@@ -39,9 +39,9 @@ macro_rules! class {
 
 macro_rules! alt {
     ($($e:expr),* $(,)?) => {{
-        $crate::Rulex::Alternation($crate::alternation::Alternation::new(
+        $crate::alternation::Alternation::new_rulex(
             vec![$( $e ),*],
-        ))
+        )
     }};
 }
 

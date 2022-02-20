@@ -5,7 +5,7 @@ use crate::error::ParseError;
 
 use super::tokens::Tokens;
 
-#[derive(Logos, Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Logos, Eq, PartialEq, Copy, Clone)]
 pub enum Token {
     /// `%-` (`^` boundary)
     #[token("%-")]

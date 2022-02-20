@@ -1,4 +1,3 @@
-use core::fmt;
 use std::{cmp::Ordering, collections::BTreeSet};
 
 #[derive(Clone, Eq, Default)]
@@ -20,8 +19,9 @@ impl PartialEq for CharClass<'_> {
     }
 }
 
-impl fmt::Debug for CharClass<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for CharClass<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut items = Vec::with_capacity(self.named_parts.len() + self.ranges.len());
         for &part in &self.named_parts {
             items.push(format!("<{part}>"));
@@ -43,8 +43,9 @@ pub struct CharRange {
     last: char,
 }
 
-impl fmt::Debug for CharRange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for CharRange {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if self.first == self.last {
             self.first.fmt(f)
         } else {
@@ -71,8 +72,9 @@ impl PartialOrd for CharRange {
 #[derive(Clone, Copy, Eq)]
 struct SortRange(CharRange);
 
-impl fmt::Debug for SortRange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for SortRange {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.0.fmt(f)
     }
 }
@@ -139,6 +141,10 @@ impl<'i> CharClass<'i> {
         new
     }
 
+    pub fn is_negated(&self) -> bool {
+        self.negated
+    }
+
     pub fn add_named(&mut self, new: &'i str) {
         self.named_parts.push(new);
     }
@@ -167,21 +173,14 @@ impl<'i> CharClass<'i> {
     pub fn remove_range(&mut self, rng: CharRange) {
         self.ranges.remove(&SortRange(rng));
     }
-}
 
-#[test]
-fn test() {
-    let mut c = CharClass::default();
-    c.add_range('a', 'd');
-    c.add_range('e', 'e');
-    c.add_range('g', 'h');
-    c.add_range('h', 'j');
-    c.add_range('m', 'p');
-    c.add_range('t', 'w');
-    c.add_range('o', 'u');
-
-    assert_eq!(
-        "{'a'-'d', 'e', 'g'-'j', 'm'-'w'}",
-        format!("{:?}", c.ranges)
-    );
+    pub fn add_all(&mut self, cc: CharClass<'i>) {
+        if self.negated != cc.negated {
+            panic!("Merging a negated char class with a non-negated one is not supported");
+        }
+        for range in cc.ranges {
+            self.add_range(range.0.first, range.0.last);
+        }
+        self.named_parts.extend(cc.named_parts);
+    }
 }

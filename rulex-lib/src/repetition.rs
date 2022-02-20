@@ -1,6 +1,6 @@
 use crate::Rulex;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Repetition<'i> {
     rule: Rulex<'i>,
     kind: RepetitionKind,
@@ -13,7 +13,29 @@ impl<'i> Repetition<'i> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for Repetition<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("Repetition").field(&self.rule).finish()?;
+        match self.kind {
+            RepetitionKind {
+                lower_bound,
+                upper_bound: None,
+            } => write!(f, "{{{lower_bound}, inf}}"),
+            RepetitionKind {
+                lower_bound,
+                upper_bound: Some(upper_bound),
+            } => write!(f, "{{{lower_bound}, {upper_bound}}}"),
+        }?;
+        if let Greedy::Yes = self.greedy {
+            write!(f, " greedy")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Copy)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub enum Greedy {
     Yes,
     No,
@@ -26,7 +48,8 @@ pub enum Greedy {
 ///  * `'x'?` is equivalent to `'x'{0,1}`
 ///  * `'x'+` is equivalent to `'x'{1,}`
 ///  * `'x'*` is equivalent to `'x'{0,}`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub struct RepetitionKind {
     /// The lower bound, e.g. `{4,}`
     lower_bound: u32,

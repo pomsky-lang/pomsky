@@ -1,4 +1,3 @@
-use core::fmt;
 use std::iter::Enumerate;
 
 use logos::Logos;
@@ -49,12 +48,13 @@ impl<'i, 'b> PartialEq for Tokens<'i, 'b> {
     }
 }
 
-impl<'i, 'b> fmt::Debug for Tokens<'i, 'b> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl<'i, 'b> core::fmt::Debug for Tokens<'i, 'b> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         struct X<'a>(Token, &'a str);
 
-        impl fmt::Debug for X<'_> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        impl core::fmt::Debug for X<'_> {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(f, "{:?} {:?}", self.0, self.1)
             }
         }

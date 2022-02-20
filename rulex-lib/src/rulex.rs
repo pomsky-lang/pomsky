@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::{
     alternation::Alternation,
     boundary::Boundary,
@@ -42,15 +40,16 @@ impl ToString for Rulex<'_> {
     }
 }
 
-impl fmt::Debug for Rulex<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for Rulex<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::Literal(arg0) => fmt::Debug::fmt(&arg0, f),
-            Self::CharClass(arg0) => fmt::Debug::fmt(&arg0, f),
-            Self::Group(arg0) => fmt::Debug::fmt(&arg0, f),
-            Self::Alternation(arg0) => fmt::Debug::fmt(&arg0, f),
-            Self::Repetition(arg0) => fmt::Debug::fmt(&arg0, f),
-            Self::Boundary(arg0) => fmt::Debug::fmt(&arg0, f),
+            Self::Literal(arg0) => arg0.fmt(f),
+            Self::CharClass(arg0) => arg0.fmt(f),
+            Self::Group(arg0) => arg0.fmt(f),
+            Self::Alternation(arg0) => arg0.fmt(f),
+            Self::Repetition(arg0) => arg0.fmt(f),
+            Self::Boundary(arg0) => arg0.fmt(f),
         }
     }
 }

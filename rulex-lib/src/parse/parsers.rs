@@ -36,7 +36,7 @@ pub(super) fn parse_or<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<
         if rules.len() == 1 {
             rules.pop().unwrap()
         } else {
-            Rulex::Alternation(Alternation::new(rules))
+            Alternation::new_rulex(rules)
         }
     })(tokens)
 }
@@ -145,15 +145,16 @@ pub(super) fn parse_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
     map(
         pair(
             opt(parse_capture),
-            delimited(Token::OpenParen, parse_or, Token::CloseParen),
+            delimited(Token::OpenParen, opt(parse_or), Token::CloseParen),
         ),
         |(capture, rule)| match (capture, rule) {
-            (Some(capture), Rulex::Group(mut g)) => {
-                g.set_capture(Some(capture));
+            (None, Some(rule)) => rule,
+            (capture, Some(Rulex::Group(mut g))) => {
+                g.set_capture(capture);
                 Rulex::Group(g)
             }
-            (Some(capture), rule) => Rulex::Group(Group::new(vec![rule], Some(capture))),
-            (None, rule) => rule,
+            (capture, Some(rule)) => Rulex::Group(Group::new(vec![rule], capture)),
+            (capture, None) => Rulex::Group(Group::new(vec![], capture)),
         },
     )(tokens)
 }

@@ -7,6 +7,10 @@ authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["dbg"]
+dbg = []
+
 [dependencies]
 thiserror = "1.0.30"
 logos = "0.12.0"

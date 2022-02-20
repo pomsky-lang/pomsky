@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::Rulex;
 
 #[derive(Clone, PartialEq, Eq)]
@@ -18,23 +16,29 @@ impl<'i> Group<'i> {
     }
 }
 
-impl fmt::Debug for Group<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for Group<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self.capture {
             Some(Capture { name: Some(name) }) => write!(f, "Group :{name}")?,
             Some(_) => write!(f, "Group :")?,
             None => write!(f, "Group")?,
         }
-        let mut tup = f.debug_tuple("");
-        let mut tup = &mut tup;
-        for part in &self.parts {
-            tup = tup.field(part);
+        if self.parts.is_empty() {
+            write!(f, "()")
+        } else {
+            let mut tup = f.debug_tuple("");
+            let mut tup = &mut tup;
+            for part in &self.parts {
+                tup = tup.field(part);
+            }
+            tup.finish()
         }
-        tup.finish()
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub struct Capture<'i> {
     name: Option<&'i str>,
 }
