@@ -1,0 +1,8 @@
+[workspace]
+members = ["./rulex-lib", "./rulex-bin"]
+default-members = ["./rulex-bin"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+opt-level = "s"
