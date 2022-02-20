@@ -2,8 +2,10 @@ use crate::{
     alternation::Alternation,
     boundary::Boundary,
     char_class::CharClass,
+    compile::{Compile, CompileState},
     error::{CompileError, ParseError},
     group::Group,
+    options::{CompileOptions, ParseOptions},
     repetition::Repetition,
 };
 
@@ -17,26 +19,44 @@ pub enum Rulex<'i> {
     Boundary(Boundary),
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct CompileOptions {}
-
 impl<'i> Rulex<'i> {
-    pub fn parse(input: &'i str, _options: CompileOptions) -> Result<Self, ParseError> {
+    pub fn parse(input: &'i str, _options: ParseOptions) -> Result<Self, ParseError> {
         crate::parse::parse(input)
     }
 
-    pub fn compile(input: &str, options: CompileOptions) -> Result<String, CompileError> {
-        Ok(Rulex::parse(input, options)?.to_string())
+    pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
+        let mut buf = String::new();
+        self.comp(options, &mut CompileState::new(), &mut buf)?;
+        Ok(buf)
+    }
+
+    pub fn parse_and_compile(input: &str, options: CompileOptions) -> Result<String, CompileError> {
+        let parsed = Rulex::parse(input, options.parse_options)?;
+        let mut buf = String::new();
+        parsed.comp(options, &mut CompileState::new(), &mut buf)?;
+        Ok(buf)
     }
 
     pub fn negate(self) -> Option<Self> {
-        todo!()
+        match self {
+            Rulex::CharClass(c) => Some(Rulex::CharClass(c.negate())),
+            Rulex::Boundary(b) => Some(Rulex::Boundary(match b {
+                Boundary::Word => Boundary::NotWord,
+                Boundary::NotWord => Boundary::Word,
+                Boundary::Start | Boundary::End => return None,
+            })),
+            _ => None,
+        }
     }
-}
 
-impl ToString for Rulex<'_> {
-    fn to_string(&self) -> String {
-        todo!()
+    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
+        match self {
+            Rulex::Literal(_) | Rulex::Alternation(_) => true,
+            Rulex::Group(g) => g.needs_parens_before_repetition(),
+            Rulex::CharClass(_) => false,
+            Rulex::Repetition(_) => false,
+            Rulex::Boundary(_) => false,
+        }
     }
 }
 
@@ -50,6 +70,24 @@ impl core::fmt::Debug for Rulex<'_> {
             Self::Alternation(arg0) => arg0.fmt(f),
             Self::Repetition(arg0) => arg0.fmt(f),
             Self::Boundary(arg0) => arg0.fmt(f),
+        }
+    }
+}
+
+impl Compile for Rulex<'_> {
+    fn comp(
+        &self,
+        options: CompileOptions,
+        state: &mut crate::compile::CompileState,
+        buf: &mut String,
+    ) -> crate::compile::CompileResult {
+        match self {
+            Rulex::Literal(l) => l.comp(options, state, buf),
+            Rulex::CharClass(c) => c.comp(options, state, buf),
+            Rulex::Group(g) => g.comp(options, state, buf),
+            Rulex::Alternation(a) => a.comp(options, state, buf),
+            Rulex::Repetition(r) => r.comp(options, state, buf),
+            Rulex::Boundary(b) => b.comp(options, state, buf),
         }
     }
 }

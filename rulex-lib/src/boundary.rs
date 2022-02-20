@@ -1,9 +1,31 @@
+use crate::{
+    compile::{Compile, CompileResult, CompileState},
+    options::CompileOptions,
+};
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Boundary {
     Start,
     Word,
     NotWord,
     End,
+}
+
+impl Compile for Boundary {
+    fn comp(
+        &self,
+        _options: CompileOptions,
+        _state: &mut CompileState,
+        buf: &mut String,
+    ) -> CompileResult {
+        match self {
+            Boundary::Start => buf.push('^'),
+            Boundary::Word => buf.push_str("\\b"),
+            Boundary::NotWord => buf.push_str("\\B"),
+            Boundary::End => buf.push('$'),
+        }
+        Ok(())
+    }
 }
 
 #[cfg(feature = "dbg")]

@@ -1,4 +1,9 @@
-use crate::Rulex;
+use crate::{
+    compile::{Compile, CompileResult, CompileState},
+    error::{CompileError, Feature},
+    options::{CompileOptions, RegexFlavor},
+    Rulex,
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Group<'i> {
@@ -13,6 +18,71 @@ impl<'i> Group<'i> {
 
     pub fn set_capture(&mut self, capture: Option<Capture<'i>>) {
         self.capture = capture;
+    }
+
+    pub fn needs_parens_before_repetition(&self) -> bool {
+        if self.capture.is_none() && self.parts.len() == 1 {
+            return self.parts[0].needs_parens_before_repetition();
+        }
+        false
+    }
+}
+
+impl Compile for Group<'_> {
+    fn comp(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+        buf: &mut String,
+    ) -> CompileResult {
+        match self.capture {
+            Some(Capture { name: Some(name) }) => {
+                if state.used_names.contains_key(name) {
+                    return Err(CompileError::NameUsedMultipleTimes);
+                }
+                state.used_names.insert(name.to_string(), state.next_idx);
+                state.next_idx += 1;
+
+                // https://www.regular-expressions.info/named.html
+                match options.flavor {
+                    RegexFlavor::Python | RegexFlavor::Pcre => {
+                        buf.push_str("(?P<");
+                    }
+                    RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
+                        buf.push_str("(?<");
+                    }
+                    RegexFlavor::JavaScript | RegexFlavor::Rust => {
+                        return Err(CompileError::Unsupported(
+                            Feature::NamedCaptureGroups,
+                            options.flavor,
+                        ))
+                    }
+                }
+                buf.push_str(name);
+                buf.push('>');
+                for part in &self.parts {
+                    part.comp(options, state, buf)?;
+                }
+                buf.push(')');
+                Ok(())
+            }
+            Some(Capture { name: None }) => {
+                state.next_idx += 1;
+
+                buf.push('(');
+                for part in &self.parts {
+                    part.comp(options, state, buf)?;
+                }
+                buf.push(')');
+                Ok(())
+            }
+            None => {
+                for part in &self.parts {
+                    part.comp(options, state, buf)?;
+                }
+                Ok(())
+            }
+        }
     }
 }
 

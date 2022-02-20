@@ -1,10 +1,96 @@
 use std::{cmp::Ordering, collections::BTreeSet};
 
+use crate::{compile::Compile, error::CompileError};
+
 #[derive(Clone, Eq, Default)]
 pub struct CharClass<'i> {
     named_parts: Vec<&'i str>,
     ranges: BTreeSet<SortRange>,
     negated: bool,
+}
+
+impl Compile for CharClass<'_> {
+    fn comp(
+        &self,
+        _options: crate::options::CompileOptions,
+        _state: &mut crate::compile::CompileState,
+        buf: &mut String,
+    ) -> crate::compile::CompileResult {
+        if self.named_parts.contains(&"all") {
+            if !self.negated {
+                buf.push_str("[\\S\\s]");
+            } else {
+                buf.push_str("[^\\S\\s]");
+            }
+        } else if self.named_parts.len() == 1 && self.ranges.is_empty() {
+            let range = self.named_parts[0];
+            if (range == "." && !self.negated) || (range == "n" && self.negated) {
+                buf.push('.');
+            } else if (range == "." && self.negated) || (range == "n" && !self.negated) {
+                buf.push_str("\\n");
+            } else {
+                compile_named_range(range, self.negated, buf)?;
+            }
+        } else {
+            buf.push('[');
+            if self.negated {
+                buf.push('^');
+            }
+            for &range in &self.named_parts {
+                compile_named_range(range, false, buf)?;
+            }
+            for &range in &self.ranges {
+                let range = range.0;
+                compile_range_char(range.first, buf);
+                if range.last != range.first {
+                    buf.push('-');
+                    compile_range_char(range.last, buf);
+                }
+            }
+            buf.push(']');
+        }
+        Ok(())
+    }
+}
+
+fn compile_named_range(range: &str, negated: bool, buf: &mut String) -> Result<(), CompileError> {
+    if !negated {
+        if range == "." {
+            return Err(CompileError::Other(
+                "Unsupported <.> combined with another character class",
+            ));
+        } else if range.starts_with(char::is_lowercase) {
+            buf.push('\\');
+            buf.push_str(range);
+        } else {
+            buf.push_str("\\p{");
+            buf.push_str(range);
+            buf.push('}');
+        }
+    } else {
+        // negated
+        if range == "." {
+            buf.push_str("\\n");
+        } else if range.starts_with(char::is_lowercase) {
+            buf.push('\\');
+            buf.push_str(&range.to_uppercase());
+        } else {
+            buf.push_str("\\P{");
+            buf.push_str(range);
+            buf.push('}');
+        }
+    }
+    Ok(())
+}
+
+fn compile_range_char(c: char, buf: &mut String) {
+    match c {
+        '\\' => buf.push_str(r#"\\"#),
+        '-' => buf.push_str(r#"\-"#),
+        ']' => buf.push_str(r#"\]"#),
+        '^' => buf.push_str(r#"\^"#),
+        c => buf.push(c),
+    }
 }
 
 impl PartialEq for CharClass<'_> {
@@ -139,6 +225,11 @@ impl<'i> CharClass<'i> {
         let mut new = CharClass::default();
         new.add_named(name);
         new
+    }
+
+    pub fn negate(mut self) -> Self {
+        self.negated = !self.negated;
+        self
     }
 
     pub fn is_negated(&self) -> bool {

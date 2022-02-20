@@ -1,4 +1,10 @@
-use crate::Rulex;
+use std::fmt::Write;
+
+use crate::{
+    compile::{Compile, CompileResult, CompileState, Parens},
+    options::CompileOptions,
+    Rulex,
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Repetition<'i> {
@@ -10,6 +16,66 @@ pub struct Repetition<'i> {
 impl<'i> Repetition<'i> {
     pub fn new(rule: Rulex<'i>, kind: RepetitionKind, greedy: Greedy) -> Self {
         Repetition { rule, kind, greedy }
+    }
+}
+
+impl Compile for Repetition<'_> {
+    fn comp(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+        buf: &mut String,
+    ) -> CompileResult {
+        if self.rule.needs_parens_before_repetition() {
+            Parens(&self.rule).comp(options, state, buf)?;
+        } else {
+            self.rule.comp(options, state, buf)?;
+        }
+
+        match self.kind {
+            RepetitionKind {
+                lower_bound: 0,
+                upper_bound: Some(1),
+            } => buf.push('?'),
+            RepetitionKind {
+                lower_bound: 0,
+                upper_bound: None,
+            } => buf.push('*'),
+            RepetitionKind {
+                lower_bound: 1,
+                upper_bound: None,
+            } => buf.push('+'),
+            RepetitionKind {
+                lower_bound,
+                upper_bound: None,
+            } => {
+                write!(buf, "{{{lower_bound},}}").unwrap();
+            }
+            RepetitionKind {
+                lower_bound,
+                upper_bound: Some(upper_bound),
+            } if lower_bound == upper_bound => {
+                write!(buf, "{{{lower_bound}}}").unwrap();
+            }
+            RepetitionKind {
+                lower_bound: 0,
+                upper_bound: Some(upper_bound),
+            } => {
+                write!(buf, "{{,{upper_bound}}}").unwrap();
+            }
+            RepetitionKind {
+                lower_bound,
+                upper_bound: Some(upper_bound),
+            } => {
+                write!(buf, "{{{lower_bound},{upper_bound}}}").unwrap();
+            }
+        }
+
+        if let Greedy::No = self.greedy {
+            buf.push('?');
+        }
+
+        Ok(())
     }
 }
 

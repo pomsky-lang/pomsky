@@ -38,6 +38,10 @@ On the left are rulex expressions, on the right is the compiled regex:
 # Boundaries
 %- -%                       /^$/
 % 'hello' %!                /\bhello\B/
+
+# Capturing groups
+:('test')                   /(test)/
+:name('test')               /(?P<name>test)
 ```
 
 ## Why use this instead of normal regexes?
@@ -46,7 +50,7 @@ POSIX regexes are very concise, simple and easy to parse. However, they quickly 
 
 Rulex is designed to be much easier to understand even when the regular expression is long. It doesn't have escape sequences, instead using single or double quotes for raw text. Repetitions in rulex are non-greedy by default.
 
-Rulex compiles to normal POSIX regexes, so it can be used with your favorite language and regex engine. Rulex emits regexes that are as portable as possible and even applies some optimizations.
+Rulex compiles to PCRE-compatible regexes, but in the future it will be possible to specify the regex dialect.
 
 ## Usage
 
@@ -102,6 +106,10 @@ The above compiles to
 /let[\s\n]*\b\w[\w\d]*\b[\s\n]*=[\s\n]*-?(?:0|[1-9]\d*(?:\.\d+)?)/
 ```
 
+## Contributing
+
+You can contribute by filing issues or sending pull requests. If you have questions, please create an issue.
+
 ## License
 
-MIT or Apache-2.0
+Dual-licensed under the [MIT license](https://opensource.org/licenses/MIT) or the [Apache 2.0 license](https://opensource.org/licenses/Apache-2.0).

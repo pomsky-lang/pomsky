@@ -1,4 +1,4 @@
-use crate::{parse::Token, repetition::RepetitionError};
+use crate::{options::RegexFlavor, parse::Token, repetition::RepetitionError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseError {
@@ -41,10 +41,20 @@ impl<'i, 'b, I> nom::error::ParseError<I> for ParseError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CompileError;
+pub enum CompileError {
+    ParseError(ParseError),
+    Unsupported(Feature, RegexFlavor),
+    NameUsedMultipleTimes,
+    Other(&'static str),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Feature {
+    NamedCaptureGroups,
+}
 
 impl From<ParseError> for CompileError {
-    fn from(_: ParseError) -> Self {
-        CompileError
+    fn from(e: ParseError) -> Self {
+        CompileError::ParseError(e)
     }
 }

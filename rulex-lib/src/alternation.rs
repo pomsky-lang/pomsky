@@ -1,4 +1,9 @@
-use crate::{char_class::CharClass, Rulex};
+use crate::{
+    char_class::CharClass,
+    compile::{Compile, CompileResult, CompileState},
+    options::CompileOptions,
+    Rulex,
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Alternation<'i> {
@@ -34,5 +39,23 @@ impl core::fmt::Debug for Alternation<'_> {
             d = d.field(rule);
         }
         d.finish()
+    }
+}
+
+impl Compile for Alternation<'_> {
+    fn comp(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+        buf: &mut String,
+    ) -> CompileResult {
+        for rule in &self.rules {
+            rule.comp(options, state, buf)?;
+            buf.push('|');
+        }
+        if !self.rules.is_empty() {
+            buf.pop().unwrap();
+        }
+        Ok(())
     }
 }
