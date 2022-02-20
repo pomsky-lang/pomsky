@@ -5,6 +5,6 @@ pub mod error;
 pub mod group;
 pub mod parse;
 pub mod repetition;
-pub mod rulex;
+pub mod rule;
 
-pub use rulex::{CompileOptions, Rulex};
+pub use rule::{CompileOptions, Rulex};

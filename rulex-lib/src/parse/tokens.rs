@@ -128,7 +128,7 @@ impl<'i, 'b> InputLength for Tokens<'i, 'b> {
 
 impl<'i, 'b> InputTake for Tokens<'i, 'b> {
     fn take(&self, count: usize) -> Self {
-        let (tokens, _) = self.tokens.split_at(count);
+        let tokens = &self.tokens[..count];
         let last = tokens.last().map(|&(_, (_, r))| r).unwrap_or_default();
 
         Tokens {
