@@ -5,6 +5,7 @@ use crate::{
     compile::{Compile, CompileState},
     error::{CompileError, ParseError},
     group::Group,
+    lookaround::Lookaround,
     options::{CompileOptions, ParseOptions},
     repetition::Repetition,
 };
@@ -17,6 +18,7 @@ pub enum Rulex<'i> {
     Alternation(Alternation<'i>),
     Repetition(Box<Repetition<'i>>),
     Boundary(Boundary),
+    Lookaround(Box<Lookaround<'i>>),
 }
 
 impl<'i> Rulex<'i> {
@@ -53,9 +55,10 @@ impl<'i> Rulex<'i> {
         match self {
             Rulex::Literal(_) | Rulex::Alternation(_) => true,
             Rulex::Group(g) => g.needs_parens_before_repetition(),
-            Rulex::CharClass(_) => false,
-            Rulex::Repetition(_) => false,
-            Rulex::Boundary(_) => false,
+            Rulex::CharClass(_)
+            | Rulex::Repetition(_)
+            | Rulex::Boundary(_)
+            | Rulex::Lookaround(_) => false,
         }
     }
 }
@@ -70,6 +73,7 @@ impl core::fmt::Debug for Rulex<'_> {
             Self::Alternation(arg0) => arg0.fmt(f),
             Self::Repetition(arg0) => arg0.fmt(f),
             Self::Boundary(arg0) => arg0.fmt(f),
+            Self::Lookaround(arg0) => arg0.fmt(f),
         }
     }
 }
@@ -88,6 +92,7 @@ impl Compile for Rulex<'_> {
             Rulex::Alternation(a) => a.comp(options, state, buf),
             Rulex::Repetition(r) => r.comp(options, state, buf),
             Rulex::Boundary(b) => b.comp(options, state, buf),
+            Rulex::Lookaround(l) => l.comp(options, state, buf),
         }
     }
 }

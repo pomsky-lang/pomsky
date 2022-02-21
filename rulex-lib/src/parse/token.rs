@@ -1,7 +1,7 @@
 use logos::Logos;
 use nom::Parser;
 
-use crate::error::ParseError;
+use crate::error::{ParseError, ParseErrorKind};
 
 use super::tokens::Tokens;
 
@@ -61,6 +61,22 @@ pub enum Token {
     #[token("!")]
     ExclamationMark,
 
+    /// `>>` (positive lookahead)
+    #[token(">>")]
+    LookAhead,
+
+    /// `<<` (positive lookbehind)
+    #[token("<<")]
+    LookBehind,
+
+    /// `>>!` (negative lookahead)
+    #[token(">>!")]
+    LookAheadNeg,
+
+    /// `<<!` (negative lookbehind)
+    #[token("<<!")]
+    LookBehindNeg,
+
     /// * `<.>` (`.`)
     /// * `<Hello>` (`\p{Hello}`)
     #[token("<.>")]
@@ -96,6 +112,41 @@ pub enum Token {
     Error,
 }
 
+impl core::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Token::BStart => "`%-`",
+            Token::BEnd => "`-%`",
+            Token::BNotWord => "`%!`",
+            Token::BWord => "`%`",
+            Token::Star => "`*`",
+            Token::Plus => "`+`",
+            Token::QuestionMark => "`?`",
+            Token::Dash => "`-`",
+            Token::Pipe => "`|`",
+            Token::Colon => "`:`",
+            Token::OpenParen => "`(`",
+            Token::CloseParen => "`)`",
+            Token::OpenBrace => "`{`",
+            Token::CloseBrace => "`}`",
+            Token::Comma => "`,`",
+            Token::ExclamationMark => "`!`",
+            Token::LookAhead => "`>>`",
+            Token::LookBehind => "`<<`",
+            Token::LookAheadNeg => "`>>!`",
+            Token::LookBehindNeg => "`<<!`",
+            Token::CWord => "named character class",
+            Token::CharClass => "character class",
+            Token::DoubleString => "string",
+            Token::SingleString => "string",
+            Token::CodePoint => "code point",
+            Token::RepetitionCount => "repetition number",
+            Token::GroupName => "group name",
+            Token::Error => "error",
+        })
+    }
+}
+
 impl<'i, 'b> Parser<Tokens<'i, 'b>, &'i str, ParseError> for Token {
     fn parse(
         &mut self,
@@ -106,7 +157,9 @@ impl<'i, 'b> Parser<Tokens<'i, 'b>, &'i str, ParseError> for Token {
                 let _ = input.next();
                 Ok((input, s))
             }
-            _ => Err(nom::Err::Error(ParseError::ExpectedToken(*self))),
+            _ => Err(nom::Err::Error(
+                ParseErrorKind::ExpectedToken(*self).at(input.index()),
+            )),
         }
     }
 }
@@ -121,7 +174,9 @@ impl<'i, 'b> Parser<Tokens<'i, 'b>, Token, ParseError> for &'i str {
                 let _ = input.next();
                 Ok((input, t))
             }
-            _ => Err(nom::Err::Error(ParseError::ExpectedWord)),
+            _ => Err(nom::Err::Error(
+                ParseErrorKind::Expected("word").at(input.index()),
+            )),
         }
     }
 }

@@ -10,8 +10,9 @@ use crate::{
     alternation::Alternation,
     boundary::Boundary,
     char_class::CharClass,
-    error::ParseError,
+    error::{CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind},
     group::{Capture, Group},
+    lookaround::{Lookaround, LookaroundKind},
     repetition::{Greedy, Repetition, RepetitionKind},
     Rulex,
 };
@@ -22,12 +23,12 @@ pub(super) type PResult<'i, 'b, T> = IResult<Tokens<'i, 'b>, T, ParseError>;
 
 pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
     let mut buf = Vec::new();
-    let tokens = Tokens::tokenize(source, &mut buf);
+    let tokens = Tokens::tokenize(source, &mut buf)?;
     let (rest, rules) = parse_or(tokens)?;
     if rest.is_empty() {
         Ok(rules)
     } else {
-        Err(ParseError::LeftoverTokens(rest.len()))
+        Err(ParseErrorKind::LeftoverTokens.at(rest.index()))
     }
 }
 
@@ -68,7 +69,7 @@ pub(super) fn parse_fixes<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
         |(mut rule, suffixes)| {
             for suffix in suffixes {
                 rule = match suffix {
-                    Suffix::Not => Rulex::negate(rule).ok_or(ParseError::InvalidNot)?,
+                    Suffix::Not => Rulex::negate(rule).ok_or(ParseErrorKind::InvalidNot)?,
                     Suffix::Repetition((kind, greedy)) => {
                         Rulex::Repetition(Box::new(Repetition::new(rule, kind, greedy)))
                     }
@@ -105,28 +106,24 @@ pub(super) fn parse_braced_repetition<'i, 'b>(
         cut(alt((
             try_map(
                 separated_pair(
-                    opt(Token::RepetitionCount),
+                    opt(parse_repetition_count),
                     Token::Comma,
-                    opt(Token::RepetitionCount),
+                    opt(parse_repetition_count),
                 ),
-                |(lower, upper)| {
-                    let lower = parse_number_opt(lower, ParseError::NumberTooLarge)?;
-                    let upper = parse_number_opt(upper, ParseError::NumberTooLarge)?;
-
-                    Ok(RepetitionKind::try_from((lower.unwrap_or(0), upper))?)
-                },
+                |(lower, upper)| Ok(RepetitionKind::try_from((lower.unwrap_or(0), upper))?),
                 nom::Err::Failure,
             ),
-            try_map(
-                Token::RepetitionCount,
-                |num| {
-                    let num = num.parse().map_err(|_| ParseError::NumberTooLarge)?;
-                    Ok(RepetitionKind::fixed(num))
-                },
-                nom::Err::Failure,
-            ),
+            map(parse_repetition_count, RepetitionKind::fixed),
         ))),
         cut(Token::CloseBrace),
+    )(tokens)
+}
+
+fn parse_repetition_count<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, u32> {
+    try_map(
+        Token::RepetitionCount,
+        |n| str::parse(n).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge)),
+        nom::Err::Failure,
     )(tokens)
 }
 
@@ -138,6 +135,8 @@ pub(super) fn parse_atom<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rule
         parse_char_range_class,
         parse_char_word_class,
         parse_boundary,
+        parse_lookaround,
+        err(|| ParseErrorKind::Expected("expression")),
     ))(tokens)
 }
 
@@ -145,7 +144,7 @@ pub(super) fn parse_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
     map(
         pair(
             opt(parse_capture),
-            delimited(Token::OpenParen, opt(parse_or), Token::CloseParen),
+            delimited(Token::OpenParen, opt(parse_or), cut(Token::CloseParen)),
         ),
         |(capture, rule)| match (capture, rule) {
             (None, Some(rule)) => rule,
@@ -173,14 +172,18 @@ pub(super) fn parse_string<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Ru
 
 pub(super) fn parse_chars<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     fn parse_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, char> {
-        alt((parse_code_point, parse_char_string))(tokens)
+        alt((
+            parse_code_point,
+            parse_char_string,
+            err(|| ParseErrorKind::ExpectedCodePointOrChar),
+        ))(tokens)
     }
 
     try_map(
-        pair(parse_char, opt(preceded(Token::Dash, parse_char))),
+        pair(parse_char, opt(preceded(Token::Dash, cut(parse_char)))),
         |(c1, c2)| {
             let cc = CharClass::try_from_range(c1, c2.unwrap_or(c1))
-                .ok_or(ParseError::InvalidCodePointRange)?;
+                .ok_or(ParseErrorKind::CodePoint(CodePointError::InvalidRange))?;
             Ok(Rulex::CharClass(cc))
         },
         nom::Err::Failure,
@@ -195,7 +198,7 @@ pub(super) fn parse_char_string<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, '
             let mut iter = s.chars();
             match iter.next() {
                 Some(c) if matches!(iter.next(), None) => Ok(c),
-                _ => Err(ParseError::InvalidCharString),
+                _ => Err(ParseErrorKind::CharString(CharStringError::Invalid)),
             }
         },
         nom::Err::Error,
@@ -208,12 +211,12 @@ pub(super) fn parse_code_point<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
         |s| {
             let hex = &s[2..];
             if hex.len() > 6 {
-                Err(ParseError::InvalidCodePoint)
+                Err(ParseErrorKind::CodePoint(CodePointError::Invalid))
             } else {
                 u32::from_str_radix(hex, 16)
                     .ok()
                     .and_then(|n| char::try_from(n).ok())
-                    .ok_or(ParseError::InvalidCodePoint)
+                    .ok_or(ParseErrorKind::CodePoint(CodePointError::Invalid))
             }
         },
         nom::Err::Failure,
@@ -244,26 +247,46 @@ pub(super) fn parse_boundary<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, 
     )(tokens)
 }
 
+pub(super) fn parse_lookaround<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    map(
+        pair(
+            alt((
+                map(Token::LookAhead, |_| LookaroundKind::Ahead),
+                map(Token::LookBehind, |_| LookaroundKind::Behind),
+                map(Token::LookAheadNeg, |_| LookaroundKind::AheadNegative),
+                map(Token::LookBehindNeg, |_| LookaroundKind::BehindNegative),
+            )),
+            cut(parse_atom),
+        ),
+        |(kind, rule)| Rulex::Lookaround(Box::new(Lookaround::new(rule, kind))),
+    )(tokens)
+}
+
 fn strip_first_last(s: &str) -> &str {
     &s[1..s.len() - 1]
 }
 
-fn parse_number_opt(num: Option<&str>, err: ParseError) -> Result<Option<u32>, ParseError> {
-    num.map(str::parse).transpose().map_err(|_| err)
-}
-
-fn try_map<I, O1, O2, E, P, M, EM>(
+fn try_map<'i, 'b, O1, O2, P, M, EM>(
     mut parser: P,
     mut map: M,
     err_kind: EM,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(Tokens<'i, 'b>) -> IResult<Tokens<'i, 'b>, O2, ParseError>
 where
-    P: Parser<I, O1, E>,
-    M: FnMut(O1) -> Result<O2, E>,
-    EM: Copy + FnOnce(E) -> nom::Err<E>,
+    P: Parser<Tokens<'i, 'b>, O1, ParseError>,
+    M: FnMut(O1) -> Result<O2, ParseErrorKind>,
+    EM: Copy + FnOnce(ParseError) -> nom::Err<ParseError>,
 {
     move |input| {
-        let (rest, o) = parser.parse(input)?;
-        Ok((rest, map(o).map_err(err_kind)?))
+        let (rest, o) = parser.parse(input.clone())?;
+        Ok((
+            rest,
+            map(o).map_err(|e| e.at(input.index())).map_err(err_kind)?,
+        ))
     }
+}
+
+fn err<'i, 'b, T>(
+    mut error_fn: impl FnMut() -> ParseErrorKind,
+) -> impl FnMut(Tokens<'i, 'b>) -> IResult<Tokens<'i, 'b>, T, ParseError> {
+    move |input| Err(nom::Err::Error(error_fn().at(input.index())))
 }

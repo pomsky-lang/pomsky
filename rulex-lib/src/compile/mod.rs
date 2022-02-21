@@ -21,23 +21,27 @@ impl Compile for &'_ str {
         buf: &mut String,
     ) -> CompileResult {
         for c in self.chars() {
-            match c {
-                '\\' => buf.push_str(r#"\\"#),
-                '[' => buf.push_str(r#"\["#),
-                '{' => buf.push_str(r#"\{"#),
-                '(' => buf.push_str(r#"\("#),
-                ')' => buf.push_str(r#"\)"#),
-                '.' => buf.push_str(r#"\."#),
-                '+' => buf.push_str(r#"\+"#),
-                '*' => buf.push_str(r#"\*"#),
-                '?' => buf.push_str(r#"\?"#),
-                '|' => buf.push_str(r#"\|"#),
-                '^' => buf.push_str(r#"\^"#),
-                '$' => buf.push_str(r#"\$"#),
-                c => buf.push(c),
-            }
+            compile_char(c, buf);
         }
         Ok(())
+    }
+}
+
+pub(crate) fn compile_char(c: char, buf: &mut String) {
+    match c {
+        '\\' => buf.push_str(r#"\\"#),
+        '[' => buf.push_str(r#"\["#),
+        '{' => buf.push_str(r#"\{"#),
+        '(' => buf.push_str(r#"\("#),
+        ')' => buf.push_str(r#"\)"#),
+        '.' => buf.push_str(r#"\."#),
+        '+' => buf.push_str(r#"\+"#),
+        '*' => buf.push_str(r#"\*"#),
+        '?' => buf.push_str(r#"\?"#),
+        '|' => buf.push_str(r#"\|"#),
+        '^' => buf.push_str(r#"\^"#),
+        '$' => buf.push_str(r#"\$"#),
+        c => buf.push(c),
     }
 }
 

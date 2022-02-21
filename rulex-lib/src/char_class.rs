@@ -1,6 +1,9 @@
 use std::{cmp::Ordering, collections::BTreeSet};
 
-use crate::{compile::Compile, error::CompileError};
+use crate::{
+    compile::{compile_char, Compile},
+    error::CompileError,
+};
 
 #[derive(Clone, Eq, Default)]
 pub struct CharClass<'i> {
@@ -31,6 +34,8 @@ impl Compile for CharClass<'_> {
             } else {
                 compile_named_range(range, self.negated, buf)?;
             }
+        } else if let Some(c) = self.get_single_char() {
+            compile_char(c, buf)
         } else {
             buf.push('[');
             if self.negated {
@@ -209,6 +214,18 @@ impl<'i> CharClass<'i> {
         let mut new = CharClass::default();
         new.add_range(c, c);
         new
+    }
+
+    pub fn get_single_char(&self) -> Option<char> {
+        if self.named_parts.is_empty() && self.ranges.len() == 1 {
+            if let Some(range) = self.ranges.iter().next() {
+                let range = range.0;
+                if range.first == range.last {
+                    return Some(range.first);
+                }
+            }
+        }
+        None
     }
 
     pub fn try_from_range(start: char, end: char) -> Option<Self> {

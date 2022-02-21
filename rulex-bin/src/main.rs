@@ -79,7 +79,7 @@ fn compile(input: &str, debug: bool, flavor: Option<Flavor>) {
     let parsed = match Rulex::parse(input, Default::default()) {
         Ok(parsed) => parsed,
         Err(e) => {
-            eprintln!("error: {e:?}");
+            eprintln!("error: {e}");
             return;
         }
     };
@@ -91,6 +91,6 @@ fn compile(input: &str, debug: bool, flavor: Option<Flavor>) {
         ..Default::default()
     }) {
         Ok(compiled) => println!("{compiled}"),
-        Err(e) => eprintln!("{e:?}"),
+        Err(e) => eprintln!("{e}"),
     }
 }

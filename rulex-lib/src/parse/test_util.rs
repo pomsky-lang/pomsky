@@ -8,7 +8,7 @@ macro_rules! test {
     ($f:ident $lit:literal { $($rest:tt)* }) => {{
         let mut buf = Vec::new();
         assert_eq!(
-            $f($crate::parse::Tokens::tokenize($lit, &mut buf)),
+            $f($crate::parse::Tokens::tokenize($lit, &mut buf).unwrap()),
             Ok((tokens![], $($rest)* ))
         );
     }};

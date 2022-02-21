@@ -38,7 +38,7 @@ impl Compile for Group<'_> {
         match self.capture {
             Some(Capture { name: Some(name) }) => {
                 if state.used_names.contains_key(name) {
-                    return Err(CompileError::NameUsedMultipleTimes);
+                    return Err(CompileError::NameUsedMultipleTimes(name.to_string()));
                 }
                 state.used_names.insert(name.to_string(), state.next_idx);
                 state.next_idx += 1;

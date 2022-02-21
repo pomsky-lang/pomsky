@@ -3,6 +3,8 @@ use std::iter::Enumerate;
 use logos::Logos;
 use nom::{InputIter, InputLength, InputTake};
 
+use crate::error::{ParseError, ParseErrorKind};
+
 use super::token::Token;
 
 #[derive(Clone)]
@@ -12,21 +14,36 @@ pub(crate) struct Tokens<'i, 'b> {
 }
 
 impl<'i, 'b> Tokens<'i, 'b> {
-    pub(super) fn tokenize(source: &'i str, buf: &'b mut Vec<(Token, (usize, usize))>) -> Self {
+    pub(super) fn tokenize(
+        source: &'i str,
+        buf: &'b mut Vec<(Token, (usize, usize))>,
+    ) -> Result<Self, ParseError> {
         assert!(buf.is_empty());
 
         let lex = Token::lexer(source);
         buf.extend(lex.spanned().map(|(t, r)| (t, (r.start, r.end))));
+
+        let error = buf.iter().find_map(|&(t, (start, _))| match t {
+            Token::Error => Some(start),
+            _ => None,
+        });
+        if let Some(index) = error {
+            return Err(ParseErrorKind::LexError.at(index));
+        }
+
         let tokens = &**buf;
-        Tokens { source, tokens }
+        Ok(Tokens { source, tokens })
     }
 
     pub(super) fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
 
-    pub(super) fn len(&self) -> usize {
-        self.tokens.len()
+    pub(crate) fn index(&self) -> usize {
+        self.tokens
+            .first()
+            .map(|&(_, (start, _))| start)
+            .unwrap_or_else(|| self.source.len())
     }
 
     pub(super) fn peek(&self) -> Option<(Token, &'i str)> {
@@ -129,25 +146,23 @@ impl<'i, 'b> InputLength for Tokens<'i, 'b> {
 impl<'i, 'b> InputTake for Tokens<'i, 'b> {
     fn take(&self, count: usize) -> Self {
         let tokens = &self.tokens[..count];
-        let last = tokens.last().map(|&(_, (_, r))| r).unwrap_or_default();
 
         Tokens {
-            source: &self.source[..last],
+            source: self.source,
             tokens,
         }
     }
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         let (left, right) = self.tokens.split_at(count);
-        let limit = left.last().map(|&(_, (_, r))| r).unwrap_or_default();
 
         (
             Tokens {
-                source: &self.source[..limit],
+                source: self.source,
                 tokens: left,
             },
             Tokens {
-                source: &self.source[limit..],
+                source: self.source,
                 tokens: right,
             },
         )
