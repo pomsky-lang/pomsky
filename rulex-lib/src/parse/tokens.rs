@@ -1,4 +1,4 @@
-use std::iter::Enumerate;
+use std::{iter::Enumerate, ops::Range};
 
 use logos::Logos;
 use nom::{InputIter, InputLength, InputTake};
@@ -23,12 +23,16 @@ impl<'i, 'b> Tokens<'i, 'b> {
         let lex = Token::lexer(source);
         buf.extend(lex.spanned().map(|(t, r)| (t, (r.start, r.end))));
 
-        let error = buf.iter().find_map(|&(t, (start, _))| match t {
-            Token::Error => Some(start),
+        let error = buf.iter().find_map(|&(t, (start, end))| match t {
+            Token::Error => Some((start, end, None)),
+            Token::ErrorMsg(m) => Some((start, end, Some(m))),
             _ => None,
         });
-        if let Some(index) = error {
-            return Err(ParseErrorKind::LexError.at(index));
+        if let Some((start, end, msg)) = error {
+            return match msg {
+                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(start..end)),
+                None => Err(ParseErrorKind::LexError.at(start..end)),
+            };
         }
 
         let tokens = &**buf;
@@ -39,11 +43,11 @@ impl<'i, 'b> Tokens<'i, 'b> {
         self.tokens.is_empty()
     }
 
-    pub(crate) fn index(&self) -> usize {
+    pub(crate) fn index(&self) -> Range<usize> {
         self.tokens
             .first()
-            .map(|&(_, (start, _))| start)
-            .unwrap_or_else(|| self.source.len())
+            .map(|&(_, (start, end))| start..end)
+            .unwrap_or_else(|| self.source.len()..self.source.len())
     }
 
     pub(super) fn peek(&self) -> Option<(Token, &'i str)> {

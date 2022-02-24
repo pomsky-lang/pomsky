@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     combinator::{cut, map, opt},
     multi::{many0, many1, separated_list1},
-    sequence::{delimited, pair, preceded, separated_pair},
+    sequence::{delimited, pair, preceded, separated_pair, tuple},
     IResult, Parser,
 };
 
@@ -59,14 +59,20 @@ pub(super) fn parse_fixes<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
     }
 
     try_map(
-        pair(
+        tuple((
+            many0(alt((
+                map(Token::LookAhead, |_| LookaroundKind::Ahead),
+                map(Token::LookBehind, |_| LookaroundKind::Behind),
+                map(Token::LookAheadNeg, |_| LookaroundKind::AheadNegative),
+                map(Token::LookBehindNeg, |_| LookaroundKind::BehindNegative),
+            ))),
             parse_atom,
             many0(alt((
                 map(Token::ExclamationMark, |_| Suffix::Not),
                 map(parse_repetition, Suffix::Repetition),
             ))),
-        ),
-        |(mut rule, suffixes)| {
+        )),
+        |(lookarounds, mut rule, suffixes)| {
             for suffix in suffixes {
                 rule = match suffix {
                     Suffix::Not => Rulex::negate(rule).ok_or(ParseErrorKind::InvalidNot)?,
@@ -74,6 +80,9 @@ pub(super) fn parse_fixes<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
                         Rulex::Repetition(Box::new(Repetition::new(rule, kind, greedy)))
                     }
                 }
+            }
+            for &kind in lookarounds.iter().rev() {
+                rule = Rulex::Lookaround(Box::new(Lookaround::new(rule, kind)));
             }
             Ok(rule)
         },
@@ -135,7 +144,6 @@ pub(super) fn parse_atom<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rule
         parse_char_range_class,
         parse_char_word_class,
         parse_boundary,
-        parse_lookaround,
         err(|| ParseErrorKind::Expected("expression")),
     ))(tokens)
 }
@@ -244,21 +252,6 @@ pub(super) fn parse_boundary<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, 
             map(Token::BNotWord, |_| Boundary::NotWord),
         )),
         Rulex::Boundary,
-    )(tokens)
-}
-
-pub(super) fn parse_lookaround<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(
-        pair(
-            alt((
-                map(Token::LookAhead, |_| LookaroundKind::Ahead),
-                map(Token::LookBehind, |_| LookaroundKind::Behind),
-                map(Token::LookAheadNeg, |_| LookaroundKind::AheadNegative),
-                map(Token::LookBehindNeg, |_| LookaroundKind::BehindNegative),
-            )),
-            cut(parse_atom),
-        ),
-        |(kind, rule)| Rulex::Lookaround(Box::new(Lookaround::new(rule, kind))),
     )(tokens)
 }
 

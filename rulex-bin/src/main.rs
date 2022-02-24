@@ -79,12 +79,14 @@ fn compile(input: &str, debug: bool, flavor: Option<Flavor>) {
     let parsed = match Rulex::parse(input, Default::default()) {
         Ok(parsed) => parsed,
         Err(e) => {
+            let e = e.with_context(input);
             eprintln!("error: {e}");
             return;
         }
     };
     if debug {
-        println!("{parsed:#?}");
+        eprintln!("======================== debug ========================");
+        eprintln!("{parsed:#?}\n");
     }
     match parsed.compile(CompileOptions {
         flavor: flavor.unwrap_or(Flavor::Pcre).into(),

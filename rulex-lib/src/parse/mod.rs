@@ -9,7 +9,7 @@ mod tokens;
 //mod tokens2;
 
 pub(crate) use parsers::parse;
-pub use token::Token;
+pub use token::{ParseErrorMsg, Token};
 pub(crate) use tokens::Tokens;
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, collections::BTreeSet};
 
 use crate::{
-    compile::{compile_char, Compile},
+    compile::{compile_char, compile_char_escaped, Compile},
     error::CompileError,
 };
 
@@ -19,7 +19,11 @@ impl Compile for CharClass<'_> {
         _state: &mut crate::compile::CompileState,
         buf: &mut String,
     ) -> crate::compile::CompileResult {
-        if self.named_parts.contains(&"all") {
+        if self
+            .named_parts
+            .iter()
+            .any(|&p| matches!(p, "codepoint" | "cp"))
+        {
             if !self.negated {
                 buf.push_str("[\\S\\s]");
             } else {
@@ -35,7 +39,13 @@ impl Compile for CharClass<'_> {
                 compile_named_range(range, self.negated, buf)?;
             }
         } else if let Some(c) = self.get_single_char() {
-            compile_char(c, buf)
+            if self.negated {
+                buf.push_str("[^");
+                compile_range_char(c, buf);
+                buf.push(']');
+            } else {
+                compile_char_escaped(c, buf);
+            }
         } else {
             buf.push('[');
             if self.negated {
@@ -94,7 +104,7 @@ fn compile_range_char(c: char, buf: &mut String) {
         '-' => buf.push_str(r#"\-"#),
         ']' => buf.push_str(r#"\]"#),
         '^' => buf.push_str(r#"\^"#),
-        c => buf.push(c),
+        c => compile_char(c, buf),
     }
 }
 

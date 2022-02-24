@@ -80,11 +80,11 @@ pub enum Token {
     /// * `<.>` (`.`)
     /// * `<Hello>` (`\p{Hello}`)
     #[token("<.>")]
-    #[regex(r"<\w*>")]
+    #[regex(r"<\w+>")]
     CWord,
 
     /// `[abx]`
-    #[regex(r#"\[[^\]]*\]"#)]
+    #[regex(r#"\[[^\]]+\]"#)]
     CharClass,
 
     /// `"Hello"` (`Hello`)
@@ -106,10 +106,43 @@ pub enum Token {
     #[regex(r"\w[\w\d]*", priority = 1)]
     GroupName,
 
+    // match illegal tokens for which we want to show a better error message
+    #[token("[]", |_| ParseErrorMsg::EmptyCharClass)]
+    #[token("<>", |_| ParseErrorMsg::EmptyCharClass)]
+    #[token(".", |_| ParseErrorMsg::Dot)]
+    #[token("^", |_| ParseErrorMsg::Caret)]
+    #[token("$", |_| ParseErrorMsg::Dollar)]
+    #[token("[", |_| ParseErrorMsg::UnmatchedBracket)]
+    #[token("]", |_| ParseErrorMsg::UnmatchedBracket)]
+    #[regex(r#"\(\?[<!>:=]?"#, |_| ParseErrorMsg::SpecialGroup)]
+    #[regex(
+        r#"\\(u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|x[0-9a-fA-F][0-9a-fA-F]|.)"#,
+        |_| ParseErrorMsg::BackslashSequence
+    )]
+    ErrorMsg(ParseErrorMsg),
+
     #[regex(r"[ \t\n\f]+", logos::skip)]
     #[regex("#.*", logos::skip)]
     #[error]
     Error,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ParseErrorMsg {
+    #[error("A character class can't be empty")]
+    EmptyCharClass,
+    #[error("The dot must be surrounded by angle brackets: <.>")]
+    Dot,
+    #[error("`^` is not a valid token. Use `%-` to match the start of the string")]
+    Caret,
+    #[error("`$` is not a valid token. Use `-%` to match the end of the string")]
+    Dollar,
+    #[error("There's an unmatched square bracket")]
+    UnmatchedBracket,
+    #[error("This syntax is not supported")]
+    SpecialGroup,
+    #[error("Backslash escapes are not supported")]
+    BackslashSequence,
 }
 
 impl core::fmt::Display for Token {
@@ -142,7 +175,7 @@ impl core::fmt::Display for Token {
             Token::CodePoint => "code point",
             Token::RepetitionCount => "repetition number",
             Token::GroupName => "group name",
-            Token::Error => "error",
+            Token::ErrorMsg(_) | Token::Error => "error",
         })
     }
 }
