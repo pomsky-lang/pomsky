@@ -61,6 +61,18 @@ impl<'i> Rulex<'i> {
             | Rulex::Lookaround(_) => false,
         }
     }
+
+    pub(crate) fn needs_parens_in_group(&self) -> bool {
+        match self {
+            Rulex::Alternation(_) => true,
+            Rulex::Literal(_)
+            | Rulex::Group(_)
+            | Rulex::CharClass(_)
+            | Rulex::Repetition(_)
+            | Rulex::Boundary(_)
+            | Rulex::Lookaround(_) => false,
+        }
+    }
 }
 
 #[cfg(feature = "dbg")]

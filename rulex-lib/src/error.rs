@@ -188,6 +188,8 @@ pub enum ParseErrorKind {
     #[error(transparent)]
     CharString(CharStringError),
     #[error(transparent)]
+    CharClass(CharClassError),
+    #[error(transparent)]
     CodePoint(CodePointError),
     #[error(transparent)]
     Number(NumberError),
@@ -231,6 +233,14 @@ impl ParseErrorKind {
 pub enum CharStringError {
     #[error("This char string is invalid")]
     Invalid,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum CharClassError {
+    #[error("This character class is unknown")]
+    Invalid,
+    #[error("This character class is not supported")]
+    Unsupported,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -293,6 +303,10 @@ pub enum Feature {
     NamedCaptureGroups,
     #[error("lookahead/behind")]
     Lookaround,
+    #[error("grapheme cluster matcher (\\X)")]
+    Grapheme,
+    #[error("Unicode line break (\\R)")]
+    UnicodeLineBreak,
 }
 
 impl From<ParseError> for CompileError {

@@ -25,10 +25,12 @@ macro_rules! class {
         $crate::Rulex::CharClass($crate::char_class::CharClass::from_chars($lit))
     };
     (<.>) => {
-        $crate::Rulex::CharClass($crate::char_class::CharClass::from_named("."))
+        $crate::Rulex::CharClass($crate::char_class::CharClass::from_group_name("."))
     };
     (<$i:ident>) => {
-        $crate::Rulex::CharClass($crate::char_class::CharClass::from_named(stringify!($i)))
+        $crate::Rulex::CharClass($crate::char_class::CharClass::from_group_name(stringify!(
+            $i
+        )))
     };
     ($start:literal - $end:literal) => {
         $crate::Rulex::CharClass(

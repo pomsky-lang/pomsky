@@ -238,9 +238,23 @@ pub(super) fn parse_char_range_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<
 }
 
 pub(super) fn parse_char_word_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(Token::CWord, |s| {
-        Rulex::CharClass(CharClass::from_named(strip_first_last(s)))
-    })(tokens)
+    try_map(
+        Token::CWord,
+        |s| {
+            let s = strip_first_last(s);
+            let cc = match s {
+                "t" => CharClass::from_char('\t'),
+                "r" => CharClass::from_char('\r'),
+                "n" => CharClass::from_char('\n'),
+                "a" => CharClass::from_char('\x07'),
+                "e" => CharClass::from_char('\x1B'),
+                "f" => CharClass::from_char('\x0C'),
+                _ => CharClass::from_group_name(s),
+            };
+            Ok(Rulex::CharClass(cc))
+        },
+        nom::Err::Failure,
+    )(tokens)
 }
 
 pub(super) fn parse_boundary<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {

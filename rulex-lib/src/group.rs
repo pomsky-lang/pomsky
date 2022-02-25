@@ -16,6 +16,13 @@ impl<'i> Group<'i> {
         Group { parts, capture }
     }
 
+    pub fn two(a: Rulex<'i>, b: Rulex<'i>) -> Self {
+        Group {
+            parts: vec![a, b],
+            capture: None,
+        }
+    }
+
     pub fn set_capture(&mut self, capture: Option<Capture<'i>>) {
         self.capture = capture;
     }
@@ -78,7 +85,14 @@ impl Compile for Group<'_> {
             }
             None => {
                 for part in &self.parts {
+                    let needs_parens = part.needs_parens_in_group();
+                    if needs_parens {
+                        buf.push_str("(?:");
+                    }
                     part.comp(options, state, buf)?;
+                    if needs_parens {
+                        buf.push(')');
+                    }
                 }
                 Ok(())
             }

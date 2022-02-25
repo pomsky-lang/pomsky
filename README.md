@@ -96,14 +96,35 @@ cat ./file.rulex | rulex
 
 ## TODO (short-term)
 
-- Lookaround is currently untested and undocumented.
-- Parse non-printable characters like `<n>`, `<r>`, `<t>`, `<f>` so they can be correctly negated
+- Parsing lookaround is currently untested and undocumented.
+- Compilation (generating regexes) is currently untested.
+- Consider a simpler syntax that is closer to regexes:
+  ```
+  ['abc']           --> [abc]
+  [not 'abc']       --> [^abc]
+  ['abc' "'"]       --> [abc"]
+  ['abc' '1'-'9']   --> [abc1-9]
+  [X]               --> \X
+  [not X]           --> [^\X]
+  [s d]             --> [\s\d]
+  [.]               --> .
+  [. 'ab']              ERROR
+  [. n]             --> [\S\s]
+  ```
+  - Remove `<codepoint>`, use `[.n]` instead
+  - Use `<%` and `%>` for `^` and `$`
+  - Use `%` for `\b` and `not %` for `\B`
+  - Use `<<`/`>>` for lookaround and `not <<`/`not >>` for negative lookaround
 - Provide an ASCII mode
-- Add support for `<X>` and `<R>`; show error when targeting JS.
 - Advise to add `u` flag when targeting JS.
 - Add backreferences and forward references.
-- Warning when parsing `[^]`, recommending `'^'` instead; when there are more characters
-  in the class, recommend putting another character first (e.g. `[$^]` instead of `[^$]`)
+- ~~Warning when parsing `[^]`, recommending `'^'` instead; when there are more characters
+  in the class, recommend putting another character first (e.g. `[$^]` instead of `[^$]`)~~
+- Make optimization explicit:
+  ```
+  optimize ('foo' | 'foobar' | 'fountain' | 'foundation')  --> fo(?:o(?:bar)??|un(?:tain|dation))
+  ```
+-
 
 ## Roadmap
 
@@ -134,14 +155,6 @@ to support search/replace by group name in engines that support it, e.g. Rust.
 - Convert Unicode categories and scripts into ranges to support engines like JS
 
 - Rulex should be able to detect when an invalid character class is provided.
-
-### Better optimizations
-
-- Merge adjacent character classes: `[abc] | [d-j] -> [a-j]`
-
-- Turn an alternation with an empty branch to an optional group: `(|"test") -> (?:test)??`
-
-- Alternations with common prefixes: `"abc" | "abcd" -> abcd??`, `"abc" | "abg" -> ab[cg]`
 
 ### Variables
 

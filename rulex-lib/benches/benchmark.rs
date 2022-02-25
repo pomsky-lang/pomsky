@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rulex::Rulex;
 
 const PARSE_INPUT: &str = r#"
-<.> <w> <s> <all> <alpha> <.> <w> <s> <all> <alpha>
+<.> <w> <s> <cp> <alpha> <.> <w> <s> <cp> <alpha>
 ([ab] | [+-*/%] | '[' | ']' | '0'-'9' | 'f'-'o' | 'j'-'z')
 (<.> | <w> | :() | % "tests" % | % "test" %)
 ((((((((((((((((((((((((('a')))))))))))))))))))))))))

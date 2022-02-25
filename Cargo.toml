@@ -1,6 +1,6 @@
 [workspace]
 members = ["./rulex-lib", "./rulex-bin"]
-default-members = ["./rulex-bin"]
+default-members = ["./rulex-bin", "./rulex-lib"]
 
 [profile.release]
 lto = "thin"
