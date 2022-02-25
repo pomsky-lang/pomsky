@@ -21,22 +21,39 @@ macro_rules! lit {
 }
 
 macro_rules! class {
-    ([ $lit:literal ]) => {
-        $crate::Rulex::CharClass($crate::char_class::CharClass::from_chars($lit))
+    ($($rest:tt)*) => {
+        $crate::Rulex::CharClass(char_group!( $($rest)* ).into())
     };
-    (<.>) => {
-        $crate::Rulex::CharClass($crate::char_class::CharClass::from_group_name("."))
+}
+
+macro_rules! char_group {
+    ($start:literal - $end:literal $($rest:tt)*) => {
+        char_group!({
+            $crate::char_class::CharGroup::try_from_range($start, $end).unwrap()
+        } $($rest)*)
     };
-    (<$i:ident>) => {
-        $crate::Rulex::CharClass($crate::char_class::CharClass::from_group_name(stringify!(
-            $i
-        )))
+    ($lit:literal $($rest:tt)*) => {
+        char_group!({
+            $crate::char_class::CharGroup::from_chars($lit)
+        } $($rest)*)
     };
-    ($start:literal - $end:literal) => {
-        $crate::Rulex::CharClass(
-            $crate::char_class::CharClass::try_from_range($start, $end).unwrap(),
-        )
+    (. $($rest:tt)*) => {
+        char_group!({
+            $crate::char_class::CharGroup::from_group_name(".")
+        } $($rest)*)
     };
+    ($i:ident $($rest:tt)*) => {
+        char_group!({
+            $crate::char_class::CharGroup::from_group_name(stringify!($i))
+        } $($rest)*)
+    };
+    () => {
+        $crate::char_class::CharGroup::Items(vec![])
+    };
+    ({ $e:expr } $($rest:tt)+) => {
+        $e.union(char_group!($($rest)*)).unwrap()
+    };
+    ({ $e:expr }) => { $e };
 }
 
 macro_rules! alt {
@@ -68,17 +85,44 @@ macro_rules! group {
     };
 }
 
+macro_rules! look {
+    (>> $($rest:tt)*) => {
+        $crate::Rulex::Lookaround(Box::new($crate::lookaround::Lookaround::new(
+            $($rest)*,
+            $crate::lookaround::LookaroundKind::Ahead,
+        )))
+    };
+    (<< $($rest:tt)*) => {
+        $crate::Rulex::Lookaround(Box::new($crate::lookaround::Lookaround::new(
+            $($rest)*,
+            $crate::lookaround::LookaroundKind::Behind,
+        )))
+    };
+    (not >> $($rest:tt)*) => {
+        $crate::Rulex::Lookaround(Box::new($crate::lookaround::Lookaround::new(
+            $($rest)*,
+            $crate::lookaround::LookaroundKind::AheadNegative,
+        )))
+    };
+    (not << $($rest:tt)*) => {
+        $crate::Rulex::Lookaround(Box::new($crate::lookaround::Lookaround::new(
+            $($rest)*,
+            $crate::lookaround::LookaroundKind::BehindNegative,
+        )))
+    };
+}
+
 macro_rules! boundary {
-    (%-) => {
+    (<%) => {
         $crate::Rulex::Boundary($crate::boundary::Boundary::Start)
     };
-    (-%) => {
+    (%>) => {
         $crate::Rulex::Boundary($crate::boundary::Boundary::End)
     };
     (%) => {
         $crate::Rulex::Boundary($crate::boundary::Boundary::Word)
     };
-    (%!) => {
+    (not %) => {
         $crate::Rulex::Boundary($crate::boundary::Boundary::NotWord)
     };
 }

@@ -17,7 +17,17 @@ impl<'i> Alternation<'i> {
     pub fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex {
         rules
             .into_iter()
-            .reduce(reduce)
+            .reduce(|a, b| match (a, b) {
+                (Rulex::Alternation(mut a), Rulex::Alternation(b)) => {
+                    a.rules.extend(b.rules);
+                    Rulex::Alternation(a)
+                }
+                (Rulex::Alternation(mut a), b) => {
+                    a.rules.push(b);
+                    Rulex::Alternation(a)
+                }
+                (a, b) => Alternation::two(a, b),
+            })
             .unwrap_or(Rulex::Literal(""))
     }
 }
@@ -31,45 +41,6 @@ impl core::fmt::Debug for Alternation<'_> {
             d = d.field(rule);
         }
         d.finish()
-    }
-}
-
-fn reduce<'i>(a: Rulex<'i>, b: Rulex<'i>) -> Rulex<'i> {
-    match (a, b) {
-        (Rulex::CharClass(a), Rulex::CharClass(b)) => match a.union(b) {
-            Ok(c) => Rulex::CharClass(c),
-            Err((a, b)) => Alternation::two(Rulex::CharClass(a), Rulex::CharClass(b)),
-        },
-        (Rulex::Alternation(mut a), Rulex::Alternation(b)) => {
-            a.rules.extend(b.rules);
-            Rulex::Alternation(a)
-        }
-        (Rulex::Alternation(mut a), Rulex::CharClass(b))
-            if matches!(a.rules.last(), Some(Rulex::CharClass(_))) =>
-        {
-            match a.rules.pop() {
-                Some(Rulex::CharClass(last)) if !last.is_negated() && !b.is_negated() => {
-                    match last.union(b) {
-                        Ok(c) => a.rules.push(Rulex::CharClass(c)),
-                        Err((d, e)) => {
-                            a.rules.push(Rulex::CharClass(d));
-                            a.rules.push(Rulex::CharClass(e));
-                        }
-                    }
-                }
-                Some(last) => {
-                    a.rules.push(last);
-                    a.rules.push(Rulex::CharClass(b));
-                }
-                None => unreachable!("We checked in the outer match that a.rules.last() is Some"),
-            }
-            Rulex::Alternation(a)
-        }
-        (Rulex::Alternation(mut a), b) => {
-            a.rules.push(b);
-            Rulex::Alternation(a)
-        }
-        (a, b) => Alternation::two(a, b),
     }
 }
 

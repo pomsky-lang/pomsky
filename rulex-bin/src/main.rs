@@ -28,11 +28,14 @@ struct Args {
 
 /// Regex flavor
 #[derive(Clone, Debug, ArgEnum)]
+#[clap(rename_all = "lower")]
 enum Flavor {
     Pcre,
     Python,
     Java,
+    #[clap(alias = "js")]
     JavaScript,
+    #[clap(alias = ".net")]
     DotNet,
     Ruby,
     Rust,

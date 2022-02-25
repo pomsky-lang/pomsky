@@ -39,18 +39,6 @@ impl<'i> Rulex<'i> {
         Ok(buf)
     }
 
-    pub fn negate(self) -> Option<Self> {
-        match self {
-            Rulex::CharClass(c) => Some(Rulex::CharClass(c.negate())),
-            Rulex::Boundary(b) => Some(Rulex::Boundary(match b {
-                Boundary::Word => Boundary::NotWord,
-                Boundary::NotWord => Boundary::Word,
-                Boundary::Start | Boundary::End => return None,
-            })),
-            _ => None,
-        }
-    }
-
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
         match self {
             Rulex::Literal(_) | Rulex::Alternation(_) => true,

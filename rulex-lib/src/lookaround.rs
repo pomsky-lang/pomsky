@@ -18,8 +18,8 @@ impl core::fmt::Debug for Lookaround<'_> {
         f.write_str(match self.kind {
             LookaroundKind::Ahead => ">> ",
             LookaroundKind::Behind => "<< ",
-            LookaroundKind::AheadNegative => ">>! ",
-            LookaroundKind::BehindNegative => "<<! ",
+            LookaroundKind::AheadNegative => "not >> ",
+            LookaroundKind::BehindNegative => "not << ",
         })?;
         self.rule.fmt(f)
     }

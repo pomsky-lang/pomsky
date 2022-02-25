@@ -1,99 +1,32 @@
+use std::fmt::Write;
+
 use crate::{
     compile::{compile_char, compile_char_escaped, Compile, CompileState},
     error::{CompileError, Feature},
     options::{CompileOptions, RegexFlavor},
 };
 
-use inner::CharClassInner;
+pub(crate) use self::group::{CharGroup, GroupItem};
 
-mod char_range;
-mod inner;
+mod group;
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum CharClass<'i> {
-    CodePoint,
-    Grapheme,
-    Dot,
-    Empty,
-    Inner(CharClassInner<'i>),
-    Negated(CharClassInner<'i>),
+pub struct CharClass<'i> {
+    negative: bool,
+    inner: CharGroup<'i>,
 }
 
 impl<'i> CharClass<'i> {
-    pub fn negate(self) -> Self {
-        match self {
-            CharClass::CodePoint | CharClass::Grapheme => CharClass::Empty,
-            CharClass::Dot => CharClass::from_char('\n'),
-            CharClass::Empty => CharClass::CodePoint,
-            CharClass::Inner(i) => CharClass::Negated(i),
-            CharClass::Negated(n) => CharClass::Inner(n),
-        }
+    pub fn negate(&mut self) {
+        self.negative = !self.negative;
     }
+}
 
-    pub fn is_negated(&self) -> bool {
-        matches!(self, CharClass::Negated(_))
-    }
-
-    pub fn union(self, rhs: Self) -> Result<Self, (Self, Self)> {
-        Ok(match (self, rhs) {
-            (CharClass::Empty, c) | (c, CharClass::Empty) => c,
-            (CharClass::CodePoint, _) | (_, CharClass::CodePoint) => CharClass::CodePoint,
-            (CharClass::Grapheme, _) | (_, CharClass::Grapheme) => CharClass::Grapheme,
-            (CharClass::Dot, c) | (c, CharClass::Dot) => {
-                if c.includes_newline() {
-                    CharClass::CodePoint
-                } else {
-                    CharClass::Dot
-                }
-            }
-            (CharClass::Inner(i1), CharClass::Inner(ref mut i2)) => CharClass::Inner(i1.union(i2)),
-            tuple @ ((CharClass::Negated(_), CharClass::Negated(_))
-            | (CharClass::Inner(_), CharClass::Negated(_))
-            | (CharClass::Negated(_), CharClass::Inner(_))) => return Err(tuple),
-        })
-    }
-
-    pub fn try_from_range(first: char, last: char) -> Option<Self> {
-        let mut new = CharClassInner::default();
-        if first <= last {
-            new.add_range(first, last);
-            Some(CharClass::Inner(new))
-        } else {
-            None
-        }
-    }
-
-    pub fn from_chars(chars: &str) -> Self {
-        let mut inner = CharClassInner::default();
-        inner.add_ranges(chars);
-        CharClass::Inner(inner)
-    }
-
-    pub fn from_char(c: char) -> Self {
-        let mut inner = CharClassInner::default();
-        inner.add_range(c, c);
-        CharClass::Inner(inner)
-    }
-
-    pub fn from_group_name(name: &'i str) -> Self {
-        match name {
-            "codepoint" | "cp" => CharClass::CodePoint,
-            "X" => CharClass::Grapheme,
-            "." => CharClass::Dot,
-            _ => {
-                let mut inner = CharClassInner::default();
-                inner.add_named(name);
-                CharClass::Inner(inner)
-            }
-        }
-    }
-
-    fn includes_newline(&self) -> bool {
-        match self {
-            CharClass::CodePoint | CharClass::Grapheme => true,
-            CharClass::Dot | CharClass::Empty => false,
-            CharClass::Inner(n) => n.includes_newline(),
-            CharClass::Negated(n) => !n.includes_newline(),
+impl<'i> From<CharGroup<'i>> for CharClass<'i> {
+    fn from(inner: CharGroup<'i>) -> Self {
+        CharClass {
+            inner,
+            negative: false,
         }
     }
 }
@@ -101,26 +34,26 @@ impl<'i> CharClass<'i> {
 #[cfg(feature = "dbg")]
 impl core::fmt::Debug for CharClass<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            CharClass::CodePoint => f.write_str("CharClass(<codepoint>)"),
-            CharClass::Grapheme => f.write_str("CharClass(<X>)"),
-            CharClass::Dot => f.write_str("CharClass(<.>)"),
-            CharClass::Empty => f.write_str("CharClass(empty)"),
-            CharClass::Inner(i) | CharClass::Negated(i) => {
-                let mut items = Vec::with_capacity(i.groups.len() + i.ranges.len());
-                for &part in &i.groups {
-                    items.push(format!("<{part}>"));
+        f.write_str("CharClass(")?;
+
+        if self.negative {
+            f.write_str("not ")?;
+        }
+
+        match &self.inner {
+            CharGroup::Dot => f.write_str(".")?,
+            CharGroup::CodePoint => f.write_str("codepoint")?,
+            CharGroup::X => f.write_str("X")?,
+            CharGroup::Items(items) => {
+                for (i, item) in items.iter().enumerate() {
+                    if i > 0 {
+                        f.write_char(' ')?;
+                    }
+                    item.fmt(f)?;
                 }
-                for range in &i.ranges {
-                    items.push(format!("{range:?}"));
-                }
-                write!(f, "CharClass({})", items.join(" | "))?;
-                if let CharClass::Negated(_) = self {
-                    f.write_str(" negated")?;
-                }
-                Ok(())
             }
         }
+        f.write_char(')')
     }
 }
 
@@ -131,66 +64,78 @@ impl Compile for CharClass<'_> {
         _state: &mut CompileState,
         buf: &mut String,
     ) -> crate::compile::CompileResult {
-        match self {
-            CharClass::Empty => {
-                buf.push_str("[^\\S\\s]");
+        match &self.inner {
+            CharGroup::Dot => {
+                buf.push_str(if self.negative { "\\n" } else { "." });
             }
-            CharClass::CodePoint => {
+            CharGroup::CodePoint => {
+                if self.negative {
+                    return Err(CompileError::EmptyClassNegated);
+                }
                 buf.push_str("[\\S\\s]");
             }
-            CharClass::Grapheme => {
+            CharGroup::X => {
+                if self.negative {
+                    return Err(CompileError::EmptyClassNegated);
+                }
                 if options.flavor == RegexFlavor::JavaScript {
                     return Err(CompileError::Unsupported(Feature::Grapheme, options.flavor));
                 }
                 buf.push_str("\\X");
             }
-            CharClass::Dot => {
-                buf.push('.');
-            }
-            CharClass::Inner(i) => {
-                if i.groups.len() == 1 && i.ranges.is_empty() {
-                    compile_named_range(i.groups[0], false, true, buf, options.flavor)?;
-                } else if let Some(c) = i.get_single_char() {
-                    compile_char_escaped(c, buf);
-                } else {
+            CharGroup::Items(items) => match (items.len(), self.negative) {
+                (0, _) => return Err(CompileError::EmptyClass),
+                (1, false) => match items[0] {
+                    GroupItem::Char(c) => compile_char_escaped(c, buf),
+                    GroupItem::Range { first, last } => {
+                        buf.push('[');
+                        compile_range_char(first, buf);
+                        buf.push('-');
+                        compile_range_char(last, buf);
+                        buf.push(']');
+                    }
+                    GroupItem::Named(name) => {
+                        compile_named_range(name, buf, options.flavor)?;
+                    }
+                },
+                (1, true) => match items[0] {
+                    GroupItem::Char(c) => {
+                        buf.push_str("[^");
+                        compile_range_char(c, buf);
+                        buf.push(']');
+                    }
+                    GroupItem::Range { first, last } => {
+                        buf.push_str("[^");
+                        compile_range_char(first, buf);
+                        buf.push('-');
+                        compile_range_char(last, buf);
+                        buf.push(']');
+                    }
+                    GroupItem::Named(name) => {
+                        compile_named_range_negative(name, buf, options.flavor)?;
+                    }
+                },
+                (_, _) => {
                     buf.push('[');
-                    for &range in &i.groups {
-                        compile_named_range(range, false, false, buf, options.flavor)?;
+                    if self.negative {
+                        buf.push('^');
                     }
-                    for &range in &i.ranges {
-                        let range = range.0;
-                        compile_range_char(range.first, buf);
-                        if range.last != range.first {
-                            buf.push('-');
-                            compile_range_char(range.last, buf);
+                    for item in items {
+                        match *item {
+                            GroupItem::Char(c) => compile_range_char(c, buf),
+                            GroupItem::Range { first, last } => {
+                                compile_range_char(first, buf);
+                                buf.push('-');
+                                compile_range_char(last, buf);
+                            }
+                            GroupItem::Named(name) => {
+                                compile_named_range(name, buf, options.flavor)?;
+                            }
                         }
                     }
                     buf.push(']');
                 }
-            }
-            CharClass::Negated(n) => {
-                if n.groups.len() == 1 && n.ranges.is_empty() {
-                    compile_named_range(n.groups[0], true, true, buf, options.flavor)?;
-                } else if let Some(c) = n.get_single_char() {
-                    buf.push_str("[^");
-                    compile_range_char(c, buf);
-                    buf.push(']');
-                } else {
-                    buf.push_str("[^");
-                    for &range in &n.groups {
-                        compile_named_range(range, false, false, buf, options.flavor)?;
-                    }
-                    for &range in &n.ranges {
-                        let range = range.0;
-                        compile_range_char(range.first, buf);
-                        if range.last != range.first {
-                            buf.push('-');
-                            compile_range_char(range.last, buf);
-                        }
-                    }
-                    buf.push(']');
-                }
-            }
+            },
         }
         Ok(())
     }
@@ -198,46 +143,40 @@ impl Compile for CharClass<'_> {
 
 fn compile_named_range(
     group: &str,
-    negated: bool,
-    single: bool,
     buf: &mut String,
     flavor: RegexFlavor,
 ) -> Result<(), CompileError> {
-    if matches!(group, "R" | "X") {
+    if group == "R" {
         if flavor == RegexFlavor::JavaScript {
-            return Err(CompileError::Unsupported(
-                if group == "R" {
-                    Feature::UnicodeLineBreak
-                } else {
-                    Feature::Grapheme
-                },
-                flavor,
-            ));
+            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
         }
-        if negated {
-            if !single {
-                return Err(CompileError::Other("Cannot negate <R>"));
-            }
-            buf.push_str("[^\\");
-            buf.push_str(group);
-            buf.push(']');
-        } else {
-            buf.push('\\');
-            buf.push_str(group);
-        }
+        buf.push_str("\\R");
     } else if group.starts_with(char::is_lowercase) {
         buf.push('\\');
-        if negated {
-            buf.push_str(&group.to_ascii_uppercase());
-        } else {
-            buf.push_str(group);
-        }
+        buf.push_str(group);
     } else {
-        if negated {
-            buf.push_str("\\P{");
-        } else {
-            buf.push_str("\\p{");
+        buf.push_str("\\p{");
+        buf.push_str(group);
+        buf.push('}');
+    }
+    Ok(())
+}
+
+fn compile_named_range_negative(
+    group: &str,
+    buf: &mut String,
+    flavor: RegexFlavor,
+) -> Result<(), CompileError> {
+    if group == "R" {
+        if flavor == RegexFlavor::JavaScript {
+            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
         }
+        buf.push_str("[^\\R]");
+    } else if group.starts_with(char::is_lowercase) {
+        buf.push('\\');
+        buf.push_str(&group.to_uppercase());
+    } else {
+        buf.push_str("\\P{");
         buf.push_str(group);
         buf.push('}');
     }

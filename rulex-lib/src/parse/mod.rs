@@ -30,71 +30,77 @@ mod tests {
     }
 
     #[test]
-    fn char_class() {
-        test!(parse_char_word_class "<.>" {
-            class!(<.>)
+    fn char_class_named() {
+        test!(parse_char_class "[.]" {
+            class![.]
         });
-        test!(parse_char_word_class "<Test>" {
-            class!(<Test>)
+        test!(parse_char_class "[Test]" {
+            class![Test]
         });
-        test!(parse_char_range_class "[Test]" {
-            class!(["Test"])
+        test!(parse_char_class "[a b c]" {
+            class![a b c]
         });
-        test!(parse_char_range_class r#"[+#-"\]"# {
-            class!([r#"+#-"\"#])
+        test!(parse_char_class "[.]" {
+            class![.]
         });
     }
 
     #[test]
-    fn chars() {
-        test!(parse_chars "'a'" {
-            class!(["a"])
+    fn char_class_ranges() {
+        test!(parse_char_class r#"['+#-"\']"# {
+            class![r#"+#-"\"#]
         });
-        test!(parse_chars "U+0" {
-            class!(["\0"])
+        test!(parse_char_class "['a']" {
+            class!["a"]
         });
-        test!(parse_chars r#""!"-U+255"# {
-            class!('!'-'\u{255}')
+        test!(parse_char_class "['Test']" {
+            class!["Test"]
         });
-        test!(parse_chars r#"U+0000 - U+FFFF"# {
-            class!('\0'-'\u{FFFF}')
+        test!(parse_char_class "[u+0]" {
+            class!["\0"]
+        });
+        test!(parse_char_class r#"["!"-U+255]"# {
+            class!['!'-'\u{255}']
+        });
+        test!(parse_char_class r#"[U+0000 - U+FFFF]"# {
+            class!['\0'-'\u{FFFF}']
         });
     }
 
     #[test]
     fn boundary() {
-        test!(parse_boundary "%-" {
-            boundary!(%-)
+        test!(parse_boundary "<%" {
+            boundary!(<%)
         });
-        test!(parse_boundary "-%" {
-            boundary!(-%)
+        test!(parse_boundary "%>" {
+            boundary!(%>)
         });
         test!(parse_boundary "%" {
             boundary!(%)
         });
-        test!(parse_boundary "%!" {
-            boundary!(%!)
+        test!(parse_boundary "not %" {
+            boundary!(not %)
         });
     }
 
     #[test]
     fn sequence() {
-        test!(parse_sequence "<.> % 'test' [test]" {
+        test!(parse_sequence "[.] % 'test' ['test']" {
             group!(
-                class!(<.>),
+                class![.],
                 boundary!(%),
                 lit!("test"),
-                class!(["test"]),
+                class!["test"],
             )
         });
     }
 
     #[test]
     fn or() {
-        test!(parse_or "<.> % | 'test' [test] | %" {
+        test!(parse_or "[.] % | 'test' ['test'] | %" {
             alt![
-                group!(class!(<.>), boundary!(%)),
-                group!(lit!("test"), class!(["test"])),
+                group!(class![.], boundary!(%)),
+                group!(lit!("test"), class!["test"]),
                 boundary!(%),
             ]
         });
@@ -102,12 +108,12 @@ mod tests {
 
     #[test]
     fn group() {
-        test!(parse_or "((<.>) % | 'test' ([test] | %))" {
+        test!(parse_or "(([.]) % | 'test' (['test'] | %))" {
             alt![
-                group!(class!(<.>), boundary!(%)),
+                group!(class![.], boundary!(%)),
                 group!(
                     lit!("test"),
-                    alt![ class!(["test"]), boundary!(%) ],
+                    alt![ class!["test"], boundary!(%) ],
                 ),
             ]
         });
@@ -115,15 +121,15 @@ mod tests {
 
     #[test]
     fn capturing_group() {
-        test!(parse_or "(:(<.>) % | 'test' :foo([test] | %))" {
+        test!(parse_or "(:([.]) % | 'test' :foo(['test'] | %))" {
             alt![
                 group!(
-                    group![:(class!(<.>))],
+                    group![:(class![.])],
                     boundary!(%),
                 ),
                 group!(
                     lit!("test"),
-                    group![:foo( alt![ class!(["test"]), boundary!(%) ] )],
+                    group![:foo( alt![ class!["test"], boundary!(%) ] )],
                 ),
             ]
         });
@@ -175,6 +181,25 @@ mod tests {
         });
         test!(parse_fixes "%{3}{4}" {
             repeat!(repeat!(boundary!(%), {3,3}), {4,4})
+        });
+    }
+
+    #[test]
+    fn lookaround() {
+        test!(parse_fixes "<< 'test'" {
+            look! { << lit!("test") }
+        });
+        test!(parse_fixes "<< 'test'*" {
+            look! { << repeat!(lit!("test"), {0,}) }
+        });
+        test!(parse_fixes "<< 'foo' 'bar'" {
+            look! { << group!(lit!("foo"), lit!("bar")) }
+        });
+        test!(parse_fixes "<< 'test'* | [.]" {
+            look! { << alt![
+                repeat!(lit!("test"), {0,}),
+                class![.]
+            ] }
         });
     }
 }

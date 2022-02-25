@@ -7,15 +7,12 @@ use super::tokens::Tokens;
 
 #[derive(Debug, Logos, Eq, PartialEq, Copy, Clone)]
 pub enum Token {
-    /// `%-` (`^` boundary)
-    #[token("%-")]
+    /// `<%` (`^` boundary)
+    #[token("<%")]
     BStart,
-    /// `-%` (`$` boundary)
-    #[token("-%")]
+    /// `%>` (`$` boundary)
+    #[token("%>")]
     BEnd,
-    /// `%!` (`\B` boundary)
-    #[token("%!")]
-    BNotWord,
     /// `%` (`\b` boundary)
     #[token("%")]
     BWord,
@@ -57,9 +54,17 @@ pub enum Token {
     #[token(",")]
     Comma,
 
-    /// `!` (postfix negation operator)
-    #[token("!")]
-    ExclamationMark,
+    /// `[` (open character class)
+    #[token("[")]
+    OpenBracket,
+
+    /// `]` (close character class)
+    #[token("]")]
+    CloseBracket,
+
+    /// `.` (any code point except newline)
+    #[token(".")]
+    Dot,
 
     /// `>>` (positive lookahead)
     #[token(">>")]
@@ -69,51 +74,26 @@ pub enum Token {
     #[token("<<")]
     LookBehind,
 
-    /// `>>!` (negative lookahead)
-    #[token(">>!")]
-    LookAheadNeg,
-
-    /// `<<!` (negative lookbehind)
-    #[token("<<!")]
-    LookBehindNeg,
-
-    /// * `<.>` (`.`)
-    /// * `<Hello>` (`\p{Hello}`)
-    #[token("<.>")]
-    #[regex(r"<\w+>")]
-    CWord,
-
-    /// `[abx]`
-    #[regex(r#"\[[^\]]+\]"#)]
-    CharClass,
-
-    /// `"Hello"` (`Hello`)
+    /// `"Hello"` or `'Hello'` (`Hello`)
     #[regex(r#""[^"]*""#)]
-    DoubleString,
-    /// `'Hello'` (`Hello`)
     #[regex("'[^']*'")]
-    SingleString,
+    String,
 
     /// `U+FFF03` (Unicode code point)
-    #[regex(r"U\+[\da-fA-F]+")]
+    #[regex(r"[Uu]\+[0-9a-fA-F]+")]
     CodePoint,
 
     /// `12` (number in repetition)
     #[regex(r"\d+", priority = 2)]
-    RepetitionCount,
+    Number,
 
     /// `hello` (capturing group name)
     #[regex(r"\w[\w\d]*", priority = 1)]
-    GroupName,
+    Identifier,
 
     // match illegal tokens for which we want to show a better error message
-    #[token("[]", |_| ParseErrorMsg::EmptyCharClass)]
-    #[token("<>", |_| ParseErrorMsg::EmptyCharClass)]
-    #[token(".", |_| ParseErrorMsg::Dot)]
     #[token("^", |_| ParseErrorMsg::Caret)]
     #[token("$", |_| ParseErrorMsg::Dollar)]
-    #[token("[", |_| ParseErrorMsg::UnmatchedBracket)]
-    #[token("]", |_| ParseErrorMsg::UnmatchedBracket)]
     #[regex(r#"\(\?[<!>:=]?"#, |_| ParseErrorMsg::SpecialGroup)]
     #[regex(
         r#"\\(u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|x[0-9a-fA-F][0-9a-fA-F]|.)"#,
@@ -133,9 +113,9 @@ pub enum ParseErrorMsg {
     EmptyCharClass,
     #[error("The dot must be surrounded by angle brackets: <.>")]
     Dot,
-    #[error("`^` is not a valid token. Use `%-` to match the start of the string")]
+    #[error("`^` is not a valid token. Use `<%` to match the start of the string")]
     Caret,
-    #[error("`$` is not a valid token. Use `-%` to match the end of the string")]
+    #[error("`$` is not a valid token. Use `%>` to match the end of the string")]
     Dollar,
     #[error("There's an unmatched square bracket")]
     UnmatchedBracket,
@@ -148,9 +128,8 @@ pub enum ParseErrorMsg {
 impl core::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Token::BStart => "`%-`",
-            Token::BEnd => "`-%`",
-            Token::BNotWord => "`%!`",
+            Token::BStart => "`<%`",
+            Token::BEnd => "`%>`",
             Token::BWord => "`%`",
             Token::Star => "`*`",
             Token::Plus => "`+`",
@@ -163,18 +142,15 @@ impl core::fmt::Display for Token {
             Token::OpenBrace => "`{`",
             Token::CloseBrace => "`}`",
             Token::Comma => "`,`",
-            Token::ExclamationMark => "`!`",
             Token::LookAhead => "`>>`",
             Token::LookBehind => "`<<`",
-            Token::LookAheadNeg => "`>>!`",
-            Token::LookBehindNeg => "`<<!`",
-            Token::CWord => "named character class",
-            Token::CharClass => "character class",
-            Token::DoubleString => "string",
-            Token::SingleString => "string",
+            Token::OpenBracket => "`[`",
+            Token::CloseBracket => "`]`",
+            Token::Dot => "`.`",
+            Token::String => "string",
             Token::CodePoint => "code point",
-            Token::RepetitionCount => "repetition number",
-            Token::GroupName => "group name",
+            Token::Number => "number",
+            Token::Identifier => "identifier",
             Token::ErrorMsg(_) | Token::Error => "error",
         })
     }

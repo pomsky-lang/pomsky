@@ -26,24 +26,29 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 'hello' | 'world'             /hello|world/
 
 # Character classes/ranges
-[aeiou] | ']' | 'p'-'s'       /[aeiou\]p-s]/
+['aeiou]' 'p'-'s']            /[aeiou\]p-s]/
 
 # Named character classes
-<codepoint> <.> <w> <s> <X>   /[\S\s].\w\s\X/
+[.] [X] [w] [s] [n]           /.\X\w\s\n/
 
-# Negation
-<.>! <w>! <s>! 'a'!           /\n\W\S[^a]/
+# Mixed and negated character classes
+[not w 'a' 't'-'z']           /[^\wat-z]/
 
 # Unicode
-<Greek> U+205                 /\p{Greek}\u{0205}/
+[Greek] U+30F                 /\p{Greek}\u030F/
 
 # Boundaries
-%- -%                         /^$/
-% 'hello' %!                  /\bhello\B/
+<% %>                         /^$/
+% 'hello' not %               /\bhello\B/
 
 # Capturing groups
 :('test')                     /(test)/
 :name('test')                 /(?P<name>test)
+
+# Lookahead/lookbehind
+>> 'foo' | 'bar'              /(?=foo|bar)/
+<< 'foo' 'bar'?               /(?<=foo(?:bar)??)/
+(not >> ['foo']) 'bar'        /(?![fo])bar/
 ```
 
 ## Why use this instead of normal regexes?
@@ -59,12 +64,14 @@ Repetitions in rulex are non-greedy by default. The language is designed to be i
 Rulex allows you to specify the regex flavor. It can compile to regexes that are compatible with
 PCRE, JavaScript, Java, .NET, Python, Ruby or Rust.
 
-## Caution
+## Portability
 
-Although rulexes are portable, they don't always work correctly on every regex engine.
-Regex engines have vastly different feature sets and implementations. A rulex that works and is
-very fast in one engine might be too slow in another, it might produce incorrect results,
-or it might be unsupported.
+Rulex tries its best to emit regexes with consistent behavior across regex engines. Not all features
+are supported for every regex flavor. However, if a rulex compiles, it should work as expected on
+every regex engine. If you find an inconsistency, please file an issue!
+
+When you use rulex for JavaScript, don't forget to enable the `u` flag. This is required for
+Unicode support.
 
 ## Usage
 
@@ -96,35 +103,9 @@ cat ./file.rulex | rulex
 
 ## TODO (short-term)
 
-- Parsing lookaround is currently untested and undocumented.
 - Compilation (generating regexes) is currently untested.
-- Consider a simpler syntax that is closer to regexes:
-  ```
-  ['abc']           --> [abc]
-  [not 'abc']       --> [^abc]
-  ['abc' "'"]       --> [abc"]
-  ['abc' '1'-'9']   --> [abc1-9]
-  [X]               --> \X
-  [not X]           --> [^\X]
-  [s d]             --> [\s\d]
-  [.]               --> .
-  [. 'ab']              ERROR
-  [. n]             --> [\S\s]
-  ```
-  - Remove `<codepoint>`, use `[.n]` instead
-  - Use `<%` and `%>` for `^` and `$`
-  - Use `%` for `\b` and `not %` for `\B`
-  - Use `<<`/`>>` for lookaround and `not <<`/`not >>` for negative lookaround
-- Provide an ASCII mode
-- Advise to add `u` flag when targeting JS.
+- Provide an ASCII mode (escaping all non-ASCII characters)
 - Add backreferences and forward references.
-- ~~Warning when parsing `[^]`, recommending `'^'` instead; when there are more characters
-  in the class, recommend putting another character first (e.g. `[$^]` instead of `[^$]`)~~
-- Make optimization explicit:
-  ```
-  optimize ('foo' | 'foobar' | 'fountain' | 'foundation')  --> fo(?:o(?:bar)??|un(?:tain|dation))
-  ```
--
 
 ## Roadmap
 
@@ -216,6 +197,13 @@ Enabled with the `atomic` keyword: `('foo' | 'bar') atomic`
 ### Possessive matching
 
 Enabled with the `possessive` keyword: `'foo'* possessive`
+
+## Optimization
+
+Allow optimizing expressions with an `optimize` keyword. This finds common prefixes in alternatives,
+e.g. `optimize ('school' | 'schooling' | 'scholar')` would be compiled to
+`scho(?:(?:ol(?:ing)??)|lar)`. This regex is more efficient in conventional regex engines that don't
+optimize the regex themselves and use backtracking by default.
 
 ## Contributing
 
