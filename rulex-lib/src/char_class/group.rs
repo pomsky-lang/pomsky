@@ -41,10 +41,7 @@ impl<'i> CharGroup<'i> {
                 it.extend(other);
                 Ok(())
             }
-            (a, b) => {
-                eprintln!("{a:?}, {b:?}");
-                Err(CharClassError::Unallowed)
-            }
+            _ => Err(CharClassError::Unallowed),
         }
     }
 

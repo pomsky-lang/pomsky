@@ -86,12 +86,12 @@ impl Compile for CharClass<'_> {
             CharGroup::Items(items) => match (items.len(), self.negative) {
                 (0, _) => return Err(CompileError::EmptyClass),
                 (1, false) => match items[0] {
-                    GroupItem::Char(c) => compile_char_escaped(c, buf),
+                    GroupItem::Char(c) => compile_char_escaped(c, buf, options.flavor),
                     GroupItem::Range { first, last } => {
                         buf.push('[');
-                        compile_range_char(first, buf);
+                        compile_range_char(first, buf, options.flavor);
                         buf.push('-');
-                        compile_range_char(last, buf);
+                        compile_range_char(last, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Named(name) => {
@@ -101,14 +101,14 @@ impl Compile for CharClass<'_> {
                 (1, true) => match items[0] {
                     GroupItem::Char(c) => {
                         buf.push_str("[^");
-                        compile_range_char(c, buf);
+                        compile_range_char(c, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Range { first, last } => {
                         buf.push_str("[^");
-                        compile_range_char(first, buf);
+                        compile_range_char(first, buf, options.flavor);
                         buf.push('-');
-                        compile_range_char(last, buf);
+                        compile_range_char(last, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Named(name) => {
@@ -122,11 +122,11 @@ impl Compile for CharClass<'_> {
                     }
                     for item in items {
                         match *item {
-                            GroupItem::Char(c) => compile_range_char(c, buf),
+                            GroupItem::Char(c) => compile_range_char(c, buf, options.flavor),
                             GroupItem::Range { first, last } => {
-                                compile_range_char(first, buf);
+                                compile_range_char(first, buf, options.flavor);
                                 buf.push('-');
-                                compile_range_char(last, buf);
+                                compile_range_char(last, buf, options.flavor);
                             }
                             GroupItem::Named(name) => {
                                 compile_named_range(name, buf, options.flavor)?;
@@ -183,12 +183,12 @@ fn compile_named_range_negative(
     Ok(())
 }
 
-fn compile_range_char(c: char, buf: &mut String) {
+fn compile_range_char(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '-' => buf.push_str(r#"\-"#),
         ']' => buf.push_str(r#"\]"#),
         '^' => buf.push_str(r#"\^"#),
-        c => compile_char(c, buf),
+        c => compile_char(c, buf, flavor),
     }
 }

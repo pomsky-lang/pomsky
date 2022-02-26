@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use crate::{error::CompileError, options::CompileOptions};
+use crate::{
+    error::CompileError,
+    options::{CompileOptions, RegexFlavor},
+};
 
 pub(crate) type CompileResult = Result<(), CompileError>;
 
@@ -17,18 +20,18 @@ pub(crate) trait Compile {
 impl Compile for &'_ str {
     fn comp(
         &self,
-        _options: CompileOptions,
+        options: CompileOptions,
         _state: &mut CompileState,
         buf: &mut String,
     ) -> CompileResult {
         for c in self.chars() {
-            compile_char_escaped(c, buf);
+            compile_char_escaped(c, buf, options.flavor);
         }
         Ok(())
     }
 }
 
-pub(crate) fn compile_char_escaped(c: char, buf: &mut String) {
+pub(crate) fn compile_char_escaped(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '[' => buf.push_str(r#"\["#),
@@ -42,28 +45,36 @@ pub(crate) fn compile_char_escaped(c: char, buf: &mut String) {
         '|' => buf.push_str(r#"\|"#),
         '^' => buf.push_str(r#"\^"#),
         '$' => buf.push_str(r#"\$"#),
-        c => compile_char(c, buf),
+        c => compile_char(c, buf, flavor),
     }
 }
 
-pub(crate) fn compile_char(c: char, buf: &mut String) {
+pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
-        '\t' => buf.push_str("\\t"),
-        '\r' => buf.push_str("\\r"),
-        '\n' => buf.push_str("\\n"),
         '\x07' => buf.push_str("\\a"),
         '\x1B' => buf.push_str("\\e"),
         '\x0C' => buf.push_str("\\f"),
         ' ' => buf.push(' '),
-        c if c.len_utf16() == 2 => {
-            write!(buf, "\\u{{{:X}}}", c as u32).unwrap();
+        _ if c.is_ascii() => {
+            if c.is_ascii_graphic() {
+                buf.push(c);
+            } else {
+                write!(buf, "\\x{:02X}", c as u8).unwrap();
+            }
         }
-        c if c.is_ascii_graphic() || c.is_alphanumeric() => buf.push(c),
-        c if c.is_ascii() => {
-            write!(buf, "\\x{:02X}", c as u8).unwrap();
+        _ if c.is_alphanumeric() && c.len_utf16() == 1 => {
+            buf.push(c);
         }
-        c => {
-            write!(buf, "\\u{:04X}", c as u32).unwrap();
+        _ => {
+            match flavor {
+                RegexFlavor::Pcre => buf.push_str("\\x"),
+                _ => buf.push_str("\\u"),
+            }
+            if c.len_utf16() == 1 {
+                write!(buf, "{:X}", c as u32).unwrap();
+            } else {
+                write!(buf, "{{{:X}}}", c as u32).unwrap();
+            }
         }
     }
 }

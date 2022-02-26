@@ -43,25 +43,19 @@ impl Display for ContextParseError<'_> {
         f.write_char('\n')?;
 
         let slice = &self.input[self.span.clone()];
-        let mut nl_found = false;
-        let mut count = 0;
-        let mut str: String = slice
-            .chars()
-            .take(60)
-            .take_while(|&c| {
-                count += 1;
-                nl_found = matches!(c, '\n' | '\r');
-                !nl_found
-            })
-            .collect();
-        if !nl_found && count == 60 {
-            str.push_str("...");
-        }
+        let before = self.input[..self.span.start]
+            .lines()
+            .last()
+            .unwrap_or_default();
+        let after = self.input[self.span.end..]
+            .lines()
+            .next()
+            .unwrap_or_default();
 
         if let ParseErrorKind::LexErrorWithMessage(msg) = self.kind {
             let messages = match msg {
-                ParseErrorMsg::SpecialGroup => get_special_group_help(&str),
-                ParseErrorMsg::BackslashSequence => get_backslash_help(&str),
+                ParseErrorMsg::SpecialGroup => get_special_group_help(slice),
+                ParseErrorMsg::BackslashSequence => get_backslash_help(slice),
                 _ => None,
             };
             if let Some(messages) = messages {
@@ -71,7 +65,10 @@ impl Display for ContextParseError<'_> {
             }
         }
 
-        writeln!(f, " |\n > {str}\n |")
+        writeln!(
+            f,
+            " |\n > {before}\x1B[1m\x1B[38;5;9m{slice}\x1B[0m{after}\n |"
+        )
     }
 }
 
@@ -129,6 +126,11 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
         }
         Some('A') => vec!["Replace `\\A` with `<%` to match the start of the string".into()],
         Some('z') => vec!["Replace `\\z` with `%>` to match the end of the string".into()],
+        Some('Z') => vec![
+            "\\Z is not supported. Use `%>` to match the end of the string".into(),
+            "Note, however, that `%>` doesn't match the position before the final newline.".into(),
+        ],
+        Some('N') => vec![format!("Replace `\\N` with `[.]`")],
         Some(c @ ('u' | 'x')) => {
             let (str, max_len) = if let Some('{') = iter.next() {
                 (&str[2..], 6)
@@ -152,9 +154,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
         Some(
             c @ ('a' | 'e' | 'f' | 'n' | 'r' | 'h' | 'v' | 'X' | 'd' | 'D' | 'w' | 'W' | 's' | 'S'
             | 'R'),
-        ) => {
-            vec![format!("Replace `\\{c}` with `[{c}]`")]
-        }
+        ) => vec![format!("Replace `\\{c}` with `[{c}]`")],
         Some('k') if iter.next() == Some('<') => {
             let str = &str[2..];
             let rest = str.trim_start_matches(char::is_alphanumeric);
@@ -233,14 +233,21 @@ impl ParseErrorKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum CharStringError {
-    #[error("This char string is invalid")]
-    Invalid,
+    #[error("Strings used in ranges can't be empty")]
+    Empty,
+    #[error("Strings used in ranges can only contain 1 code point")]
+    TooManyCodePoints,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum CharClassError {
     #[error("This character class is empty")]
     Empty,
+    #[error(
+        "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
+        *.0 as u32, *.1 as u32
+    )]
+    DescendingRange(char, char),
     #[error("Expected string, range, code point or named character class")]
     Invalid,
     #[error("This character class is unknown")]

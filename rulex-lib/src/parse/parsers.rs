@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     combinator::{cut, map, opt, value},
     multi::{many0, many1, separated_list0},
-    sequence::{delimited, pair, preceded, separated_pair},
+    sequence::{delimited, pair, separated_pair},
     IResult, Parser,
 };
 
@@ -166,89 +166,103 @@ pub(super) fn parse_string<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Ru
 }
 
 pub(super) fn parse_char_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    pub(super) fn parse_single_char_string<'i, 'b>(
-        tokens: Tokens<'i, 'b>,
-    ) -> PResult<'i, 'b, char> {
-        try_map(
-            Token::String,
-            |s| {
-                let s = strip_first_last(s);
-                let mut iter = s.chars();
-                match iter.next() {
-                    Some(c) if matches!(iter.next(), None) => Ok(c),
-                    _ => Err(ParseErrorKind::CharString(CharStringError::Invalid)),
-                }
-            },
-            nom::Err::Error,
-        )(tokens)
+    #[derive(Clone, Copy)]
+    enum StringOrChar<'i> {
+        String(&'i str),
+        Char(char),
     }
 
-    fn parse_single_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, char> {
+    impl StringOrChar<'_> {
+        fn to_char(self) -> Result<char, ParseErrorKind> {
+            Err(ParseErrorKind::CharString(match self {
+                StringOrChar::Char(c) => return Ok(c),
+                StringOrChar::String(s) => {
+                    let s = strip_first_last(s);
+                    let mut iter = s.chars();
+                    match iter.next() {
+                        Some(c) if matches!(iter.next(), None) => return Ok(c),
+                        Some(_) => CharStringError::TooManyCodePoints,
+                        _ => CharStringError::Empty,
+                    }
+                }
+            }))
+        }
+    }
+
+    fn parse_string_or_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, StringOrChar<'i>> {
         alt((
-            parse_single_char_string,
-            parse_code_point,
+            map(Token::String, StringOrChar::String),
+            map(parse_code_point, StringOrChar::Char),
+            map(parse_special_char, StringOrChar::Char),
             err(|| ParseErrorKind::ExpectedCodePointOrChar),
         ))(tokens)
     }
 
-    fn parse_char_or_range<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
-        try_map(
-            pair(
-                parse_single_char,
-                opt(preceded(Token::Dash, cut(parse_single_char))),
-            ),
-            |(first, last)| match (first, last) {
-                (first, None) => Ok(CharGroup::from_char(first)),
-                (first, Some(last)) => CharGroup::try_from_range(first, last)
-                    .ok_or(ParseErrorKind::CodePoint(CodePointError::InvalidRange)),
-            },
-            nom::Err::Failure,
-        )(tokens)
-    }
+    fn parse_chars_or_range<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
+        // this is not clean code, but using the combinators results in worse error spans
+        let span1 = tokens.index();
+        let (tokens, first) = parse_string_or_char(tokens)?;
 
-    fn parse_chars<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
-        map(Token::String, |s| {
-            CharGroup::from_chars(strip_first_last(s))
-        })(tokens)
+        if let Ok((tokens, _)) = Token::Dash.parse(tokens.clone()) {
+            let span2 = tokens.index();
+            let (tokens, last) = cut(parse_string_or_char)(tokens)?;
+
+            let first = first
+                .to_char()
+                .map_err(|e| nom::Err::Failure(e.at(span1.clone())))?;
+            let last = last
+                .to_char()
+                .map_err(|e| nom::Err::Failure(e.at(span2.clone())))?;
+
+            let group = CharGroup::try_from_range(first, last).ok_or_else(|| {
+                nom::Err::Failure(
+                    ParseErrorKind::CharClass(CharClassError::DescendingRange(first, last))
+                        .at(span1.start..span2.end),
+                )
+            })?;
+            Ok((tokens, group))
+        } else {
+            let group = match first {
+                StringOrChar::String(s) => CharGroup::from_chars(strip_first_last(s)),
+                StringOrChar::Char(c) => CharGroup::from_char(c),
+            };
+            Ok((tokens, group))
+        }
     }
 
     fn parse_char_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
-        try_map(
-            many0(alt((
-                parse_char_or_range,
-                parse_chars,
-                value(CharGroup::Dot, Token::Dot),
-                map(Token::Identifier, CharGroup::from_group_name),
-                err(|| ParseErrorKind::CharClass(CharClassError::Invalid)),
-            ))),
-            |ranges| {
-                let mut iter = ranges.into_iter();
-                let mut class = iter
-                    .next()
-                    .ok_or(ParseErrorKind::CharClass(CharClassError::Empty))?;
+        let span1 = tokens.index();
 
-                for range in iter {
-                    class.add(range).map_err(ParseErrorKind::CharClass)?;
-                }
-                Ok(class)
-            },
-            nom::Err::Failure,
-        )(tokens)
+        let (tokens, ranges) = many1(alt((
+            parse_chars_or_range,
+            value(CharGroup::Dot, Token::Dot),
+            map(Token::Identifier, CharGroup::from_group_name),
+            err(|| ParseErrorKind::CharClass(CharClassError::Invalid)),
+        )))(tokens)?;
+
+        let mut iter = ranges.into_iter();
+        let mut class = iter.next().unwrap();
+
+        for range in iter {
+            class.add(range).map_err(|e| {
+                nom::Err::Failure(
+                    ParseErrorKind::CharClass(e).at(span1.start..tokens.index().start),
+                )
+            })?;
+        }
+        Ok((tokens, class))
     }
 
     delimited(
         Token::OpenBracket,
-        map(
-            pair(opt("not"), parse_char_group),
-            |(not, class): (_, CharGroup<'_>)| {
-                let mut class: CharClass<'_> = class.into();
-                if not.is_some() {
-                    class.negate();
-                }
-                Rulex::CharClass(class)
-            },
-        ),
-        Token::CloseBracket,
+        map(pair(opt("not"), cut(parse_char_group)), |(not, class)| {
+            let mut class: CharClass<'_> = class.into();
+            if not.is_some() {
+                class.negate();
+            }
+            Rulex::CharClass(class)
+        }),
+        cut(Token::CloseBracket),
     )(tokens)
 }
 
@@ -267,6 +281,21 @@ pub(super) fn parse_code_point<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
             }
         },
         nom::Err::Failure,
+    )(tokens)
+}
+
+pub(super) fn parse_special_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, char> {
+    try_map(
+        Token::Identifier,
+        |s| {
+            Ok(match s {
+                "a" => '\u{07}',
+                "e" => '\u{1B}',
+                "f" => '\u{0C}',
+                _ => return Err(ParseErrorKind::Incomplete),
+            })
+        },
+        nom::Err::Error,
     )(tokens)
 }
 
@@ -297,11 +326,10 @@ where
     EM: Copy + FnOnce(ParseError) -> nom::Err<ParseError>,
 {
     move |input| {
-        let (rest, o) = parser.parse(input.clone())?;
-        Ok((
-            rest,
-            map(o).map_err(|e| e.at(input.index())).map_err(err_kind)?,
-        ))
+        let span = input.index();
+        let (rest, o1) = parser.parse(input)?;
+        let o2 = map(o1).map_err(|e| err_kind(e.at(span)))?;
+        Ok((rest, o2))
     }
 }
 
