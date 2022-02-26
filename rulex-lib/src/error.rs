@@ -128,7 +128,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
             vec!["Replace `\\B` with `not %` to match a place without a word boundary".into()]
         }
         Some('A') => vec!["Replace `\\A` with `<%` to match the start of the string".into()],
-        Some('Z') => vec!["Replace `\\Z` with `%>` to match the end of the string".into()],
+        Some('z') => vec!["Replace `\\z` with `%>` to match the end of the string".into()],
         Some(c @ ('u' | 'x')) => {
             let (str, max_len) = if let Some('{') = iter.next() {
                 (&str[2..], 6)
