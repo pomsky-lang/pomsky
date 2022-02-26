@@ -1,0 +1,5 @@
+# expect=error
+['a'-]
+-----
+Parse error: Expected code point or character
+  at 5..6

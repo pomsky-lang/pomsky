@@ -1,0 +1,5 @@
+# ignore, expect=error
+[not not 'a']
+-----
+Parse error: Unexpected keyword `not`
+  at 5..8

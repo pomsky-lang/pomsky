@@ -1,0 +1,5 @@
+# expect=error
+['a'-'bc']
+-----
+Parse error: Strings used in ranges can only contain 1 code point
+  at 5..9

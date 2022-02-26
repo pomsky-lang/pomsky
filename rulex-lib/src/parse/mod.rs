@@ -38,7 +38,7 @@ mod tests {
             class![Test]
         });
         test!(parse_char_class "[a b c]" {
-            class![a b c]
+            class!["\u{7}" b c]
         });
         test!(parse_char_class "[.]" {
             class![.]

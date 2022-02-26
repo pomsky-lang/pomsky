@@ -1,0 +1,5 @@
+# expect=error
+~~~~~~~~
+-----
+Parse error: Unknown token
+  at 0..1

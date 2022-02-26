@@ -1,0 +1,5 @@
+# expect=error
+[. n]
+-----
+Parse error: This combination of character classes is not allowed
+  at 1..4
