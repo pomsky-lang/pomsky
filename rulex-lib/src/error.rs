@@ -153,7 +153,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
             c @ ('a' | 'e' | 'f' | 'n' | 'r' | 'h' | 'v' | 'X' | 'd' | 'D' | 'w' | 'W' | 's' | 'S'
             | 'R'),
         ) => {
-            vec![format!("Replace `\\{c}` with `<{c}>`")]
+            vec![format!("Replace `\\{c}` with `[{c}]`")]
         }
         Some('k') if iter.next() == Some('<') => {
             let str = &str[2..];

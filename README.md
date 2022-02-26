@@ -12,7 +12,7 @@ A new, portable, regular expression language
 
 On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex, enclosed in `//`:
 
-```python
+```regexp
 # String
 'hello world'                 /hello world/
 
@@ -26,7 +26,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 'hello' | 'world'             /hello|world/
 
 # Character classes/ranges
-['aeiou]' 'p'-'s']            /[aeiou\]p-s]/
+['aeiou' 'p'-'s']             /[aeioup-s]/
 
 # Named character classes
 [.] [X] [w] [s] [n]           /.\X\w\s\n/
@@ -83,22 +83,19 @@ Install the rulex CLI tool with
 cargo install rulex-bin
 ```
 
-Then you can compile rulex expressions like this:
+Then you can compile rulex expressions. Input can be provided from a CLI argument, from a file or
+from stdin:
 
 ```sh
-rulex "'foo' | 'bar' | 'baz'"
+$ rulex "'foo' | 'bar' | 'baz'"
+$ rulex --path ./file.rulex
+$ cat ./file.rulex | rulex
 ```
 
-Or from a file:
+You can also specify the regex flavor:
 
 ```sh
-rulex --path ./file.rulex
-```
-
-Or from another command:
-
-```
-cat ./file.rulex | rulex
+rulex --flavor js --path ./file.rulex
 ```
 
 ## TODO (short-term)
@@ -111,29 +108,34 @@ cat ./file.rulex | rulex
 
 ### Backreferences
 
-Backreferences will look like this:
+Backreferences (and forward references) will look like this:
 
-```
+```regexp
 # Reference by index:
-:(['"]) <.>* ::1            (['"]).*?\1
+:(['"]) [.]* ::1            (['"]).*?\1
 
 # Reference by name:
-:quote(['"]) <.>* ::quote   (?P<quote>['"]).*?\k<quote>
+:quote(['"]) [.]* ::quote   (?P<quote>['"]).*?\k<quote>
 ```
 
-I'm also considering an option or syntax to remove the group names during compilation; they would
-still be useful to reference a group by its name (similar to loop labels in programming languages).
-This has the advantage that we could support regex engines like JavaScript that support
-backreferences but not named groups. But this can't be the default behavior, because we want
-to support search/replace by group name in engines that support it, e.g. Rust.
+### Explicit index backreferences
 
-### Better support for character classes
+Inline backreferences (and inline forward references) will look like this:
 
-- Most importantly: `<X> -> \X`.
+```regexp
+:1(['"]) [.]* ::1           (['"]).*?\1
+```
+
+This emits an error if the group marked with `:1` isn't the first group, and makes it easier to
+find the group referenced with `::1`. This is valuable if there are many, possibly nested,
+capturing groups.
+
+Note that named capturing groups are usually better, but JavaScript doesn't support them, although
+it does support backreferences.
+
+### Better Unicode support
 
 - Add the `Is` prefix to scripts (e.g. `IsLatin`) and `In`/`Is` to blocks as required by the engine
-
-- Convert Unicode categories and scripts into ranges to support engines like JS
 
 - Rulex should be able to detect when an invalid character class is provided.
 
@@ -144,33 +146,33 @@ during compilation. Variables can't have cyclic dependencies, since that would m
 expression is no longer regular. Still, this is a powerful feature that makes regular expressions
 much easier to understand:
 
-```python
-WS      :=  (<s> | <n>)* greedy
-WORD    :=  % <w> (<w> | <d>)* greedy %
-DIGITS0 := <d>+ greedy
-DIGITS1 := '0' | '1'-'9' <d>* greedy
-NUMBER  :=  '-'? DIGITS1 ("." DIGITS0)? greedy
+```regexp
+WS      :=  [s n]* greedy
+WORD    :=  % [w] [w d]* greedy %
+DIGITS0 := [d]+ greedy
+DIGITS1 := '0' | ['1'-'9'] [d]* greedy
+NUMBER  :=  '-'? DIGITS1 ('.' DIGITS0)? greedy
 
-"let" WS WORD WS "=" WS NUMBER
+'let' WS WORD WS '=' WS NUMBER
 ```
 
 The above compiles to
 
-```
+```regexp
 /let[\s\n]*\b\w[\w\d]*\b[\s\n]*=[\s\n]*-?(?:0|[1-9]\d*(?:\.\d+)?)/
 ```
 
 Note that backreferences within variable definitions are counted from the start of the definition:
 
-```
-STR  :=  :(['"]) <.>* ::1
+```regexp
+STR  :=  :(['"]) [.]* ::1
 
 STR " - " STR " - " STR
 ```
 
 The above compiles to
 
-```
+```regexp
 (['"]).*?\1 - (['"]).*?\2 - (['"]).*?\3
 ```
 
@@ -178,15 +180,15 @@ Note that the backreference is adjusted depending on where the variable is inser
 are used, they clash, which might cause problems. If this isn't desired, a possible solution is to
 append a `$` when group names clash:
 
-```
-STR  :=  :quotes$(['"]) <.>* ::quotes
+```regexp
+STR  :=  :quotes$(['"]) [.]* ::quotes
 
 STR " - " STR " - " STR
 ```
 
 Which compiles to
 
-```
+```regexp
 (?P<quotes1>['"]).*?\k<quotes1> - (?P<quotes2>['"]).*?\k<quotes2> - (?P<quotes3>['"]).*?\k<quotes3>
 ```
 
