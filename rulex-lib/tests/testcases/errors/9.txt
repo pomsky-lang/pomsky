@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 [not not 'a']
 -----
 Parse error: Unexpected keyword `not`

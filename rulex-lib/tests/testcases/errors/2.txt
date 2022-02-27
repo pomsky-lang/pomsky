@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 ~~~~~~~~
 -----
 Parse error: Unknown token

@@ -2,7 +2,10 @@ use std::{
     fmt, fs, io,
     panic::catch_unwind,
     path::{Path, PathBuf},
-    process::exit,
+    process,
+    sync::mpsc::{self, Sender},
+    thread,
+    time::Duration,
 };
 
 use rulex::options::{CompileOptions, RegexFlavor};
@@ -12,7 +15,7 @@ pub fn main() {
         Ok(_) => {}
         Err(e) => {
             eprintln!("error: {e}");
-            exit(1);
+            process::exit(1);
         }
     }
 }
@@ -53,9 +56,38 @@ fn defer_main() -> Result<(), io::Error> {
         filter,
     };
 
+    let (tx, rx) = mpsc::channel();
+    let child = thread::spawn(move || {
+        let mut prev = None;
+        let mut duration_millis = 0;
+        const INTERVAL: u64 = 50;
+        loop {
+            match rx.recv_timeout(Duration::from_millis(INTERVAL)) {
+                Ok(path_buf) => {
+                    prev = Some(path_buf);
+                    duration_millis = 0;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    if let Some(prev) = &prev {
+                        duration_millis += INTERVAL;
+                        if duration_millis == INTERVAL {
+                            eprintln!("{yellow}Warning{reset}: Test case {prev:?} is taking >50ms");
+                        } else if duration_millis == 5_000 {
+                            eprintln!("{red}Cancelled{reset} after 5 secs");
+                            process::exit(255);
+                        }
+                    }
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            }
+        }
+    });
+
     eprintln!();
-    walk_dir_recursive(marker, "./tests/testcases", &mut results, &args)?;
+    walk_dir_recursive(marker, "./tests/testcases".into(), &mut results, tx, &args)?;
     eprintln!();
+
+    child.join().unwrap();
 
     let mut ok = 0;
     let mut failed = 0;
@@ -124,7 +156,7 @@ fn defer_main() -> Result<(), io::Error> {
     }
 
     if failed > 0 || panics > 0 {
-        exit(failed + panics);
+        process::exit(failed + panics);
     }
 
     Ok(())
@@ -159,11 +191,12 @@ const TTY_MARKER: Marker = Marker {
 
 fn walk_dir_recursive(
     marker @ Marker { blue, reset, .. }: Marker,
-    path: impl AsRef<Path>,
+    path: PathBuf,
     results: &mut Vec<(PathBuf, TestResult)>,
+    tx: Sender<PathBuf>,
     args: &Args,
 ) -> Result<(), io::Error> {
-    let path = path.as_ref();
+    let path = &path;
     if !path.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -172,7 +205,7 @@ fn walk_dir_recursive(
     }
     if path.is_dir() {
         for test in fs::read_dir(path)? {
-            walk_dir_recursive(marker, test?.path(), results, args)?;
+            walk_dir_recursive(marker, test?.path(), results, tx.clone(), args)?;
         }
         Ok(())
     } else if path.is_file() {
@@ -180,7 +213,8 @@ fn walk_dir_recursive(
         results.push((
             path.to_owned(),
             if filter_matches(&args.filter, path) {
-                test_file(&content, args)
+                tx.send(path.to_owned()).unwrap();
+                test_file(&content, path, args)
             } else {
                 TestResult::Filtered
             },
@@ -248,14 +282,14 @@ impl fmt::Display for Print {
     }
 }
 
-fn test_file(content: &str, args: &Args) -> TestResult {
+fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
     let (mut input, expected) = content.split_once("\n-----").unwrap();
     let expected = expected.trim_start_matches('-').trim_start_matches('\n');
 
-    let (flavor, expect, ignored) = if input.starts_with('#') {
+    let (flavor, expect, ignored) = if input.starts_with("#!") {
         let (first_line, new_input) = input.split_once('\n').unwrap_or_default();
         input = new_input;
-        parse_first_line_comment(first_line)
+        parse_first_line_comment(first_line, path)
     } else {
         (RegexFlavor::Pcre, Expect::Success, Ignored::No)
     };
@@ -323,12 +357,12 @@ fn test_file(content: &str, args: &Args) -> TestResult {
     })
 }
 
-fn parse_first_line_comment(string: &str) -> (RegexFlavor, Expect, Ignored) {
+fn parse_first_line_comment(string: &str, path: &Path) -> (RegexFlavor, Expect, Ignored) {
     let mut flavor = RegexFlavor::Pcre;
     let mut expect = Expect::Success;
     let mut ignored = Ignored::No;
 
-    for part in string.trim_start_matches('#').split(',') {
+    for part in string.trim_start_matches("#!").split(',') {
         let part = part.trim();
         let (key, value) = part.split_once('=').unwrap_or((part, ""));
         match key {
@@ -341,24 +375,39 @@ fn parse_first_line_comment(string: &str) -> (RegexFlavor, Expect, Ignored) {
                     "python" => RegexFlavor::Python,
                     "rust" => RegexFlavor::Rust,
                     "ruby" => RegexFlavor::Ruby,
-                    _ => continue,
+                    _ => {
+                        eprintln!("Warning: Unknown flavor {value:?}");
+                        eprintln!("  in {path:?}");
+                        continue;
+                    }
                 };
             }
             "expect" => {
                 expect = match value {
                     "success" => Expect::Success,
                     "error" => Expect::Error,
-                    _ => continue,
+                    _ => {
+                        eprintln!("Warning: Unknown expected outcome {value:?}");
+                        eprintln!("  in {path:?}");
+                        continue;
+                    }
                 }
             }
             "ignore" | "ignored" => {
                 ignored = match value {
-                    "yes" | "" => Ignored::Yes,
-                    "no" => Ignored::No,
-                    _ => continue,
+                    "yes" | "true" | "" => Ignored::Yes,
+                    "no" | "false" => Ignored::No,
+                    _ => {
+                        eprintln!("Warning: Unknown boolean {value:?}");
+                        eprintln!("  in {path:?}");
+                        continue;
+                    }
                 }
             }
-            _ => {}
+            _ => {
+                eprintln!("Warning: Unknown option {key:?}");
+                eprintln!("  in {path:?}");
+            }
         }
     }
     (flavor, expect, ignored)

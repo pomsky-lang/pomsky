@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 ['a'-]
 -----
 Parse error: Expected code point or character

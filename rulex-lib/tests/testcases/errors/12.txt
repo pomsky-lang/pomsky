@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 ('hello'
 -----
 Parse error: Expected token `)`

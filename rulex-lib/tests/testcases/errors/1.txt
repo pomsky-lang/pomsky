@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 []
 -----
 Parse error: Expected string, range, code point or named character class

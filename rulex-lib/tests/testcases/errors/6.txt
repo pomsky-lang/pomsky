@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 ['ab'-'c']
 -----
 Parse error: Strings used in ranges can only contain 1 code point

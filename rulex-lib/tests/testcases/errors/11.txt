@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 ['abc']]
 -----
 Parse error: There are leftover tokens that couldn't be parsed

@@ -1,4 +1,4 @@
-# expect=error
+#! expect=error
 [X n]
 -----
 Parse error: This combination of character classes is not allowed

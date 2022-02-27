@@ -1,3 +1,5 @@
+# These quantifiers are lazy (non-greedy), which is denoted by a `?` suffix in regexes.
+
 'hello'* 'world'+
 -----
 (?:hello)*?(?:world)+?

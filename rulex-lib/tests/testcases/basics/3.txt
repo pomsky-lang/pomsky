@@ -1,3 +1,5 @@
+# The `greedy` keyword makes a quantifier greedy, which is the default in regexes.
+
 'hello'? greedy
 -----
 (?:hello)?

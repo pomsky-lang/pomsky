@@ -1,0 +1,5 @@
+# unneeded parentheses are eliminated
+
+'hello' | ('world') | ((['!?'] '!'))
+-----
+hello|world|[!?]!
