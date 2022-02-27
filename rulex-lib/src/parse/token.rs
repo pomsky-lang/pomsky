@@ -3,7 +3,7 @@ use nom::Parser;
 
 use crate::error::{ParseError, ParseErrorKind};
 
-use super::tokens::Tokens;
+use super::input::Input;
 
 #[derive(Debug, Logos, Eq, PartialEq, Copy, Clone)]
 pub enum Token {
@@ -109,16 +109,10 @@ pub enum Token {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ParseErrorMsg {
-    #[error("A character class can't be empty")]
-    EmptyCharClass,
-    #[error("The dot must be surrounded by angle brackets: <.>")]
-    Dot,
     #[error("`^` is not a valid token. Use `<%` to match the start of the string")]
     Caret,
     #[error("`$` is not a valid token. Use `%>` to match the end of the string")]
     Dollar,
-    #[error("There's an unmatched square bracket")]
-    UnmatchedBracket,
     #[error("This syntax is not supported")]
     SpecialGroup,
     #[error("Backslash escapes are not supported")]
@@ -156,11 +150,11 @@ impl core::fmt::Display for Token {
     }
 }
 
-impl<'i, 'b> Parser<Tokens<'i, 'b>, &'i str, ParseError> for Token {
+impl<'i, 'b> Parser<Input<'i, 'b>, &'i str, ParseError> for Token {
     fn parse(
         &mut self,
-        mut input: Tokens<'i, 'b>,
-    ) -> nom::IResult<Tokens<'i, 'b>, &'i str, ParseError> {
+        mut input: Input<'i, 'b>,
+    ) -> nom::IResult<Input<'i, 'b>, &'i str, ParseError> {
         match input.peek() {
             Some((t, s)) if t == *self => {
                 let _ = input.next();
@@ -173,11 +167,11 @@ impl<'i, 'b> Parser<Tokens<'i, 'b>, &'i str, ParseError> for Token {
     }
 }
 
-impl<'i, 'b> Parser<Tokens<'i, 'b>, Token, ParseError> for &'i str {
+impl<'i, 'b> Parser<Input<'i, 'b>, Token, ParseError> for &'i str {
     fn parse(
         &mut self,
-        mut input: Tokens<'i, 'b>,
-    ) -> nom::IResult<Tokens<'i, 'b>, Token, ParseError> {
+        mut input: Input<'i, 'b>,
+    ) -> nom::IResult<Input<'i, 'b>, Token, ParseError> {
         match input.peek() {
             Some((t, s)) if s == *self => {
                 let _ = input.next();

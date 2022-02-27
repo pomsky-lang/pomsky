@@ -8,12 +8,12 @@ use crate::error::{ParseError, ParseErrorKind};
 use super::token::Token;
 
 #[derive(Clone)]
-pub(crate) struct Tokens<'i, 'b> {
+pub(crate) struct Input<'i, 'b> {
     source: &'i str,
     tokens: &'b [(Token, (usize, usize))],
 }
 
-impl<'i, 'b> Tokens<'i, 'b> {
+impl<'i, 'b> Input<'i, 'b> {
     pub(super) fn tokenize(
         source: &'i str,
         buf: &'b mut Vec<(Token, (usize, usize))>,
@@ -36,7 +36,7 @@ impl<'i, 'b> Tokens<'i, 'b> {
         }
 
         let tokens = &**buf;
-        Ok(Tokens { source, tokens })
+        Ok(Input { source, tokens })
     }
 
     pub(super) fn is_empty(&self) -> bool {
@@ -53,24 +53,16 @@ impl<'i, 'b> Tokens<'i, 'b> {
     pub(super) fn peek(&self) -> Option<(Token, &'i str)> {
         self.iter_elements().next()
     }
-
-    #[cfg(test)]
-    pub(crate) fn empty() -> Self {
-        Tokens {
-            source: "",
-            tokens: &[],
-        }
-    }
 }
 
-impl<'i, 'b> PartialEq for Tokens<'i, 'b> {
+impl<'i, 'b> PartialEq for Input<'i, 'b> {
     fn eq(&self, other: &Self) -> bool {
         Iterator::eq(self.iter_elements(), other.iter_elements())
     }
 }
 
 #[cfg(feature = "dbg")]
-impl<'i, 'b> core::fmt::Debug for Tokens<'i, 'b> {
+impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         struct X<'a>(Token, &'a str);
 
@@ -90,7 +82,7 @@ impl<'i, 'b> core::fmt::Debug for Tokens<'i, 'b> {
     }
 }
 
-impl<'i, 'b> Iterator for Tokens<'i, 'b> {
+impl<'i, 'b> Iterator for Input<'i, 'b> {
     type Item = (Token, &'i str);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -104,7 +96,7 @@ impl<'i, 'b> Iterator for Tokens<'i, 'b> {
     }
 }
 
-impl<'i, 'b> InputIter for Tokens<'i, 'b> {
+impl<'i, 'b> InputIter for Input<'i, 'b> {
     type Item = (Token, &'i str);
 
     type Iter = Enumerate<Self>;
@@ -116,7 +108,7 @@ impl<'i, 'b> InputIter for Tokens<'i, 'b> {
     }
 
     fn iter_elements(&self) -> Self::IterElem {
-        Tokens {
+        Input {
             source: self.source,
             tokens: self.tokens,
         }
@@ -141,17 +133,17 @@ impl<'i, 'b> InputIter for Tokens<'i, 'b> {
     }
 }
 
-impl<'i, 'b> InputLength for Tokens<'i, 'b> {
+impl<'i, 'b> InputLength for Input<'i, 'b> {
     fn input_len(&self) -> usize {
         self.tokens.len()
     }
 }
 
-impl<'i, 'b> InputTake for Tokens<'i, 'b> {
+impl<'i, 'b> InputTake for Input<'i, 'b> {
     fn take(&self, count: usize) -> Self {
         let tokens = &self.tokens[..count];
 
-        Tokens {
+        Input {
             source: self.source,
             tokens,
         }
@@ -161,11 +153,11 @@ impl<'i, 'b> InputTake for Tokens<'i, 'b> {
         let (left, right) = self.tokens.split_at(count);
 
         (
-            Tokens {
+            Input {
                 source: self.source,
                 tokens: left,
             },
-            Tokens {
+            Input {
                 source: self.source,
                 tokens: right,
             },

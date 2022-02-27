@@ -9,7 +9,8 @@ use nom::{
 use crate::{
     alternation::Alternation,
     boundary::Boundary,
-    char_class::{CharClass, CharGroup},
+    char_class::CharClass,
+    char_group::CharGroup,
     error::{
         CharClassError, CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind,
     },
@@ -19,13 +20,13 @@ use crate::{
     Rulex,
 };
 
-use super::{Token, Tokens};
+use super::{Input, Token};
 
-pub(super) type PResult<'i, 'b, T> = IResult<Tokens<'i, 'b>, T, ParseError>;
+pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
 pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
     let mut buf = Vec::new();
-    let tokens = Tokens::tokenize(source, &mut buf)?;
+    let tokens = Input::tokenize(source, &mut buf)?;
     let (rest, rules) = parse_or(tokens)?;
     if rest.is_empty() {
         Ok(rules)
@@ -34,27 +35,27 @@ pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
     }
 }
 
-pub(super) fn parse_or<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     map(separated_list0(Token::Pipe, parse_sequence), |mut rules| {
         if rules.len() == 1 {
             rules.pop().unwrap()
         } else {
             Alternation::new_rulex(rules)
         }
-    })(tokens)
+    })(input)
 }
 
-pub(super) fn parse_sequence<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     map(many1(parse_fixes), |mut rules| {
         if rules.len() == 1 {
             rules.pop().unwrap()
         } else {
             Rulex::Group(Group::new(rules, None))
         }
-    })(tokens)
+    })(input)
 }
 
-pub(super) fn parse_fixes<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     alt((
         map(pair(parse_lookaround, parse_or), |(kind, rule)| {
             Rulex::Lookaround(Box::new(Lookaround::new(rule, kind)))
@@ -68,10 +69,10 @@ pub(super) fn parse_fixes<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
                 rule
             },
         ),
-    ))(tokens)
+    ))(input)
 }
 
-pub(super) fn parse_lookaround<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, LookaroundKind> {
+pub(super) fn parse_lookaround<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, LookaroundKind> {
     alt((
         value(LookaroundKind::Ahead, Token::LookAhead),
         value(LookaroundKind::Behind, Token::LookBehind),
@@ -80,11 +81,11 @@ pub(super) fn parse_lookaround<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
             LookaroundKind::BehindNegative,
             pair("not", Token::LookBehind),
         ),
-    ))(tokens)
+    ))(input)
 }
 
 pub(super) fn parse_repetition<'i, 'b>(
-    tokens: Tokens<'i, 'b>,
+    input: Input<'i, 'b>,
 ) -> PResult<'i, 'b, (RepetitionKind, Greedy)> {
     pair(
         alt((
@@ -97,18 +98,18 @@ pub(super) fn parse_repetition<'i, 'b>(
             Some(_) => Greedy::Yes,
             None => Greedy::No,
         }),
-    )(tokens)
+    )(input)
 }
 
 pub(super) fn parse_braced_repetition<'i, 'b>(
-    tokens: Tokens<'i, 'b>,
+    input: Input<'i, 'b>,
 ) -> PResult<'i, 'b, RepetitionKind> {
     fn str_to_u32(s: &str) -> Result<u32, ParseErrorKind> {
         str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
     }
 
-    fn parse_u32<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, u32> {
-        try_map(Token::Number, str_to_u32, nom::Err::Failure)(tokens)
+    fn parse_u32<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, u32> {
+        try_map(Token::Number, str_to_u32, nom::Err::Failure)(input)
     }
 
     delimited(
@@ -122,10 +123,10 @@ pub(super) fn parse_braced_repetition<'i, 'b>(
             map(parse_u32, RepetitionKind::fixed),
         ))),
         cut(Token::CloseBrace),
-    )(tokens)
+    )(input)
 }
 
-pub(super) fn parse_atom<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     alt((
         parse_group,
         parse_string,
@@ -135,14 +136,14 @@ pub(super) fn parse_atom<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rule
             Rulex::CharClass(CharGroup::from_char(c).into())
         }),
         err(|| ParseErrorKind::Expected("expression")),
-    ))(tokens)
+    ))(input)
 }
 
-pub(super) fn parse_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    fn parse_capture<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Capture<'i>> {
+pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    fn parse_capture<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Capture<'i>> {
         map(pair(Token::Colon, opt(Token::Identifier)), |(_, name)| {
             Capture::new(name)
-        })(tokens)
+        })(input)
     }
 
     map(
@@ -158,14 +159,14 @@ pub(super) fn parse_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rul
             }
             (capture, rule) => Rulex::Group(Group::new(vec![rule], capture)),
         },
-    )(tokens)
+    )(input)
 }
 
-pub(super) fn parse_string<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(Token::String, |s| Rulex::Literal(strip_first_last(s)))(tokens)
+pub(super) fn parse_string<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    map(Token::String, |s| Rulex::Literal(strip_first_last(s)))(input)
 }
 
-pub(super) fn parse_char_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     #[derive(Clone, Copy)]
     enum StringOrChar<'i> {
         String(&'i str),
@@ -189,23 +190,23 @@ pub(super) fn parse_char_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
         }
     }
 
-    fn parse_string_or_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, StringOrChar<'i>> {
+    fn parse_string_or_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, StringOrChar<'i>> {
         alt((
             map(Token::String, StringOrChar::String),
             map(parse_code_point, StringOrChar::Char),
             map(parse_special_char, StringOrChar::Char),
             err(|| ParseErrorKind::ExpectedCodePointOrChar),
-        ))(tokens)
+        ))(input)
     }
 
-    fn parse_chars_or_range<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
+    fn parse_chars_or_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
         // this is not clean code, but using the combinators results in worse error spans
-        let span1 = tokens.index();
-        let (tokens, first) = parse_string_or_char(tokens)?;
+        let span1 = input.index();
+        let (input, first) = parse_string_or_char(input)?;
 
-        if let Ok((tokens, _)) = Token::Dash.parse(tokens.clone()) {
-            let span2 = tokens.index();
-            let (tokens, last) = cut(parse_string_or_char)(tokens)?;
+        if let Ok((input, _)) = Token::Dash.parse(input.clone()) {
+            let span2 = input.index();
+            let (input, last) = cut(parse_string_or_char)(input)?;
 
             let first = first
                 .to_char()
@@ -220,37 +221,39 @@ pub(super) fn parse_char_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
                         .at(span1.start..span2.end),
                 )
             })?;
-            Ok((tokens, group))
+            Ok((input, group))
         } else {
             let group = match first {
                 StringOrChar::String(s) => CharGroup::from_chars(strip_first_last(s)),
                 StringOrChar::Char(c) => CharGroup::from_char(c),
             };
-            Ok((tokens, group))
+            Ok((input, group))
         }
     }
 
-    fn parse_char_group<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
-        let span1 = tokens.index();
+    fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
+        let span1 = input.index();
 
-        let (tokens, ranges) = many1(alt((
+        let (input, ranges) = many1(alt((
             parse_chars_or_range,
             value(CharGroup::Dot, Token::Dot),
-            map(Token::Identifier, CharGroup::from_group_name),
+            try_map(
+                Token::Identifier,
+                |s| CharGroup::try_from_group_name(s).map_err(ParseErrorKind::CharClass),
+                nom::Err::Failure,
+            ),
             err(|| ParseErrorKind::CharClass(CharClassError::Invalid)),
-        )))(tokens)?;
+        )))(input)?;
 
         let mut iter = ranges.into_iter();
         let mut class = iter.next().unwrap();
 
         for range in iter {
             class.add(range).map_err(|e| {
-                nom::Err::Failure(
-                    ParseErrorKind::CharClass(e).at(span1.start..tokens.index().start),
-                )
+                nom::Err::Failure(ParseErrorKind::CharClass(e).at(span1.start..input.index().start))
             })?;
         }
-        Ok((tokens, class))
+        Ok((input, class))
     }
 
     delimited(
@@ -263,10 +266,10 @@ pub(super) fn parse_char_class<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
             Rulex::CharClass(class)
         }),
         cut(Token::CloseBracket),
-    )(tokens)
+    )(input)
 }
 
-pub(super) fn parse_code_point<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, char> {
+pub(super) fn parse_code_point<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
     try_map(
         Token::CodePoint,
         |s| {
@@ -281,10 +284,10 @@ pub(super) fn parse_code_point<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b
             }
         },
         nom::Err::Failure,
-    )(tokens)
+    )(input)
 }
 
-pub(super) fn parse_special_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, char> {
+pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
     try_map(
         Token::Identifier,
         |s| {
@@ -296,10 +299,10 @@ pub(super) fn parse_special_char<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 
             })
         },
         nom::Err::Error,
-    )(tokens)
+    )(input)
 }
 
-pub(super) fn parse_boundary<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     map(
         alt((
             value(Boundary::Start, Token::BStart),
@@ -308,7 +311,7 @@ pub(super) fn parse_boundary<'i, 'b>(tokens: Tokens<'i, 'b>) -> PResult<'i, 'b, 
             value(Boundary::NotWord, pair("not", Token::BWord)),
         )),
         Rulex::Boundary,
-    )(tokens)
+    )(input)
 }
 
 fn strip_first_last(s: &str) -> &str {
@@ -319,9 +322,9 @@ fn try_map<'i, 'b, O1, O2, P, M, EM>(
     mut parser: P,
     mut map: M,
     err_kind: EM,
-) -> impl FnMut(Tokens<'i, 'b>) -> IResult<Tokens<'i, 'b>, O2, ParseError>
+) -> impl FnMut(Input<'i, 'b>) -> IResult<Input<'i, 'b>, O2, ParseError>
 where
-    P: Parser<Tokens<'i, 'b>, O1, ParseError>,
+    P: Parser<Input<'i, 'b>, O1, ParseError>,
     M: FnMut(O1) -> Result<O2, ParseErrorKind>,
     EM: Copy + FnOnce(ParseError) -> nom::Err<ParseError>,
 {
@@ -335,6 +338,6 @@ where
 
 fn err<'i, 'b, T>(
     mut error_fn: impl FnMut() -> ParseErrorKind,
-) -> impl FnMut(Tokens<'i, 'b>) -> IResult<Tokens<'i, 'b>, T, ParseError> {
+) -> impl FnMut(Input<'i, 'b>) -> IResult<Input<'i, 'b>, T, ParseError> {
     move |input| Err(nom::Err::Error(error_fn().at(input.index())))
 }

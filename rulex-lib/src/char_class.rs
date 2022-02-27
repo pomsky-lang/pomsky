@@ -6,9 +6,7 @@ use crate::{
     options::{CompileOptions, RegexFlavor},
 };
 
-pub(crate) use self::group::{CharGroup, GroupItem};
-
-mod group;
+use crate::char_group::{CharGroup, GroupItem};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct CharClass<'i> {

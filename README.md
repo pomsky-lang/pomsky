@@ -98,19 +98,18 @@ You can also specify the regex flavor:
 rulex --flavor js --path ./file.rulex
 ```
 
-## TODO (short-term)
-
-- Compilation (generating regexes) is currently untested.
-- Provide an ASCII mode (escaping all non-ASCII characters)
-- Add backreferences and forward references.
-
 ## Roadmap
 
 [You can find the Roadmap here.](https://github.com/users/Aloso/projects/1/views/1)
 
 ## Contributing
 
-You can contribute by filing issues or sending pull requests. If you have questions, please create an issue.
+You can contribute by using rulex and providing feedback. If you find a bug or have a question,
+please create an issue.
+
+I also gladly accept code contributions. If you want to contribute, please upvote or comment on
+[this issue](https://github.com/Aloso/rulex/issues/9), so I will prioritize documenting the code
+and writing a Contributor's Guide.
 
 ## License
 

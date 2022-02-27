@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     options::RegexFlavor,
-    parse::{ParseErrorMsg, Token, Tokens},
+    parse::{Input, ParseErrorMsg, Token},
     repetition::RepetitionError,
 };
 
@@ -239,7 +239,7 @@ pub enum CharStringError {
     TooManyCodePoints,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum CharClassError {
     #[error("This character class is empty")]
     Empty,
@@ -254,6 +254,10 @@ pub enum CharClassError {
     Unknown,
     #[error("This combination of character classes is not allowed")]
     Unallowed,
+    #[error("Unknown character class `{}`", .0)]
+    UnknownNamedClass(String),
+    #[error("Unexpected keyword `{}`", .0)]
+    Keyword(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -285,12 +289,12 @@ impl From<RepetitionError> for ParseErrorKind {
     }
 }
 
-impl<'i, 'b> nom::error::ParseError<Tokens<'i, 'b>> for ParseError {
-    fn from_error_kind(i: Tokens<'i, 'b>, kind: nom::error::ErrorKind) -> Self {
+impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
+    fn from_error_kind(i: Input<'i, 'b>, kind: nom::error::ErrorKind) -> Self {
         ParseErrorKind::Nom(kind).at(i.index())
     }
 
-    fn append(_: Tokens<'i, 'b>, _: nom::error::ErrorKind, other: Self) -> Self {
+    fn append(_: Input<'i, 'b>, _: nom::error::ErrorKind, other: Self) -> Self {
         other
     }
 }
