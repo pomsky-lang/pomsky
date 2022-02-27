@@ -80,31 +80,19 @@ fn defer_main() -> Result<(), io::Error> {
                 got,
             } => {
                 failed += 1;
-                eprintln!(
-                    r#"{path}: {msg}
-       {t_input}: {input}
-    {t_expected}: {expected}
-         {t_got}: {got}
-"#,
-                    path = path.to_string_lossy(),
-                    msg = Red("incorrect result."),
-                    t_input = Blue("input"),
-                    t_expected = Blue("expected"),
-                    t_got = Blue("got"),
-                    expected = Print(expected),
-                    got = Print(got),
-                );
+                eprintln!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
+                eprintln!("       {}: {}", Blue("input"), input);
+                eprintln!("    {}: {}", Blue("expected"), Print(expected));
+                eprintln!("         {}: {}", Blue("got"), Print(got));
+                eprintln!();
             }
             TestResult::Panic { message } => {
                 panics += 1;
-                eprintln!(
-                    r#"{path}: {msg}
-     {t_message}: {message:?}
-"#,
-                    path = path.to_string_lossy(),
-                    msg = Red("compilation panicked."),
-                    t_message = Blue("message"),
-                );
+                eprintln!("{}: {}", path.to_string_lossy(), Red("test panicked."));
+                if let Some(message) = message {
+                    eprintln!("     {}: {message}", Blue("message"));
+                }
+                eprintln!();
             }
         }
     }
@@ -119,7 +107,7 @@ fn defer_main() -> Result<(), io::Error> {
     );
 
     if panics + failed > 0 {
-        if !args.filter.is_empty() {
+        if args.filter.is_empty() {
             eprintln!(
                 "{t_tip}: You can rerun a specific test case with \
                 `cargo test --test it -- {t_filter}`\n\

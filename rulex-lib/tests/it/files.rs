@@ -2,7 +2,7 @@ use std::{panic::catch_unwind, path::Path};
 
 use rulex::options::{CompileOptions, RegexFlavor};
 
-use crate::Args;
+use crate::{color::Color::*, Args};
 
 pub(crate) enum TestResult {
     Success,
@@ -18,31 +18,106 @@ pub(crate) enum TestResult {
     },
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Expect {
+struct Options {
+    flavor: RegexFlavor,
+    ignore: bool,
+    expected_outcome: Outcome,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            flavor: RegexFlavor::Pcre,
+            ignore: false,
+            expected_outcome: Outcome::Success,
+        }
+    }
+}
+
+impl Options {
+    fn parse(line: &str, path: &Path) -> Self {
+        let mut result = Options::default();
+
+        for part in line.trim_start_matches("#!").split(',') {
+            let part = part.trim();
+            let (key, value) = part.split_once('=').unwrap_or((part, ""));
+            match key {
+                "flavor" => {
+                    result.flavor = match value.to_ascii_lowercase().as_str() {
+                        "pcre" | "" => RegexFlavor::Pcre,
+                        "js" | "javascript" => RegexFlavor::JavaScript,
+                        "java" => RegexFlavor::Java,
+                        ".net" => RegexFlavor::DotNet,
+                        "python" => RegexFlavor::Python,
+                        "rust" => RegexFlavor::Rust,
+                        "ruby" => RegexFlavor::Ruby,
+                        _ => {
+                            eprintln!("{}: Unknown flavor {value:?}", Yellow("Warning"));
+                            eprintln!("  in {path:?}");
+                            continue;
+                        }
+                    };
+                }
+                "expect" => {
+                    result.expected_outcome = match value {
+                        "success" => Outcome::Success,
+                        "error" => Outcome::Error,
+                        _ => {
+                            eprintln!("{}: Unknown expected outcome {value:?}", Yellow("Warning"));
+                            eprintln!("  in {path:?}");
+                            continue;
+                        }
+                    }
+                }
+                "ignore" | "ignored" => {
+                    result.ignore = match value {
+                        "yes" | "true" | "" => true,
+                        "no" | "false" => false,
+                        _ => {
+                            eprintln!("{}: Unknown boolean {value:?}", Yellow("Warning"));
+                            eprintln!("  in {path:?}");
+                            continue;
+                        }
+                    }
+                }
+                _ => {
+                    eprintln!("{}: Unknown option {key:?}", Yellow("Warning"));
+                    eprintln!("  in {path:?}");
+                }
+            }
+        }
+        result
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Outcome {
     Success,
     Error,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Ignored {
-    Yes,
-    No,
+impl Outcome {
+    fn of(self, inner: String) -> Result<String, String> {
+        match self {
+            Outcome::Success => Ok(inner),
+            Outcome::Error => Err(inner),
+        }
+    }
 }
 
 pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
     let (mut input, expected) = content.split_once("\n-----").unwrap();
     let expected = expected.trim_start_matches('-').trim_start_matches('\n');
 
-    let (flavor, expect, ignored) = if input.starts_with("#!") {
+    let options = if input.starts_with("#!") {
         let (first_line, new_input) = input.split_once('\n').unwrap_or_default();
         input = new_input;
-        parse_first_line_comment(first_line, path)
+        Options::parse(first_line, path)
     } else {
-        (RegexFlavor::Pcre, Expect::Success, Ignored::No)
+        Options::default()
     };
 
-    if ignored == Ignored::Yes && !args.include_ignored {
+    if options.ignore && !args.include_ignored {
         return TestResult::Ignored;
     }
 
@@ -50,113 +125,45 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
         let parsed = rulex::Rulex::parse_and_compile(
             input,
             CompileOptions {
-                flavor,
+                flavor: options.flavor,
                 ..Default::default()
             },
         );
         match parsed {
-            Ok(got) if expect == Expect::Success => {
-                if got == expected {
-                    TestResult::Success
-                } else {
-                    TestResult::IncorrectResult {
-                        input: input.to_string(),
-                        expected: Ok(expected.to_string()),
-                        got: Ok(got),
-                    }
-                }
-            }
-            Ok(got) => {
-                // if expecting error
-                TestResult::IncorrectResult {
-                    input: input.to_string(),
-                    expected: Err(expected.to_string()),
+            Ok(got) => match options.expected_outcome {
+                Outcome::Success if got == expected => TestResult::Success,
+                outcome => TestResult::IncorrectResult {
+                    input: strip_input(input),
+                    expected: outcome.of(expected.to_string()),
                     got: Ok(got),
-                }
-            }
-            Err(err) if expect == Expect::Success => TestResult::IncorrectResult {
-                input: input.to_string(),
-                expected: Ok(expected.to_string()),
-                got: Err(err.to_string()),
+                },
             },
-            Err(err) => {
-                // if expecting error
-                if expected.is_empty() {
-                    return TestResult::Success;
-                }
-                let err = err.to_string();
-                if err == expected {
+            Err(err) => match options.expected_outcome {
+                Outcome::Error if expected.is_empty() || expected == err.to_string() => {
                     TestResult::Success
-                } else {
-                    TestResult::IncorrectResult {
-                        input: input.to_string(),
-                        expected: Err(expected.to_string()),
-                        got: Err(err),
-                    }
                 }
-            }
+                outcome => TestResult::IncorrectResult {
+                    input: strip_input(input),
+                    expected: outcome.of(expected.to_string()),
+                    got: Err(err.to_string()),
+                },
+            },
         }
     })
-    .unwrap_or_else(|e| TestResult::Panic {
-        message: e
+    .unwrap_or_else(|err| TestResult::Panic {
+        message: err
             .downcast_ref::<String>()
             .map(ToOwned::to_owned)
-            .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())),
+            .or_else(|| err.downcast_ref::<&str>().map(|s| s.to_string())),
     })
 }
 
-fn parse_first_line_comment(string: &str, path: &Path) -> (RegexFlavor, Expect, Ignored) {
-    let mut flavor = RegexFlavor::Pcre;
-    let mut expect = Expect::Success;
-    let mut ignored = Ignored::No;
-
-    for part in string.trim_start_matches("#!").split(',') {
-        let part = part.trim();
-        let (key, value) = part.split_once('=').unwrap_or((part, ""));
-        match key {
-            "flavor" | "flavour" => {
-                flavor = match value.to_ascii_lowercase().as_str() {
-                    "pcre" | "" => RegexFlavor::Pcre,
-                    "js" | "javascript" => RegexFlavor::JavaScript,
-                    "java" => RegexFlavor::Java,
-                    ".net" => RegexFlavor::DotNet,
-                    "python" => RegexFlavor::Python,
-                    "rust" => RegexFlavor::Rust,
-                    "ruby" => RegexFlavor::Ruby,
-                    _ => {
-                        eprintln!("Warning: Unknown flavor {value:?}");
-                        eprintln!("  in {path:?}");
-                        continue;
-                    }
-                };
-            }
-            "expect" => {
-                expect = match value {
-                    "success" => Expect::Success,
-                    "error" => Expect::Error,
-                    _ => {
-                        eprintln!("Warning: Unknown expected outcome {value:?}");
-                        eprintln!("  in {path:?}");
-                        continue;
-                    }
-                }
-            }
-            "ignore" | "ignored" => {
-                ignored = match value {
-                    "yes" | "true" | "" => Ignored::Yes,
-                    "no" | "false" => Ignored::No,
-                    _ => {
-                        eprintln!("Warning: Unknown boolean {value:?}");
-                        eprintln!("  in {path:?}");
-                        continue;
-                    }
-                }
-            }
-            _ => {
-                eprintln!("Warning: Unknown option {key:?}");
-                eprintln!("  in {path:?}");
-            }
-        }
-    }
-    (flavor, expect, ignored)
+fn strip_input(input: &str) -> String {
+    input
+        .lines()
+        .filter(|l| {
+            let l = l.trim_start();
+            !l.is_empty() && !l.starts_with('#')
+        })
+        .collect()
 }
