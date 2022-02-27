@@ -18,6 +18,7 @@ atty = "0.2.14"
 [dependencies.rulex]
 version = "0.1.0"
 path = "../rulex-lib"
+features = ["dbg"]
 
 [dependencies.clap]
 version = "3.1.0"

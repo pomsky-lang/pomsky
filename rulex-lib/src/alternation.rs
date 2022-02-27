@@ -1,9 +1,18 @@
+//! Implements [alternation](https://www.regular-expressions.info/alternation.html):
+//! `('alt1' | 'alt2' | 'alt3')`.
+
 use crate::{
     compile::{Compile, CompileResult, CompileState},
     options::CompileOptions,
     Rulex,
 };
 
+/// An [alternation](https://www.regular-expressions.info/alternation.html). This is a list of
+/// alternatives. Each alternative is a [`Rulex`].
+///
+/// If an alternative consists of multiple expressions (e.g. `'a' | 'b' 'c'`), that alternative is
+/// a [`Rulex::Group`]. Note that a group's parentheses are removed when compiling to a regex if
+/// they aren't required. In other words, `'a' | ('b' 'c')` compiles to `a|bc`.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Alternation<'i> {
     rules: Vec<Rulex<'i>>,
@@ -55,9 +64,7 @@ impl Compile for Alternation<'_> {
             rule.comp(options, state, buf)?;
             buf.push('|');
         }
-        if !self.rules.is_empty() {
-            buf.pop().unwrap();
-        }
+        let _ = buf.pop();
         Ok(())
     }
 }

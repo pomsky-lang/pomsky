@@ -1,3 +1,11 @@
+//! Contains the [`CharGroup`] type, which is the contents of a
+//! [`CharClass`](crate::char_class::CharClass).
+//!
+//! However, a `CharGroup` doesn't store the information whether the character class is negated.
+//!
+//! A `CharGroup`
+//! ([more information](crate::char_class)).
+
 use crate::error::CharClassError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,9 +42,10 @@ impl<'i> CharGroup<'i> {
             _ if name.starts_with(|c: char| c.is_ascii_uppercase()) => {
                 CharGroup::Items(vec![GroupItem::Named(name)])
             }
-            "n" | "r" | "t" | "w" | "d" | "s" | "h" | "v" => {
-                CharGroup::Items(vec![GroupItem::Named(name)])
-            }
+            "n" => CharGroup::Items(vec![GroupItem::Char('\n')]),
+            "r" => CharGroup::Items(vec![GroupItem::Char('\r')]),
+            "t" => CharGroup::Items(vec![GroupItem::Char('\t')]),
+            "w" | "d" | "s" | "h" | "v" => CharGroup::Items(vec![GroupItem::Named(name)]),
             "alpha" => CharGroup::Items(vec![
                 GroupItem::range_unchecked('a', 'z'),
                 GroupItem::range_unchecked('A', 'Z'),
@@ -125,7 +134,7 @@ impl GroupItem<'_> {
     }
 }
 
-#[cfg(feature = "dbg")]
+// required by Display impl of CharGroup
 impl core::fmt::Debug for GroupItem<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {

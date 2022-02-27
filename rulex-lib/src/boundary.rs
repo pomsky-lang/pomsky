@@ -1,13 +1,29 @@
+//! Implements _boundaries_. The analogues in the regex world are
+//! [word boundaries](https://www.regular-expressions.info/wordboundaries.html) and
+//! [anchors](https://www.regular-expressions.info/anchors.html).
+
 use crate::{
     compile::{Compile, CompileResult, CompileState},
     options::CompileOptions,
 };
 
+/// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
+/// [anchor](https://www.regular-expressions.info/anchors.html), which we combine under the term
+/// _boundary_.
+///
+/// All boundaries use a variation of the `%` sigil, so they are easy to remember.
+///
+/// While parsing, `not` in front of a word boundary has the highest binding power, so `not % %>`
+/// is equivalent to `(not %) %>`.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Boundary {
+    /// `<%`, the start of the string (or start of line in single-line mode)
     Start,
+    /// `%`, a word boundary
     Word,
+    /// `not %`, not a word boundary
     NotWord,
+    /// `%>`, the end of the string (or end of line in single-line mode)
     End,
 }
 
