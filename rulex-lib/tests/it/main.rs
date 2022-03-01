@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
     process,
     sync::mpsc::Sender,
+    time::Instant,
 };
 
 use crate::{color::Color::*, files::TestResult};
@@ -46,26 +47,27 @@ pub fn main() {
 }
 
 fn defer_main() -> Result<(), io::Error> {
-    eprintln!("Running test cases...");
+    eprintln!("\nrunning integration tests");
 
     let mut results = Vec::new();
 
     let args = Args::parse();
     if args.include_ignored {
-        eprintln!("{}", Yellow("Including ignored cases!"));
+        eprintln!("{}", Yellow("including ignored cases!"));
     }
 
     let (tx, child) = timeout::timeout_thread();
 
     eprintln!();
+    let start = Instant::now();
     walk_dir_recursive("./tests/testcases".into(), &mut results, tx, &args)?;
+    let elapsed = start.elapsed();
     eprintln!();
 
     child.join().unwrap();
 
     let mut ok = 0;
     let mut failed = 0;
-    let mut panics = 0;
     let mut ignored = 0;
     let mut filtered = 0;
 
@@ -87,7 +89,7 @@ fn defer_main() -> Result<(), io::Error> {
                 eprintln!();
             }
             TestResult::Panic { message } => {
-                panics += 1;
+                failed += 1;
                 eprintln!("{}: {}", path.to_string_lossy(), Red("test panicked."));
                 if let Some(message) = message {
                     eprintln!("     {}: {message}", Blue("message"));
@@ -98,33 +100,38 @@ fn defer_main() -> Result<(), io::Error> {
     }
 
     eprintln!(
-        "Test cases finished. {}, {}, {}, {}, {}.\n",
-        color!(Green if ok > 0; ok, " ok"),
+        "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
+        if failed == 0 {
+            Green("ok")
+        } else {
+            Red("FAILED")
+        },
+        color!(Green if ok > 0; ok, " passed"),
         color!(Red if failed > 0; failed, " failed"),
-        color!(Red if panics > 0; panics, " panicked"),
-        color!(Yellow if filtered > 0; filtered, " filtered"),
         color!(Yellow if ignored > 0; ignored, " ignored"),
+        color!(Yellow if filtered > 0; filtered, " filtered out"),
+        elapsed,
     );
 
-    if panics + failed > 0 {
+    if failed > 0 {
         if args.filter.is_empty() {
             eprintln!(
-                "{t_tip}: You can rerun a specific test case with \
+                "{t_tip}: you can rerun a specific test case with \
                 `cargo test --test it -- {t_filter}`\n\
                 where {t_filter} is a substring of the test case's file path\n",
-                t_tip = Yellow("Tip"),
+                t_tip = Yellow("tip"),
                 t_filter = Blue("<filter>"),
             );
         }
     } else if ignored > 0 {
         eprintln!(
-            "{t_tip}: Run ignored test cases with `cargo test --test it -- -i`",
-            t_tip = Yellow("Tip"),
+            "{t_tip}: run ignored test cases with `cargo test --test it -- -i`",
+            t_tip = Yellow("tip"),
         );
     }
 
-    if failed + panics > 0 {
-        process::exit(failed + panics);
+    if failed > 0 {
+        process::exit(failed);
     }
 
     Ok(())
@@ -140,7 +147,7 @@ fn walk_dir_recursive(
     if !path.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("File {:?} not found", Blue(path)),
+            format!("file {:?} not found", Blue(path)),
         ));
     }
     if path.is_dir() {
@@ -163,7 +170,7 @@ fn walk_dir_recursive(
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
-            format!("Unexpected file type of {:?}", Blue(path)),
+            format!("unexpected file type of {:?}", Blue(path)),
         ))
     }
 }
