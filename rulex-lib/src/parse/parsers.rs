@@ -76,10 +76,13 @@ pub(super) fn parse_lookaround<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     alt((
         value(LookaroundKind::Ahead, Token::LookAhead),
         value(LookaroundKind::Behind, Token::LookBehind),
-        value(LookaroundKind::AheadNegative, pair("not", Token::LookAhead)),
+        value(
+            LookaroundKind::AheadNegative,
+            pair(Token::Not, Token::LookAhead),
+        ),
         value(
             LookaroundKind::BehindNegative,
-            pair("not", Token::LookBehind),
+            pair(Token::Not, Token::LookBehind),
         ),
     ))(input)
 }
@@ -256,16 +259,22 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         Ok((input, class))
     }
 
-    delimited(
-        Token::OpenBracket,
-        map(pair(opt("not"), cut(parse_char_group)), |(not, class)| {
+    map(
+        pair(
+            opt(Token::Not),
+            delimited(
+                Token::OpenBracket,
+                cut(parse_char_group),
+                cut(Token::CloseBracket),
+            ),
+        ),
+        |(not, class)| {
             let mut class: CharClass<'_> = class.into();
             if not.is_some() {
                 class.negate();
             }
             Rulex::CharClass(class)
-        }),
-        cut(Token::CloseBracket),
+        },
     )(input)
 }
 
@@ -292,6 +301,9 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
         Token::Identifier,
         |s| {
             Ok(match s {
+                "n" => '\n',
+                "r" => '\r',
+                "t" => '\t',
                 "a" => '\u{07}',
                 "e" => '\u{1B}',
                 "f" => '\u{0C}',
@@ -308,7 +320,7 @@ pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
             value(Boundary::Start, Token::BStart),
             value(Boundary::End, Token::BEnd),
             value(Boundary::Word, Token::BWord),
-            value(Boundary::NotWord, pair("not", Token::BWord)),
+            value(Boundary::NotWord, pair(Token::Not, Token::BWord)),
         )),
         Rulex::Boundary,
     )(input)

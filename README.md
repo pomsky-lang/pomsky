@@ -32,14 +32,14 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 [.] [X] [w] [s] [n]           /.\X\w\s\n/
 
 # Mixed and negated character classes
-[not w 'a' 't'-'z']           /[^\wat-z]/
+![w 'a' 't'-'z']              /[^\wat-z]/
 
 # Unicode
 [Greek] U+30F                 /\p{Greek}\u030F/
 
 # Boundaries
 <% %>                         /^$/
-% 'hello' not %               /\bhello\B/
+% 'hello' !%                  /\bhello\B/
 
 # Capturing groups
 :('test')                     /(test)/
@@ -48,7 +48,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 # Lookahead/lookbehind
 >> 'foo' | 'bar'              /(?=foo|bar)/
 << 'foo' 'bar'?               /(?<=foo(?:bar)??)/
-(not >> ['foo']) 'bar'        /(?![fo])bar/
+(!>> ['foo']) 'bar'           /(?![fo])bar/
 ```
 
 ## Why use this instead of normal regexes?

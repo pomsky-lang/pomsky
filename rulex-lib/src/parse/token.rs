@@ -27,9 +27,6 @@ pub enum Token {
     #[token("?")]
     QuestionMark,
 
-    /// `-` (unicode range)
-    #[token("-")]
-    Dash,
     /// `|` (or)
     #[token("|")]
     Pipe,
@@ -54,9 +51,16 @@ pub enum Token {
     #[token(",")]
     Comma,
 
+    #[token("!")]
+    Not,
+
     /// `[` (open character class)
     #[token("[")]
     OpenBracket,
+
+    /// `-` (unicode range)
+    #[token("-")]
+    Dash,
 
     /// `]` (close character class)
     #[token("]")]
@@ -128,7 +132,6 @@ impl core::fmt::Display for Token {
             Token::Star => "`*`",
             Token::Plus => "`+`",
             Token::QuestionMark => "`?`",
-            Token::Dash => "`-`",
             Token::Pipe => "`|`",
             Token::Colon => "`:`",
             Token::OpenParen => "`(`",
@@ -138,7 +141,9 @@ impl core::fmt::Display for Token {
             Token::Comma => "`,`",
             Token::LookAhead => "`>>`",
             Token::LookBehind => "`<<`",
+            Token::Not => "`!`",
             Token::OpenBracket => "`[`",
+            Token::Dash => "`-`",
             Token::CloseBracket => "`]`",
             Token::Dot => "`.`",
             Token::String => "string",

@@ -9,47 +9,53 @@
 //!
 //! All kinds of character classes mentioned above require `[` square brackets `]` in rulex.
 //! A character class can be negated by putting the keyword `not` after the opening bracket. For
-//! example, `[not .]` compiles to `\x0A`, the ASCII line break.
+//! example, `![.]` compiles to `\n`.
 //!
 //! ## Items
 //!
 //! A character class can contain multiple _items_, which can be
 //!
-//! - A code point (called _char_ for simplicity; I know this is incorrect, but this is the
-//!   terminology used by most documentation about regexes)
+//! - A __code point__, e.g. `['a']` or `[U+107]`
 //!
-//! - A range of code points, e.g. `U+10-U+200`, which matches any code point `U+10 <= P <= U+200`
+//!   - This includes
+//!     [non-printable characters](https://www.regular-expressions.info/nonprint.html).\
+//!     Supported are `[n]`, `[r]`, `[t]`, `[a]`, `[e]` and `[f]`.
 //!
-//! - A named character class, which can be one of
-//!   - a [shorthand character class](https://www.regular-expressions.info/shorthand.html),
-//!     e.g. `[w]`, which matches any "word character" (letter, digit or underscore)
-//!   - a [non-printable character](https://www.regular-expressions.info/nonprint.html),
-//!     e.g. `[e]`, which matches U+001B, the _escape_ control character
-//!   - a [POSIX class](https://www.regular-expressions.info/posixbrackets.html#class),
-//!     e.g. `[alpha]`, which matches any ASCII alphabetic character.<br>
-//!     __However__, POSIX classes are lowered to ranges, e.g. `[alpha]` = `[a-zA-Z]`.
-//!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category),
-//!     e.g. `[Letter]`, which matches any Unicode code point in the _Letter_ category.
+//! - A __range of code points__. For example, `[U+10 - U+200]` matches any code point P where
+//!   `U+10 ≤ P ≤ U+200`
+//!
+//! - A __named character class__, which can be one of
+//!
+//!   - a [shorthand character class](https://www.regular-expressions.info/shorthand.html).\
+//!     Supported are `[w]`, `[d]`, `[s]`, `[h]`, `[v]` and `[R]`.
+//!
+//!   - a [POSIX class](https://www.regular-expressions.info/posixbrackets.html#class).\
+//!     Supported are `[alnum]`, `[alpha]`, `[ascii]`, `[blank]`, `[cntrl]`, `[digit]`, `[graph]`,
+//!     `[lower]`, `[print]`, `[punct]`, `[space]`, `[upper]`, `[word]` and `[xdigit]`.\
+//!     _Note_: POSIX classes are not Unicode aware!\
+//!     _Note_: They're converted to ranges, e.g. `[alpha]` = `[a-zA-Z]`.
+//!
+//!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
+//!     For example: `[Letter]` compiles to `\p{Letter}`. Rulex currently treats any uppercase
+//!     identifier except `X` and `R` as Unicode class.
 //!
 //! ### "Special" items
 //!
 //! There are also three special variants:
 //!
-//! - `[cp]` or `[codepoint]`, matching any code point
+//! - `[cp]` or `[codepoint]`, matching a code point
 //! - `[.]` (the [dot](https://www.regular-expressions.info/dot.html)), matching any code point
 //!   except the ASCII line break (`\n`)
 //! - `[X]`, matching an
-//!   [extended grapheme clusters](https://www.regular-expressions.info/unicode.html#grapheme)
+//!   [extended grapheme cluster](https://www.regular-expressions.info/unicode.html#grapheme)
 //!
-//! These must be treated specially, so a character class containing any of these can't contain
-//! anything else:
+//! A character class containing any of these can't contain anything else. Note that:
 //!
-//! - Combining `[X]` with anything else would be equivalent to `[X]`
-//! - Combining `[cp]` with anything other than `[X]` would be equivalent to `[cp]`
-//! - Combining `[.]` with anything other than `[cp]` or `[X]` would be equivalent to `[.]`
+//! - combining `[X]` with anything else would be equivalent to `[X]`
+//! - combining `[cp]` with anything other than `[X]` would be equivalent to `[cp]`
+//! - combining `[.]` with anything other than `[cp]` or `[X]` would be equivalent to `[.]`
 //!
-//! This demonstrates that there is no need to allow combinations including these special character
-//! classes. The other reason is that they require special treatment when negating them (see below).
+//! They also require special treatment when negating them (see below).
 //!
 //! ## Compilation
 //!
@@ -59,11 +65,12 @@
 //! - `['a']` = `a`
 //! - `[w]` = `\w`
 //! - `[Letter]` = `\p{Letter}`
-//! - `[cp]` = `[\S\s]`
 //! - `[.]` = `.`
 //! - `[X]` = `\X`
 //!
-//! When there is more than one item or a range (e.g. `['a'-'z' '!']`), a character class is
+//! The exception is `[cp]`, which compiles to `[\S\s]`.
+//!
+//! When there is more than one item or a range (e.g. `['a'-'z' '!']`), a regex character class is
 //! created:
 //!
 //! - `['a'-'z' '!']` = `[a-z!]`
@@ -73,29 +80,35 @@
 //!
 //! Negation is implemented as follows:
 //!
-//! - Ranges and chars such as `[not 'a'-'z' '!']` are negated with a negative character class,
-//!   e.g. `[^a-z!]`.
+//! - Ranges and chars such as `!['a'-'z' '!' e]` are wrapped in a negative character class,
+//!   e.g. `[^a-z!\e]`.
 //!
-//! - Shorthand characters such as `[w]` are negated by making them uppercase: `[not w]` = `\W`
+//! - The `h`, `v` and `R` shorthands are also wrapped in a negative character class.
 //!
-//! - Non-printable characters such as `[e]` must be negated by wrapping them in a negated group:
-//!   `[not e]` = `[^\e]`
+//! - The `w`, `d` and `s` shorthands are negated by making them uppercase (`![w]` = `\W`),
+//!   except when there is more than one item in the class (`![w '-']` = `[^\w\-]`)
 //!
 //! - Special classes:
-//!   - `[not X]` = `[^\X]`
-//!   - `[not .]` = `\x0A` (ASCII line break)
-//!   - `[not cp]` = **ERROR**. This would result in an empty group, which is only allowed in
-//!     JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case, since it
-//!     matches nothing (it always fails).
+//!   - `![.]` = `\n`
+//!   - `![X]` or `![cp]` is an error, as this would result in an empty group, which is only
+//!     allowed in JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case,
+//!     since it matches nothing (it always fails).
+//!
+//! I'm considering a possibility to negate only part of a character class, e.g. `[s !s]`
+//! (which is equivalent to `[cp]`) or `![!Latin 'a']` = `[^\P{Latin}a]`.
+//!
+//! I'm also considering making `X` an expression that isn't wrapped in brackets. After all, it is
+//! the only character class that can match more than 1 code point.
 
 use crate::{
-    compile::{compile_char, compile_char_escaped, Compile, CompileState},
+    compile::{compile_char, compile_char_esc, Compile, CompileState},
     error::{CompileError, Feature},
     options::{CompileOptions, RegexFlavor},
 };
 
 use crate::char_group::{CharGroup, GroupItem};
 
+/// A _character class_. Refer to the [module-level documentation](self) for details.
 #[derive(Clone, PartialEq, Eq)]
 pub struct CharClass<'i> {
     negative: bool,
@@ -103,6 +116,7 @@ pub struct CharClass<'i> {
 }
 
 impl<'i> CharClass<'i> {
+    /// Makes a positive character class negative and vice versa.
     pub fn negate(&mut self) {
         self.negative = !self.negative;
     }
@@ -174,12 +188,12 @@ impl Compile for CharClass<'_> {
             CharGroup::Items(items) => match (items.len(), self.negative) {
                 (0, _) => return Err(CompileError::EmptyClass),
                 (1, false) => match items[0] {
-                    GroupItem::Char(c) => compile_char_escaped(c, buf, options.flavor),
+                    GroupItem::Char(c) => compile_char_esc(c, buf, options.flavor),
                     GroupItem::Range { first, last } => {
                         buf.push('[');
-                        compile_range_char(first, buf, options.flavor);
+                        compile_char_esc_in_class(first, buf, options.flavor);
                         buf.push('-');
-                        compile_range_char(last, buf, options.flavor);
+                        compile_char_esc_in_class(last, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Named(name) => {
@@ -189,14 +203,14 @@ impl Compile for CharClass<'_> {
                 (1, true) => match items[0] {
                     GroupItem::Char(c) => {
                         buf.push_str("[^");
-                        compile_range_char(c, buf, options.flavor);
+                        compile_char_esc_in_class(c, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Range { first, last } => {
                         buf.push_str("[^");
-                        compile_range_char(first, buf, options.flavor);
+                        compile_char_esc_in_class(first, buf, options.flavor);
                         buf.push('-');
-                        compile_range_char(last, buf, options.flavor);
+                        compile_char_esc_in_class(last, buf, options.flavor);
                         buf.push(']');
                     }
                     GroupItem::Named(name) => {
@@ -210,11 +224,11 @@ impl Compile for CharClass<'_> {
                     }
                     for item in items {
                         match *item {
-                            GroupItem::Char(c) => compile_range_char(c, buf, options.flavor),
+                            GroupItem::Char(c) => compile_char_esc_in_class(c, buf, options.flavor),
                             GroupItem::Range { first, last } => {
-                                compile_range_char(first, buf, options.flavor);
+                                compile_char_esc_in_class(first, buf, options.flavor);
                                 buf.push('-');
-                                compile_range_char(last, buf, options.flavor);
+                                compile_char_esc_in_class(last, buf, options.flavor);
                             }
                             GroupItem::Named(name) => {
                                 compile_named_class(name, buf, options.flavor, false)?;
@@ -229,6 +243,23 @@ impl Compile for CharClass<'_> {
     }
 }
 
+/// Compiles a shorthand character class or Unicode category/script/block.
+///
+/// Refer to the [module-level documentation](self) for details about named character classes.
+///
+/// The last argument is important. Set `is_single` to `true` if no square brackets are printed
+/// outside of this function call:
+///
+#[cfg_attr(doctest, doc = " ````no_test")]
+/// ```
+/// compile_named_class("h", buf, flavor, true);
+///
+/// // or:
+///
+/// buf.push('[');
+/// compile_named_class("h", buf, flavor, false);
+/// buf.push(']');
+/// ````
 fn compile_named_class(
     group: &str,
     buf: &mut String,
@@ -236,12 +267,6 @@ fn compile_named_class(
     is_single: bool,
 ) -> Result<(), CompileError> {
     match group {
-        "R" => {
-            if flavor == RegexFlavor::JavaScript {
-                return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
-            }
-            buf.push_str("\\R");
-        }
         "w" | "d" | "s" => {
             buf.push('\\');
             buf.push_str(group);
@@ -264,6 +289,10 @@ fn compile_named_class(
                 }
             }
         }
+        "R" if flavor == RegexFlavor::JavaScript => {
+            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
+        }
+        "R" => buf.push_str("\\R"),
         _ if group.starts_with(char::is_lowercase) => {
             return Err(CompileError::Other("Unknown shorthand character class"));
         }
@@ -276,20 +305,19 @@ fn compile_named_class(
     Ok(())
 }
 
+/// Compiles a negated shorthand character class or Unicode category/script/block.
+///
+/// Refer to the [module-level documentation](self) for details about named character classes
+/// and negation.
 fn compile_named_class_negative(
     group: &str,
     buf: &mut String,
     flavor: RegexFlavor,
 ) -> Result<(), CompileError> {
     match group {
-        "R" if flavor == RegexFlavor::JavaScript => {
-            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
-        }
-        "R" => buf.push_str("[^\\R]"),
-        "w" | "d" | "s" => {
-            buf.push('\\');
-            buf.push_str(&group.to_uppercase());
-        }
+        "w" => buf.push_str("\\W"),
+        "d" => buf.push_str("\\D"),
+        "s" => buf.push_str("\\S"),
         "h" | "v" => {
             buf.push_str("[^");
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
@@ -302,6 +330,10 @@ fn compile_named_class_negative(
             }
             buf.push(']');
         }
+        "R" if flavor == RegexFlavor::JavaScript => {
+            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
+        }
+        "R" => buf.push_str("[^\\R]"),
         _ if group.starts_with(|c: char| c.is_ascii_lowercase()) => {
             return Err(CompileError::Other("Unknown shorthand character class"));
         }
@@ -314,7 +346,9 @@ fn compile_named_class_negative(
     Ok(())
 }
 
-fn compile_range_char(c: char, buf: &mut String, flavor: RegexFlavor) {
+/// Write a char to the output buffer with proper escaping. Assumes the char is inside a
+/// character class.
+fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '-' => buf.push_str(r#"\-"#),

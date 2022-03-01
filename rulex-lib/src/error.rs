@@ -99,16 +99,16 @@ fn get_special_group_help(str: &str) -> Option<Vec<String>> {
             "For example, `>> 'bob'` matches if the position is followed by bob.".into(),
         ],
         (Some('!'), _) => vec![
-            "Negative lookahead uses the `not >>` syntax.".into(),
-            "For example, `not >> 'bob'` matches if the position is not followed by bob.".into(),
+            "Negative lookahead uses the `!>>` syntax.".into(),
+            "For example, `!>> 'bob'` matches if the position is not followed by bob.".into(),
         ],
         (Some('<'), Some('=')) => vec![
             "Lookbehind uses the `<<` syntax.".into(),
             "For example, `<< 'bob'` matches if the position is preceded with bob.".into(),
         ],
         (Some('<'), Some('!')) => vec![
-            "Negative lookbehind uses the `not <<` syntax.".into(),
-            "For example, `not << 'bob'` matches if the position is not preceded with bob.".into(),
+            "Negative lookbehind uses the `!<<` syntax.".into(),
+            "For example, `!<< 'bob'` matches if the position is not preceded with bob.".into(),
         ],
         _ => return None,
     })
@@ -122,7 +122,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
     Some(match iter.next() {
         Some('b') => vec!["Replace `\\b` with `%` to match a word boundary".into()],
         Some('B') => {
-            vec!["Replace `\\B` with `not %` to match a place without a word boundary".into()]
+            vec!["Replace `\\B` with `!%` to match a place without a word boundary".into()]
         }
         Some('A') => vec!["Replace `\\A` with `<%` to match the start of the string".into()],
         Some('z') => vec!["Replace `\\z` with `%>` to match the end of the string".into()],

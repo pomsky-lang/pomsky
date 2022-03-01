@@ -19,10 +19,6 @@ pub struct Alternation<'i> {
 }
 
 impl<'i> Alternation<'i> {
-    fn two(a: Rulex<'i>, b: Rulex<'i>) -> Rulex<'i> {
-        Rulex::Alternation(Alternation { rules: vec![a, b] })
-    }
-
     pub fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex {
         rules
             .into_iter()
@@ -35,7 +31,7 @@ impl<'i> Alternation<'i> {
                     a.rules.push(b);
                     Rulex::Alternation(a)
                 }
-                (a, b) => Alternation::two(a, b),
+                (a, b) => Rulex::Alternation(Alternation { rules: vec![a, b] }),
             })
             .unwrap_or(Rulex::Literal(""))
     }

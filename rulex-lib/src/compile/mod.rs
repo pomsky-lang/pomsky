@@ -25,13 +25,15 @@ impl Compile for &'_ str {
         buf: &mut String,
     ) -> CompileResult {
         for c in self.chars() {
-            compile_char_escaped(c, buf, options.flavor);
+            compile_char_esc(c, buf, options.flavor);
         }
         Ok(())
     }
 }
 
-pub(crate) fn compile_char_escaped(c: char, buf: &mut String, flavor: RegexFlavor) {
+/// Write a char to the output buffer with proper escaping. Assumes the char is not in a
+/// character class.
+pub(crate) fn compile_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '[' => buf.push_str(r#"\["#),
@@ -49,8 +51,14 @@ pub(crate) fn compile_char_escaped(c: char, buf: &mut String, flavor: RegexFlavo
     }
 }
 
+/// Write a char to the output buffer. This escapes characters that are neither alphanumeric, nor
+/// printable ASCII characters. It does _not_ escape characters like `(` or `]` that have a
+/// special meaning.
 pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
+        '\n' => buf.push_str("\\n"),
+        '\r' => buf.push_str("\\r"),
+        '\t' => buf.push_str("\\t"),
         '\x07' => buf.push_str("\\a"),
         '\x1B' => buf.push_str("\\e"),
         '\x0C' => buf.push_str("\\f"),

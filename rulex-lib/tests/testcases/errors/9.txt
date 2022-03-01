@@ -1,5 +1,5 @@
 #! expect=error
-[not not 'a']
+[greedy 'a']
 -----
-Parse error: Unexpected keyword `not`
-  at 5..8
+Parse error: Unexpected keyword `greedy`
+  at 1..7

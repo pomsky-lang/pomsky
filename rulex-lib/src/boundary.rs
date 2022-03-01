@@ -12,16 +12,13 @@ use crate::{
 /// _boundary_.
 ///
 /// All boundaries use a variation of the `%` sigil, so they are easy to remember.
-///
-/// While parsing, `not` in front of a word boundary has the highest binding power, so `not % %>`
-/// is equivalent to `(not %) %>`.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Boundary {
     /// `<%`, the start of the string (or start of line in single-line mode)
     Start,
     /// `%`, a word boundary
     Word,
-    /// `not %`, not a word boundary
+    /// `!%`, not a word boundary
     NotWord,
     /// `%>`, the end of the string (or end of line in single-line mode)
     End,
@@ -50,7 +47,7 @@ impl core::fmt::Debug for Boundary {
         match self {
             Self::Start => write!(f, "<%"),
             Self::Word => write!(f, "%"),
-            Self::NotWord => write!(f, "not %"),
+            Self::NotWord => write!(f, "!%"),
             Self::End => write!(f, "%>"),
         }
     }
