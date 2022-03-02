@@ -241,8 +241,11 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             parse_chars_or_range,
             value(CharGroup::Dot, Token::Dot),
             try_map(
-                Token::Identifier,
-                |s| CharGroup::try_from_group_name(s).map_err(ParseErrorKind::CharClass),
+                pair(opt(Token::Not), Token::Identifier),
+                |(not, s)| {
+                    CharGroup::try_from_group_name(s, not.is_some())
+                        .map_err(ParseErrorKind::CharClass)
+                },
                 nom::Err::Failure,
             ),
             err(|| ParseErrorKind::CharClass(CharClassError::Invalid)),

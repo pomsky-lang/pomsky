@@ -256,6 +256,8 @@ pub enum CharClassError {
     Unallowed,
     #[error("Unknown character class `{}`", .0)]
     UnknownNamedClass(String),
+    #[error("This character class can't be negated")]
+    Negative,
     #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
 }
@@ -313,8 +315,11 @@ pub enum CompileError {
     #[error("Compile error: This character class is empty")]
     EmptyClass,
 
-    #[error("Compile error: This negated character class is empty")]
+    #[error("Compile error: This negated character class matches nothing")]
     EmptyClassNegated,
+
+    #[error("Compile error: `{}` can't be negated within a character class", .0)]
+    UnsupportedNegatedClass(String),
 
     #[error("Compile error: {}", .0)]
     Other(&'static str),

@@ -10,92 +10,127 @@ A new, portable, regular expression language
 
 ## Examples
 
-On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex, enclosed in `//`:
+On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex:
 
 ```regexp
 # String
-'hello world'                 /hello world/
+'hello world'                 hello world
 
 # Repetition
-'hello'{1,5}                  /(?:hello){1,5}?/
+'hello'{1,5}                  (?:hello){1,5}?
 
 # Greedy repetition
-'hello'{1,5} greedy           /(?:hello){1,5}/
+'hello'{1,5} greedy           (?:hello){1,5}
 
 # Alternation
-'hello' | 'world'             /hello|world/
+'hello' | 'world'             hello|world
 
-# Character classes/ranges
-['aeiou' 'p'-'s']             /[aeioup-s]/
+# Character classes
+['aeiou']                     [aeiou]
+['p'-'s']                     [p-s]
 
 # Named character classes
-[.] [X] [w] [s] [n]           /.\X\w\s\n/
+[.] [X] [w] [s] [n]           .\X\w\s\n
 
-# Mixed and negated character classes
-![w 'a' 't'-'z']              /[^\wat-z]/
+# Combined
+[w 'a' 't'-'z' U+15]          [\wat-z\x15]
+
+# Negated character classes
+!['a' 't'-'z']                [^at-z]
 
 # Unicode
-[Greek] U+30F                 /\p{Greek}\u030F/
+[Greek] U+30F                 \p{Greek}\u030F
 
 # Boundaries
-<% %>                         /^$/
-% 'hello' !%                  /\bhello\B/
+<% %>                         ^$
+% 'hello' !%                  \bhello\B
+
+# Non-capturing groups
+'terri' ('fic' | 'ble')       terri(?:fic|ble)
 
 # Capturing groups
-:('test')                     /(test)/
-:name('test')                 /(?P<name>test)
+:('test')                     (test)
+:name('test')                 (?P<name>test)
 
 # Lookahead/lookbehind
->> 'foo' | 'bar'              /(?=foo|bar)/
-<< 'foo' 'bar'?               /(?<=foo(?:bar)??)/
-(!>> ['foo']) 'bar'           /(?![fo])bar/
+>> 'foo' | 'bar'              (?=foo|bar)
+<< 'foo' 'bar'?               (?<=foo(?:bar)??)
+!>> [.]* 'awesome'            (?!.*?awesome)
 ```
 
 ## Why use this instead of normal regexes?
 
-POSIX regexes are very concise, simple and easy to parse. However, they quickly get very long and
-difficult to understand. Also, it's not always clear which characters need to be escaped, and
-repetitions are greedy by default. This can cause bugs that are difficult to track down.
+Normal regexes are very concise, but when they get longer, they get increasingly difficult to
+understand. By default, they don't have comments, and whitespace is significant. Then there's the
+plethora of sigils and backslash escapes that follow no discernible system:
+`(?<=) (?P<>) .?? \N \p{} \k<> \g''` and so on. Add inconsistencies between regex implementations,
+and you have the perfect recipe for confusion.
 
-Rulex is designed to be much easier to understand even when the regular expression is long.
-It doesn't have escape sequences, instead using single or double quotes for raw text.
-Repetitions in rulex are non-greedy by default. The language is designed to be intuitive:
+Rulex solves these problems by introducing a new, simpler and more consistent syntax:
 
-Rulex allows you to specify the regex flavor. It can compile to regexes that are compatible with
-PCRE, JavaScript, Java, .NET, Python, Ruby or Rust.
+- It's not whitespace sensitive and allows comments.
+- Text must appear in quotes. This makes expressions longer, but also much easier to read.
+- There are no backslash escapes.
+- Non-capturing groups are the default.
+- More consistent syntax:
+  - Negation is always denoted with an `!` exclamation mark
+  - Character classes, shorthands, POSIX classes and Unicode categories share the same syntax
+    with `[` brackets `]`.
+- Currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust.
 
 ## Portability
 
-Rulex tries its best to emit regexes with consistent behavior across regex engines. Not all features
-are supported for every regex flavor. However, if a rulex compiles, it should work as expected on
-every regex engine. If you find an inconsistency, please file an issue!
+Rulex tries its best to emit regexes with consistent behavior across all regex engines. Not every
+feature is supported in every regex flavor, but rulex will kindly show an error if you try to use an
+unsupported feature. The aim is that, if a rulex compiles successfully, it works as expected;
+there should be no subtle differences between regex engines. If you find an inconsistency,
+please file an issue!
 
-When you use rulex for JavaScript, don't forget to enable the `u` flag. This is required for
-Unicode support.
+**Important note for JavaScript users**: Don't forget to enable the `u` flag. This is required for
+Unicode support. All other major regex engines support Unicode by default.
 
 ## Usage
 
-Requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
+There's a Rust library and a CLI. IDE integration and a procedural macro are also planned.
 
-Install the rulex CLI tool with
+The CLI requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
+
+Install the CLI with
 
 ```sh
 cargo install rulex-bin
 ```
 
-Then you can compile rulex expressions. Input can be provided from a CLI argument, from a file or
-from stdin:
+Then you can compile rulex expressions to a regex flavor of your choice; the default is PCRE.
 
 ```sh
-$ rulex "'foo' | 'bar' | 'baz'"
-$ rulex --path ./file.rulex
-$ cat ./file.rulex | rulex
-```
+$ rulex --help
+rulex 0.1.0
+Ludwig Stecher <ludwig.stecher@gmx.de>
+Compile rulex expressions, a new regular expression language
 
-You can also specify the regex flavor:
+USAGE:
+    rulex [OPTIONS] [INPUT]
 
-```sh
-rulex --flavor js --path ./file.rulex
+ARGS:
+    <INPUT>    Rulex expression to compile
+
+OPTIONS:
+    -d, --debug
+            Show debug information
+
+    -f, --flavor <FLAVOR>
+            Regex flavor [possible values: pcre, python, java,
+            javascript, dotnet, ruby, rust]
+
+    -h, --help
+            Print help information
+
+    -p, --path <FILE>
+            File containing the rulex expression to compile
+
+    -V, --version
+            Print version information
 ```
 
 ## Roadmap
@@ -113,4 +148,5 @@ and writing a Contributor's Guide.
 
 ## License
 
-Dual-licensed under the [MIT license](https://opensource.org/licenses/MIT) or the [Apache 2.0 license](https://opensource.org/licenses/Apache-2.0).
+Dual-licensed under the [MIT license](https://opensource.org/licenses/MIT) or the
+[Apache 2.0 license](https://opensource.org/licenses/Apache-2.0).

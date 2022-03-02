@@ -5,6 +5,8 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
+use std::fmt::Write;
+
 use crate::error::CharClassError;
 
 /// The contents of a [`CharClass`](crate::char_class::CharClass).
@@ -54,15 +56,22 @@ impl<'i> CharGroup<'i> {
     ///
     /// If the name is uppercase (and not `X` or `R`), we just assume that it is a Unicode category,
     /// script or block. This needs to be fixed at one point!
-    pub fn try_from_group_name(name: &'i str) -> Result<Self, CharClassError> {
+    pub fn try_from_group_name(name: &'i str, negative: bool) -> Result<Self, CharClassError> {
         Ok(match name {
+            // TODO: Refactor this unintelligible mess
+            "codepoint" | "cp" | "X" | "." if negative => {
+                return Err(CharClassError::Negative);
+            }
             "codepoint" | "cp" => CharGroup::CodePoint,
             "X" => CharGroup::X,
             "." => CharGroup::Dot,
-            _ if name.starts_with(|c: char| c.is_ascii_uppercase()) => {
-                CharGroup::Items(vec![GroupItem::Named(name)])
+            "w" | "d" | "s" | "h" | "v" | "R" => {
+                CharGroup::Items(vec![GroupItem::Named { name, negative }])
             }
-            "w" | "d" | "s" | "h" | "v" => CharGroup::Items(vec![GroupItem::Named(name)]),
+            _ if name.starts_with(|c: char| c.is_ascii_uppercase()) => {
+                CharGroup::Items(vec![GroupItem::Named { name, negative }])
+            }
+            _ if negative => return Err(CharClassError::Negative),
             "alpha" => CharGroup::Items(vec![
                 GroupItem::range_unchecked('a', 'z'),
                 GroupItem::range_unchecked('A', 'Z'),
@@ -110,7 +119,8 @@ impl<'i> CharGroup<'i> {
             ]),
 
             "let" | "greedy" | "atomic" | "enable" | "disable" => {
-                return Err(CharClassError::Keyword(name.to_string()))
+                // Reserved words. Some are currently unused.
+                return Err(CharClassError::Keyword(name.to_string()));
             }
             _ => return Err(CharClassError::UnknownNamedClass(name.to_string())),
         })
@@ -159,7 +169,9 @@ pub(crate) enum GroupItem<'i> {
     Range { first: char, last: char },
     /// A named character class, i.e. a shorthand or a Unicode category/script/block. Shorthands are
     /// `[w]`, `[s]`, `[d]`, `[v]`, `[h]` and `[R]`.
-    Named(&'i str),
+    ///
+    /// Some of them (`w`, `d`, `s` and Unicode) can be negated.
+    Named { name: &'i str, negative: bool },
 }
 
 impl GroupItem<'_> {
@@ -174,7 +186,12 @@ impl core::fmt::Debug for GroupItem<'_> {
         match *self {
             Self::Char(c) => c.fmt(f),
             Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
-            Self::Named(name) => f.write_str(name),
+            Self::Named { name, negative } => {
+                if negative {
+                    f.write_char('!')?;
+                }
+                f.write_str(name)
+            }
         }
     }
 }

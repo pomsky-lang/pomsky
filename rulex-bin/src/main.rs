@@ -9,6 +9,7 @@ use rulex::{
 
 /// Compile a rulex expression to a regex
 #[derive(Parser, Debug)]
+#[clap(name = "rulex")]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Rulex expression to compile

@@ -94,11 +94,15 @@
 //!     allowed in JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case,
 //!     since it matches nothing (it always fails).
 //!
-//! I'm considering a possibility to negate only part of a character class, e.g. `[s !s]`
-//! (which is equivalent to `[cp]`) or `![!Latin 'a']` = `[^\P{Latin}a]`.
+//! - `w`, `s`, `d` and Unicode categories/scripts/blocks can be negated individually _within a
+//!   character class_, e.g. `[s !s]` = `[\s\S]` (equivalent to `[cp]`),
+//!   `![!Latin 'a']` = `[^\P{Latin}a]`.
 //!
-//! I'm also considering making `X` an expression that isn't wrapped in brackets. After all, it is
-//! the only character class that can match more than 1 code point.
+//!   When a negated character class only contains 1 item, which is also negated, the class is
+//!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
+//!
+//! I'm considering making `X` an expression that isn't wrapped in brackets. After all, it is the
+//! only character class that can match more than 1 code point.
 
 use crate::{
     compile::{compile_char, compile_char_esc, Compile, CompileState},
@@ -196,8 +200,12 @@ impl Compile for CharClass<'_> {
                         compile_char_esc_in_class(last, buf, options.flavor);
                         buf.push(']');
                     }
-                    GroupItem::Named(name) => {
-                        compile_named_class(name, buf, options.flavor, true)?;
+                    GroupItem::Named { name, negative } => {
+                        if negative {
+                            compile_named_class_negative(name, buf, options.flavor)?;
+                        } else {
+                            compile_named_class(name, negative, buf, options.flavor, true)?;
+                        }
                     }
                 },
                 (1, true) => match items[0] {
@@ -213,8 +221,12 @@ impl Compile for CharClass<'_> {
                         compile_char_esc_in_class(last, buf, options.flavor);
                         buf.push(']');
                     }
-                    GroupItem::Named(name) => {
-                        compile_named_class_negative(name, buf, options.flavor)?;
+                    GroupItem::Named { name, negative } => {
+                        if negative {
+                            compile_named_class(name, false, buf, options.flavor, true)?;
+                        } else {
+                            compile_named_class_negative(name, buf, options.flavor)?;
+                        }
                     }
                 },
                 (_, _) => {
@@ -230,8 +242,8 @@ impl Compile for CharClass<'_> {
                                 buf.push('-');
                                 compile_char_esc_in_class(last, buf, options.flavor);
                             }
-                            GroupItem::Named(name) => {
-                                compile_named_class(name, buf, options.flavor, false)?;
+                            GroupItem::Named { name, negative } => {
+                                compile_named_class(name, negative, buf, options.flavor, false)?;
                             }
                         }
                     }
@@ -262,14 +274,21 @@ impl Compile for CharClass<'_> {
 /// ````
 fn compile_named_class(
     group: &str,
+    negative: bool,
     buf: &mut String,
     flavor: RegexFlavor,
     is_single: bool,
 ) -> Result<(), CompileError> {
     match group {
+        "w" if negative => buf.push_str("\\W"),
+        "d" if negative => buf.push_str("\\D"),
+        "s" if negative => buf.push_str("\\S"),
         "w" | "d" | "s" => {
             buf.push('\\');
             buf.push_str(group);
+        }
+        "h" | "v" | "R" if negative => {
+            return Err(CompileError::UnsupportedNegatedClass(group.to_string()));
         }
         "h" | "v" => {
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
@@ -297,7 +316,11 @@ fn compile_named_class(
             return Err(CompileError::Other("Unknown shorthand character class"));
         }
         _ => {
-            buf.push_str("\\p{");
+            if negative {
+                buf.push_str("\\P{");
+            } else {
+                buf.push_str("\\p{");
+            }
             buf.push_str(group);
             buf.push('}');
         }
