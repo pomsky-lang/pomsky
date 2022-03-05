@@ -5,6 +5,10 @@ use crate::{
     Rulex,
 };
 
+/// A group, i.e. sequence of rules. A group is either capturing or non-capturing.
+///
+/// If it is capturing, it must be wrapped in parentheses, and can have a name.
+/// If it is non-capturing, the parentheses can be omitted in same cases.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Group<'i> {
     parts: Vec<Rulex<'i>>,
@@ -31,7 +35,7 @@ impl<'i> Group<'i> {
         if self.capture.is_none() && self.parts.len() == 1 {
             return self.parts[0].needs_parens_before_repetition();
         }
-        false
+        true
     }
 }
 

@@ -3,6 +3,7 @@ pub mod boundary;
 pub mod char_class;
 pub mod compile;
 pub mod error;
+pub mod grapheme;
 pub mod group;
 pub mod lookaround;
 pub mod options;

@@ -14,6 +14,7 @@ use crate::{
     error::{
         CharClassError, CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind,
     },
+    grapheme::Grapheme,
     group::{Capture, Group},
     lookaround::{Lookaround, LookaroundKind},
     repetition::{Greedy, Repetition, RepetitionKind},
@@ -134,6 +135,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
         parse_group,
         parse_string,
         parse_char_class,
+        parse_grapheme,
         parse_boundary,
         map(parse_code_point, |c| {
             Rulex::CharClass(CharGroup::from_char(c).into())
@@ -315,6 +317,10 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
         },
         nom::Err::Error,
     )(input)
+}
+
+pub(super) fn parse_grapheme<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    map("X", |_| Rulex::Grapheme(Grapheme))(input)
 }
 
 pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {

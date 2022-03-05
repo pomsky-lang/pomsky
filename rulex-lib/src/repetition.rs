@@ -32,6 +32,8 @@ impl Compile for Repetition<'_> {
             self.rule.comp(options, state, buf)?;
         }
 
+        let mut omit_lazy = false;
+
         match self.kind {
             RepetitionKind {
                 lower_bound: 0,
@@ -56,6 +58,7 @@ impl Compile for Repetition<'_> {
                 upper_bound: Some(upper_bound),
             } if lower_bound == upper_bound => {
                 write!(buf, "{{{lower_bound}}}").unwrap();
+                omit_lazy = true;
             }
             RepetitionKind {
                 lower_bound: 0,
@@ -72,7 +75,9 @@ impl Compile for Repetition<'_> {
         }
 
         if let Greedy::No = self.greedy {
-            buf.push('?');
+            if !omit_lazy {
+                buf.push('?');
+            }
         }
 
         Ok(())

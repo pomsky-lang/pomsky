@@ -1,0 +1,5 @@
+#! expect=error
+[X]
+-----
+Parse error: A character class can't contain `X` (a grapheme cluster)
+  at 1..2

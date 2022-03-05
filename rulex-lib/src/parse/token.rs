@@ -103,6 +103,8 @@ pub enum Token {
         r#"\\(u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|x[0-9a-fA-F][0-9a-fA-F]|.)"#,
         |_| ParseErrorMsg::BackslashSequence
     )]
+    #[regex(r#""[^"]*"#, |_| ParseErrorMsg::UnclosedString)]
+    #[regex("'[^']*", |_| ParseErrorMsg::UnclosedString)]
     ErrorMsg(ParseErrorMsg),
 
     #[regex(r"[ \t\n\f]+", logos::skip)]
@@ -121,6 +123,8 @@ pub enum ParseErrorMsg {
     SpecialGroup,
     #[error("Backslash escapes are not supported")]
     BackslashSequence,
+    #[error("This string literal doesn't have a closing quote")]
+    UnclosedString,
 }
 
 impl core::fmt::Display for Token {

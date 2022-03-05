@@ -131,6 +131,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
             "Note, however, that `%>` doesn't match the position before the final newline.".into(),
         ],
         Some('N') => vec![format!("Replace `\\N` with `[.]`")],
+        Some('X') => vec!["Replace `\\X` with `X`".into()],
         Some(c @ ('u' | 'x')) => {
             let (str, max_len) = if let Some('{') = iter.next() {
                 (&str[2..], 6)
@@ -152,8 +153,7 @@ fn get_backslash_help(str: &str) -> Option<Vec<String>> {
             ]
         }
         Some(
-            c @ ('a' | 'e' | 'f' | 'n' | 'r' | 'h' | 'v' | 'X' | 'd' | 'D' | 'w' | 'W' | 's' | 'S'
-            | 'R'),
+            c @ ('a' | 'e' | 'f' | 'n' | 'r' | 'h' | 'v' | 'd' | 'D' | 'w' | 'W' | 's' | 'S' | 'R'),
         ) => vec![format!("Replace `\\{c}` with `[{c}]`")],
         Some('k') if iter.next() == Some('<') => {
             let str = &str[2..];
@@ -258,6 +258,8 @@ pub enum CharClassError {
     UnknownNamedClass(String),
     #[error("This character class can't be negated")]
     Negative,
+    #[error("A character class can't contain `X` (a grapheme cluster)")]
+    Grapheme,
     #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
 }

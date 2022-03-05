@@ -19,8 +19,6 @@ pub(crate) enum CharGroup<'i> {
     Dot,
     /// `[cp]` or `[codepoint]`. Matches any code point.
     CodePoint,
-    /// `[X]`. Matches an extended grapheme cluster.
-    X,
     /// This variant is used for the remaining cases.
     Items(Vec<GroupItem<'i>>),
 }
@@ -59,11 +57,11 @@ impl<'i> CharGroup<'i> {
     pub fn try_from_group_name(name: &'i str, negative: bool) -> Result<Self, CharClassError> {
         Ok(match name {
             // TODO: Refactor this unintelligible mess
-            "codepoint" | "cp" | "X" | "." if negative => {
+            "X" => return Err(CharClassError::Grapheme),
+            "codepoint" | "cp" | "." if negative => {
                 return Err(CharClassError::Negative);
             }
             "codepoint" | "cp" => CharGroup::CodePoint,
-            "X" => CharGroup::X,
             "." => CharGroup::Dot,
             "w" | "d" | "s" | "h" | "v" | "R" => {
                 CharGroup::Items(vec![GroupItem::Named { name, negative }])
@@ -126,8 +124,8 @@ impl<'i> CharGroup<'i> {
         })
     }
 
-    /// Tries to add another `CharGroup` to this one. Fails if one of them is a `[.]`, `[cp]` or
-    /// `[X]`. If it succeeds, it just appends the new items to the existing ones.
+    /// Tries to add another `CharGroup` to this one. Fails if one of them is a `[.]` or `[cp]`.
+    /// If it succeeds, it just appends the new items to the existing ones.
     ///
     /// The previous implementation was much more advanced and merged overlapping ranges using a
     /// `BTreeSet` with a custom (technically incorrect) `PartialEq` implementation. This added
@@ -148,7 +146,6 @@ impl core::fmt::Display for CharGroup<'_> {
         match self {
             CharGroup::Dot => f.write_str("`.`"),
             CharGroup::CodePoint => f.write_str("`codepoint`"),
-            CharGroup::X => f.write_str("`X`"),
             CharGroup::Items(i) => core::fmt::Debug::fmt(i, f),
         }
     }

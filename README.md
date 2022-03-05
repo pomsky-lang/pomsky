@@ -30,7 +30,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 ['p'-'s']                     [p-s]
 
 # Named character classes
-[.] [X] [w] [s] [n]           .\X\w\s\n
+[.] [w] [s] [n]               .\w\s\n
 
 # Combined
 [w 'a' 't'-'z' U+15]          [\wat-z\x15]
@@ -39,7 +39,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 !['a' 't'-'z']                [^at-z]
 
 # Unicode
-[Greek] U+30F                 \p{Greek}\u030F
+[Greek] U+30F X               \p{Greek}\u030F\X
 
 # Boundaries
 <% %>                         ^$
@@ -54,8 +54,9 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 
 # Lookahead/lookbehind
 >> 'foo' | 'bar'              (?=foo|bar)
-<< 'foo' 'bar'?               (?<=foo(?:bar)??)
-!>> [.]* 'awesome'            (?!.*?awesome)
+<< 'foo' | 'bar'              (?<=foo|bar)
+!>> 'foo' | 'bar'             (?!foo|bar)
+!<< 'foo' | 'bar'             (?<!foo|bar)
 ```
 
 ## Why use this instead of normal regexes?
@@ -63,31 +64,36 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 Normal regexes are very concise, but when they get longer, they get increasingly difficult to
 understand. By default, they don't have comments, and whitespace is significant. Then there's the
 plethora of sigils and backslash escapes that follow no discernible system:
-`(?<=) (?P<>) .?? \N \p{} \k<> \g''` and so on. Add inconsistencies between regex implementations,
-and you have the perfect recipe for confusion.
+`(?<=) (?P<>) .?? \N \p{} \k<> \g''` and so on. And with various inconsistencies between regex
+implementations, it's the perfect recipe for confusion.
 
-Rulex solves these problems by introducing a new, simpler and more consistent syntax:
+Rulex solves these problems with a new, simpler syntax:
 
-- It's not whitespace sensitive and allows comments.
-- Text must appear in quotes. This makes expressions longer, but also much easier to read.
-- There are no backslash escapes.
-- Non-capturing groups are the default.
-- More consistent syntax:
-  - Negation is always denoted with an `!` exclamation mark
-  - Character classes, shorthands, POSIX classes and Unicode categories share the same syntax
-    with `[` brackets `]`.
-- Currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust.
+- It's not whitespace sensitive and allows comments
+- Text must appear in quotes. This makes expressions longer, but also much easier to read
+- There are no backslash escapes
+- Non-capturing groups are the default
+- More consistent syntax
 
-## Portability
+## Compatibility
 
-Rulex tries its best to emit regexes with consistent behavior across all regex engines. Not every
-feature is supported in every regex flavor, but rulex will kindly show an error if you try to use an
-unsupported feature. The aim is that, if a rulex compiles successfully, it works as expected;
-there should be no subtle differences between regex engines. If you find an inconsistency,
-please file an issue!
+Rulex is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust. The regex
+flavor must be specified during compilation, so rulex can ensure that the produced regex works as
+desired on the targeted regex engine.
 
 **Important note for JavaScript users**: Don't forget to enable the `u` flag. This is required for
 Unicode support. All other major regex engines support Unicode by default.
+
+## Diagnostics
+
+Rulex looks for mistakes and displays helpful diagnostics:
+
+- It shows an error if you use a feature not supported by the targeted regex flavor
+- It detects syntax errors and shows suggestions how to resolve them
+- It parses backslash escapes (which are not allowed in a rulex) and explains what to write instead
+- It looks for likely mistakes and displays warnings
+- It looks for patterns that can be very slow for certain inputs and are susceptible to
+  Denial-of-Service attacks _(coming soon)_
 
 ## Usage
 

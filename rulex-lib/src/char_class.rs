@@ -3,7 +3,6 @@
 //! [shorthand character classes](https://www.regular-expressions.info/shorthand.html),
 //! [non-printable characters](https://www.regular-expressions.info/nonprint.html),
 //! [Unicode categories/scripts/blocks](https://www.regular-expressions.info/unicode.html#category),
-//! [extended grapheme clusters](https://www.regular-expressions.info/unicode.html#grapheme),
 //! [POSIX classes](https://www.regular-expressions.info/posixbrackets.html#class) and the
 //! [dot](https://www.regular-expressions.info/dot.html).
 //!
@@ -37,7 +36,7 @@
 //!
 //!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
 //!     For example: `[Letter]` compiles to `\p{Letter}`. Rulex currently treats any uppercase
-//!     identifier except `X` and `R` as Unicode class.
+//!     identifier except `R` as Unicode class.
 //!
 //! ### "Special" items
 //!
@@ -46,14 +45,11 @@
 //! - `[cp]` or `[codepoint]`, matching a code point
 //! - `[.]` (the [dot](https://www.regular-expressions.info/dot.html)), matching any code point
 //!   except the ASCII line break (`\n`)
-//! - `[X]`, matching an
-//!   [extended grapheme cluster](https://www.regular-expressions.info/unicode.html#grapheme)
 //!
-//! A character class containing any of these can't contain anything else. Note that:
+//! A character class containing `cp` or `.` can't contain anything else. Note that:
 //!
-//! - combining `[X]` with anything else would be equivalent to `[X]`
-//! - combining `[cp]` with anything other than `[X]` would be equivalent to `[cp]`
-//! - combining `[.]` with anything other than `[cp]` or `[X]` would be equivalent to `[.]`
+//! - combining `[cp]` with anything else would be equivalent to `[cp]`
+//! - combining `[.]` with anything other than `[cp]` or `[n]` would be equivalent to `[.]`
 //!
 //! They also require special treatment when negating them (see below).
 //!
@@ -66,7 +62,6 @@
 //! - `[w]` = `\w`
 //! - `[Letter]` = `\p{Letter}`
 //! - `[.]` = `.`
-//! - `[X]` = `\X`
 //!
 //! The exception is `[cp]`, which compiles to `[\S\s]`.
 //!
@@ -90,9 +85,9 @@
 //!
 //! - Special classes:
 //!   - `![.]` = `\n`
-//!   - `![X]` or `![cp]` is an error, as this would result in an empty group, which is only
-//!     allowed in JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case,
-//!     since it matches nothing (it always fails).
+//!   - `![cp]` is an error, as this would result in an empty group, which is only allowed in
+//!     JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case, since it
+//!     matches nothing (it always fails).
 //!
 //! - `w`, `s`, `d` and Unicode categories/scripts/blocks can be negated individually _within a
 //!   character class_, e.g. `[s !s]` = `[\s\S]` (equivalent to `[cp]`),
@@ -100,9 +95,6 @@
 //!
 //!   When a negated character class only contains 1 item, which is also negated, the class is
 //!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
-//!
-//! I'm considering making `X` an expression that isn't wrapped in brackets. After all, it is the
-//! only character class that can match more than 1 code point.
 
 use crate::{
     compile::{compile_char, compile_char_esc, Compile, CompileState},
@@ -149,7 +141,6 @@ impl core::fmt::Debug for CharClass<'_> {
         match &self.inner {
             CharGroup::Dot => f.write_str(".")?,
             CharGroup::CodePoint => f.write_str("codepoint")?,
-            CharGroup::X => f.write_str("X")?,
             CharGroup::Items(items) => {
                 for (i, item) in items.iter().enumerate() {
                     if i > 0 {
@@ -179,15 +170,6 @@ impl Compile for CharClass<'_> {
                     return Err(CompileError::EmptyClassNegated);
                 }
                 buf.push_str("[\\S\\s]");
-            }
-            CharGroup::X => {
-                if self.negative {
-                    return Err(CompileError::EmptyClassNegated);
-                }
-                if options.flavor == RegexFlavor::JavaScript {
-                    return Err(CompileError::Unsupported(Feature::Grapheme, options.flavor));
-                }
-                buf.push_str("\\X");
             }
             CharGroup::Items(items) => match (items.len(), self.negative) {
                 (0, _) => return Err(CompileError::EmptyClass),

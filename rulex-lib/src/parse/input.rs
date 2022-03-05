@@ -64,9 +64,9 @@ impl<'i, 'b> PartialEq for Input<'i, 'b> {
 #[cfg(feature = "dbg")]
 impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        struct X<'a>(Token, &'a str);
+        struct FmtHelper<'a>(Token, &'a str);
 
-        impl core::fmt::Debug for X<'_> {
+        impl core::fmt::Debug for FmtHelper<'_> {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(f, "{:?} {:?}", self.0, self.1)
             }
@@ -75,7 +75,7 @@ impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
         let v: Vec<_> = self
             .tokens
             .iter()
-            .map(|&(t, (start, end))| X(t, &self.source[start..end]))
+            .map(|&(t, (start, end))| FmtHelper(t, &self.source[start..end]))
             .collect();
 
         v.fmt(f)
