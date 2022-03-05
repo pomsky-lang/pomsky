@@ -1,5 +1,5 @@
 [workspace]
-members = ["./rulex-lib", "./rulex-bin", "./benchmark"]
+members = ["./rulex-lib", "./rulex-bin", "./rulex-macro", "./benchmark"]
 default-members = ["./rulex-bin", "./rulex-lib"]
 
 [profile.release]

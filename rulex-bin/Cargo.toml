@@ -4,6 +4,7 @@ description = "Compile rulex expressions, a new regular expression language"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+license = "MIT or Apache-2"
 
 
 [[bin]]

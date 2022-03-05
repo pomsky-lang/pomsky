@@ -4,6 +4,7 @@ description = "A new regular expression language"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+license = "MIT or Apache-2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

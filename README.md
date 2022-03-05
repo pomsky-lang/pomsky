@@ -16,11 +16,15 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 # String
 'hello world'                 hello world
 
-# Repetition
+# Lazy repetition
 'hello'{1,5}                  (?:hello){1,5}?
+'hello'*                      (?:hello)*?
+'hello'+                      (?:hello)+?
 
 # Greedy repetition
 'hello'{1,5} greedy           (?:hello){1,5}
+'hello'* greedy               (?:hello)*
+'hello'+ greedy               (?:hello)+
 
 # Alternation
 'hello' | 'world'             hello|world
@@ -97,10 +101,21 @@ Rulex looks for mistakes and displays helpful diagnostics:
 
 ## Usage
 
-There's a Rust library and a CLI. IDE integration and a procedural macro are also planned.
+## Procedural macro
 
-The CLI requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
+The Rust procedural macro allows converting a rulex to a regex string literal at compile time:
 
+```rust
+use rulex_macro::rulex;
+
+const REGEX: &str = rulex!(r#" 'foo' | 'bar'+ greedy "#);
+```
+
+This means that errors from rulex are shown at compile time, too, and are highlighted in an IDE.
+
+## CLI
+
+The CLI currently requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
 Install the CLI with
 
 ```sh
@@ -122,21 +137,12 @@ ARGS:
     <INPUT>    Rulex expression to compile
 
 OPTIONS:
-    -d, --debug
-            Show debug information
-
-    -f, --flavor <FLAVOR>
-            Regex flavor [possible values: pcre, python, java,
-            javascript, dotnet, ruby, rust]
-
-    -h, --help
-            Print help information
-
-    -p, --path <FILE>
-            File containing the rulex expression to compile
-
-    -V, --version
-            Print version information
+    -d, --debug              Show debug information
+    -f, --flavor <FLAVOR>    Regex flavor [possible values: pcre, python,
+                             java, javascript, dotnet, ruby, rust]
+    -h, --help               Print help information
+    -p, --path <FILE>        File containing the rulex expression to compile
+    -V, --version            Print version information
 ```
 
 ## Roadmap

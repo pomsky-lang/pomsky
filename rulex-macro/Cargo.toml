@@ -1,0 +1,15 @@
+[package]
+name = "rulex-macro"
+description = "Macro for converting rulex expressions to regexes"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+license = "MIT or Apache-2"
+
+[lib]
+proc-macro = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rulex = { version = "0.1.0", path = "../rulex-lib" }
