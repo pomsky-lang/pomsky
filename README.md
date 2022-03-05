@@ -12,55 +12,55 @@ A new, portable, regular expression language
 
 On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex:
 
-```regexp
+```py
 # String
-'hello world'                 hello world
+'hello world'                 # hello world
 
 # Lazy repetition
-'hello'{1,5}                  (?:hello){1,5}?
-'hello'*                      (?:hello)*?
-'hello'+                      (?:hello)+?
+'hello'{1,5}                  # (?:hello){1,5}?
+'hello'*                      # (?:hello)*?
+'hello'+                      # (?:hello)+?
 
 # Greedy repetition
-'hello'{1,5} greedy           (?:hello){1,5}
-'hello'* greedy               (?:hello)*
-'hello'+ greedy               (?:hello)+
+'hello'{1,5} greedy           # (?:hello){1,5}
+'hello'* greedy               # (?:hello)*
+'hello'+ greedy               # (?:hello)+
 
 # Alternation
-'hello' | 'world'             hello|world
+'hello' | 'world'             # hello|world
 
 # Character classes
-['aeiou']                     [aeiou]
-['p'-'s']                     [p-s]
+['aeiou']                     # [aeiou]
+['p'-'s']                     # [p-s]
 
 # Named character classes
-[.] [w] [s] [n]               .\w\s\n
+[.] [w] [s] [n]               # .\w\s\n
 
 # Combined
-[w 'a' 't'-'z' U+15]          [\wat-z\x15]
+[w 'a' 't'-'z' U+15]          # [\wat-z\x15]
 
 # Negated character classes
-!['a' 't'-'z']                [^at-z]
+!['a' 't'-'z']                # [^at-z]
 
 # Unicode
-[Greek] U+30F X               \p{Greek}\u030F\X
+[Greek] U+30F X               # \p{Greek}\u030F\X
 
 # Boundaries
-<% %>                         ^$
-% 'hello' !%                  \bhello\B
+<% %>                         # ^$
+% 'hello' !%                  # \bhello\B
 
 # Non-capturing groups
-'terri' ('fic' | 'ble')       terri(?:fic|ble)
+'terri' ('fic' | 'ble')       # terri(?:fic|ble)
 
 # Capturing groups
-:('test')                     (test)
-:name('test')                 (?P<name>test)
+:('test')                     # (test)
+:name('test')                 # (?P<name>test)
 
 # Lookahead/lookbehind
->> 'foo' | 'bar'              (?=foo|bar)
-<< 'foo' | 'bar'              (?<=foo|bar)
-!>> 'foo' | 'bar'             (?!foo|bar)
-!<< 'foo' | 'bar'             (?<!foo|bar)
+>> 'foo' | 'bar'              # (?=foo|bar)
+<< 'foo' | 'bar'              # (?<=foo|bar)
+!>> 'foo' | 'bar'             # (?!foo|bar)
+!<< 'foo' | 'bar'             # (?<!foo|bar)
 ```
 
 ## Why use this instead of normal regexes?
