@@ -5,6 +5,7 @@
 use crate::{
     compile::{Compile, CompileResult, CompileState},
     options::CompileOptions,
+    span::Span,
 };
 
 /// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
@@ -13,7 +14,19 @@ use crate::{
 ///
 /// All boundaries use a variation of the `%` sigil, so they are easy to remember.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Boundary {
+pub struct Boundary {
+    kind: BoundaryKind,
+    pub(crate) span: Span,
+}
+
+impl Boundary {
+    pub(crate) fn new(kind: BoundaryKind, span: Span) -> Self {
+        Boundary { kind, span }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum BoundaryKind {
     /// `<%`, the start of the string (or start of line in single-line mode)
     Start,
     /// `%`, a word boundary
@@ -31,11 +44,11 @@ impl Compile for Boundary {
         _state: &mut CompileState,
         buf: &mut String,
     ) -> CompileResult {
-        match self {
-            Boundary::Start => buf.push('^'),
-            Boundary::Word => buf.push_str("\\b"),
-            Boundary::NotWord => buf.push_str("\\B"),
-            Boundary::End => buf.push('$'),
+        match self.kind {
+            BoundaryKind::Start => buf.push('^'),
+            BoundaryKind::Word => buf.push_str("\\b"),
+            BoundaryKind::NotWord => buf.push_str("\\B"),
+            BoundaryKind::End => buf.push('$'),
         }
         Ok(())
     }
@@ -44,11 +57,11 @@ impl Compile for Boundary {
 #[cfg(feature = "dbg")]
 impl core::fmt::Debug for Boundary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Self::Start => write!(f, "<%"),
-            Self::Word => write!(f, "%"),
-            Self::NotWord => write!(f, "!%"),
-            Self::End => write!(f, "%>"),
+        match self.kind {
+            BoundaryKind::Start => write!(f, "<%"),
+            BoundaryKind::Word => write!(f, "%"),
+            BoundaryKind::NotWord => write!(f, "!%"),
+            BoundaryKind::End => write!(f, "%>"),
         }
     }
 }

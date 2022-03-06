@@ -2,6 +2,7 @@ extern crate proc_macro;
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use rulex::{
+    error::Diagnostic,
     options::{CompileOptions, RegexFlavor},
     Rulex,
 };
@@ -82,10 +83,10 @@ fn rulex_impl(mut items: impl Iterator<Item = TokenTree>) -> Result<Literal, Err
                     };
                     match parsed.compile(options) {
                         Ok(compiled) => Ok(Literal::string(&compiled)),
-                        Err(e) => bail!(e.to_string(), span),
+                        Err(e) => bail!(fmt(Diagnostic::from_compile_error(e, input)), span),
                     }
                 }
-                Err(e) => bail!(e.with_context(input).to_string(), span),
+                Err(e) => bail!(fmt(Diagnostic::from_parse_error(e, input)), span),
             }
         }
         TokenTree::Group(x) => bail!("Expected string literal, got group", x.span()),
@@ -130,6 +131,51 @@ fn get_flavor(mut items: impl Iterator<Item = TokenTree>) -> Result<RegexFlavor,
         Some(tt) => bail!("Unexpected token `{tt}`", tt.span()),
         None => bail!("Expected identifier"),
     })
+}
+
+fn fmt(diagnostic: Diagnostic) -> String {
+    let mut buf = String::new();
+    buf.push_str("error: ");
+    buf.push_str(&diagnostic.msg);
+    buf.push('\n');
+
+    let range = diagnostic
+        .span
+        .range()
+        .unwrap_or(0..diagnostic.source_code.len());
+    let slice = &diagnostic.source_code[range.clone()];
+    let span = rulex::span::Span::from(range);
+
+    let before = diagnostic.source_code[..span.start]
+        .lines()
+        .next_back()
+        .unwrap_or_default();
+    let after = diagnostic.source_code[span.end..]
+        .lines()
+        .next()
+        .unwrap_or_default();
+
+    let line_number = diagnostic.source_code[..span.start].lines().count().max(1);
+    let line_number_len = (line_number as f32).log10().floor() as usize + 1;
+    let before_len = before.chars().count();
+    let arrow_len = slice.chars().count().max(1);
+
+    buf.push_str(&format!(
+        "\
+{space:line_number_len$} |
+{line_number} | {before}{slice}{after}
+{space:line_number_len$} | {space:before_len$}{space:^<arrow_len$}",
+        space = ""
+    ));
+    buf.push('\n');
+
+    if let Some(help) = diagnostic.help {
+        buf.push_str("help: ");
+        buf.push_str(&help);
+        buf.push('\n');
+    }
+
+    buf
 }
 
 fn error(s: &str, start: Span, end: Span) -> TokenStream {

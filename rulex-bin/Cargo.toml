@@ -15,11 +15,13 @@ path = "src/main.rs"
 
 [dependencies]
 atty = "0.2.14"
+thiserror = "1.0.30"
+miette = { version = "4.2.1", features = ["fancy"] }
 
 [dependencies.rulex]
 version = "0.1.0"
 path = "../rulex-lib"
-features = ["dbg"]
+features = ["dbg", "miette"]
 
 [dependencies.clap]
 version = "3.1.0"

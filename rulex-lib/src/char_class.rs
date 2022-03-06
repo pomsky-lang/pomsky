@@ -97,9 +97,11 @@
 //!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use crate::{
-    compile::{compile_char, compile_char_esc, Compile, CompileState},
-    error::{CompileError, Feature},
+    compile::{Compile, CompileState},
+    error::{CompileError, CompileErrorKind, Feature},
+    literal::{compile_char, compile_char_esc},
     options::{CompileOptions, RegexFlavor},
+    span::Span,
 };
 
 use crate::char_group::{CharGroup, GroupItem};
@@ -109,21 +111,21 @@ use crate::char_group::{CharGroup, GroupItem};
 pub struct CharClass<'i> {
     negative: bool,
     inner: CharGroup<'i>,
+    pub(crate) span: Span,
 }
 
 impl<'i> CharClass<'i> {
+    pub(crate) fn new(inner: CharGroup<'i>, span: Span) -> Self {
+        CharClass {
+            inner,
+            span,
+            negative: false,
+        }
+    }
+
     /// Makes a positive character class negative and vice versa.
     pub fn negate(&mut self) {
         self.negative = !self.negative;
-    }
-}
-
-impl<'i> From<CharGroup<'i>> for CharClass<'i> {
-    fn from(inner: CharGroup<'i>) -> Self {
-        CharClass {
-            inner,
-            negative: false,
-        }
     }
 }
 
@@ -161,18 +163,19 @@ impl Compile for CharClass<'_> {
         _state: &mut CompileState,
         buf: &mut String,
     ) -> crate::compile::CompileResult {
+        let span = self.span;
         match &self.inner {
             CharGroup::Dot => {
                 buf.push_str(if self.negative { "\\n" } else { "." });
             }
             CharGroup::CodePoint => {
                 if self.negative {
-                    return Err(CompileError::EmptyClassNegated);
+                    return Err(CompileErrorKind::EmptyClassNegated.at(span));
                 }
                 buf.push_str("[\\S\\s]");
             }
             CharGroup::Items(items) => match (items.len(), self.negative) {
-                (0, _) => return Err(CompileError::EmptyClass),
+                (0, _) => return Err(CompileErrorKind::EmptyClass.at(span)),
                 (1, false) => match items[0] {
                     GroupItem::Char(c) => compile_char_esc(c, buf, options.flavor),
                     GroupItem::Range { first, last } => {
@@ -184,9 +187,9 @@ impl Compile for CharClass<'_> {
                     }
                     GroupItem::Named { name, negative } => {
                         if negative {
-                            compile_named_class_negative(name, buf, options.flavor)?;
+                            compile_named_class_negative(name, buf, options.flavor, span)?;
                         } else {
-                            compile_named_class(name, negative, buf, options.flavor, true)?;
+                            compile_named_class(name, negative, buf, options.flavor, true, span)?;
                         }
                     }
                 },
@@ -205,9 +208,9 @@ impl Compile for CharClass<'_> {
                     }
                     GroupItem::Named { name, negative } => {
                         if negative {
-                            compile_named_class(name, false, buf, options.flavor, true)?;
+                            compile_named_class(name, false, buf, options.flavor, true, span)?;
                         } else {
-                            compile_named_class_negative(name, buf, options.flavor)?;
+                            compile_named_class_negative(name, buf, options.flavor, span)?;
                         }
                     }
                 },
@@ -225,7 +228,14 @@ impl Compile for CharClass<'_> {
                                 compile_char_esc_in_class(last, buf, options.flavor);
                             }
                             GroupItem::Named { name, negative } => {
-                                compile_named_class(name, negative, buf, options.flavor, false)?;
+                                compile_named_class(
+                                    name,
+                                    negative,
+                                    buf,
+                                    options.flavor,
+                                    false,
+                                    span,
+                                )?;
                             }
                         }
                     }
@@ -260,6 +270,7 @@ fn compile_named_class(
     buf: &mut String,
     flavor: RegexFlavor,
     is_single: bool,
+    span: Span,
 ) -> Result<(), CompileError> {
     match group {
         "w" if negative => buf.push_str("\\W"),
@@ -270,7 +281,7 @@ fn compile_named_class(
             buf.push_str(group);
         }
         "h" | "v" | "R" if negative => {
-            return Err(CompileError::UnsupportedNegatedClass(group.to_string()));
+            return Err(CompileErrorKind::UnsupportedNegatedClass(group.to_string()).at(span));
         }
         "h" | "v" => {
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
@@ -291,11 +302,11 @@ fn compile_named_class(
             }
         }
         "R" if flavor == RegexFlavor::JavaScript => {
-            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
+            return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
         }
         "R" => buf.push_str("\\R"),
         _ if group.starts_with(char::is_lowercase) => {
-            return Err(CompileError::Other("Unknown shorthand character class"));
+            return Err(CompileErrorKind::Other("Unknown shorthand character class").at(span));
         }
         _ => {
             if negative {
@@ -318,6 +329,7 @@ fn compile_named_class_negative(
     group: &str,
     buf: &mut String,
     flavor: RegexFlavor,
+    span: Span,
 ) -> Result<(), CompileError> {
     match group {
         "w" => buf.push_str("\\W"),
@@ -336,11 +348,11 @@ fn compile_named_class_negative(
             buf.push(']');
         }
         "R" if flavor == RegexFlavor::JavaScript => {
-            return Err(CompileError::Unsupported(Feature::UnicodeLineBreak, flavor));
+            return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
         }
         "R" => buf.push_str("[^\\R]"),
         _ if group.starts_with(|c: char| c.is_ascii_lowercase()) => {
-            return Err(CompileError::Other("Unknown shorthand character class"));
+            return Err(CompileErrorKind::Other("Unknown shorthand character class").at(span));
         }
         _ => {
             buf.push_str("\\P{");

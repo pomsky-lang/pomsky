@@ -1,7 +1,8 @@
 use crate::{
     compile::{Compile, CompileResult, CompileState},
-    error::{CompileError, Feature},
+    error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
+    span::Span,
     Rulex,
 };
 
@@ -9,6 +10,7 @@ use crate::{
 pub struct Lookaround<'i> {
     kind: LookaroundKind,
     rule: Rulex<'i>,
+    pub(crate) span: Span,
 }
 
 #[cfg(feature = "dbg")]
@@ -34,8 +36,8 @@ pub enum LookaroundKind {
 }
 
 impl<'i> Lookaround<'i> {
-    pub fn new(rule: Rulex<'i>, kind: LookaroundKind) -> Self {
-        Lookaround { rule, kind }
+    pub fn new(rule: Rulex<'i>, kind: LookaroundKind, span: Span) -> Self {
+        Lookaround { rule, kind, span }
     }
 }
 
@@ -47,10 +49,9 @@ impl Compile for Lookaround<'_> {
         buf: &mut String,
     ) -> CompileResult {
         if options.flavor == RegexFlavor::Rust {
-            return Err(CompileError::Unsupported(
-                Feature::Lookaround,
-                options.flavor,
-            ));
+            return Err(
+                CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor).at(self.span),
+            );
         }
 
         buf.push_str(match self.kind {

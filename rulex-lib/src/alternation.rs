@@ -3,7 +3,9 @@
 
 use crate::{
     compile::{Compile, CompileResult, CompileState},
+    literal::Literal,
     options::CompileOptions,
+    span::Span,
     Rulex,
 };
 
@@ -16,6 +18,7 @@ use crate::{
 #[derive(Clone, PartialEq, Eq)]
 pub struct Alternation<'i> {
     rules: Vec<Rulex<'i>>,
+    pub(crate) span: Span,
 }
 
 impl<'i> Alternation<'i> {
@@ -31,9 +34,15 @@ impl<'i> Alternation<'i> {
                     a.rules.push(b);
                     Rulex::Alternation(a)
                 }
-                (a, b) => Rulex::Alternation(Alternation { rules: vec![a, b] }),
+                (a, b) => {
+                    let span = a.span().join(b.span());
+                    Rulex::Alternation(Alternation {
+                        rules: vec![a, b],
+                        span,
+                    })
+                }
             })
-            .unwrap_or(Rulex::Literal(""))
+            .unwrap_or_else(|| Rulex::Literal(Literal::new("", Span::default())))
     }
 }
 

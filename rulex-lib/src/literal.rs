@@ -1,30 +1,42 @@
-use std::collections::HashMap;
 use std::fmt::Write;
 
 use crate::{
-    error::CompileError,
+    compile::{Compile, CompileResult, CompileState},
     options::{CompileOptions, RegexFlavor},
+    span::Span,
 };
 
-pub(crate) type CompileResult = Result<(), CompileError>;
-
-pub(crate) trait Compile {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult;
+#[derive(Clone, PartialEq, Eq)]
+pub struct Literal<'i> {
+    content: &'i str,
+    pub(crate) span: Span,
 }
 
-impl Compile for &'_ str {
+impl<'i> Literal<'i> {
+    pub(crate) fn new(content: &'i str, span: Span) -> Self {
+        Literal { content, span }
+    }
+
+    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
+        self.content.chars().nth(1).is_some()
+    }
+}
+
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for Literal<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.content.fmt(f)
+    }
+}
+
+impl Compile for Literal<'_> {
     fn comp(
         &self,
         options: CompileOptions,
         _state: &mut CompileState,
         buf: &mut String,
     ) -> CompileResult {
-        for c in self.chars() {
+        for c in self.content.chars() {
             compile_char_esc(c, buf, options.flavor);
         }
         Ok(())
@@ -83,37 +95,6 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
             } else {
                 write!(buf, "{{{:X}}}", c as u32).unwrap();
             }
-        }
-    }
-}
-
-pub(crate) struct Parens<'a, T>(pub(crate) &'a T);
-
-impl<T: Compile> Compile for Parens<'_, T> {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        buf.push_str("(?:");
-        self.0.comp(options, state, buf)?;
-        buf.push(')');
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct CompileState {
-    pub(crate) next_idx: u32,
-    pub(crate) used_names: HashMap<String, u32>,
-}
-
-impl CompileState {
-    pub(crate) fn new() -> Self {
-        CompileState {
-            next_idx: 1,
-            used_names: HashMap::new(),
         }
     }
 }

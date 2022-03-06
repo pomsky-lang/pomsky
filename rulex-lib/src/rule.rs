@@ -2,20 +2,22 @@ use crate::{
     alternation::Alternation,
     boundary::Boundary,
     char_class::CharClass,
-    compile::{Compile, CompileState},
+    compile::{Compile, CompileResult, CompileState},
     error::{CompileError, ParseError},
     grapheme::Grapheme,
     group::Group,
+    literal::Literal,
     lookaround::Lookaround,
     options::{CompileOptions, ParseOptions},
     repetition::Repetition,
+    span::Span,
 };
 
 /// A parsed rulex expression, which might contain more sub-expressions.
 #[derive(Clone, PartialEq, Eq)]
 pub enum Rulex<'i> {
     /// A string literal
-    Literal(&'i str),
+    Literal(Literal<'i>),
     /// A character class
     CharClass(CharClass<'i>),
     /// A Unicode grapheme
@@ -53,9 +55,9 @@ impl<'i> Rulex<'i> {
 
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
         match self {
-            Rulex::Literal(l) => l.chars().nth(1).is_some(),
-            Rulex::Alternation(_) => true,
+            Rulex::Literal(l) => l.needs_parens_before_repetition(),
             Rulex::Group(g) => g.needs_parens_before_repetition(),
+            Rulex::Alternation(_) => true,
             Rulex::CharClass(_)
             | Rulex::Grapheme(_)
             | Rulex::Repetition(_)
@@ -74,6 +76,19 @@ impl<'i> Rulex<'i> {
             | Rulex::Repetition(_)
             | Rulex::Boundary(_)
             | Rulex::Lookaround(_) => false,
+        }
+    }
+
+    pub(crate) fn span(&self) -> Span {
+        match self {
+            Rulex::Literal(l) => l.span,
+            Rulex::CharClass(c) => c.span,
+            Rulex::Grapheme(g) => g.span,
+            Rulex::Group(g) => g.span,
+            Rulex::Alternation(a) => a.span,
+            Rulex::Repetition(r) => r.span,
+            Rulex::Boundary(b) => b.span,
+            Rulex::Lookaround(l) => l.span,
         }
     }
 }
@@ -98,9 +113,9 @@ impl Compile for Rulex<'_> {
     fn comp(
         &self,
         options: CompileOptions,
-        state: &mut crate::compile::CompileState,
+        state: &mut CompileState,
         buf: &mut String,
-    ) -> crate::compile::CompileResult {
+    ) -> CompileResult {
         match self {
             Rulex::Literal(l) => l.comp(options, state, buf),
             Rulex::CharClass(c) => c.comp(options, state, buf),

@@ -3,6 +3,7 @@ use std::fmt::Write;
 use crate::{
     compile::{Compile, CompileResult, CompileState, Parens},
     options::CompileOptions,
+    span::Span,
     Rulex,
 };
 
@@ -11,11 +12,17 @@ pub struct Repetition<'i> {
     rule: Rulex<'i>,
     kind: RepetitionKind,
     greedy: Greedy,
+    pub(crate) span: Span,
 }
 
 impl<'i> Repetition<'i> {
-    pub fn new(rule: Rulex<'i>, kind: RepetitionKind, greedy: Greedy) -> Self {
-        Repetition { rule, kind, greedy }
+    pub fn new(rule: Rulex<'i>, kind: RepetitionKind, greedy: Greedy, span: Span) -> Self {
+        Repetition {
+            rule,
+            kind,
+            greedy,
+            span,
+        }
     }
 }
 

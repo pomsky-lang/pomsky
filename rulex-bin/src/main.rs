@@ -1,8 +1,12 @@
-use std::{io::Read, path::PathBuf};
+use std::{
+    io::{self, Read},
+    path::PathBuf,
+};
 
 use atty::Stream;
 use clap::{ArgEnum, Parser};
 use rulex::{
+    error::Diagnostic,
     options::{CompileOptions, RegexFlavor},
     Rulex,
 };
@@ -56,47 +60,60 @@ impl From<Flavor> for RegexFlavor {
     }
 }
 
-pub fn main() {
+#[derive(Debug, miette::Diagnostic, thiserror::Error)]
+enum MyError {
+    #[diagnostic(code(error::io))]
+    #[error("{}\nFile: {}", .error, .path.display())]
+    Io { error: io::Error, path: PathBuf },
+
+    #[error("{}", .0)]
+    #[diagnostic(code(error::other))]
+    Other(String),
+}
+
+pub fn main() -> miette::Result<()> {
     let args = Args::parse();
 
     match (args.input, args.path) {
-        (Some(input), None) => compile(&input, args.debug, args.flavor),
-        (None, Some(path)) => match std::fs::read_to_string(path) {
-            Ok(input) => compile(&input, args.debug, args.flavor),
-            Err(e) => eprintln!("error reading file: {e}"),
+        (Some(input), None) => compile(&input, args.debug, args.flavor)?,
+        (None, Some(path)) => match std::fs::read_to_string(&path) {
+            Ok(input) => compile(&input, args.debug, args.flavor)?,
+            Err(error) => return Err(MyError::Io { error, path }.into()),
         },
         (None, None) if atty::isnt(Stream::Stdin) => {
             let mut buf = Vec::new();
             std::io::stdin().read_to_end(&mut buf).unwrap();
 
             match String::from_utf8(buf) {
-                Ok(input) => compile(&input, args.debug, args.flavor),
-                Err(e) => eprintln!("error parsing stdin: {e}"),
+                Ok(input) => compile(&input, args.debug, args.flavor)?,
+                Err(e) => return Err(MyError::Other(format!("error parsing stdin: {e}")).into()),
             }
         }
-        (Some(_), Some(_)) => eprintln!("error: Can't provide an input and a path"),
-        (None, None) => eprintln!("error: No input provided"),
+        (Some(_), Some(_)) => {
+            return Err(MyError::Other("error: Can't provide an input and a path".into()).into())
+        }
+        (None, None) => return Err(MyError::Other("error: No input provided".into()).into()),
     }
+    Ok(())
 }
 
-fn compile(input: &str, debug: bool, flavor: Option<Flavor>) {
-    let parsed = match Rulex::parse(input, Default::default()) {
-        Ok(parsed) => parsed,
-        Err(e) => {
-            let e = e.with_context(input);
-            eprintln!("error: {e}");
-            return;
-        }
-    };
+fn compile(input: &str, debug: bool, flavor: Option<Flavor>) -> miette::Result<()> {
+    let parsed = Rulex::parse(input, Default::default())
+        .map_err(|e| Diagnostic::from_parse_error(e, input))?;
+
     if debug {
         eprintln!("======================== debug ========================");
         eprintln!("{parsed:#?}\n");
     }
-    match parsed.compile(CompileOptions {
+
+    let options = CompileOptions {
         flavor: flavor.unwrap_or(Flavor::Pcre).into(),
         ..Default::default()
-    }) {
-        Ok(compiled) => println!("{compiled}"),
-        Err(e) => eprintln!("{e}"),
-    }
+    };
+    let compiled = parsed
+        .compile(options)
+        .map_err(|e| Diagnostic::from_compile_error(e, input))?;
+
+    println!("{compiled}");
+    Ok(())
 }

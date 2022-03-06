@@ -5,10 +5,12 @@ pub mod compile;
 pub mod error;
 pub mod grapheme;
 pub mod group;
+pub mod literal;
 pub mod lookaround;
 pub mod options;
 pub mod parse;
 pub mod repetition;
+pub mod span;
 
 mod char_group;
 mod rule;

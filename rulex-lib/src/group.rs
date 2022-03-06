@@ -1,7 +1,8 @@
 use crate::{
     compile::{Compile, CompileResult, CompileState},
-    error::{CompileError, Feature},
+    error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
+    span::Span,
     Rulex,
 };
 
@@ -13,17 +14,23 @@ use crate::{
 pub struct Group<'i> {
     parts: Vec<Rulex<'i>>,
     capture: Option<Capture<'i>>,
+    pub(crate) span: Span,
 }
 
 impl<'i> Group<'i> {
-    pub fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>) -> Self {
-        Group { parts, capture }
+    pub fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
+        Group {
+            parts,
+            capture,
+            span,
+        }
     }
 
-    pub fn two(a: Rulex<'i>, b: Rulex<'i>) -> Self {
+    pub fn two(a: Rulex<'i>, b: Rulex<'i>, span: Span) -> Self {
         Group {
             parts: vec![a, b],
             capture: None,
+            span,
         }
     }
 
@@ -49,7 +56,9 @@ impl Compile for Group<'_> {
         match self.capture {
             Some(Capture { name: Some(name) }) => {
                 if state.used_names.contains_key(name) {
-                    return Err(CompileError::NameUsedMultipleTimes(name.to_string()));
+                    return Err(
+                        CompileErrorKind::NameUsedMultipleTimes(name.to_string()).at(self.span)
+                    );
                 }
                 state.used_names.insert(name.to_string(), state.next_idx);
                 state.next_idx += 1;
@@ -63,10 +72,11 @@ impl Compile for Group<'_> {
                         buf.push_str("(?<");
                     }
                     RegexFlavor::JavaScript | RegexFlavor::Rust => {
-                        return Err(CompileError::Unsupported(
+                        return Err(CompileErrorKind::Unsupported(
                             Feature::NamedCaptureGroups,
                             options.flavor,
-                        ))
+                        )
+                        .at(self.span))
                     }
                 }
                 buf.push_str(name);

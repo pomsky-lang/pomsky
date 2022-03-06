@@ -1,7 +1,10 @@
 use logos::Logos;
 use nom::Parser;
 
-use crate::error::{ParseError, ParseErrorKind};
+use crate::{
+    error::{ParseError, ParseErrorKind},
+    span::Span,
+};
 
 use super::input::Input;
 
@@ -99,10 +102,11 @@ pub enum Token {
     #[token("^", |_| ParseErrorMsg::Caret)]
     #[token("$", |_| ParseErrorMsg::Dollar)]
     #[regex(r#"\(\?[<!>:=]?"#, |_| ParseErrorMsg::SpecialGroup)]
-    #[regex(
-        r#"\\(u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]|x[0-9a-fA-F][0-9a-fA-F]|.)"#,
-        |_| ParseErrorMsg::BackslashSequence
-    )]
+    #[regex(r#"\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]"#, |_| ParseErrorMsg::BackslashU4)]
+    #[regex(r#"\\x[0-9a-fA-F][0-9a-fA-F]"#, |_| ParseErrorMsg::BackslashX2)]
+    #[regex(r#"\\[ux]\{[0-9a-fA-F]+\}"#, |_| ParseErrorMsg::BackslashUnicode)]
+    #[regex(r#"\\k<[\d\w-]+>"#, |_| ParseErrorMsg::BackslashK)]
+    #[regex(r#"\\."#, |_| ParseErrorMsg::Backslash)]
     #[regex(r#""[^"]*"#, |_| ParseErrorMsg::UnclosedString)]
     #[regex("'[^']*", |_| ParseErrorMsg::UnclosedString)]
     ErrorMsg(ParseErrorMsg),
@@ -122,7 +126,15 @@ pub enum ParseErrorMsg {
     #[error("This syntax is not supported")]
     SpecialGroup,
     #[error("Backslash escapes are not supported")]
-    BackslashSequence,
+    Backslash,
+    #[error("Backslash escapes are not supported")]
+    BackslashU4,
+    #[error("Backslash escapes are not supported")]
+    BackslashX2,
+    #[error("Backslash escapes are not supported")]
+    BackslashUnicode,
+    #[error("Backslash escapes are not supported")]
+    BackslashK,
     #[error("This string literal doesn't have a closing quote")]
     UnclosedString,
 }
@@ -159,35 +171,37 @@ impl core::fmt::Display for Token {
     }
 }
 
-impl<'i, 'b> Parser<Input<'i, 'b>, &'i str, ParseError> for Token {
+impl<'i, 'b> Parser<Input<'i, 'b>, (&'i str, Span), ParseError> for Token {
     fn parse(
         &mut self,
         mut input: Input<'i, 'b>,
-    ) -> nom::IResult<Input<'i, 'b>, &'i str, ParseError> {
+    ) -> nom::IResult<Input<'i, 'b>, (&'i str, Span), ParseError> {
         match input.peek() {
             Some((t, s)) if t == *self => {
+                let span = input.span();
                 let _ = input.next();
-                Ok((input, s))
+                Ok((input, (s, span)))
             }
             _ => Err(nom::Err::Error(
-                ParseErrorKind::ExpectedToken(*self).at(input.index()),
+                ParseErrorKind::ExpectedToken(*self).at(input.span()),
             )),
         }
     }
 }
 
-impl<'i, 'b> Parser<Input<'i, 'b>, Token, ParseError> for &'i str {
+impl<'i, 'b> Parser<Input<'i, 'b>, (Token, Span), ParseError> for &'i str {
     fn parse(
         &mut self,
         mut input: Input<'i, 'b>,
-    ) -> nom::IResult<Input<'i, 'b>, Token, ParseError> {
+    ) -> nom::IResult<Input<'i, 'b>, (Token, Span), ParseError> {
         match input.peek() {
             Some((t, s)) if s == *self => {
+                let span = input.span();
                 let _ = input.next();
-                Ok((input, t))
+                Ok((input, (t, span)))
             }
             _ => Err(nom::Err::Error(
-                ParseErrorKind::Expected("word").at(input.index()),
+                ParseErrorKind::Expected("word").at(input.span()),
             )),
         }
     }

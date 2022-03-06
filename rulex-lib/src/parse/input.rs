@@ -1,9 +1,12 @@
-use std::{iter::Enumerate, ops::Range};
+use std::iter::Enumerate;
 
 use logos::Logos;
 use nom::{InputIter, InputLength, InputTake};
 
-use crate::error::{ParseError, ParseErrorKind};
+use crate::{
+    error::{ParseError, ParseErrorKind},
+    span::Span,
+};
 
 use super::token::Token;
 
@@ -30,8 +33,8 @@ impl<'i, 'b> Input<'i, 'b> {
         });
         if let Some((start, end, msg)) = error {
             return match msg {
-                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(start..end)),
-                None => Err(ParseErrorKind::LexError.at(start..end)),
+                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(Span { start, end })),
+                None => Err(ParseErrorKind::UnknownToken.at(Span { start, end })),
             };
         }
 
@@ -43,11 +46,11 @@ impl<'i, 'b> Input<'i, 'b> {
         self.tokens.is_empty()
     }
 
-    pub(crate) fn index(&self) -> Range<usize> {
+    pub(crate) fn span(&self) -> Span {
         self.tokens
             .first()
-            .map(|&(_, (start, end))| start..end)
-            .unwrap_or_else(|| self.source.len()..self.source.len())
+            .map(|&(_, (start, end))| Span { start, end })
+            .unwrap_or_else(|| (self.source.len()..self.source.len()).into())
     }
 
     pub(super) fn peek(&self) -> Option<(Token, &'i str)> {
