@@ -101,7 +101,7 @@ Rulex looks for mistakes and displays helpful diagnostics:
 
 ## Usage
 
-## Procedural macro
+### Procedural macro
 
 The Rust procedural macro allows converting a rulex to a regex string literal at compile time:
 
@@ -113,7 +113,7 @@ const REGEX: &str = rulex!(r#" 'foo' | 'bar'+ greedy "#);
 
 This means that errors from rulex are shown at compile time, too, and are highlighted in an IDE.
 
-## CLI
+### CLI
 
 The CLI currently requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
 Install the CLI with
