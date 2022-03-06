@@ -1,5 +1,6 @@
 extern crate proc_macro;
-use proc_macro::{Literal, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+
 use rulex::{
     options::{CompileOptions, RegexFlavor},
     Rulex,
@@ -7,31 +8,69 @@ use rulex::{
 
 #[proc_macro]
 pub fn rulex(items: TokenStream) -> TokenStream {
-    match rulex_impl(items.into_iter()) {
+    let group = Group::new(Delimiter::None, items);
+    let global_span = group.span();
+
+    match rulex_impl(group.stream().into_iter()) {
         Ok(lit) => TokenTree::Literal(lit).into(),
-        Err(msg) => {
+        Err(Error { msg, span }) => {
+            let span = span.unwrap_or(global_span);
             let msg = format!("error: {msg}");
-            format!("compile_error!({msg:?})").parse().unwrap()
+            error(&msg, span, span)
         }
     }
 }
 
-fn rulex_impl(mut items: impl Iterator<Item = TokenTree>) -> Result<Literal, String> {
+struct Error {
+    msg: String,
+    span: Option<Span>,
+}
+
+impl Error {
+    fn new(msg: String, span: Span) -> Self {
+        Error {
+            msg,
+            span: Some(span),
+        }
+    }
+
+    fn from_msg(msg: String) -> Self {
+        Error { msg, span: None }
+    }
+}
+
+macro_rules! bail {
+    ($l:literal) => {
+        return Err(Error::from_msg(format!($l)))
+    };
+    ($l:literal, $e:expr) => {
+        return Err(Error::new(format!($l), $e))
+    };
+    ($e1:expr, $e2:expr) => {
+        return Err(Error::new($e1, $e2))
+    };
+}
+
+fn rulex_impl(mut items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error> {
     let lit = items
         .next()
-        .ok_or_else(|| "Expected string literal".to_string())?;
+        .ok_or_else(|| Error::from_msg("Expected string literal".into()))?;
+    let span = lit.span();
 
     match lit {
         TokenTree::Literal(lit) => {
             let s = lit.to_string();
             if !s.starts_with('r') {
-                return Err(r##"Expected a raw string literal: `r"..."` or `r#"..."#`"##.into());
+                bail!(
+                    r##"Expected raw string literal: `r"..."` or `r#"..."#`"##,
+                    span
+                );
             }
             let s = s[1..].trim_matches('#');
             let input = s
                 .strip_prefix('"')
                 .and_then(|s| s.strip_suffix('"'))
-                .ok_or_else(|| "Expected string literal".to_string())?;
+                .ok_or_else(|| Error::new("Expected string literal".into(), span))?;
 
             let flavor = get_flavor(items)?;
 
@@ -43,38 +82,35 @@ fn rulex_impl(mut items: impl Iterator<Item = TokenTree>) -> Result<Literal, Str
                     };
                     match parsed.compile(options) {
                         Ok(compiled) => Ok(Literal::string(&compiled)),
-                        Err(e) => Err(e.to_string()),
+                        Err(e) => bail!(e.to_string(), span),
                     }
                 }
-                Err(e) => {
-                    let e = e.with_context(input);
-                    Err(e.to_string())
-                }
+                Err(e) => bail!(e.with_context(input).to_string(), span),
             }
         }
-        TokenTree::Group(_) => Err("Expected string literal, got group".into()),
-        TokenTree::Ident(_) => Err("Expected string literal, got identifier".into()),
-        TokenTree::Punct(_) => Err("Expected string literal, got punctuation".into()),
+        TokenTree::Group(x) => bail!("Expected string literal, got group", x.span()),
+        TokenTree::Ident(x) => bail!("Expected string literal, got identifier", x.span()),
+        TokenTree::Punct(x) => bail!("Expected string literal, got punctuation", x.span()),
     }
 }
 
-fn get_flavor(mut items: impl Iterator<Item = TokenTree>) -> Result<RegexFlavor, String> {
+fn get_flavor(mut items: impl Iterator<Item = TokenTree>) -> Result<RegexFlavor, Error> {
     match items.next() {
         None => return Ok(RegexFlavor::Rust),
         Some(TokenTree::Punct(p)) if p.as_char() == ',' => {}
-        Some(tt) => return Err(format!("Unexpected token `{tt}`")),
+        Some(tt) => bail!("Unexpected token `{tt}`", tt.span()),
     }
 
     match items.next() {
         None => return Ok(RegexFlavor::Rust),
         Some(TokenTree::Ident(id)) if &id.to_string() == "flavor" => {}
-        Some(tt) => return Err(format!("Expected `flavor =`, got `{tt}`")),
+        Some(tt) => bail!("Expected `flavor =`, got `{tt}`", tt.span()),
     }
 
     match items.next() {
         Some(TokenTree::Punct(p)) if p.as_char() == '=' => {}
-        Some(tt) => return Err(format!("Unexpected token `{tt}`")),
-        None => return Err("Expected `=`".to_string()),
+        Some(tt) => bail!("Unexpected token `{tt}`", tt.span()),
+        None => bail!("Expected `=`"),
     }
 
     Ok(match items.next() {
@@ -86,13 +122,32 @@ fn get_flavor(mut items: impl Iterator<Item = TokenTree>) -> Result<RegexFlavor,
             "Python" => RegexFlavor::Python,
             "Ruby" => RegexFlavor::Ruby,
             "Rust" => RegexFlavor::Rust,
-            s => {
-                return Err(format!(
-                    "Expected one of: DotNet, Java, JavaScript, Pcre, Python, Ruby, Rust\nGot: {s}"
-                ))
-            }
+            s => bail!(
+                "Expected one of: DotNet, Java, JavaScript, Pcre, Python, Ruby, Rust\nGot: {s}",
+                id.span()
+            ),
         },
-        Some(tt) => return Err(format!("Unexpected token `{tt}`")),
-        None => return Err("Expected identifier".to_string()),
+        Some(tt) => bail!("Unexpected token `{tt}`", tt.span()),
+        None => bail!("Expected identifier"),
     })
+}
+
+fn error(s: &str, start: Span, end: Span) -> TokenStream {
+    let group = vec![respan(Literal::string(s), Span::call_site())]
+        .into_iter()
+        .collect();
+
+    vec![
+        respan(Ident::new("compile_error", start), start),
+        respan(Punct::new('!', Spacing::Alone), Span::call_site()),
+        respan(Group::new(Delimiter::Brace, group), end),
+    ]
+    .into_iter()
+    .collect()
+}
+
+fn respan<T: Into<TokenTree>>(t: T, span: Span) -> TokenTree {
+    let mut t = t.into();
+    t.set_span(span);
+    t
 }
