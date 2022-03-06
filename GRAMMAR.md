@@ -31,9 +31,13 @@ Here's an incomplete summary of the syntax, which should be enough to read the g
 
 ### Whitespace
 
-Comments and whitespace are ignored; they can be added anywhere, except in strings, in tokens,
-in words, numbers and code points. Whitespace is required between consecutive words, e.g.
-`[a n Latin]`. Comments start with `#` and end at the end of the same line.
+Comments start with `#` and end at the end of the same line.
+
+Comments and whitespace are ignored; they can be added anywhere, except in strings, in tokens
+(such as `>>`), in words, numbers and code points (such as `U+306F`). For example, `>>` can't be
+written as `> >`, but `!>>'test'+` can be written as `! >> 'test' +`.
+
+Whitespace is required between consecutive words and code points, e.g. `[a n Latin U+50]`.
 
 ## Formal grammar
 
