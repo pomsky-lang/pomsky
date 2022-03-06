@@ -8,6 +8,12 @@ A new, portable, regular expression language
 
 </div>
 
+See also
+
+- **[Procedural macro](./rulex-macro/README.md)**
+- **[Rulex CLI](./rulex-bin/README.md)**
+- **[Formal grammar](./GRAMMAR.md)**
+
 ## Examples
 
 On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex:
@@ -98,52 +104,6 @@ Rulex looks for mistakes and displays helpful diagnostics:
 - It looks for likely mistakes and displays warnings
 - It looks for patterns that can be very slow for certain inputs and are susceptible to
   Denial-of-Service attacks _(coming soon)_
-
-## Usage
-
-### Procedural macro
-
-The Rust procedural macro allows converting a rulex to a regex string literal at compile time:
-
-```rust
-use rulex_macro::rulex;
-
-const REGEX: &str = rulex!(r#" 'foo' | 'bar'+ greedy "#);
-```
-
-This means that errors from rulex are shown at compile time, too, and are highlighted in an IDE.
-
-### CLI
-
-The CLI currently requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
-Install the CLI with
-
-```sh
-cargo install rulex-bin
-```
-
-Then you can compile rulex expressions to a regex flavor of your choice; the default is PCRE.
-
-```sh
-$ rulex --help
-rulex 0.1.0
-Ludwig Stecher <ludwig.stecher@gmx.de>
-Compile rulex expressions, a new regular expression language
-
-USAGE:
-    rulex [OPTIONS] [INPUT]
-
-ARGS:
-    <INPUT>    Rulex expression to compile
-
-OPTIONS:
-    -d, --debug              Show debug information
-    -f, --flavor <FLAVOR>    Regex flavor [possible values: pcre, python,
-                             java, javascript, dotnet, ruby, rust]
-    -h, --help               Print help information
-    -p, --path <FILE>        File containing the rulex expression to compile
-    -V, --version            Print version information
-```
 
 ## Roadmap
 
