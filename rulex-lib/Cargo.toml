@@ -14,7 +14,6 @@ dbg = []
 
 [dependencies]
 thiserror = "1.0.30"
-logos = "0.12.0"
 nom = "7.1.0"
 miette = { version = "4.2.1", optional = true }
 

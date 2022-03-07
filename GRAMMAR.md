@@ -46,7 +46,7 @@ Whitespace is required between consecutive words and code points, e.g. `[a n Lat
 ```
 Expression = Alternative ('|' Alternative)*
 
-Alternative = FixExpression*
+Alternative = FixExpression+
 ```
 
 ### FixExpression

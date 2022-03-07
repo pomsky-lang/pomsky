@@ -28,9 +28,10 @@ use super::{Input, Token};
 pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
 pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
-    let mut buf = Vec::new();
-    let tokens = Input::tokenize(source, &mut buf)?;
-    let (rest, rules) = parse_or(tokens)?;
+    let tokens = super::tokenize::tokenize(source);
+    let input = Input::from(source, &tokens)?;
+
+    let (rest, rules) = parse_or(input)?;
     if rest.is_empty() {
         Ok(rules)
     } else {

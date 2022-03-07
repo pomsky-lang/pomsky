@@ -70,7 +70,7 @@ pub enum ParseErrorKind {
     Expected(&'static str),
     #[error("There are leftover tokens that couldn't be parsed")]
     LeftoverTokens,
-    #[error("Expected token {}", .0)]
+    #[error("Expected {}", .0)]
     ExpectedToken(Token),
     #[error("Expected code point or character")]
     ExpectedCodePointOrChar,

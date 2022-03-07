@@ -1,6 +1,5 @@
 use std::iter::Enumerate;
 
-use logos::Logos;
 use nom::{InputIter, InputLength, InputTake};
 
 use crate::{
@@ -13,22 +12,14 @@ use super::token::Token;
 #[derive(Clone)]
 pub(crate) struct Input<'i, 'b> {
     source: &'i str,
-    tokens: &'b [(Token, (usize, usize))],
+    tokens: &'b [(Token, Span)],
 }
 
 impl<'i, 'b> Input<'i, 'b> {
-    pub(super) fn tokenize(
-        source: &'i str,
-        buf: &'b mut Vec<(Token, (usize, usize))>,
-    ) -> Result<Self, ParseError> {
-        assert!(buf.is_empty());
-
-        let lex = Token::lexer(source);
-        buf.extend(lex.spanned().map(|(t, r)| (t, (r.start, r.end))));
-
-        let error = buf.iter().find_map(|&(t, (start, end))| match t {
-            Token::Error => Some((start, end, None)),
-            Token::ErrorMsg(m) => Some((start, end, Some(m))),
+    pub(super) fn from(source: &'i str, tokens: &'b [(Token, Span)]) -> Result<Self, ParseError> {
+        let error = tokens.iter().find_map(|&(t, span)| match t {
+            Token::Error => Some((span.start, span.end, None)),
+            Token::ErrorMsg(m) => Some((span.start, span.end, Some(m))),
             _ => None,
         });
         if let Some((start, end, msg)) = error {
@@ -38,7 +29,6 @@ impl<'i, 'b> Input<'i, 'b> {
             };
         }
 
-        let tokens = &**buf;
         Ok(Input { source, tokens })
     }
 
@@ -49,7 +39,7 @@ impl<'i, 'b> Input<'i, 'b> {
     pub(crate) fn span(&self) -> Span {
         self.tokens
             .first()
-            .map(|&(_, (start, end))| Span { start, end })
+            .map(|&(_, span)| span)
             .unwrap_or_else(|| (self.source.len()..self.source.len()).into())
     }
 
@@ -78,7 +68,7 @@ impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
         let v: Vec<_> = self
             .tokens
             .iter()
-            .map(|&(t, (start, end))| FmtHelper(t, &self.source[start..end]))
+            .map(|&(t, span)| FmtHelper(t, &self.source[span.start..span.end]))
             .collect();
 
         v.fmt(f)
@@ -90,9 +80,9 @@ impl<'i, 'b> Iterator for Input<'i, 'b> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.tokens.split_first() {
-            Some((&(token, range), rest)) => {
+            Some((&(token, span), rest)) => {
                 self.tokens = rest;
-                Some((token, &self.source[range.0..range.1]))
+                Some((token, &self.source[span.start..span.end]))
             }
             None => None,
         }

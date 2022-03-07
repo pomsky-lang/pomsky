@@ -1,5 +1,5 @@
 #! expect=error
 'hello'{
 -----
-Parse error: Expected token number
+Parse error: Expected number
   at 8..8

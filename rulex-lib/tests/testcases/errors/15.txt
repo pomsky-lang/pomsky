@@ -1,5 +1,5 @@
 #! expect=error
 'hello'{1
 -----
-Parse error: Expected token `}`
+Parse error: Expected `}`
   at 9..9

@@ -1,4 +1,3 @@
-use logos::Logos;
 use nom::Parser;
 
 use crate::{
@@ -8,112 +7,77 @@ use crate::{
 
 use super::input::Input;
 
-#[derive(Debug, Logos, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Token {
     /// `<%` (`^` boundary)
-    #[token("<%")]
     BStart,
     /// `%>` (`$` boundary)
-    #[token("%>")]
     BEnd,
     /// `%` (`\b` boundary)
-    #[token("%")]
     BWord,
 
     /// `*` (`*?` repetition)
-    #[token("*")]
     Star,
     /// `+` (`+?` repetition)
-    #[token("+")]
     Plus,
     /// `?` (`??` repetition)
-    #[token("?")]
     QuestionMark,
 
     /// `|` (or)
-    #[token("|")]
     Pipe,
 
     /// `:` (capturing group start)
-    #[token(":")]
     Colon,
     /// `(` (open group)
-    #[token("(")]
     OpenParen,
     /// `)` (close group)
-    #[token(")")]
     CloseParen,
 
     /// `{` (open repetition)
-    #[token("{")]
     OpenBrace,
     /// `}` (close repetition)
-    #[token("}")]
     CloseBrace,
     /// `,` (comma in repetition)
-    #[token(",")]
     Comma,
 
-    #[token("!")]
     Not,
 
     /// `[` (open character class)
-    #[token("[")]
     OpenBracket,
 
     /// `-` (unicode range)
-    #[token("-")]
     Dash,
 
     /// `]` (close character class)
-    #[token("]")]
     CloseBracket,
 
     /// `.` (any code point except newline)
-    #[token(".")]
     Dot,
 
     /// `>>` (positive lookahead)
-    #[token(">>")]
     LookAhead,
 
     /// `<<` (positive lookbehind)
-    #[token("<<")]
     LookBehind,
 
+    /// `::` (back reference)
+    Backref,
+
     /// `"Hello"` or `'Hello'` (`Hello`)
-    #[regex(r#""[^"]*""#)]
-    #[regex("'[^']*'")]
     String,
 
     /// `U+FFF03` (Unicode code point)
-    #[regex(r"[Uu]\+[0-9a-fA-F]+")]
     CodePoint,
 
     /// `12` (number in repetition)
-    #[regex(r"\d+", priority = 2)]
     Number,
 
     /// `hello` (capturing group name)
-    #[regex(r"\w[\w\d]*", priority = 1)]
     Identifier,
 
     // match illegal tokens for which we want to show a better error message
-    #[token("^", |_| ParseErrorMsg::Caret)]
-    #[token("$", |_| ParseErrorMsg::Dollar)]
-    #[regex(r#"\(\?[<!>:=]?"#, |_| ParseErrorMsg::SpecialGroup)]
-    #[regex(r#"\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]"#, |_| ParseErrorMsg::BackslashU4)]
-    #[regex(r#"\\x[0-9a-fA-F][0-9a-fA-F]"#, |_| ParseErrorMsg::BackslashX2)]
-    #[regex(r#"\\[ux]\{[0-9a-fA-F]+\}"#, |_| ParseErrorMsg::BackslashUnicode)]
-    #[regex(r#"\\k<[\d\w-]+>"#, |_| ParseErrorMsg::BackslashK)]
-    #[regex(r#"\\."#, |_| ParseErrorMsg::Backslash)]
-    #[regex(r#""[^"]*"#, |_| ParseErrorMsg::UnclosedString)]
-    #[regex("'[^']*", |_| ParseErrorMsg::UnclosedString)]
     ErrorMsg(ParseErrorMsg),
 
-    #[regex(r"[ \t\n\f]+", logos::skip)]
-    #[regex("#.*", logos::skip)]
-    #[error]
     Error,
 }
 
@@ -157,6 +121,7 @@ impl core::fmt::Display for Token {
             Token::Comma => "`,`",
             Token::LookAhead => "`>>`",
             Token::LookBehind => "`<<`",
+            Token::Backref => "`::`",
             Token::Not => "`!`",
             Token::OpenBracket => "`[`",
             Token::Dash => "`-`",
