@@ -1,0 +1,84 @@
+name: Build and upload binaries to release
+
+# https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+# https://mateuscosta.me/rust-releases-with-github-actions
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.*"
+
+jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    # Note this. We are going to use that in further jobs.
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Set variables
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          body: |
+            This is a new release of `rulex`.
+            ### Installation
+            If you're running on Linux, macOS or Windows, you can use the binaries below.
+            Alternatively, you can build `rulex` with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
+            ```shell
+            $ cargo install --git https://github.com/Aloso/rulex --tag ${{ github.ref }}
+            ```
+            You might have to add the `.cargo/bin` folder to your `PATH` afterwards.
+            Please file issues if you run into any problems or have suggestions.
+  release_assets:
+    name: Release assets
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            file_ending: ""
+          - os: macos-latest
+            platform: macos
+            file_ending: ""
+          - os: windows-latest
+            platform: windows
+            file_ending: ".exe"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Print information
+        run: |
+          rustup show active-toolchain
+          rustc --version
+          cargo tree
+      - name: Set variables
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Build project
+        run: cargo build --release --locked
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: rulex_${{ matrix.platform }}_${{ steps.vars.outputs.tag }}${{ matrix.file_ending }}
+          asset_path: target/release/rulex${{ matrix.file_ending }}
+          asset_content_type: application/octet-stream
