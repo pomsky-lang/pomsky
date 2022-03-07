@@ -156,7 +156,8 @@ fn walk_dir_recursive(
         }
         Ok(())
     } else if path.is_file() {
-        let content = std::fs::read_to_string(path)?;
+        let mut content = std::fs::read_to_string(path)?;
+        content.retain(|c| c != '\r');
         results.push((
             path.to_owned(),
             if filter_matches(&args.filter, path) {
