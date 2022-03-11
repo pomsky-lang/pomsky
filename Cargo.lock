@@ -60,7 +60,7 @@ dependencies = [
 
 [[package]]
 name = "benchmark"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "criterion",
  "rulex",
@@ -606,7 +606,7 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "rulex"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "atty",
  "miette",
@@ -617,7 +617,7 @@ dependencies = [
 
 [[package]]
 name = "rulex-bin"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "atty",
  "clap 3.1.5",
@@ -628,7 +628,7 @@ dependencies = [
 
 [[package]]
 name = "rulex-macro"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "rulex",
 ]
