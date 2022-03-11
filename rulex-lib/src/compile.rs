@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{error::CompileError, options::CompileOptions};
+use crate::{
+    error::{CompileError, CompileErrorKind},
+    options::CompileOptions,
+    span::Span,
+};
 
 pub(crate) type CompileResult = Result<(), CompileError>;
 
@@ -33,6 +37,9 @@ impl<T: Compile> Compile for Parens<'_, T> {
 pub(crate) struct CompileState {
     pub(crate) next_idx: u32,
     pub(crate) used_names: HashMap<String, u32>,
+
+    pub(crate) unknown_references: Vec<(String, Span)>,
+    pub(crate) unknown_groups: Vec<(u32, Span)>,
 }
 
 impl CompileState {
@@ -40,6 +47,20 @@ impl CompileState {
         CompileState {
             next_idx: 1,
             used_names: HashMap::new(),
+            unknown_references: vec![],
+            unknown_groups: vec![],
         }
+    }
+
+    pub(crate) fn check_validity(self) -> Result<(), CompileError> {
+        for (group, span) in self.unknown_groups {
+            if group >= self.next_idx {
+                return Err(CompileErrorKind::UnknownReferenceNumber(group).at(span));
+            }
+        }
+        if let Some((reference, span)) = self.unknown_references.into_iter().next() {
+            return Err(CompileErrorKind::UnknownReferenceName(reference).at(span));
+        }
+        Ok(())
     }
 }

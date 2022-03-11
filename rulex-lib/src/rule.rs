@@ -9,6 +9,7 @@ use crate::{
     literal::Literal,
     lookaround::Lookaround,
     options::{CompileOptions, ParseOptions},
+    reference::Reference,
     repetition::Repetition,
     span::Span,
 };
@@ -33,6 +34,8 @@ pub enum Rulex<'i> {
     Boundary(Boundary),
     /// A (positive or negative) lookahead or lookbehind.
     Lookaround(Box<Lookaround<'i>>),
+    /// A backreference or forward reference.
+    Reference(Reference<'i>),
 }
 
 impl<'i> Rulex<'i> {
@@ -42,14 +45,18 @@ impl<'i> Rulex<'i> {
 
     pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
         let mut buf = String::new();
-        self.comp(options, &mut CompileState::new(), &mut buf)?;
+        let mut state = CompileState::new();
+        self.comp(options, &mut state, &mut buf)?;
+        state.check_validity()?;
         Ok(buf)
     }
 
     pub fn parse_and_compile(input: &str, options: CompileOptions) -> Result<String, CompileError> {
         let parsed = Rulex::parse(input, options.parse_options)?;
         let mut buf = String::new();
-        parsed.comp(options, &mut CompileState::new(), &mut buf)?;
+        let mut state = CompileState::new();
+        parsed.comp(options, &mut state, &mut buf)?;
+        state.check_validity()?;
         Ok(buf)
     }
 
@@ -62,7 +69,8 @@ impl<'i> Rulex<'i> {
             | Rulex::Grapheme(_)
             | Rulex::Repetition(_)
             | Rulex::Boundary(_)
-            | Rulex::Lookaround(_) => false,
+            | Rulex::Lookaround(_)
+            | Rulex::Reference(_) => false,
         }
     }
 
@@ -75,7 +83,8 @@ impl<'i> Rulex<'i> {
             | Rulex::Grapheme(_)
             | Rulex::Repetition(_)
             | Rulex::Boundary(_)
-            | Rulex::Lookaround(_) => false,
+            | Rulex::Lookaround(_)
+            | Rulex::Reference(_) => false,
         }
     }
 
@@ -89,6 +98,7 @@ impl<'i> Rulex<'i> {
             Rulex::Repetition(r) => r.span,
             Rulex::Boundary(b) => b.span,
             Rulex::Lookaround(l) => l.span,
+            Rulex::Reference(r) => r.span,
         }
     }
 }
@@ -97,14 +107,15 @@ impl<'i> Rulex<'i> {
 impl core::fmt::Debug for Rulex<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::Literal(arg0) => arg0.fmt(f),
-            Self::CharClass(arg0) => arg0.fmt(f),
+            Rulex::Literal(arg0) => arg0.fmt(f),
+            Rulex::CharClass(arg0) => arg0.fmt(f),
             Rulex::Grapheme(arg0) => arg0.fmt(f),
-            Self::Group(arg0) => arg0.fmt(f),
-            Self::Alternation(arg0) => arg0.fmt(f),
-            Self::Repetition(arg0) => arg0.fmt(f),
-            Self::Boundary(arg0) => arg0.fmt(f),
-            Self::Lookaround(arg0) => arg0.fmt(f),
+            Rulex::Group(arg0) => arg0.fmt(f),
+            Rulex::Alternation(arg0) => arg0.fmt(f),
+            Rulex::Repetition(arg0) => arg0.fmt(f),
+            Rulex::Boundary(arg0) => arg0.fmt(f),
+            Rulex::Lookaround(arg0) => arg0.fmt(f),
+            Rulex::Reference(arg0) => arg0.fmt(f),
         }
     }
 }
@@ -125,6 +136,7 @@ impl Compile for Rulex<'_> {
             Rulex::Repetition(r) => r.comp(options, state, buf),
             Rulex::Boundary(b) => b.comp(options, state, buf),
             Rulex::Lookaround(l) => l.comp(options, state, buf),
+            Rulex::Reference(r) => r.comp(options, state, buf),
         }
     }
 }

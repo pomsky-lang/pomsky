@@ -34,8 +34,8 @@ impl<'i> Group<'i> {
         }
     }
 
-    pub fn set_capture(&mut self, capture: Option<Capture<'i>>) {
-        self.capture = capture;
+    pub fn set_capture(&mut self, capture: Capture<'i>) {
+        self.capture = Some(capture);
     }
 
     pub fn needs_parens_before_repetition(&self) -> bool {
@@ -61,6 +61,7 @@ impl Compile for Group<'_> {
                     );
                 }
                 state.used_names.insert(name.to_string(), state.next_idx);
+                state.unknown_references.retain(|(s, _)| s != name);
                 state.next_idx += 1;
 
                 // https://www.regular-expressions.info/named.html
@@ -68,10 +69,13 @@ impl Compile for Group<'_> {
                     RegexFlavor::Python | RegexFlavor::Pcre => {
                         buf.push_str("(?P<");
                     }
-                    RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
+                    RegexFlavor::DotNet
+                    | RegexFlavor::Java
+                    | RegexFlavor::Ruby
+                    | RegexFlavor::JavaScript => {
                         buf.push_str("(?<");
                     }
-                    RegexFlavor::JavaScript | RegexFlavor::Rust => {
+                    RegexFlavor::Rust => {
                         return Err(CompileErrorKind::Unsupported(
                             Feature::NamedCaptureGroups,
                             options.flavor,

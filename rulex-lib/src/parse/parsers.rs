@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     combinator::{cut, map, opt, value},
     multi::{many0, many1, separated_list0},
-    sequence::{pair, separated_pair, tuple},
+    sequence::{pair, preceded, separated_pair, tuple},
     IResult, Parser,
 };
 
@@ -18,6 +18,7 @@ use crate::{
     group::{Capture, Group},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
+    reference::{Reference, ReferenceTarget},
     repetition::{Greedy, Repetition, RepetitionKind},
     span::Span,
     Rulex,
@@ -125,10 +126,6 @@ pub(super) fn parse_repetition<'i, 'b>(
 pub(super) fn parse_braced_repetition<'i, 'b>(
     input: Input<'i, 'b>,
 ) -> PResult<'i, 'b, (RepetitionKind, Span)> {
-    fn str_to_u32(s: &str) -> Result<u32, ParseErrorKind> {
-        str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
-    }
-
     fn parse_u32<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, u32> {
         try_map(Token::Number, |(s, _)| str_to_u32(s), nom::Err::Failure)(input)
     }
@@ -157,6 +154,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
         parse_char_class,
         parse_grapheme,
         parse_boundary,
+        parse_reference,
         map(parse_code_point, |(c, span)| {
             Rulex::CharClass(CharClass::new(CharGroup::from_char(c), span))
         }),
@@ -166,10 +164,11 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
 }
 
 pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    fn parse_capture<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Capture<'i>> {
-        map(pair(Token::Colon, opt(Token::Identifier)), |(_, name)| {
-            Capture::new(name.map(|(s, _)| s))
-        })(input)
+    fn parse_capture<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (Capture<'i>, Span)> {
+        map(
+            pair(Token::Colon, opt(Token::Identifier)),
+            |((_, span1), name)| (Capture::new(name.map(|(s, _)| s)), span1),
+        )(input)
     }
 
     map(
@@ -177,13 +176,18 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
             opt(parse_capture),
             tuple((Token::OpenParen, parse_or, cut(Token::CloseParen))),
         ),
-        |(capture, ((_, start), rule, (_, end)))| match (capture, rule) {
+        |(capture, (_, rule, (_, close_paren)))| match (capture, rule) {
             (None, rule) => rule,
-            (capture, Rulex::Group(mut g)) => {
+            (Some((capture, c_span)), Rulex::Group(mut g)) => {
                 g.set_capture(capture);
+                g.span.start = c_span.start;
                 Rulex::Group(g)
             }
-            (capture, rule) => Rulex::Group(Group::new(vec![rule], capture, start.join(end))),
+            (Some((capture, c_span)), rule) => Rulex::Group(Group::new(
+                vec![rule],
+                Some(capture),
+                c_span.join(close_paren),
+            )),
         },
     )(input)
 }
@@ -366,6 +370,48 @@ pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
         )),
         Rulex::Boundary,
     )(input)
+}
+
+pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    preceded(
+        Token::Backref,
+        alt((
+            try_map(
+                Token::Number,
+                |(s, span)| {
+                    let target = ReferenceTarget::Number(str_to_u32(s)?);
+                    Ok(Rulex::Reference(Reference::new(target, span)))
+                },
+                nom::Err::Failure,
+            ),
+            map(Token::Identifier, |(s, span)| {
+                let target = ReferenceTarget::Named(s);
+                Rulex::Reference(Reference::new(target, span))
+            }),
+            try_map(
+                pair(alt((Token::Plus, Token::Dash)), Token::Number),
+                |((sign, span1), (s, span2))| {
+                    let num = if sign == "-" {
+                        str_to_i32(&format!("-{s}"))
+                    } else {
+                        str_to_i32(s)
+                    }?;
+                    let target = ReferenceTarget::Relative(num);
+                    Ok(Rulex::Reference(Reference::new(target, span1.join(span2))))
+                },
+                nom::Err::Failure,
+            ),
+            err(|| ParseErrorKind::Expected("number or group name")),
+        )),
+    )(input)
+}
+
+fn str_to_u32(s: &str) -> Result<u32, ParseErrorKind> {
+    str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
+}
+
+fn str_to_i32(s: &str) -> Result<i32, ParseErrorKind> {
+    str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
 }
 
 fn strip_first_last(s: &str) -> &str {

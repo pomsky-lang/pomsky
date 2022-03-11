@@ -67,6 +67,10 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 << 'foo' | 'bar'              # (?<=foo|bar)
 !>> 'foo' | 'bar'             # (?!foo|bar)
 !<< 'foo' | 'bar'             # (?<!foo|bar)
+
+# Backreferences
+:('test') ::1                 # (test)\1
+:name('test') ::name          # (?P<name>test)\k<name>
 ```
 
 ## Why use this instead of normal regexes?

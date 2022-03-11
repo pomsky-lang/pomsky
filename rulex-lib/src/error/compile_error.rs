@@ -28,6 +28,15 @@ pub enum CompileErrorKind {
     #[error("Compile error: Unsupported feature `{}` in the `{:?}` regex flavor", .0.name(), .1)]
     Unsupported(Feature, RegexFlavor),
 
+    #[error("Group references this large aren't supported")]
+    HugeReference,
+
+    #[error("Reference to unknown group. There is no group number {}", .0)]
+    UnknownReferenceNumber(u32),
+
+    #[error("Reference to unknown group. There is no group named `{}`", .0)]
+    UnknownReferenceName(String),
+
     #[error("Compile error: Group name `{}` used multiple times", .0)]
     NameUsedMultipleTimes(String),
 
@@ -50,6 +59,10 @@ pub enum Feature {
     Lookaround,
     Grapheme,
     UnicodeLineBreak,
+    Backreference,
+    ForwardReference,
+    RelativeReference,
+    NonNegativeRelativeReference,
 }
 
 impl Feature {
@@ -59,6 +72,10 @@ impl Feature {
             Feature::Lookaround => "lookahead/behind",
             Feature::Grapheme => "grapheme cluster matcher (\\X)",
             Feature::UnicodeLineBreak => "Unicode line break (\\R)",
+            Feature::Backreference => "Backreference",
+            Feature::ForwardReference => "Forward reference",
+            Feature::RelativeReference => "Relative backreference",
+            Feature::NonNegativeRelativeReference => "Non-negative relative backreference",
         }
     }
 }
