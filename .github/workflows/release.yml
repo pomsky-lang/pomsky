@@ -36,7 +36,7 @@ jobs:
             If you're running on Linux, macOS or Windows, you can use the binaries below.
             Alternatively, you can build `rulex` with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
             ```shell
-            $ cargo install --git https://github.com/Aloso/rulex --tag ${{ github.ref }}
+            $ cargo install rulex-bin
             ```
             You might have to add the `.cargo/bin` folder to your `PATH` afterwards.
             Please file issues if you run into any problems or have suggestions.
