@@ -75,7 +75,7 @@ static ATTY: OnceCell<bool> = OnceCell::new();
 
 impl<T: fmt::Display> fmt::Display for Color<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let &atty = ATTY.get_or_init(|| atty::is(atty::Stream::Stderr));
+        let &atty = ATTY.get_or_init(|| atty::is(atty::Stream::Stdout));
 
         if atty {
             let (m1, m2) = self.get_markers();
@@ -88,7 +88,8 @@ impl<T: fmt::Display> fmt::Display for Color<T> {
 
 impl<T: fmt::Debug> fmt::Debug for Color<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let &atty = ATTY.get_or_init(|| atty::is(atty::Stream::Stderr));
+        let &atty =
+            ATTY.get_or_init(|| atty::is(atty::Stream::Stderr) && atty::is(atty::Stream::Stdout));
 
         if atty {
             let (m1, m2) = self.get_markers();

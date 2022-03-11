@@ -47,22 +47,22 @@ pub fn main() {
 }
 
 fn defer_main() -> Result<(), io::Error> {
-    eprintln!("\nrunning integration tests");
+    println!("\nrunning integration tests");
 
     let mut results = Vec::new();
 
     let args = Args::parse();
     if args.include_ignored {
-        eprintln!("{}", Yellow("including ignored cases!"));
+        println!("{}", Yellow("including ignored cases!"));
     }
 
     let (tx, child) = timeout::timeout_thread();
 
-    eprintln!();
+    println!();
     let start = Instant::now();
     walk_dir_recursive("./tests/testcases".into(), &mut results, tx, &args)?;
     let elapsed = start.elapsed();
-    eprintln!();
+    println!();
 
     child.join().unwrap();
 
@@ -82,24 +82,24 @@ fn defer_main() -> Result<(), io::Error> {
                 got,
             } => {
                 failed += 1;
-                eprintln!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
-                eprintln!("       {}: {}", Blue("input"), input);
-                eprintln!("    {}: {}", Blue("expected"), Print(expected));
-                eprintln!("         {}: {}", Blue("got"), Print(got));
-                eprintln!();
+                println!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
+                println!("       {}: {}", Blue("input"), input);
+                println!("    {}: {}", Blue("expected"), Print(expected));
+                println!("         {}: {}", Blue("got"), Print(got));
+                println!();
             }
             TestResult::Panic { message } => {
                 failed += 1;
-                eprintln!("{}: {}", path.to_string_lossy(), Red("test panicked."));
+                println!("{}: {}", path.to_string_lossy(), Red("test panicked."));
                 if let Some(message) = message {
-                    eprintln!("     {}: {message}", Blue("message"));
+                    println!("     {}: {message}", Blue("message"));
                 }
-                eprintln!();
+                println!();
             }
         }
     }
 
-    eprintln!(
+    println!(
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
         if failed == 0 {
             Green("ok")
@@ -115,7 +115,7 @@ fn defer_main() -> Result<(), io::Error> {
 
     if failed > 0 {
         if args.filter.is_empty() {
-            eprintln!(
+            println!(
                 "{t_tip}: you can rerun a specific test case with \
                 `cargo test --test it -- {t_filter}`\n\
                 where {t_filter} is a substring of the test case's file path\n",
@@ -124,7 +124,7 @@ fn defer_main() -> Result<(), io::Error> {
             );
         }
     } else if ignored > 0 {
-        eprintln!(
+        println!(
             "{t_tip}: run ignored test cases with `cargo test --test it -- -i`",
             t_tip = Yellow("tip"),
         );
