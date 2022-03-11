@@ -5,16 +5,23 @@ use std::{
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span {
-    pub start: usize,
-    pub end: usize,
+    start: usize,
+    end: usize,
 }
 
 impl Span {
-    pub fn range(self) -> Option<Range<usize>> {
-        if self.start > self.end {
-            None
-        } else {
-            Some(self.start..self.end)
+    pub(crate) fn new(start: usize, end: usize) -> Self {
+        Span { start, end }
+    }
+
+    pub fn range(self) -> Range<usize> {
+        self.start..self.end
+    }
+
+    pub(crate) fn start(&self) -> Span {
+        Span {
+            start: self.start,
+            end: self.start,
         }
     }
 

@@ -139,7 +139,7 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                 let start = offset;
                 offset += len;
                 input = &input[len..];
-                result.push((token, Span { start, end: offset }));
+                result.push((token, Span::new(start, offset)));
             }
         }
     }

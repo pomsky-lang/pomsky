@@ -1,6 +1,6 @@
 use crate::{
     compile::{Compile, CompileResult, CompileState},
-    error::{CompileErrorKind, Feature},
+    error::CompileErrorKind,
     options::{CompileOptions, RegexFlavor},
     span::Span,
     Rulex,
@@ -58,7 +58,7 @@ impl Compile for Group<'_> {
 
                 // https://www.regular-expressions.info/named.html
                 match options.flavor {
-                    RegexFlavor::Python | RegexFlavor::Pcre => {
+                    RegexFlavor::Python | RegexFlavor::Pcre | RegexFlavor::Rust => {
                         buf.push_str("(?P<");
                     }
                     RegexFlavor::DotNet
@@ -66,13 +66,6 @@ impl Compile for Group<'_> {
                     | RegexFlavor::Ruby
                     | RegexFlavor::JavaScript => {
                         buf.push_str("(?<");
-                    }
-                    RegexFlavor::Rust => {
-                        return Err(CompileErrorKind::Unsupported(
-                            Feature::NamedCaptureGroups,
-                            options.flavor,
-                        )
-                        .at(self.span))
                     }
                 }
                 buf.push_str(name);

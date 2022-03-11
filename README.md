@@ -73,6 +73,11 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 :name('test') ::name          # (?P<name>test)\k<name>
 ```
 
+## Usage
+
+Check out the [CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
+[procedural macro](./rulex-macro/).
+
 ## Why use this instead of normal regexes?
 
 Normal regexes are very concise, but when they get longer, they get increasingly difficult to

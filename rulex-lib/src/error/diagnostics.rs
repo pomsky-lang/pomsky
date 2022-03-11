@@ -16,7 +16,8 @@ pub struct Diagnostic {
 #[cfg(feature = "miette")]
 impl From<Span> for miette::SourceSpan {
     fn from(s: Span) -> Self {
-        miette::SourceSpan::new(s.start.into(), (s.end - s.start).into())
+        let std::ops::Range { start, end } = s.range();
+        miette::SourceSpan::new(start.into(), (end - start).into())
     }
 }
 
@@ -39,11 +40,12 @@ impl miette::Diagnostic for Diagnostic {
     }
 
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+        let std::ops::Range { start, end } = self.span.range();
         Some(Box::new(
             [miette::LabeledSpan::new(
                 Some("error occurred here".into()),
-                self.span.start,
-                self.span.end - self.span.start,
+                start,
+                end - start,
             )]
             .into_iter(),
         ))
@@ -52,7 +54,7 @@ impl miette::Diagnostic for Diagnostic {
 
 impl Diagnostic {
     pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
-        let range = error.span.range().unwrap_or(0..source_code.len());
+        let range = error.span.map(Span::range).unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
         let span = Span::from(range);
 
@@ -80,18 +82,21 @@ impl Diagnostic {
         }
     }
 
-    pub fn from_compile_error(error: CompileError, source_code: &str) -> Self {
-        match error.kind {
+    pub fn from_compile_error(
+        CompileError { kind, span }: CompileError,
+        source_code: &str,
+    ) -> Self {
+        match kind {
             CompileErrorKind::ParseError(kind) => {
-                Diagnostic::from_parse_error(kind.at(error.span), source_code)
+                Diagnostic::from_parse_error(ParseError { kind, span }, source_code)
             }
             _ => {
-                let range = error.span.range().unwrap_or(0..source_code.len());
+                let range = span.map(Span::range).unwrap_or(0..source_code.len());
                 let span = Span::from(range);
 
                 Diagnostic {
                     code: None,
-                    msg: error.kind.to_string(),
+                    msg: kind.to_string(),
                     source_code: source_code.into(),
                     help: None,
                     span,

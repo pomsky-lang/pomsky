@@ -18,14 +18,14 @@ pub(crate) struct Input<'i, 'b> {
 impl<'i, 'b> Input<'i, 'b> {
     pub(super) fn from(source: &'i str, tokens: &'b [(Token, Span)]) -> Result<Self, ParseError> {
         let error = tokens.iter().find_map(|&(t, span)| match t {
-            Token::Error => Some((span.start, span.end, None)),
-            Token::ErrorMsg(m) => Some((span.start, span.end, Some(m))),
+            Token::Error => Some((span, None)),
+            Token::ErrorMsg(m) => Some((span, Some(m))),
             _ => None,
         });
-        if let Some((start, end, msg)) = error {
+        if let Some((span, msg)) = error {
             return match msg {
-                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(Span { start, end })),
-                None => Err(ParseErrorKind::UnknownToken.at(Span { start, end })),
+                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(span)),
+                None => Err(ParseErrorKind::UnknownToken.at(span)),
             };
         }
 
@@ -68,7 +68,7 @@ impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
         let v: Vec<_> = self
             .tokens
             .iter()
-            .map(|&(t, span)| FmtHelper(t, &self.source[span.start..span.end]))
+            .map(|&(t, span)| FmtHelper(t, &self.source[span.range()]))
             .collect();
 
         v.fmt(f)
@@ -82,7 +82,7 @@ impl<'i, 'b> Iterator for Input<'i, 'b> {
         match self.tokens.split_first() {
             Some((&(token, span), rest)) => {
                 self.tokens = rest;
-                Some((token, &self.source[span.start..span.end]))
+                Some((token, &self.source[span.range()]))
             }
             None => None,
         }

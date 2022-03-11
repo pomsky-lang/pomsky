@@ -180,7 +180,7 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
             (None, rule) => rule,
             (Some((capture, c_span)), Rulex::Group(mut g)) => {
                 g.set_capture(capture);
-                g.span.start = c_span.start;
+                g.span = c_span.join(g.span);
                 Rulex::Group(g)
             }
             (Some((capture, c_span)), rule) => Rulex::Group(Group::new(
@@ -248,7 +248,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             let group = CharGroup::try_from_range(first, last).ok_or_else(|| {
                 nom::Err::Failure(
                     ParseErrorKind::CharClass(CharClassError::DescendingRange(first, last))
-                        .at((span1.start..span2.end).into()),
+                        .at(span1.join(span2)),
                 )
             })?;
             Ok((input, group))
@@ -283,9 +283,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
 
         for range in iter {
             class.add(range).map_err(|e| {
-                nom::Err::Failure(
-                    ParseErrorKind::CharClass(e).at((span1.start..input.span().start).into()),
-                )
+                nom::Err::Failure(ParseErrorKind::CharClass(e).at(span1.join(input.span().start())))
             })?;
         }
         Ok((input, class))
@@ -311,22 +309,40 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
 }
 
 pub(super) fn parse_code_point<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (char, Span)> {
-    try_map(
-        Token::CodePoint,
-        |(s, span)| {
-            let hex = &s[2..];
-            if hex.len() > 6 {
-                Err(ParseErrorKind::CodePoint(CodePointError::Invalid))
-            } else {
-                u32::from_str_radix(hex, 16)
-                    .ok()
-                    .and_then(|n| char::try_from(n).ok())
-                    .map(|c| (c, span))
-                    .ok_or(ParseErrorKind::CodePoint(CodePointError::Invalid))
-            }
-        },
-        nom::Err::Failure,
-    )(input)
+    alt((
+        try_map(
+            Token::CodePoint,
+            |(s, span)| {
+                let hex = &s[2..];
+                if hex.len() > 6 {
+                    Err(ParseErrorKind::CodePoint(CodePointError::Invalid))
+                } else {
+                    u32::from_str_radix(hex, 16)
+                        .ok()
+                        .and_then(|n| char::try_from(n).ok())
+                        .map(|c| (c, span))
+                        .ok_or(ParseErrorKind::CodePoint(CodePointError::Invalid))
+                }
+            },
+            nom::Err::Failure,
+        ),
+        try_map(
+            Token::Identifier,
+            |(str, span)| {
+                if let Some(rest) = str.strip_prefix('U') {
+                    if let Ok(n) = u32::from_str_radix(rest, 16) {
+                        if let Ok(c) = char::try_from(n) {
+                            return Ok((c, span));
+                        } else {
+                            return Err(ParseErrorKind::CodePoint(CodePointError::Invalid));
+                        }
+                    }
+                }
+                Err(ParseErrorKind::ExpectedToken(Token::CodePoint))
+            },
+            nom::Err::Error,
+        ),
+    ))(input)
 }
 
 pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {

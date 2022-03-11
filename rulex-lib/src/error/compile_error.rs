@@ -5,18 +5,25 @@ use super::{ParseError, ParseErrorKind};
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub struct CompileError {
     pub(super) kind: CompileErrorKind,
-    pub(super) span: Span,
+    pub(super) span: Option<Span>,
 }
 
 impl CompileErrorKind {
     pub(crate) fn at(self, span: Span) -> CompileError {
-        CompileError { kind: self, span }
+        CompileError {
+            kind: self,
+            span: Some(span),
+        }
     }
 }
 
 impl core::fmt::Display for CompileError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\n  at {}", self.kind, self.span)
+        if let Some(span) = self.span {
+            write!(f, "{}\n  at {}", self.kind, span)
+        } else {
+            self.kind.fmt(f)
+        }
     }
 }
 
@@ -84,6 +91,9 @@ impl Feature {
 
 impl From<ParseError> for CompileError {
     fn from(e: ParseError) -> Self {
-        CompileErrorKind::ParseError(e.kind).at(e.span)
+        CompileError {
+            kind: CompileErrorKind::ParseError(e.kind),
+            span: e.span,
+        }
     }
 }

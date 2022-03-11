@@ -6,10 +6,30 @@ string literal at compile time:
 ```rust
 use rulex_macro::rulex;
 
-const REGEX: &str = rulex!(r#" 'foo' | 'bar'+ greedy "#);
+const REGEX: &str = rulex!("foo" | "bar"+ greedy);
 ```
 
-Errors from rulex are shown at compile time, too, and are highlighted in your IDE.
+This string can then used with the `regex` crate:
+
+```rust
+let my_regex = regex::Regex::new(REGEX).unwrap();
+```
+
+## Diagnostics
+
+Errors from rulex are shown at compile time and are highlighted in your IDE. You can improve the
+diagnostics by enabling the `diagnostics` feature, which requires Rust Nightly.
+
+## Regex flavor
+
+If you want to use a regex flavor _other than Rust_, you can specify it after a hashtag:
+
+```rust
+const REGEX: &str = rulex!(
+    #flavor = Pcre
+    >> "test" %
+);
+```
 
 ## License
 

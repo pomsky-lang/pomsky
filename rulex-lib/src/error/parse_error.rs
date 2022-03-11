@@ -7,28 +7,32 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
     pub(super) kind: ParseErrorKind,
-    pub(super) span: Span,
+    pub(super) span: Option<Span>,
 }
 
 impl ParseErrorKind {
     pub(crate) fn at(self, span: Span) -> ParseError {
-        ParseError { kind: self, span }
+        ParseError {
+            kind: self,
+            span: Some(span),
+        }
     }
 
     pub(crate) fn unknown_index(self) -> ParseError {
         ParseError {
             kind: self,
-            span: Span {
-                start: usize::MAX,
-                end: usize::MAX,
-            },
+            span: None,
         }
     }
 }
 
 impl core::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}\n  at {}", self.kind, self.span)
+        if let Some(span) = self.span {
+            write!(f, "{}\n  at {}", self.kind, span)
+        } else {
+            self.kind.fmt(f)
+        }
     }
 }
 

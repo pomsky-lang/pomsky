@@ -14,7 +14,9 @@ categories = ["text-processing"]
 [lib]
 proc-macro = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["diagnostics"]
+diagnostics = []
 
 [dependencies]
 rulex = { version = "0.1.0", path = "../rulex-lib" }
