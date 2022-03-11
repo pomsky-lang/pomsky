@@ -11,12 +11,17 @@ use crate::{
 pub struct Repetition<'i> {
     rule: Rulex<'i>,
     kind: RepetitionKind,
-    greedy: Greedy,
+    greedy: Quantifier,
     pub(crate) span: Span,
 }
 
 impl<'i> Repetition<'i> {
-    pub fn new(rule: Rulex<'i>, kind: RepetitionKind, greedy: Greedy, span: Span) -> Self {
+    pub(crate) fn new(
+        rule: Rulex<'i>,
+        kind: RepetitionKind,
+        greedy: Quantifier,
+        span: Span,
+    ) -> Self {
         Repetition {
             rule,
             kind,
@@ -81,7 +86,7 @@ impl Compile for Repetition<'_> {
             }
         }
 
-        if let Greedy::No = self.greedy {
+        if let Quantifier::Lazy = self.greedy {
             if !omit_lazy {
                 buf.push('?');
             }
@@ -105,7 +110,7 @@ impl core::fmt::Debug for Repetition<'_> {
                 upper_bound: Some(upper_bound),
             } => write!(f, "{{{lower_bound}, {upper_bound}}}"),
         }?;
-        if let Greedy::Yes = self.greedy {
+        if let Quantifier::Greedy = self.greedy {
             write!(f, " greedy")?;
         }
         Ok(())
@@ -114,9 +119,10 @@ impl core::fmt::Debug for Repetition<'_> {
 
 #[derive(Clone, PartialEq, Eq, Copy)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub enum Greedy {
-    Yes,
-    No,
+#[non_exhaustive]
+pub enum Quantifier {
+    Greedy,
+    Lazy,
 }
 
 /// A repetition in its most canonical form, `{x,y}`.
@@ -137,36 +143,32 @@ pub struct RepetitionKind {
 }
 
 impl RepetitionKind {
-    pub fn zero_inf() -> Self {
+    pub(crate) fn zero_inf() -> Self {
         RepetitionKind {
             lower_bound: 0,
             upper_bound: None,
         }
     }
 
-    pub fn one_inf() -> Self {
+    pub(crate) fn one_inf() -> Self {
         RepetitionKind {
             lower_bound: 1,
             upper_bound: None,
         }
     }
 
-    pub fn zero_one() -> Self {
+    pub(crate) fn zero_one() -> Self {
         RepetitionKind {
             lower_bound: 0,
             upper_bound: Some(1),
         }
     }
 
-    pub fn fixed(n: u32) -> Self {
+    pub(crate) fn fixed(n: u32) -> Self {
         RepetitionKind {
             lower_bound: n,
             upper_bound: Some(n),
         }
-    }
-
-    pub fn get_range(&self) -> (u32, Option<u32>) {
-        (self.lower_bound, self.upper_bound)
     }
 }
 

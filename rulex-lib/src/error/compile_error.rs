@@ -21,6 +21,7 @@ impl core::fmt::Display for CompileError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum CompileErrorKind {
     #[error("Parse error: {}", .0)]
     ParseError(ParseErrorKind),
@@ -54,6 +55,7 @@ pub enum CompileErrorKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Feature {
     NamedCaptureGroups,
     Lookaround,

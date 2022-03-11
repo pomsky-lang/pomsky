@@ -22,7 +22,7 @@ pub struct Alternation<'i> {
 }
 
 impl<'i> Alternation<'i> {
-    pub fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex {
+    pub(crate) fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex {
         rules
             .into_iter()
             .reduce(|a, b| match (a, b) {

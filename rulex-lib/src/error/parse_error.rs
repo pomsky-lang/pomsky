@@ -58,6 +58,7 @@ impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum ParseErrorKind {
     #[error("Unknown token")]
     UnknownToken,
@@ -96,6 +97,7 @@ pub enum ParseErrorKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum CharStringError {
     #[error("Strings used in ranges can't be empty")]
     Empty,
@@ -104,6 +106,7 @@ pub enum CharStringError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum CharClassError {
     #[error("This character class is empty")]
     Empty,
@@ -129,6 +132,7 @@ pub enum CharClassError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum CodePointError {
     #[error("This code point is outside the allowed range")]
     Invalid,
@@ -137,6 +141,7 @@ pub enum CodePointError {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum NumberError {
     #[error("Numbers this large are not supported")]
     TooLarge,

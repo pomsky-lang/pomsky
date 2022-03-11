@@ -18,7 +18,7 @@ pub struct Group<'i> {
 }
 
 impl<'i> Group<'i> {
-    pub fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
+    pub(crate) fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
         Group {
             parts,
             capture,
@@ -26,19 +26,11 @@ impl<'i> Group<'i> {
         }
     }
 
-    pub fn two(a: Rulex<'i>, b: Rulex<'i>, span: Span) -> Self {
-        Group {
-            parts: vec![a, b],
-            capture: None,
-            span,
-        }
-    }
-
-    pub fn set_capture(&mut self, capture: Capture<'i>) {
+    pub(crate) fn set_capture(&mut self, capture: Capture<'i>) {
         self.capture = Some(capture);
     }
 
-    pub fn needs_parens_before_repetition(&self) -> bool {
+    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
         if self.capture.is_none() && self.parts.len() == 1 {
             return self.parts[0].needs_parens_before_repetition();
         }
@@ -146,7 +138,7 @@ pub struct Capture<'i> {
 }
 
 impl<'i> Capture<'i> {
-    pub fn new(name: Option<&'i str>) -> Self {
+    pub(crate) fn new(name: Option<&'i str>) -> Self {
         Capture { name }
     }
 }

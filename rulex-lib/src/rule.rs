@@ -16,6 +16,7 @@ use crate::{
 
 /// A parsed rulex expression, which might contain more sub-expressions.
 #[derive(Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Rulex<'i> {
     /// A string literal
     Literal(Literal<'i>),

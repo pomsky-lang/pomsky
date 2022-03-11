@@ -13,6 +13,7 @@ use crate::error::CharClassError;
 ///
 /// Refer to the [`char_class` module](crate::char_class) for more information.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub(crate) enum CharGroup<'i> {
     /// `[.]`, the [dot](https://www.regular-expressions.info/dot.html). Matches any code point
     /// except `\n`.
@@ -26,7 +27,7 @@ pub(crate) enum CharGroup<'i> {
 impl<'i> CharGroup<'i> {
     /// Tries to create a `CharGroup` from a range of characters (inclusive). Returns `None` if
     /// `last` is lower than `first`.
-    pub fn try_from_range(first: char, last: char) -> Option<Self> {
+    pub(crate) fn try_from_range(first: char, last: char) -> Option<Self> {
         if first <= last {
             let range = GroupItem::Range { first, last };
             Some(CharGroup::Items(vec![range]))
@@ -37,12 +38,12 @@ impl<'i> CharGroup<'i> {
 
     /// Creates a `CharGroup` from a string, by iterating over the `char`s and adding each of them
     /// to the list.
-    pub fn from_chars(chars: &str) -> Self {
+    pub(crate) fn from_chars(chars: &str) -> Self {
         CharGroup::Items(chars.chars().map(GroupItem::Char).collect())
     }
 
     /// Creates a `CharGroup` from a single `char`.
-    pub fn from_char(c: char) -> Self {
+    pub(crate) fn from_char(c: char) -> Self {
         CharGroup::Items(vec![GroupItem::Char(c)])
     }
 
@@ -54,7 +55,10 @@ impl<'i> CharGroup<'i> {
     ///
     /// If the name is uppercase (and not `X` or `R`), we just assume that it is a Unicode category,
     /// script or block. This needs to be fixed at one point!
-    pub fn try_from_group_name(name: &'i str, negative: bool) -> Result<Self, CharClassError> {
+    pub(crate) fn try_from_group_name(
+        name: &'i str,
+        negative: bool,
+    ) -> Result<Self, CharClassError> {
         Ok(match name {
             // TODO: Refactor this unintelligible mess
             "X" => return Err(CharClassError::Grapheme),
@@ -130,7 +134,7 @@ impl<'i> CharGroup<'i> {
     /// The previous implementation was much more advanced and merged overlapping ranges using a
     /// `BTreeSet` with a custom (technically incorrect) `PartialEq` implementation. This added
     /// a lot of complexity for very little return, so I decided to ditch it.
-    pub fn add(&mut self, other: CharGroup<'i>) -> Result<(), CharClassError> {
+    pub(crate) fn add(&mut self, other: CharGroup<'i>) -> Result<(), CharClassError> {
         match (self, other) {
             (CharGroup::Items(it), CharGroup::Items(other)) => {
                 it.extend(other);

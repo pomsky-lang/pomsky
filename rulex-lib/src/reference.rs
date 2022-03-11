@@ -18,6 +18,7 @@ impl<'i> Reference<'i> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub(crate) enum ReferenceTarget<'i> {
     Named(&'i str),
     Number(u32),

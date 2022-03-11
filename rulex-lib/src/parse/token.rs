@@ -8,6 +8,7 @@ use crate::{
 use super::input::Input;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[non_exhaustive]
 pub enum Token {
     /// `<%` (`^` boundary)
     BStart,
@@ -82,6 +83,7 @@ pub enum Token {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum ParseErrorMsg {
     #[error("`^` is not a valid token. Use `<%` to match the start of the string")]
     Caret,

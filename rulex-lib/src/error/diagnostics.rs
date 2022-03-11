@@ -4,6 +4,7 @@ use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErro
 
 #[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]
 #[cfg_attr(feature = "miette", error("{}", .msg))]
+#[non_exhaustive]
 pub struct Diagnostic {
     pub msg: String,
     pub code: Option<String>,

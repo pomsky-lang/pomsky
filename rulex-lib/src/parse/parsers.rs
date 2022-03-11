@@ -19,7 +19,7 @@ use crate::{
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
     reference::{Reference, ReferenceTarget},
-    repetition::{Greedy, Repetition, RepetitionKind},
+    repetition::{Quantifier, Repetition, RepetitionKind},
     span::Span,
     Rulex,
 };
@@ -103,7 +103,7 @@ pub(super) fn parse_lookaround<'i, 'b>(
 
 pub(super) fn parse_repetition<'i, 'b>(
     input: Input<'i, 'b>,
-) -> PResult<'i, 'b, (RepetitionKind, Greedy, Span)> {
+) -> PResult<'i, 'b, (RepetitionKind, Quantifier, Span)> {
     map(
         pair(
             alt((
@@ -115,8 +115,8 @@ pub(super) fn parse_repetition<'i, 'b>(
                 parse_braced_repetition,
             )),
             map(opt("greedy"), |a| match a {
-                Some((_, span)) => (Greedy::Yes, span),
-                None => (Greedy::No, Span::default()),
+                Some((_, span)) => (Quantifier::Greedy, span),
+                None => (Quantifier::Lazy, Span::default()),
             }),
         ),
         |((kind, span1), (greedy, span2))| (kind, greedy, span1.join(span2)),

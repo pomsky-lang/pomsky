@@ -8,6 +8,7 @@ pub struct CompileOptions {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum RegexFlavor {
     Pcre,
     Python,
