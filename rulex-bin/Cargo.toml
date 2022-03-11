@@ -4,7 +4,12 @@ description = "Compile rulex expressions, a new regular expression language"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
-license = "MIT or Apache-2"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/Aloso/rulex"
+repository = "https://github.com/Aloso/rulex"
+readme = "README.md"
+keywords = ["regexp", "regex", "rulex"]
+categories = ["text-processing", "command-line-utilities"]
 
 
 [[bin]]

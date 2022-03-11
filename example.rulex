@@ -1,1 +1,0 @@
-% :test('hello' | 'world' | [.] ['a'-'g'] (['-+' '0'-'9' 'a'-'f'])+ greedy) << "test"
