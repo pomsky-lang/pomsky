@@ -49,10 +49,6 @@ impl CharGroup {
         CharGroup::Items(vec![GroupItem::Char(c)])
     }
 
-    fn from_group_name(name: GroupName, negative: bool) -> Self {
-        CharGroup::Items(vec![GroupItem::Named { name, negative }])
-    }
-
     /// Try to create a `CharGroup` from the name of a character class. Fails if the name is
     /// lowercase and not known, or if it matches a keyword.
     ///
@@ -79,12 +75,6 @@ impl CharGroup {
             "codepoint" | "cp" => CharGroup::CodePoint,
             "." => CharGroup::Dot,
 
-            "w" | "word" => CharGroup::from_group_name(GroupName::Word, negative),
-            "d" | "digit" => CharGroup::from_group_name(GroupName::Digit, negative),
-            "s" | "space" => CharGroup::from_group_name(GroupName::Space, negative),
-            "h" | "horiz_space" => CharGroup::from_group_name(GroupName::HorizSpace, negative),
-            "v" | "vert_space" => CharGroup::from_group_name(GroupName::VertSpace, negative),
-            "l" | "line_break" => CharGroup::from_group_name(GroupName::LineBreak, negative),
             _ => CharGroup::Items(vec![GroupItem::Named {
                 name: super::unicode::parse_group_name(name)?,
                 negative,

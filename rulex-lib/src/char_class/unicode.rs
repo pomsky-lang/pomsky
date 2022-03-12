@@ -14,12 +14,18 @@ pub(super) fn parse_group_name(name: &str) -> Result<GroupName, CharClassError> 
 
 /*
 macro_rules! data {
-    ($(
-        #$kind:ident( $prefix:literal ):
+    (
         $(
-            $name:ident $(, $alternative:ident)* -> $default_repr:literal;
+            $($name0:literal),* => $value0:expr;
         )*
-    )*) => {
+
+        $(
+            #$kind:ident( $prefix:literal ):
+            $(
+                $name:ident $(, $alternative:ident)* -> $default_repr:literal;
+            )*
+        )*
+    ) => {
         $(
             #[derive(Clone, Copy, PartialEq, Eq)]
             #[allow(non_camel_case_types)]
@@ -39,17 +45,29 @@ macro_rules! data {
         )*
 
         static PARSE_LUT: &[(&str, GroupName)] = &[
+            $($(
+                ( $name0, $value0 ),
+            )*)*
             $(
                 $(
-                    (concat!($prefix, stringify!($name)), GroupName::$kind($kind::$name))
-                    $(, (concat!($prefix, stringify!($alternative)), GroupName::$kind($kind::$name)) )*
-                ),*
-            ),*
+                    ( concat!($prefix, stringify!($name)), GroupName::$kind($kind::$name) ),
+                    $(
+                        (concat!($prefix, stringify!($alternative)), GroupName::$kind($kind::$name)),
+                    )*
+                )*
+            )*
         ];
     }
 }
 
 data! {
+    "word", "w" => GroupName::Word;
+    "digit", "d" => GroupName::Digit;
+    "space", "s" => GroupName::Space;
+    "horiz_space", "h" => GroupName::HorizSpace;
+    "vert_space", "v" => GroupName::VertSpace;
+    "line_break", "l" => GroupName::LineBreak;
+
     #Category(""):
 
     Cased_Letter, LC -> "LC";
@@ -1066,6 +1084,18 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Zs", GroupName::Category(Category::Space_Separator)),
     ("Zyyy", GroupName::Script(Script::Common)),
     ("cntrl", GroupName::Category(Category::Control)),
+    ("d", (GroupName::Digit)),
+    ("digit", (GroupName::Digit)),
     ("digit", GroupName::Category(Category::Decimal_Number)),
+    ("h", (GroupName::HorizSpace)),
+    ("horiz_space", (GroupName::HorizSpace)),
+    ("l", (GroupName::LineBreak)),
+    ("line_break", (GroupName::LineBreak)),
     ("punct", GroupName::Category(Category::Punctuation)),
+    ("s", (GroupName::Space)),
+    ("space", (GroupName::Space)),
+    ("v", (GroupName::VertSpace)),
+    ("vert_space", (GroupName::VertSpace)),
+    ("w", (GroupName::Word)),
+    ("word", (GroupName::Word)),
 ];

@@ -1,5 +1,5 @@
 #! expect=error
 [Grapheme]
 -----
-Parse error: Unknown character class `Grapheme`
+Parse error: A character class can't contain `Grapheme`
   at 1..9
