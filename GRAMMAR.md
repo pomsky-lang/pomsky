@@ -148,7 +148,7 @@ PosixClass = 'alpha' | 'alnum' | 'ascii' | 'blank'
 ### Grapheme
 
 ```
-Grapheme = 'X'
+Grapheme = 'Grapheme'
 ```
 
 ### Boundary

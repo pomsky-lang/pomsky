@@ -8,7 +8,7 @@ use crate::{
     span::Span,
 };
 
-/// The `X` expression, matching a
+/// The `Grapheme` expression, matching a
 /// [Unicode grapheme](https://www.regular-expressions.info/unicode.html#grapheme).
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
@@ -25,7 +25,7 @@ impl Compile for Grapheme {
     ) -> CompileResult {
         if options.flavor == RegexFlavor::JavaScript {
             return Err(
-                CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(self.span),
+                CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(self.span)
             );
         }
         buf.push_str("\\X");

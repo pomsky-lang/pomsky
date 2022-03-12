@@ -49,7 +49,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 !['a' 't'-'z']                # [^at-z]
 
 # Unicode
-[Greek] U+30F X               # \p{Greek}\u030F\X
+[Greek] U+30F Grapheme        # \p{Greek}\u030F\X
 
 # Boundaries
 <% %>                         # ^$

@@ -104,23 +104,25 @@ use crate::{
     span::Span,
 };
 
-use crate::char_group::{CharGroup, GroupItem};
+pub(crate) use char_group::{CharGroup, GroupItem};
+
+use self::char_group::GroupName;
+
+mod ascii;
+mod char_group;
+mod unicode;
 
 /// A _character class_. Refer to the [module-level documentation](self) for details.
 #[derive(Clone, PartialEq, Eq)]
-pub struct CharClass<'i> {
+pub struct CharClass {
     negative: bool,
-    inner: CharGroup<'i>,
+    inner: CharGroup,
     pub(crate) span: Span,
 }
 
-impl<'i> CharClass<'i> {
-    pub(crate) fn new(inner: CharGroup<'i>, span: Span) -> Self {
-        CharClass {
-            inner,
-            span,
-            negative: false,
-        }
+impl CharClass {
+    pub(crate) fn new(inner: CharGroup, span: Span) -> Self {
+        CharClass { inner, span, negative: false }
     }
 
     /// Makes a positive character class negative and vice versa.
@@ -130,7 +132,7 @@ impl<'i> CharClass<'i> {
 }
 
 #[cfg(feature = "dbg")]
-impl core::fmt::Debug for CharClass<'_> {
+impl core::fmt::Debug for CharClass {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         use std::fmt::Write;
 
@@ -156,7 +158,7 @@ impl core::fmt::Debug for CharClass<'_> {
     }
 }
 
-impl Compile for CharClass<'_> {
+impl Compile for CharClass {
     fn comp(
         &self,
         options: CompileOptions,
@@ -265,7 +267,7 @@ impl Compile for CharClass<'_> {
 /// buf.push(']');
 /// ````
 fn compile_named_class(
-    group: &str,
+    group: GroupName,
     negative: bool,
     buf: &mut String,
     flavor: RegexFlavor,
@@ -273,25 +275,26 @@ fn compile_named_class(
     span: Span,
 ) -> Result<(), CompileError> {
     match group {
-        "w" if negative => buf.push_str("\\W"),
-        "d" if negative => buf.push_str("\\D"),
-        "s" if negative => buf.push_str("\\S"),
-        "w" | "d" | "s" => {
-            buf.push('\\');
-            buf.push_str(group);
+        GroupName::Word if negative => buf.push_str("\\W"),
+        GroupName::Digit if negative => buf.push_str("\\D"),
+        GroupName::Space if negative => buf.push_str("\\S"),
+        GroupName::Word => buf.push_str("\\w"),
+        GroupName::Digit => buf.push_str("\\d"),
+        GroupName::Space => buf.push_str("\\s"),
+
+        GroupName::HorizSpace | GroupName::VertSpace | GroupName::LineBreak if negative => {
+            let s = group.as_str().to_string();
+            return Err(CompileErrorKind::UnsupportedNegatedClass(s).at(span));
         }
-        "h" | "v" | "R" if negative => {
-            return Err(CompileErrorKind::UnsupportedNegatedClass(group.to_string()).at(span));
-        }
-        "h" | "v" => {
+
+        GroupName::HorizSpace | GroupName::VertSpace => {
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
-                buf.push('\\');
-                buf.push_str(group);
+                buf.push_str(if group == GroupName::HorizSpace { "\\h" } else { "\\v" });
             } else {
                 if is_single {
                     buf.push('[');
                 }
-                if group == "h" {
+                if group == GroupName::HorizSpace {
                     buf.push_str(r#"\t\p{Zs}"#);
                 } else {
                     buf.push_str(r#"\n\x0B\f\r\x85\u2028\u2029"#);
@@ -301,23 +304,33 @@ fn compile_named_class(
                 }
             }
         }
-        "R" if flavor == RegexFlavor::JavaScript => {
+        GroupName::LineBreak if flavor == RegexFlavor::JavaScript => {
             return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
         }
-        "R" => buf.push_str("\\R"),
-        _ if group.starts_with(char::is_lowercase) => {
-            return Err(CompileErrorKind::Other("Unknown shorthand character class").at(span));
-        }
+        GroupName::LineBreak => buf.push_str("\\R"),
         _ => {
             if negative {
                 buf.push_str("\\P{");
             } else {
                 buf.push_str("\\p{");
             }
-            buf.push_str(group);
+            match group {
+                GroupName::Category(c) => buf.push_str(c.as_str()),
+                GroupName::Script(s) => buf.push_str(s.as_str()),
+                GroupName::CodeBlock(c) => {
+                    if flavor == RegexFlavor::DotNet {
+                        buf.push_str("Is");
+                    } else {
+                        buf.push_str("In");
+                    }
+                    buf.push_str(c.as_str());
+                }
+                _ => unreachable!("The group is neither a Category, nor a Script, nor a CodeBlock"),
+            }
             buf.push('}');
         }
     }
+
     Ok(())
 }
 
@@ -326,40 +339,53 @@ fn compile_named_class(
 /// Refer to the [module-level documentation](self) for details about named character classes
 /// and negation.
 fn compile_named_class_negative(
-    group: &str,
+    group: GroupName,
     buf: &mut String,
     flavor: RegexFlavor,
     span: Span,
 ) -> Result<(), CompileError> {
     match group {
-        "w" => buf.push_str("\\W"),
-        "d" => buf.push_str("\\D"),
-        "s" => buf.push_str("\\S"),
-        "h" | "v" => {
+        GroupName::Word => buf.push_str("\\W"),
+        GroupName::Space => buf.push_str("\\S"),
+        GroupName::Digit => buf.push_str("\\D"),
+        GroupName::HorizSpace | GroupName::VertSpace => {
             buf.push_str("[^");
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
-                buf.push('\\');
-                buf.push_str(group);
-            } else if group == "h" {
+                buf.push_str(if group == GroupName::HorizSpace { "\\h" } else { "\\v" });
+            } else if group == GroupName::HorizSpace {
                 buf.push_str(r#"\t\p{Zs}"#);
             } else {
                 buf.push_str(r#"\n\x0B\f\r\x85\u2028\u2029"#);
             }
             buf.push(']');
         }
-        "R" if flavor == RegexFlavor::JavaScript => {
+        GroupName::LineBreak if flavor == RegexFlavor::JavaScript => {
             return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
         }
-        "R" => buf.push_str("[^\\R]"),
-        _ if group.starts_with(|c: char| c.is_ascii_lowercase()) => {
-            return Err(CompileErrorKind::Other("Unknown shorthand character class").at(span));
-        }
-        _ => {
+        GroupName::LineBreak => buf.push_str("[^\\R]"),
+
+        GroupName::Category(c) => {
             buf.push_str("\\P{");
-            buf.push_str(group);
+            buf.push_str(c.as_str());
+            buf.push('}');
+        }
+        GroupName::Script(s) => {
+            buf.push_str("\\P{");
+            buf.push_str(s.as_str());
+            buf.push('}');
+        }
+        GroupName::CodeBlock(c) => {
+            buf.push_str("\\P{");
+            if flavor == RegexFlavor::DotNet {
+                buf.push_str("Is");
+            } else {
+                buf.push_str("In");
+            }
+            buf.push_str(c.as_str());
             buf.push('}');
         }
     }
+
     Ok(())
 }
 

@@ -50,7 +50,7 @@ impl Compile for Lookaround<'_> {
     ) -> CompileResult {
         if options.flavor == RegexFlavor::Rust {
             return Err(
-                CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor).at(self.span),
+                CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor).at(self.span)
             );
         }
 

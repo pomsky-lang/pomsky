@@ -29,10 +29,7 @@ impl Args {
                 option => eprintln!("{}: unrecognized option {option:?}", Yellow("Warning")),
             }
         }
-        Args {
-            include_ignored,
-            filter,
-        }
+        Args { include_ignored, filter }
     }
 }
 
@@ -76,11 +73,7 @@ fn defer_main() -> Result<(), io::Error> {
             TestResult::Success => ok += 1,
             TestResult::Ignored => ignored += 1,
             TestResult::Filtered => filtered += 1,
-            TestResult::IncorrectResult {
-                input,
-                expected,
-                got,
-            } => {
+            TestResult::IncorrectResult { input, expected, got } => {
                 failed += 1;
                 println!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
                 println!("       {}: {}", Blue("input"), input);
@@ -101,11 +94,7 @@ fn defer_main() -> Result<(), io::Error> {
 
     println!(
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
-        if failed == 0 {
-            Green("ok")
-        } else {
-            Red("FAILED")
-        },
+        if failed == 0 { Green("ok") } else { Red("FAILED") },
         color!(Green if ok > 0; ok, " passed"),
         color!(Red if failed > 0; failed, " failed"),
         color!(Yellow if ignored > 0; ignored, " ignored"),

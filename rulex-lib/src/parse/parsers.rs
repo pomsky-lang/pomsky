@@ -9,8 +9,7 @@ use nom::{
 use crate::{
     alternation::Alternation,
     boundary::{Boundary, BoundaryKind},
-    char_class::CharClass,
-    char_group::CharGroup,
+    char_class::{CharClass, CharGroup},
     error::{
         CharClassError, CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind,
     },
@@ -69,16 +68,13 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
             let span = span.join(rule.span());
             Rulex::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
         }),
-        map(
-            pair(parse_atom, many0(parse_repetition)),
-            |(mut rule, repetitions)| {
-                for (kind, greedy, span) in repetitions {
-                    let span = rule.span().join(span);
-                    rule = Rulex::Repetition(Box::new(Repetition::new(rule, kind, greedy, span)));
-                }
-                rule
-            },
-        ),
+        map(pair(parse_atom, many0(parse_repetition)), |(mut rule, repetitions)| {
+            for (kind, greedy, span) in repetitions {
+                let span = rule.span().join(span);
+                rule = Rulex::Repetition(Box::new(Repetition::new(rule, kind, greedy, span)));
+            }
+            rule
+        }),
     ))(input)
 }
 
@@ -87,17 +83,13 @@ pub(super) fn parse_lookaround<'i, 'b>(
 ) -> PResult<'i, 'b, (LookaroundKind, Span)> {
     alt((
         map(Token::LookAhead, |(_, span)| (LookaroundKind::Ahead, span)),
-        map(Token::LookBehind, |(_, span)| {
-            (LookaroundKind::Behind, span)
+        map(Token::LookBehind, |(_, span)| (LookaroundKind::Behind, span)),
+        map(pair(Token::Not, Token::LookAhead), |((_, span1), (_, span2))| {
+            (LookaroundKind::AheadNegative, span1.join(span2))
         }),
-        map(
-            pair(Token::Not, Token::LookAhead),
-            |((_, span1), (_, span2))| (LookaroundKind::AheadNegative, span1.join(span2)),
-        ),
-        map(
-            pair(Token::Not, Token::LookBehind),
-            |((_, span1), (_, span2))| (LookaroundKind::BehindNegative, span1.join(span2)),
-        ),
+        map(pair(Token::Not, Token::LookBehind), |((_, span1), (_, span2))| {
+            (LookaroundKind::BehindNegative, span1.join(span2))
+        }),
     ))(input)
 }
 
@@ -107,9 +99,7 @@ pub(super) fn parse_repetition<'i, 'b>(
     map(
         pair(
             alt((
-                map(Token::QuestionMark, |(_, span)| {
-                    (RepetitionKind::zero_one(), span)
-                }),
+                map(Token::QuestionMark, |(_, span)| (RepetitionKind::zero_one(), span)),
                 map(Token::Star, |(_, span)| (RepetitionKind::zero_inf(), span)),
                 map(Token::Plus, |(_, span)| (RepetitionKind::one_inf(), span)),
                 parse_braced_repetition,
@@ -165,37 +155,29 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
 
 pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     fn parse_capture<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (Capture<'i>, Span)> {
-        map(
-            pair(Token::Colon, opt(Token::Identifier)),
-            |((_, span1), name)| (Capture::new(name.map(|(s, _)| s)), span1),
-        )(input)
+        map(pair(Token::Colon, opt(Token::Identifier)), |((_, span1), name)| {
+            (Capture::new(name.map(|(s, _)| s)), span1)
+        })(input)
     }
 
     map(
-        pair(
-            opt(parse_capture),
-            tuple((Token::OpenParen, parse_or, cut(Token::CloseParen))),
-        ),
+        pair(opt(parse_capture), tuple((Token::OpenParen, parse_or, cut(Token::CloseParen)))),
         |(capture, (_, rule, (_, close_paren)))| match (capture, rule) {
             (None, rule) => rule,
-            (Some((capture, c_span)), Rulex::Group(mut g)) => {
+            (Some((capture, c_span)), Rulex::Group(mut g)) if !g.is_capturing() => {
                 g.set_capture(capture);
                 g.span = c_span.join(g.span);
                 Rulex::Group(g)
             }
-            (Some((capture, c_span)), rule) => Rulex::Group(Group::new(
-                vec![rule],
-                Some(capture),
-                c_span.join(close_paren),
-            )),
+            (Some((capture, c_span)), rule) => {
+                Rulex::Group(Group::new(vec![rule], Some(capture), c_span.join(close_paren)))
+            }
         },
     )(input)
 }
 
 pub(super) fn parse_string<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(Token::String, |(s, span)| {
-        Rulex::Literal(Literal::new(strip_first_last(s), span))
-    })(input)
+    map(Token::String, |(s, span)| Rulex::Literal(Literal::new(strip_first_last(s), span)))(input)
 }
 
 pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
@@ -231,7 +213,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         ))(input)
     }
 
-    fn parse_chars_or_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
+    fn parse_chars_or_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
         // this is not clean code, but using the combinators results in worse error spans
         let span1 = input.span();
         let (input, first) = parse_string_or_char(input)?;
@@ -240,9 +222,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             let span2 = input.span();
             let (input, last) = cut(parse_string_or_char)(input)?;
 
-            let first = first
-                .to_char()
-                .map_err(|e| nom::Err::Failure(e.at(span1)))?;
+            let first = first.to_char().map_err(|e| nom::Err::Failure(e.at(span1)))?;
             let last = last.to_char().map_err(|e| nom::Err::Failure(e.at(span2)))?;
 
             let group = CharGroup::try_from_range(first, last).ok_or_else(|| {
@@ -261,7 +241,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         }
     }
 
-    fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup<'i>> {
+    fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
         let span1 = input.span();
 
         let (input, ranges) = many1(alt((
@@ -270,6 +250,8 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             try_map(
                 pair(opt(Token::Not), Token::Identifier),
                 |(not, (s, _))| {
+                    // FIXME: When this fails on a negative item, the span of the exclamation mark
+                    // is used instead of the identifier's span
                     CharGroup::try_from_group_name(s, not.is_some())
                         .map_err(ParseErrorKind::CharClass)
                 },
@@ -292,14 +274,10 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     map(
         pair(
             opt(Token::Not),
-            tuple((
-                Token::OpenBracket,
-                cut(parse_char_group),
-                cut(Token::CloseBracket),
-            )),
+            tuple((Token::OpenBracket, cut(parse_char_group), cut(Token::CloseBracket))),
         ),
         |(not, ((_, start), inner, (_, end)))| {
-            let mut class: CharClass<'_> = CharClass::new(inner, start.join(end));
+            let mut class: CharClass = CharClass::new(inner, start.join(end));
             if not.is_some() {
                 class.negate();
             }
@@ -364,25 +342,18 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
 }
 
 pub(super) fn parse_grapheme<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map("X", |(_, span)| Rulex::Grapheme(Grapheme { span }))(input)
+    map(alt(("Grapheme", "X")), |(_, span)| Rulex::Grapheme(Grapheme { span }))(input)
 }
 
 pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     map(
         alt((
-            map(Token::BStart, |(_, span)| {
-                Boundary::new(BoundaryKind::Start, span)
+            map(Token::BStart, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
+            map(Token::BEnd, |(_, span)| Boundary::new(BoundaryKind::End, span)),
+            map(Token::BWord, |(_, span)| Boundary::new(BoundaryKind::Word, span)),
+            map(pair(Token::Not, Token::BWord), |((_, span1), (_, span2))| {
+                Boundary::new(BoundaryKind::NotWord, span1.join(span2))
             }),
-            map(Token::BEnd, |(_, span)| {
-                Boundary::new(BoundaryKind::End, span)
-            }),
-            map(Token::BWord, |(_, span)| {
-                Boundary::new(BoundaryKind::Word, span)
-            }),
-            map(
-                pair(Token::Not, Token::BWord),
-                |((_, span1), (_, span2))| Boundary::new(BoundaryKind::NotWord, span1.join(span2)),
-            ),
         )),
         Rulex::Boundary,
     )(input)
@@ -407,11 +378,8 @@ pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, R
             try_map(
                 pair(alt((Token::Plus, Token::Dash)), Token::Number),
                 |((sign, span1), (s, span2))| {
-                    let num = if sign == "-" {
-                        str_to_i32(&format!("-{s}"))
-                    } else {
-                        str_to_i32(s)
-                    }?;
+                    let num =
+                        if sign == "-" { str_to_i32(&format!("-{s}")) } else { str_to_i32(s) }?;
                     let target = ReferenceTarget::Relative(num);
                     Ok(Rulex::Reference(Reference::new(target, span1.join(span2))))
                 },

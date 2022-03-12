@@ -13,14 +13,8 @@ pub(crate) fn fmt(diagnostic: Diagnostic, _: Group) -> String {
     let slice = &diagnostic.source_code[range.clone()];
     let Range { start, end } = range;
 
-    let before = diagnostic.source_code[..start]
-        .lines()
-        .next_back()
-        .unwrap_or_default();
-    let after = diagnostic.source_code[end..]
-        .lines()
-        .next()
-        .unwrap_or_default();
+    let before = diagnostic.source_code[..start].lines().next_back().unwrap_or_default();
+    let after = diagnostic.source_code[end..].lines().next().unwrap_or_default();
 
     let line_number = diagnostic.source_code[..start].lines().count().max(1);
     let line_number_len = (line_number as f32).log10().floor() as usize + 1;
@@ -46,9 +40,7 @@ pub(crate) fn fmt(diagnostic: Diagnostic, _: Group) -> String {
 }
 
 pub(crate) fn error(s: &str, start: Span, end: Span) -> TokenStream {
-    let group = vec![respan(Literal::string(s), Span::call_site())]
-        .into_iter()
-        .collect();
+    let group = vec![respan(Literal::string(s), Span::call_site())].into_iter().collect();
 
     vec![
         respan(Ident::new("compile_error", start), start),

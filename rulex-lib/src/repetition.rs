@@ -22,12 +22,7 @@ impl<'i> Repetition<'i> {
         greedy: Quantifier,
         span: Span,
     ) -> Self {
-        Repetition {
-            rule,
-            kind,
-            greedy,
-            span,
-        }
+        Repetition { rule, kind, greedy, span }
     }
 }
 
@@ -47,41 +42,22 @@ impl Compile for Repetition<'_> {
         let mut omit_lazy = false;
 
         match self.kind {
-            RepetitionKind {
-                lower_bound: 0,
-                upper_bound: Some(1),
-            } => buf.push('?'),
-            RepetitionKind {
-                lower_bound: 0,
-                upper_bound: None,
-            } => buf.push('*'),
-            RepetitionKind {
-                lower_bound: 1,
-                upper_bound: None,
-            } => buf.push('+'),
-            RepetitionKind {
-                lower_bound,
-                upper_bound: None,
-            } => {
+            RepetitionKind { lower_bound: 0, upper_bound: Some(1) } => buf.push('?'),
+            RepetitionKind { lower_bound: 0, upper_bound: None } => buf.push('*'),
+            RepetitionKind { lower_bound: 1, upper_bound: None } => buf.push('+'),
+            RepetitionKind { lower_bound, upper_bound: None } => {
                 write!(buf, "{{{lower_bound},}}").unwrap();
             }
-            RepetitionKind {
-                lower_bound,
-                upper_bound: Some(upper_bound),
-            } if lower_bound == upper_bound => {
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) }
+                if lower_bound == upper_bound =>
+            {
                 write!(buf, "{{{lower_bound}}}").unwrap();
                 omit_lazy = true;
             }
-            RepetitionKind {
-                lower_bound: 0,
-                upper_bound: Some(upper_bound),
-            } => {
+            RepetitionKind { lower_bound: 0, upper_bound: Some(upper_bound) } => {
                 write!(buf, "{{,{upper_bound}}}").unwrap();
             }
-            RepetitionKind {
-                lower_bound,
-                upper_bound: Some(upper_bound),
-            } => {
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
                 write!(buf, "{{{lower_bound},{upper_bound}}}").unwrap();
             }
         }
@@ -101,14 +77,12 @@ impl core::fmt::Debug for Repetition<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_tuple("Repetition").field(&self.rule).finish()?;
         match self.kind {
-            RepetitionKind {
-                lower_bound,
-                upper_bound: None,
-            } => write!(f, "{{{lower_bound}, inf}}"),
-            RepetitionKind {
-                lower_bound,
-                upper_bound: Some(upper_bound),
-            } => write!(f, "{{{lower_bound}, {upper_bound}}}"),
+            RepetitionKind { lower_bound, upper_bound: None } => {
+                write!(f, "{{{lower_bound}, inf}}")
+            }
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
+                write!(f, "{{{lower_bound}, {upper_bound}}}")
+            }
         }?;
         if let Quantifier::Greedy = self.greedy {
             write!(f, " greedy")?;
@@ -144,31 +118,19 @@ pub struct RepetitionKind {
 
 impl RepetitionKind {
     pub(crate) fn zero_inf() -> Self {
-        RepetitionKind {
-            lower_bound: 0,
-            upper_bound: None,
-        }
+        RepetitionKind { lower_bound: 0, upper_bound: None }
     }
 
     pub(crate) fn one_inf() -> Self {
-        RepetitionKind {
-            lower_bound: 1,
-            upper_bound: None,
-        }
+        RepetitionKind { lower_bound: 1, upper_bound: None }
     }
 
     pub(crate) fn zero_one() -> Self {
-        RepetitionKind {
-            lower_bound: 0,
-            upper_bound: Some(1),
-        }
+        RepetitionKind { lower_bound: 0, upper_bound: Some(1) }
     }
 
     pub(crate) fn fixed(n: u32) -> Self {
-        RepetitionKind {
-            lower_bound: n,
-            upper_bound: Some(n),
-        }
+        RepetitionKind { lower_bound: n, upper_bound: Some(n) }
     }
 }
 
@@ -186,9 +148,6 @@ impl TryFrom<(u32, Option<u32>)> for RepetitionKind {
             return Err(RepetitionError::NotAscending);
         }
 
-        Ok(RepetitionKind {
-            lower_bound,
-            upper_bound,
-        })
+        Ok(RepetitionKind { lower_bound, upper_bound })
     }
 }

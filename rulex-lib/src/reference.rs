@@ -162,10 +162,8 @@ impl Compile for Reference<'_> {
             .at(self.span)),
             RegexFlavor::JavaScript if direction == ReferenceDirection::Forwards => {
                 //TODO: Return "unknown group name" if this name isn't found
-                Err(
-                    CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
-                        .at(self.span),
-                )
+                Err(CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
+                    .at(self.span))
             }
             _ => Ok(()),
         }

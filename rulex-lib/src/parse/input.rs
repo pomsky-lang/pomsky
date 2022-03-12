@@ -65,11 +65,11 @@ impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
             }
         }
 
-        let v: Vec<_> = self
+        let v = self
             .tokens
             .iter()
             .map(|&(t, span)| FmtHelper(t, &self.source[span.range()]))
-            .collect();
+            .collect::<Vec<_>>();
 
         v.fmt(f)
     }
@@ -101,10 +101,7 @@ impl<'i, 'b> InputIter for Input<'i, 'b> {
     }
 
     fn iter_elements(&self) -> Self::IterElem {
-        Input {
-            source: self.source,
-            tokens: self.tokens,
-        }
+        Input { source: self.source, tokens: self.tokens }
     }
 
     fn position<P>(&self, predicate: P) -> Option<usize>
@@ -119,9 +116,7 @@ impl<'i, 'b> InputIter for Input<'i, 'b> {
         if count <= self.tokens.len() {
             Ok(count)
         } else {
-            Err(nom::Needed::Size(
-                (count - self.tokens.len()).try_into().unwrap(),
-            ))
+            Err(nom::Needed::Size((count - self.tokens.len()).try_into().unwrap()))
         }
     }
 }
@@ -136,24 +131,12 @@ impl<'i, 'b> InputTake for Input<'i, 'b> {
     fn take(&self, count: usize) -> Self {
         let tokens = &self.tokens[..count];
 
-        Input {
-            source: self.source,
-            tokens,
-        }
+        Input { source: self.source, tokens }
     }
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         let (left, right) = self.tokens.split_at(count);
 
-        (
-            Input {
-                source: self.source,
-                tokens: left,
-            },
-            Input {
-                source: self.source,
-                tokens: right,
-            },
-        )
+        (Input { source: self.source, tokens: left }, Input { source: self.source, tokens: right })
     }
 }

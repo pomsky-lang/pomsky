@@ -8,14 +8,8 @@ pub(crate) enum TestResult {
     Success,
     Ignored,
     Filtered,
-    IncorrectResult {
-        input: String,
-        expected: Result<String, String>,
-        got: Result<String, String>,
-    },
-    Panic {
-        message: Option<String>,
-    },
+    IncorrectResult { input: String, expected: Result<String, String>, got: Result<String, String> },
+    Panic { message: Option<String> },
 }
 
 struct Options {
@@ -26,11 +20,7 @@ struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Self {
-            flavor: RegexFlavor::Pcre,
-            ignore: false,
-            expected_outcome: Outcome::Success,
-        }
+        Self { flavor: RegexFlavor::Pcre, ignore: false, expected_outcome: Outcome::Success }
     }
 }
 
@@ -124,10 +114,7 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
     catch_unwind(|| {
         let parsed = rulex::Rulex::parse_and_compile(
             input,
-            CompileOptions {
-                flavor: options.flavor,
-                ..Default::default()
-            },
+            CompileOptions { flavor: options.flavor, ..Default::default() },
         );
         match parsed {
             Ok(got) => match options.expected_outcome {

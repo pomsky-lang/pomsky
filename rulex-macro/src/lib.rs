@@ -36,10 +36,7 @@ struct Error {
 
 impl Error {
     fn new(msg: String, span: Span) -> Self {
-        Error {
-            msg,
-            span: Some(span),
-        }
+        Error { msg, span: Some(span) }
     }
 
     fn from_msg(msg: String) -> Self {
@@ -80,11 +77,8 @@ fn expect(
 fn rulex_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error> {
     let mut iter = items.peekable();
 
-    let found_hashtag = expect(
-        &mut iter,
-        |t| matches!(t, TokenTree::Punct(p) if p.as_char() == '#'),
-        "",
-    );
+    let found_hashtag =
+        expect(&mut iter, |t| matches!(t, TokenTree::Punct(p) if p.as_char() == '#'), "");
 
     let flavor = if found_hashtag.is_ok() {
         expect(
@@ -110,10 +104,9 @@ fn rulex_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error> 
 
     #[cfg(feature = "diagnostics")]
     let (span, input) = {
-        if let (Some(first), Some(last)) = (
-            group.stream().into_iter().next(),
-            group.stream().into_iter().last(),
-        ) {
+        if let (Some(first), Some(last)) =
+            (group.stream().into_iter().next(), group.stream().into_iter().last())
+        {
             let span = first.span().join(last.span()).unwrap();
             (span, span.source_text().unwrap())
         } else {
@@ -121,18 +114,12 @@ fn rulex_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error> 
         }
     };
 
-    let options = CompileOptions {
-        flavor,
-        ..Default::default()
-    };
+    let options = CompileOptions { flavor, ..Default::default() };
 
     match Rulex::parse_and_compile(&input, options) {
         Ok(compiled) => Ok(Literal::string(&compiled)),
 
-        Err(e) => bail!(
-            diagnostic::fmt(Diagnostic::from_compile_error(e, &input), group),
-            span
-        ),
+        Err(e) => bail!(diagnostic::fmt(Diagnostic::from_compile_error(e, &input), group), span),
     }
 }
 

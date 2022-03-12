@@ -106,13 +106,9 @@ fn compile(input: &str, debug: bool, flavor: Option<Flavor>) -> miette::Result<(
         eprintln!("{parsed:#?}\n");
     }
 
-    let options = CompileOptions {
-        flavor: flavor.unwrap_or(Flavor::Pcre).into(),
-        ..Default::default()
-    };
-    let compiled = parsed
-        .compile(options)
-        .map_err(|e| Diagnostic::from_compile_error(e, input))?;
+    let options =
+        CompileOptions { flavor: flavor.unwrap_or(Flavor::Pcre).into(), ..Default::default() };
+    let compiled = parsed.compile(options).map_err(|e| Diagnostic::from_compile_error(e, input))?;
 
     println!("{compiled}");
     Ok(())

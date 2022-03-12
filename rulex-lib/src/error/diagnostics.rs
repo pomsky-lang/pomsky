@@ -24,15 +24,11 @@ impl From<Span> for miette::SourceSpan {
 #[cfg(feature = "miette")]
 impl miette::Diagnostic for Diagnostic {
     fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        self.code
-            .as_deref()
-            .map(|c| Box::new(c) as Box<dyn std::fmt::Display + 'a>)
+        self.code.as_deref().map(|c| Box::new(c) as Box<dyn std::fmt::Display + 'a>)
     }
 
     fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        self.help
-            .as_deref()
-            .map(|h| Box::new(h) as Box<dyn std::fmt::Display + 'a>)
+        self.help.as_deref().map(|h| Box::new(h) as Box<dyn std::fmt::Display + 'a>)
     }
 
     fn source_code(&self) -> Option<&dyn miette::SourceCode> {
@@ -42,12 +38,8 @@ impl miette::Diagnostic for Diagnostic {
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
         let std::ops::Range { start, end } = self.span.range();
         Some(Box::new(
-            [miette::LabeledSpan::new(
-                Some("error occurred here".into()),
-                start,
-                end - start,
-            )]
-            .into_iter(),
+            [miette::LabeledSpan::new(Some("error occurred here".into()), start, end - start)]
+                .into_iter(),
         ))
     }
 }
@@ -156,7 +148,7 @@ fn get_backslash_help(str: &str) -> Option<String> {
             Note, however, that `%>` doesn't match the position before the final newline."
             .into(),
         Some('N') => "Replace `\\N` with `[.]`".into(),
-        Some('X') => "Replace `\\X` with `X`".into(),
+        Some('X') => "Replace `\\X` with `Grapheme`".into(),
         Some(
             c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'D' | 'w' | 'W' | 's' | 'S'
             | 'R'),
@@ -178,10 +170,7 @@ fn get_backslash_help_x2(str: &str) -> Option<String> {
 }
 
 fn get_backslash_help_unicode(str: &str) -> Option<String> {
-    let hex_len = str[3..]
-        .chars()
-        .take_while(|c| c.is_ascii_hexdigit())
-        .count();
+    let hex_len = str[3..].chars().take_while(|c| c.is_ascii_hexdigit()).count();
     let hex = &str[3..3 + hex_len];
     Some(format!("Try `U+{hex}` instead"))
 }

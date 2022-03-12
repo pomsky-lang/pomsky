@@ -19,11 +19,7 @@ pub struct Group<'i> {
 
 impl<'i> Group<'i> {
     pub(crate) fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
-        Group {
-            parts,
-            capture,
-            span,
-        }
+        Group { parts, capture, span }
     }
 
     pub(crate) fn set_capture(&mut self, capture: Capture<'i>) {
@@ -35,6 +31,10 @@ impl<'i> Group<'i> {
             return self.parts[0].needs_parens_before_repetition();
         }
         true
+    }
+
+    pub(crate) fn is_capturing(&self) -> bool {
+        self.capture.is_some()
     }
 }
 

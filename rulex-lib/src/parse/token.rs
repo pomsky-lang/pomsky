@@ -149,9 +149,7 @@ impl<'i, 'b> Parser<Input<'i, 'b>, (&'i str, Span), ParseError> for Token {
                 let _ = input.next();
                 Ok((input, (s, span)))
             }
-            _ => Err(nom::Err::Error(
-                ParseErrorKind::ExpectedToken(*self).at(input.span()),
-            )),
+            _ => Err(nom::Err::Error(ParseErrorKind::ExpectedToken(*self).at(input.span()))),
         }
     }
 }
@@ -167,9 +165,7 @@ impl<'i, 'b> Parser<Input<'i, 'b>, (Token, Span), ParseError> for &'i str {
                 let _ = input.next();
                 Ok((input, (t, span)))
             }
-            _ => Err(nom::Err::Error(
-                ParseErrorKind::Expected("word").at(input.span()),
-            )),
+            _ => Err(nom::Err::Error(ParseErrorKind::Expected("word").at(input.span()))),
         }
     }
 }

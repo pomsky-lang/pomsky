@@ -19,17 +19,11 @@ impl Span {
     }
 
     pub(crate) fn start(&self) -> Span {
-        Span {
-            start: self.start,
-            end: self.start,
-        }
+        Span { start: self.start, end: self.start }
     }
 
     pub(crate) fn join(self, other: Span) -> Span {
-        Span {
-            start: usize::min(self.start, other.start),
-            end: usize::max(self.end, other.end),
-        }
+        Span { start: usize::min(self.start, other.start), end: usize::max(self.end, other.end) }
     }
 }
 
@@ -41,10 +35,7 @@ impl From<Range<usize>> for Span {
 
 impl Default for Span {
     fn default() -> Self {
-        Span {
-            start: usize::MAX,
-            end: 0,
-        }
+        Span { start: usize::MAX, end: 0 }
     }
 }
 

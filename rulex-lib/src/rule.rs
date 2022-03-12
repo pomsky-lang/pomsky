@@ -21,7 +21,7 @@ pub enum Rulex<'i> {
     /// A string literal
     Literal(Literal<'i>),
     /// A character class
-    CharClass(CharClass<'i>),
+    CharClass(CharClass),
     /// A Unicode grapheme
     Grapheme(Grapheme),
     /// A group, i.e. a sequence of rules, possibly wrapped in parentheses.

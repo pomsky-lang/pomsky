@@ -36,10 +36,7 @@ impl<'i> Alternation<'i> {
                 }
                 (a, b) => {
                     let span = a.span().join(b.span());
-                    Rulex::Alternation(Alternation {
-                        rules: vec![a, b],
-                        span,
-                    })
+                    Rulex::Alternation(Alternation { rules: vec![a, b], span })
                 }
             })
             .unwrap_or_else(|| Rulex::Literal(Literal::new("", Span::default())))

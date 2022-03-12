@@ -42,7 +42,7 @@ Error:
    ·                ─┬
    ·                 ╰── error occurred here
    ╰────
-  help: Replace `\X` with `X`
+  help: Replace `\X` with `Grapheme`
 ```
 
 ## License

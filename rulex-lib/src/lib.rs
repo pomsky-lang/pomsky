@@ -12,7 +12,6 @@ pub mod reference;
 pub mod repetition;
 pub mod span;
 
-mod char_group;
 mod compile;
 mod rule;
 

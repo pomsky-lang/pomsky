@@ -10,10 +10,7 @@ pub struct CompileError {
 
 impl CompileErrorKind {
     pub(crate) fn at(self, span: Span) -> CompileError {
-        CompileError {
-            kind: self,
-            span: Some(span),
-        }
+        CompileError { kind: self, span: Some(span) }
     }
 }
 
@@ -91,9 +88,6 @@ impl Feature {
 
 impl From<ParseError> for CompileError {
     fn from(e: ParseError) -> Self {
-        CompileError {
-            kind: CompileErrorKind::ParseError(e.kind),
-            span: e.span,
-        }
+        CompileError { kind: CompileErrorKind::ParseError(e.kind), span: e.span }
     }
 }

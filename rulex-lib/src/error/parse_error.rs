@@ -12,17 +12,11 @@ pub struct ParseError {
 
 impl ParseErrorKind {
     pub(crate) fn at(self, span: Span) -> ParseError {
-        ParseError {
-            kind: self,
-            span: Some(span),
-        }
+        ParseError { kind: self, span: Some(span) }
     }
 
     pub(crate) fn unknown_index(self) -> ParseError {
-        ParseError {
-            kind: self,
-            span: None,
-        }
+        ParseError { kind: self, span: None }
     }
 }
 
@@ -129,7 +123,7 @@ pub enum CharClassError {
     UnknownNamedClass(String),
     #[error("This character class can't be negated")]
     Negative,
-    #[error("A character class can't contain `X` (a grapheme cluster)")]
+    #[error("A character class can't contain `Grapheme`")]
     Grapheme,
     #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
