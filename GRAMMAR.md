@@ -43,7 +43,7 @@ Whitespace is required between consecutive words and code points, e.g. `[a n Lat
 
 ### Expression
 
-```
+```js
 Expression = Alternative ('|' Alternative)*
 
 Alternative = FixExpression+
@@ -53,20 +53,20 @@ Alternative = FixExpression+
 
 An expression which can have a prefix or suffix.
 
-```
+```js
 FixExpression = LookaroundPrefix Expression
               | AtomExpression RepetitionSuffix
 ```
 
 ### Lookaround
 
-```
+```js
 LookaroundPrefix = '!'? ('<<' | '>>')
 ```
 
 ### Repetitions
 
-```
+```js
 RepetitionSuffix = ('*' | '+' | '?' | RepetitionBraces) Quantifier?
 
 RepetitionBraces = '{' Number '}'
@@ -81,17 +81,13 @@ Quantifier = 'greedy'
 
 ### AtomExpression
 
-```
-AtomExpression = Group
-               | String
-               | CharacterClass
-               | Grapheme
-               | Boundary
+```js
+AtomExpression = Group | String | CharacterClass | Grapheme | Boundary;
 ```
 
 ### Group
 
-```
+```js
 Group = Capture? '(' Expression ')'
 
 Capture = ':' Name?
@@ -101,14 +97,14 @@ Name = [w]+
 
 ### String
 
-```
+```js
 String = '"' !['"']* '"'
        | "'" !["'"]* "'"
 ```
 
 ### CharacterClass
 
-```
+```js
 CharacterClass = '!'? '[' CharacterGroup ']'
 
 CharacterGroup = '.' | 'cp' | CharacterGroupMulti+
@@ -118,7 +114,7 @@ CharacterGroupMulti = Range
                     | CodePoint
                     | NonPrintable
                     | Shorthand
-                    | UnicodeCategory
+                    | UnicodeProperty
                     | PosixClass
 
 Range = Character '-' Character
@@ -135,24 +131,42 @@ CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,5}
 
 NonPrintable = 'n' | 'r' | 't' | 'a' | 'e' | 'f'
 
-Shorthand = '!'? ('w' | 'd' | 's' | 'h' | 'v' | 'R')
+Shorthand = '!'? ('w' | 'word' |
+                  'd' | 'digit' |
+                  's' | 'space' |
+                  'h' | 'horiz_space' |
+                  'v' | 'vert_space' |
+                  'l' | 'line_break')
 
-UnicodeCategory = '!'? ['A'-'Z'] [w]*
+PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
+           | 'ascii_cntrl' | 'ascii_digit' | 'ascii_graph' | 'ascii_lower'
+           | 'ascii_print' | 'ascii_punct' | 'ascii_space' | 'ascii_upper'
+           | 'ascii_word'  | 'ascii_xdigit'
+```
 
-PosixClass = 'alpha' | 'alnum' | 'ascii' | 'blank'
-           | 'cntrl' | 'digit' | 'graph' | 'lower'
-           | 'print' | 'punct' | 'space' | 'upper'
-           | 'word'  | 'xdigit'
+### Unicode properties
+
+Note that only known Unicode properties are accepted. You may use
+
+- General categories (e.g. `[Letter]`)
+- Scripts (e.g. `[Latin]`)
+- Blocks (e.g. `[InBasic_Latin]`). Not supported everywhere!
+- Other (e.g. `[Alphabetic]`). Not supported everywhere!
+
+Underscores are required. Hyphens must be substituted with underscores.
+
+```js
+UnicodeProperty = '!'? [w]+
 ```
 
 ### Grapheme
 
-```
-Grapheme = 'Grapheme'
+```js
+Grapheme = "Grapheme" | "X";
 ```
 
 ### Boundary
 
-```
+```js
 Boundary = '%' | '!' '%' | '<%' | '%>'
 ```

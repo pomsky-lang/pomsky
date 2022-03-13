@@ -149,10 +149,13 @@ fn get_backslash_help(str: &str) -> Option<String> {
             .into(),
         Some('N') => "Replace `\\N` with `[.]`".into(),
         Some('X') => "Replace `\\X` with `Grapheme`".into(),
-        Some(
-            c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'D' | 'w' | 'W' | 's' | 'S'
-            | 'R'),
-        ) => format!("Replace `\\{c}` with `[{c}]`"),
+        Some('R') => "Replace `\\R` with `[line_break]`".into(),
+        Some('D') => "Replace `\\D` with `[!d]`".into(),
+        Some('W') => "Replace `\\W` with `[!w]`".into(),
+        Some('S') => "Replace `\\S` with `[!s]`".into(),
+        Some(c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'w' | 's')) => {
+            format!("Replace `\\{c}` with `[{c}]`")
+        }
         _ => return None,
     })
 }

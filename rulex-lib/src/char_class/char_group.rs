@@ -9,7 +9,7 @@ use std::fmt::Write;
 
 use crate::error::CharClassError;
 
-use super::unicode::{Category, CodeBlock, Script};
+use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
 /// The contents of a [`CharClass`](crate::char_class::CharClass).
 ///
@@ -147,8 +147,6 @@ impl core::fmt::Debug for GroupItem {
                 }
                 let name = match name {
                     GroupName::Word => "word",
-                    GroupName::Space => "space",
-                    GroupName::Digit => "digit",
                     GroupName::HorizSpace => "horiz_space",
                     GroupName::VertSpace => "vert_space",
                     GroupName::LineBreak => "line_break",
@@ -164,6 +162,10 @@ impl core::fmt::Debug for GroupItem {
                         f.write_str("block=")?;
                         b.as_str()
                     }
+                    GroupName::OtherProperties(b) => {
+                        f.write_str("prop=")?;
+                        b.as_str()
+                    }
                 };
                 f.write_str(name)
             }
@@ -175,28 +177,26 @@ impl core::fmt::Debug for GroupItem {
 #[repr(u16)]
 pub(crate) enum GroupName {
     Word,
-    Space,
-    Digit,
     HorizSpace,
     VertSpace,
     LineBreak,
     Category(Category),
     Script(Script),
     CodeBlock(CodeBlock),
+    OtherProperties(OtherProperties),
 }
 
 impl GroupName {
     pub(super) fn as_str(self) -> &'static str {
         match self {
             GroupName::Word => "w",
-            GroupName::Space => "s",
-            GroupName::Digit => "d",
             GroupName::HorizSpace => "h",
             GroupName::VertSpace => "v",
             GroupName::LineBreak => "R",
             GroupName::Category(c) => c.as_str(),
             GroupName::Script(s) => s.as_str(),
             GroupName::CodeBlock(c) => c.as_str(),
+            GroupName::OtherProperties(o) => o.as_str(),
         }
     }
 }

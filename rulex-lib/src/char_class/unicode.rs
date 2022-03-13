@@ -30,6 +30,7 @@ macro_rules! data {
             #[derive(Clone, Copy, PartialEq, Eq)]
             #[allow(non_camel_case_types)]
             #[repr(u8)]
+            #[rustfmt::skip]
             pub(crate) enum $kind {
                 $( $name, )*
             }
@@ -60,10 +61,9 @@ macro_rules! data {
     }
 }
 
+// https://tc39.es/ecma262/multipage/text-processing.html#table-unicode-script-values
 data! {
     "word", "w" => GroupName::Word;
-    "digit", "d" => GroupName::Digit;
-    "space", "s" => GroupName::Space;
     "horiz_space", "h" => GroupName::HorizSpace;
     "vert_space", "v" => GroupName::VertSpace;
     "line_break", "l" => GroupName::LineBreak;
@@ -76,7 +76,7 @@ data! {
     Control, Cc, cntrl -> "Cc";
     Currency_Symbol, Sc -> "Sc";
     Dash_Punctuation, Pd -> "Pd";
-    Decimal_Number, Nd, digit -> "Nd";
+    Decimal_Number, Nd, digit, d -> "Nd";
     Enclosing_Mark, Me -> "Me";
     Final_Punctuation, Pf -> "Pf";
     Format, Cf -> "Cf";
@@ -100,7 +100,7 @@ data! {
     Paragraph_Separator, Zp  -> "Zp";
     Private_Use, Co  -> "Co";
     Punctuation, P, punct  -> "P";
-    Separator, Z  -> "Z";
+    Separator, Z, space, s  -> "Z";
     Space_Separator, Zs  -> "Zs";
     Spacing_Mark, Mc  -> "Mc";
     Surrogate, Cs  -> "Cs";
@@ -382,6 +382,68 @@ data! {
     Arabic_Presentation_Forms_B -> "Arabic_Presentation_Forms-B";
     Halfwidth_and_Fullwidth_Forms -> "Halfwidth_and_Fullwidth_Forms";
     Specials -> "Specials";
+
+    // https://unicode.org/reports/tr44/#Property_Index
+    #OtherProperties(""):
+
+    White_Space -> "White_Space";
+    Alphabetic, alpha -> "Alphabetic";
+    Noncharacter_Code_Point -> "Noncharacter_Code_Point";
+    Default_Ignorable_Code_Point -> "Default_Ignorable_Code_Point";
+    Logical_Order_Exception -> "Logical_Order_Exception";
+    Deprecated -> "Deprecated";
+    Variation_Selector -> "Variation_Selector";
+
+    Uppercase, upper -> "Uppercase";
+    Lowercase, lower -> "Lowercase";
+    Soft_Dotted -> "Soft_Dotted";
+    Case_Ignorable -> "Case_Ignorable";
+    Changes_When_Lowercased -> "Changes_When_Lowercased";
+    Changes_When_Uppercased -> "Changes_When_Uppercased";
+    Changes_When_Titlecased -> "Changes_When_Titlecased";
+    Changes_When_Casefolded -> "Changes_When_Casefolded";
+    Changes_When_Casemapped -> "Changes_When_Casemapped";
+
+    Emoji -> "Emoji";
+    Emoji_Presentation -> "Emoji_Presentation";
+    Emoji_Modifier -> "Emoji_Modifier";
+    Emoji_Modifier_Base -> "Emoji_Modifier_Base";
+    Emoji_Component -> "Emoji_Component";
+    Extended_Pictographic -> "Extended_Pictographic";
+
+    Hex_Digit -> "Hex_Digit";
+    ASCII_Hex_Digit -> "ASCII_Hex_Digit";
+
+    Join_Control -> "Join_Control";
+    Joining_Group -> "Joining_Group";
+
+    Bidi_Control -> "Bidi_Control";
+    Bidi_Mirrored -> "Bidi_Mirrored";
+    Bidi_Mirroring_Glyph -> "Bidi_Mirroring_Glyph";
+
+    ID_Continue -> "ID_Continue";
+    ID_Start -> "ID_Start";
+    XID_Continue -> "XID_Continue";
+    XID_Start -> "XID_Start";
+    Pattern_Syntax -> "Pattern_Syntax";
+    Pattern_White_Space -> "Pattern_White_Space";
+
+    Ideographic -> "Ideographic";
+    Unified_Ideograph -> "Unified_Ideograph";
+    Radical -> "Radical";
+    IDS_Binary_Operator -> "IDS_Binary_Operator";
+    IDS_Trinary_Operator -> "IDS_Trinary_Operator";
+
+    Math -> "Math";
+    Quotation_Mark -> "Quotation_Mark";
+    Dash -> "Dash";
+    Sentence_Terminal -> "Sentence_Terminal";
+    Terminal_Punctuation -> "Terminal_Punctuation";
+    Diacritic -> "Diacritic";
+    Extender -> "Extender";
+    Grapheme_Base -> "Grapheme_Base";
+    Grapheme_Extend -> "Grapheme_Extend";
+    Regional_Indicator -> "Regional_Indicator";
 }
 */
 
@@ -393,18 +455,18 @@ data! {
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum Category {
-    Cased_Letter, Close_Punctuation, Connector_Punctuation, Control,
-    Currency_Symbol, Dash_Punctuation, Decimal_Number, Enclosing_Mark,
-    Final_Punctuation, Format, Initial_Punctuation, Letter, Letter_Number,
-    Line_Separator, Lowercase_Letter, Mark, Math_Symbol, Modifier_Letter,
-    Modifier_Symbol, Nonspacing_Mark, Number, Open_Punctuation, Other,
-    Other_Letter, Other_Number, Other_Punctuation, Other_Symbol, Paragraph_Separator,
-    Private_Use, Punctuation, Separator, Space_Separator, Spacing_Mark,
-    Surrogate, Symbol, Titlecase_Letter, Unassigned, Uppercase_Letter,
+    Cased_Letter, Close_Punctuation, Connector_Punctuation, Control, Currency_Symbol,
+    Dash_Punctuation, Decimal_Number, Enclosing_Mark, Final_Punctuation, Format,
+    Initial_Punctuation, Letter, Letter_Number, Line_Separator, Lowercase_Letter, Mark, Math_Symbol,
+    Modifier_Letter, Modifier_Symbol, Nonspacing_Mark, Number, Open_Punctuation, Other,
+    Other_Letter, Other_Number, Other_Punctuation, Other_Symbol, Paragraph_Separator, Private_Use,
+    Punctuation, Separator, Space_Separator, Spacing_Mark, Surrogate, Symbol, Titlecase_Letter,
+    Unassigned, Uppercase_Letter, 
 }
 
 impl Category {
     pub(super) fn as_str(self) -> &'static str {
+        #[rustfmt::skip]
         static LUT: &[&str] = &[
             "LC", "Pe", "Pc", "Cc", "Sc", "Pd", "Nd", "Me", "Pf", "Cf", "Pi", "L", "Nl", "Zl",
             "Ll", "M", "Sm", "Lm", "Sk", "Mn", "N", "Ps", "C", "Lo", "No", "Po", "So", "Zp", "Co",
@@ -419,28 +481,25 @@ impl Category {
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum Script {
-    Adlam, Ahom, Anatolian_Hieroglyphs, Arabic, Armenian, Avestan, Balinese,
-    Bamum, Bassa_Vah, Batak, Bengali, Bhaiksuki, Bopomofo, Brahmi, Braille,
-    Buginese, Buhid, Canadian_Aboriginal, Carian, Caucasian_Albanian, Chakma,
-    Cham, Chorasmian, Cherokee, Common, Coptic, Cuneiform, Cypriot, Cypro_Minoan,
-    Cyrillic, Deseret, Devanagari, Dives_Akuru, Dogra, Duployan, Egyptian_Hieroglyphs,
-    Elbasan, Elymaic, Ethiopic, Georgian, Glagolitic, Gothic, Grantha, Greek,
-    Gujarati, Gunjala_Gondi, Gurmukhi, Han, Hangul, Hanifi_Rohingya, Hanunoo,
-    Hatran, Hebrew, Hiragana, Imperial_Aramaic, Inherited, Inscriptional_Pahlavi,
-    Inscriptional_Parthian, Javanese, Kaithi, Kannada, Katakana, Kayah_Li, Kharoshthi,
-    Khitan_Small_Script, Khmer, Khojki, Khudawadi, Lao, Latin, Lepcha, Limbu,
-    Linear_A, Linear_B, Lisu, Lycian, Lydian, Mahajani, Makasar, Malayalam, Mandaic,
-    Manichaean, Marchen, Medefaidrin, Masaram_Gondi, Meetei_Mayek, Mende_Kikakui,
-    Meroitic_Cursive, Meroitic_Hieroglyphs, Miao, Modi, Mongolian, Mro, Multani, Myanmar,
-    Nabataean, Nandinagari, New_Tai_Lue, Newa, Nko, Nushu, Nyiakeng_Puachue_Hmong, Ogham,
-    Ol_Chiki, Old_Hungarian, Old_Italic, Old_North_Arabian, Old_Permic, Old_Persian,
-    Old_Sogdian, Old_South_Arabian, Old_Turkic, Old_Uyghur, Oriya, Osage, Osmanya,
-    Pahawh_Hmong, Palmyrene, Pau_Cin_Hau, Phags_Pa, Phoenician, Psalter_Pahlavi, Rejang,
-    Runic, Samaritan, Saurashtra, Sharada, Shavian, Siddham, SignWriting, Sinhala,
-    Sogdian, Sora_Sompeng, Soyombo, Sundanese, Syloti_Nagri, Syriac, Tagalog, Tagbanwa,
-    Tai_Le, Tai_Tham, Tai_Viet, Takri, Tamil, Tangsa, Tangut, Telugu, Thaana, Thai,
-    Tibetan, Tifinagh, Tirhuta, Toto, Ugaritic, Vai, Vithkuqi, Wancho, Warang_Citi,
-    Yezidi, Yi, Zanabazar_Square,
+    Adlam, Ahom, Anatolian_Hieroglyphs, Arabic, Armenian, Avestan, Balinese, Bamum, Bassa_Vah,
+    Batak, Bengali, Bhaiksuki, Bopomofo, Brahmi, Braille, Buginese, Buhid, Canadian_Aboriginal,
+    Carian, Caucasian_Albanian, Chakma, Cham, Chorasmian, Cherokee, Common, Coptic, Cuneiform,
+    Cypriot, Cypro_Minoan, Cyrillic, Deseret, Devanagari, Dives_Akuru, Dogra, Duployan,
+    Egyptian_Hieroglyphs, Elbasan, Elymaic, Ethiopic, Georgian, Glagolitic, Gothic, Grantha, Greek,
+    Gujarati, Gunjala_Gondi, Gurmukhi, Han, Hangul, Hanifi_Rohingya, Hanunoo, Hatran, Hebrew,
+    Hiragana, Imperial_Aramaic, Inherited, Inscriptional_Pahlavi, Inscriptional_Parthian, Javanese,
+    Kaithi, Kannada, Katakana, Kayah_Li, Kharoshthi, Khitan_Small_Script, Khmer, Khojki, Khudawadi,
+    Lao, Latin, Lepcha, Limbu, Linear_A, Linear_B, Lisu, Lycian, Lydian, Mahajani, Makasar,
+    Malayalam, Mandaic, Manichaean, Marchen, Medefaidrin, Masaram_Gondi, Meetei_Mayek,
+    Mende_Kikakui, Meroitic_Cursive, Meroitic_Hieroglyphs, Miao, Modi, Mongolian, Mro, Multani,
+    Myanmar, Nabataean, Nandinagari, New_Tai_Lue, Newa, Nko, Nushu, Nyiakeng_Puachue_Hmong, Ogham,
+    Ol_Chiki, Old_Hungarian, Old_Italic, Old_North_Arabian, Old_Permic, Old_Persian, Old_Sogdian,
+    Old_South_Arabian, Old_Turkic, Old_Uyghur, Oriya, Osage, Osmanya, Pahawh_Hmong, Palmyrene,
+    Pau_Cin_Hau, Phags_Pa, Phoenician, Psalter_Pahlavi, Rejang, Runic, Samaritan, Saurashtra,
+    Sharada, Shavian, Siddham, SignWriting, Sinhala, Sogdian, Sora_Sompeng, Soyombo, Sundanese,
+    Syloti_Nagri, Syriac, Tagalog, Tagbanwa, Tai_Le, Tai_Tham, Tai_Viet, Takri, Tamil, Tangsa,
+    Tangut, Telugu, Thaana, Thai, Tibetan, Tifinagh, Tirhuta, Toto, Ugaritic, Vai, Vithkuqi, Wancho,
+    Warang_Citi, Yezidi, Yi, Zanabazar_Square,
 }
 
 impl Script {
@@ -541,11 +600,52 @@ impl CodeBlock {
         LUT[self as u8 as usize]
     }
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+#[repr(u8)]
+#[rustfmt::skip]
+pub(crate) enum OtherProperties {
+    White_Space, Alphabetic, Noncharacter_Code_Point, Default_Ignorable_Code_Point,
+    Logical_Order_Exception, Deprecated, Variation_Selector, Uppercase, Lowercase, Soft_Dotted,
+    Case_Ignorable, Changes_When_Lowercased, Changes_When_Uppercased, Changes_When_Titlecased,
+    Changes_When_Casefolded, Changes_When_Casemapped, Emoji, Emoji_Presentation, Emoji_Modifier,
+    Emoji_Modifier_Base, Emoji_Component, Extended_Pictographic, Hex_Digit, ASCII_Hex_Digit,
+    Join_Control, Joining_Group, Bidi_Control, Bidi_Mirrored, Bidi_Mirroring_Glyph, ID_Continue,
+    ID_Start, XID_Continue, XID_Start, Pattern_Syntax, Pattern_White_Space, Ideographic,
+    Unified_Ideograph, Radical, IDS_Binary_Operator, IDS_Trinary_Operator, Math, Quotation_Mark,
+    Dash, Sentence_Terminal, Terminal_Punctuation, Diacritic, Extender, Grapheme_Base,
+    Grapheme_Extend, Regional_Indicator,
+}
+
+impl OtherProperties {
+    pub(super) fn as_str(self) -> &'static str {
+        #[rustfmt::skip]
+        static LUT: &[&str] = &[
+            "White_Space", "Alphabetic", "Noncharacter_Code_Point", "Default_Ignorable_Code_Point",
+            "Logical_Order_Exception", "Deprecated", "Variation_Selector", "Uppercase", "Lowercase",
+            "Soft_Dotted", "Case_Ignorable", "Changes_When_Lowercased", "Changes_When_Uppercased",
+            "Changes_When_Titlecased", "Changes_When_Casefolded", "Changes_When_Casemapped",
+            "Emoji", "Emoji_Presentation", "Emoji_Modifier", "Emoji_Modifier_Base",
+            "Emoji_Component", "Extended_Pictographic", "Hex_Digit", "ASCII_Hex_Digit",
+            "Join_Control", "Joining_Group", "Bidi_Control", "Bidi_Mirrored",
+            "Bidi_Mirroring_Glyph", "ID_Continue", "ID_Start", "XID_Continue", "XID_Start",
+            "Pattern_Syntax", "Pattern_White_Space", "Ideographic", "Unified_Ideograph", "Radical",
+            "IDS_Binary_Operator", "IDS_Trinary_Operator", "Math", "Quotation_Mark", "Dash",
+            "Sentence_Terminal", "Terminal_Punctuation", "Diacritic", "Extender", "Grapheme_Base",
+            "Grapheme_Extend", "Regional_Indicator",
+        ];
+        LUT[self as u8 as usize]
+    }
+}
+
 static PARSE_LUT: &[(&str, GroupName)] = &[
+    ("ASCII_Hex_Digit", GroupName::OtherProperties(OtherProperties::ASCII_Hex_Digit)),
     ("Adlam", GroupName::Script(Script::Adlam)),
     ("Adlm", GroupName::Script(Script::Adlam)),
     ("Aghb", GroupName::Script(Script::Caucasian_Albanian)),
     ("Ahom", GroupName::Script(Script::Ahom)),
+    ("Alphabetic", GroupName::OtherProperties(OtherProperties::Alphabetic)),
     ("Anatolian_Hieroglyphs", GroupName::Script(Script::Anatolian_Hieroglyphs)),
     ("Arab", GroupName::Script(Script::Arabic)),
     ("Arabic", GroupName::Script(Script::Arabic)),
@@ -566,6 +666,9 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Bengali", GroupName::Script(Script::Bengali)),
     ("Bhaiksuki", GroupName::Script(Script::Bhaiksuki)),
     ("Bhks", GroupName::Script(Script::Bhaiksuki)),
+    ("Bidi_Control", GroupName::OtherProperties(OtherProperties::Bidi_Control)),
+    ("Bidi_Mirrored", GroupName::OtherProperties(OtherProperties::Bidi_Mirrored)),
+    ("Bidi_Mirroring_Glyph", GroupName::OtherProperties(OtherProperties::Bidi_Mirroring_Glyph)),
     ("Bopo", GroupName::Script(Script::Bopomofo)),
     ("Bopomofo", GroupName::Script(Script::Bopomofo)),
     ("Brah", GroupName::Script(Script::Brahmi)),
@@ -582,12 +685,33 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Cans", GroupName::Script(Script::Canadian_Aboriginal)),
     ("Cari", GroupName::Script(Script::Carian)),
     ("Carian", GroupName::Script(Script::Carian)),
+    ("Case_Ignorable", GroupName::OtherProperties(OtherProperties::Case_Ignorable)),
     ("Cased_Letter", GroupName::Category(Category::Cased_Letter)),
     ("Caucasian_Albanian", GroupName::Script(Script::Caucasian_Albanian)),
     ("Cc", GroupName::Category(Category::Control)),
     ("Cf", GroupName::Category(Category::Format)),
     ("Chakma", GroupName::Script(Script::Chakma)),
     ("Cham", GroupName::Script(Script::Cham)),
+    (
+        "Changes_When_Casefolded",
+        GroupName::OtherProperties(OtherProperties::Changes_When_Casefolded),
+    ),
+    (
+        "Changes_When_Casemapped",
+        GroupName::OtherProperties(OtherProperties::Changes_When_Casemapped),
+    ),
+    (
+        "Changes_When_Lowercased",
+        GroupName::OtherProperties(OtherProperties::Changes_When_Lowercased),
+    ),
+    (
+        "Changes_When_Titlecased",
+        GroupName::OtherProperties(OtherProperties::Changes_When_Titlecased),
+    ),
+    (
+        "Changes_When_Uppercased",
+        GroupName::OtherProperties(OtherProperties::Changes_When_Uppercased),
+    ),
     ("Cher", GroupName::Script(Script::Cherokee)),
     ("Cherokee", GroupName::Script(Script::Cherokee)),
     ("Chorasmian", GroupName::Script(Script::Chorasmian)),
@@ -610,11 +734,18 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Cypro_Minoan", GroupName::Script(Script::Cypro_Minoan)),
     ("Cyrillic", GroupName::Script(Script::Cyrillic)),
     ("Cyrl", GroupName::Script(Script::Cyrillic)),
+    ("Dash", GroupName::OtherProperties(OtherProperties::Dash)),
     ("Dash_Punctuation", GroupName::Category(Category::Dash_Punctuation)),
     ("Decimal_Number", GroupName::Category(Category::Decimal_Number)),
+    (
+        "Default_Ignorable_Code_Point",
+        GroupName::OtherProperties(OtherProperties::Default_Ignorable_Code_Point),
+    ),
+    ("Deprecated", GroupName::OtherProperties(OtherProperties::Deprecated)),
     ("Deseret", GroupName::Script(Script::Deseret)),
     ("Deva", GroupName::Script(Script::Devanagari)),
     ("Devanagari", GroupName::Script(Script::Devanagari)),
+    ("Diacritic", GroupName::OtherProperties(OtherProperties::Diacritic)),
     ("Diak", GroupName::Script(Script::Dives_Akuru)),
     ("Dives_Akuru", GroupName::Script(Script::Dives_Akuru)),
     ("Dogr", GroupName::Script(Script::Dogra)),
@@ -628,9 +759,16 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Elbasan", GroupName::Script(Script::Elbasan)),
     ("Elym", GroupName::Script(Script::Elymaic)),
     ("Elymaic", GroupName::Script(Script::Elymaic)),
+    ("Emoji", GroupName::OtherProperties(OtherProperties::Emoji)),
+    ("Emoji_Component", GroupName::OtherProperties(OtherProperties::Emoji_Component)),
+    ("Emoji_Modifier", GroupName::OtherProperties(OtherProperties::Emoji_Modifier)),
+    ("Emoji_Modifier_Base", GroupName::OtherProperties(OtherProperties::Emoji_Modifier_Base)),
+    ("Emoji_Presentation", GroupName::OtherProperties(OtherProperties::Emoji_Presentation)),
     ("Enclosing_Mark", GroupName::Category(Category::Enclosing_Mark)),
     ("Ethi", GroupName::Script(Script::Ethiopic)),
     ("Ethiopic", GroupName::Script(Script::Ethiopic)),
+    ("Extended_Pictographic", GroupName::OtherProperties(OtherProperties::Extended_Pictographic)),
+    ("Extender", GroupName::OtherProperties(OtherProperties::Extender)),
     ("Final_Punctuation", GroupName::Category(Category::Final_Punctuation)),
     ("Format", GroupName::Category(Category::Format)),
     ("Geor", GroupName::Script(Script::Georgian)),
@@ -643,6 +781,8 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Gothic", GroupName::Script(Script::Gothic)),
     ("Gran", GroupName::Script(Script::Grantha)),
     ("Grantha", GroupName::Script(Script::Grantha)),
+    ("Grapheme_Base", GroupName::OtherProperties(OtherProperties::Grapheme_Base)),
+    ("Grapheme_Extend", GroupName::OtherProperties(OtherProperties::Grapheme_Extend)),
     ("Greek", GroupName::Script(Script::Greek)),
     ("Grek", GroupName::Script(Script::Greek)),
     ("Gujarati", GroupName::Script(Script::Gujarati)),
@@ -661,12 +801,18 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Hatran", GroupName::Script(Script::Hatran)),
     ("Hebr", GroupName::Script(Script::Hebrew)),
     ("Hebrew", GroupName::Script(Script::Hebrew)),
+    ("Hex_Digit", GroupName::OtherProperties(OtherProperties::Hex_Digit)),
     ("Hira", GroupName::Script(Script::Hiragana)),
     ("Hiragana", GroupName::Script(Script::Hiragana)),
     ("Hluw", GroupName::Script(Script::Anatolian_Hieroglyphs)),
     ("Hmng", GroupName::Script(Script::Pahawh_Hmong)),
     ("Hmnp", GroupName::Script(Script::Nyiakeng_Puachue_Hmong)),
     ("Hung", GroupName::Script(Script::Old_Hungarian)),
+    ("IDS_Binary_Operator", GroupName::OtherProperties(OtherProperties::IDS_Binary_Operator)),
+    ("IDS_Trinary_Operator", GroupName::OtherProperties(OtherProperties::IDS_Trinary_Operator)),
+    ("ID_Continue", GroupName::OtherProperties(OtherProperties::ID_Continue)),
+    ("ID_Start", GroupName::OtherProperties(OtherProperties::ID_Start)),
+    ("Ideographic", GroupName::OtherProperties(OtherProperties::Ideographic)),
     ("Imperial_Aramaic", GroupName::Script(Script::Imperial_Aramaic)),
     (
         "InAlphabetic_Presentation_Forms",
@@ -822,6 +968,8 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Ital", GroupName::Script(Script::Old_Italic)),
     ("Java", GroupName::Script(Script::Javanese)),
     ("Javanese", GroupName::Script(Script::Javanese)),
+    ("Join_Control", GroupName::OtherProperties(OtherProperties::Join_Control)),
+    ("Joining_Group", GroupName::OtherProperties(OtherProperties::Joining_Group)),
     ("Kaithi", GroupName::Script(Script::Kaithi)),
     ("Kali", GroupName::Script(Script::Kayah_Li)),
     ("Kana", GroupName::Script(Script::Katakana)),
@@ -861,6 +1009,11 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Ll", GroupName::Category(Category::Lowercase_Letter)),
     ("Lm", GroupName::Category(Category::Modifier_Letter)),
     ("Lo", GroupName::Category(Category::Other_Letter)),
+    (
+        "Logical_Order_Exception",
+        GroupName::OtherProperties(OtherProperties::Logical_Order_Exception),
+    ),
+    ("Lowercase", GroupName::OtherProperties(OtherProperties::Lowercase)),
     ("Lowercase_Letter", GroupName::Category(Category::Lowercase_Letter)),
     ("Lt", GroupName::Category(Category::Titlecase_Letter)),
     ("Lu", GroupName::Category(Category::Uppercase_Letter)),
@@ -882,6 +1035,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Marchen", GroupName::Script(Script::Marchen)),
     ("Mark", GroupName::Category(Category::Mark)),
     ("Masaram_Gondi", GroupName::Script(Script::Masaram_Gondi)),
+    ("Math", GroupName::OtherProperties(OtherProperties::Math)),
     ("Math_Symbol", GroupName::Category(Category::Math_Symbol)),
     ("Mc", GroupName::Category(Category::Spacing_Mark)),
     ("Me", GroupName::Category(Category::Enclosing_Mark)),
@@ -922,6 +1076,10 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Nkoo", GroupName::Script(Script::Nko)),
     ("Nl", GroupName::Category(Category::Letter_Number)),
     ("No", GroupName::Category(Category::Other_Number)),
+    (
+        "Noncharacter_Code_Point",
+        GroupName::OtherProperties(OtherProperties::Noncharacter_Code_Point),
+    ),
     ("Nonspacing_Mark", GroupName::Category(Category::Nonspacing_Mark)),
     ("Nshu", GroupName::Script(Script::Nushu)),
     ("Number", GroupName::Category(Category::Number)),
@@ -959,6 +1117,8 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Palm", GroupName::Script(Script::Palmyrene)),
     ("Palmyrene", GroupName::Script(Script::Palmyrene)),
     ("Paragraph_Separator", GroupName::Category(Category::Paragraph_Separator)),
+    ("Pattern_Syntax", GroupName::OtherProperties(OtherProperties::Pattern_Syntax)),
+    ("Pattern_White_Space", GroupName::OtherProperties(OtherProperties::Pattern_White_Space)),
     ("Pau_Cin_Hau", GroupName::Script(Script::Pau_Cin_Hau)),
     ("Pauc", GroupName::Script(Script::Pau_Cin_Hau)),
     ("Pc", GroupName::Category(Category::Connector_Punctuation)),
@@ -982,6 +1142,9 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Punctuation", GroupName::Category(Category::Punctuation)),
     ("Qaac", GroupName::Script(Script::Coptic)),
     ("Qaai", GroupName::Script(Script::Inherited)),
+    ("Quotation_Mark", GroupName::OtherProperties(OtherProperties::Quotation_Mark)),
+    ("Radical", GroupName::OtherProperties(OtherProperties::Radical)),
+    ("Regional_Indicator", GroupName::OtherProperties(OtherProperties::Regional_Indicator)),
     ("Rejang", GroupName::Script(Script::Rejang)),
     ("Rjng", GroupName::Script(Script::Rejang)),
     ("Rohg", GroupName::Script(Script::Hanifi_Rohingya)),
@@ -994,6 +1157,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Saur", GroupName::Script(Script::Saurashtra)),
     ("Saurashtra", GroupName::Script(Script::Saurashtra)),
     ("Sc", GroupName::Category(Category::Currency_Symbol)),
+    ("Sentence_Terminal", GroupName::OtherProperties(OtherProperties::Sentence_Terminal)),
     ("Separator", GroupName::Category(Category::Separator)),
     ("Sgnw", GroupName::Script(Script::SignWriting)),
     ("Sharada", GroupName::Script(Script::Sharada)),
@@ -1009,6 +1173,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Sk", GroupName::Category(Category::Modifier_Symbol)),
     ("Sm", GroupName::Category(Category::Math_Symbol)),
     ("So", GroupName::Category(Category::Other_Symbol)),
+    ("Soft_Dotted", GroupName::OtherProperties(OtherProperties::Soft_Dotted)),
     ("Sogd", GroupName::Script(Script::Sogdian)),
     ("Sogdian", GroupName::Script(Script::Sogdian)),
     ("Sogo", GroupName::Script(Script::Old_Sogdian)),
@@ -1044,6 +1209,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Tavt", GroupName::Script(Script::Tai_Viet)),
     ("Telu", GroupName::Script(Script::Telugu)),
     ("Telugu", GroupName::Script(Script::Telugu)),
+    ("Terminal_Punctuation", GroupName::OtherProperties(OtherProperties::Terminal_Punctuation)),
     ("Tfng", GroupName::Script(Script::Tifinagh)),
     ("Tglg", GroupName::Script(Script::Tagalog)),
     ("Thaa", GroupName::Script(Script::Thaana)),
@@ -1060,15 +1226,21 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Ugar", GroupName::Script(Script::Ugaritic)),
     ("Ugaritic", GroupName::Script(Script::Ugaritic)),
     ("Unassigned", GroupName::Category(Category::Unassigned)),
+    ("Unified_Ideograph", GroupName::OtherProperties(OtherProperties::Unified_Ideograph)),
+    ("Uppercase", GroupName::OtherProperties(OtherProperties::Uppercase)),
     ("Uppercase_Letter", GroupName::Category(Category::Uppercase_Letter)),
     ("Vai", GroupName::Script(Script::Vai)),
     ("Vaii", GroupName::Script(Script::Vai)),
+    ("Variation_Selector", GroupName::OtherProperties(OtherProperties::Variation_Selector)),
     ("Vith", GroupName::Script(Script::Vithkuqi)),
     ("Vithkuqi", GroupName::Script(Script::Vithkuqi)),
     ("Wancho", GroupName::Script(Script::Wancho)),
     ("Wara", GroupName::Script(Script::Warang_Citi)),
     ("Warang_Citi", GroupName::Script(Script::Warang_Citi)),
     ("Wcho", GroupName::Script(Script::Wancho)),
+    ("White_Space", GroupName::OtherProperties(OtherProperties::White_Space)),
+    ("XID_Continue", GroupName::OtherProperties(OtherProperties::XID_Continue)),
+    ("XID_Start", GroupName::OtherProperties(OtherProperties::XID_Start)),
     ("Xpeo", GroupName::Script(Script::Old_Persian)),
     ("Xsux", GroupName::Script(Script::Cuneiform)),
     ("Yezi", GroupName::Script(Script::Yezidi)),
@@ -1084,16 +1256,15 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Zs", GroupName::Category(Category::Space_Separator)),
     ("Zyyy", GroupName::Script(Script::Common)),
     ("cntrl", GroupName::Category(Category::Control)),
-    ("d", (GroupName::Digit)),
-    ("digit", (GroupName::Digit)),
+    ("d", GroupName::Category(Category::Decimal_Number)),
     ("digit", GroupName::Category(Category::Decimal_Number)),
     ("h", (GroupName::HorizSpace)),
     ("horiz_space", (GroupName::HorizSpace)),
     ("l", (GroupName::LineBreak)),
     ("line_break", (GroupName::LineBreak)),
     ("punct", GroupName::Category(Category::Punctuation)),
-    ("s", (GroupName::Space)),
-    ("space", (GroupName::Space)),
+    ("s", GroupName::Category(Category::Separator)),
+    ("space", GroupName::Category(Category::Separator)),
     ("v", (GroupName::VertSpace)),
     ("vert_space", (GroupName::VertSpace)),
     ("w", (GroupName::Word)),

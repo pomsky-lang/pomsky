@@ -276,11 +276,7 @@ fn compile_named_class(
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word if negative => buf.push_str("\\W"),
-        GroupName::Digit if negative => buf.push_str("\\D"),
-        GroupName::Space if negative => buf.push_str("\\S"),
         GroupName::Word => buf.push_str("\\w"),
-        GroupName::Digit => buf.push_str("\\d"),
-        GroupName::Space => buf.push_str("\\s"),
 
         GroupName::HorizSpace | GroupName::VertSpace | GroupName::LineBreak if negative => {
             let s = group.as_str().to_string();
@@ -317,13 +313,32 @@ fn compile_named_class(
             match group {
                 GroupName::Category(c) => buf.push_str(c.as_str()),
                 GroupName::Script(s) => buf.push_str(s.as_str()),
-                GroupName::CodeBlock(c) => {
-                    if flavor == RegexFlavor::DotNet {
+                GroupName::CodeBlock(c) => match flavor {
+                    RegexFlavor::DotNet => {
                         buf.push_str("Is");
-                    } else {
-                        buf.push_str("In");
+                        buf.push_str(&c.as_str().replace('_', ""));
                     }
-                    buf.push_str(c.as_str());
+                    RegexFlavor::Java => {
+                        buf.push_str("In");
+                        buf.push_str(&c.as_str().replace('-', ""));
+                    }
+                    RegexFlavor::Ruby => {
+                        buf.push_str("In");
+                        buf.push_str(c.as_str());
+                    }
+                    _ => {
+                        return Err(
+                            CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)
+                        )
+                    }
+                },
+                GroupName::OtherProperties(o) => {
+                    if flavor == RegexFlavor::Pcre {
+                        return Err(
+                            CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span)
+                        );
+                    }
+                    buf.push_str(o.as_str());
                 }
                 _ => unreachable!("The group is neither a Category, nor a Script, nor a CodeBlock"),
             }
@@ -346,8 +361,6 @@ fn compile_named_class_negative(
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word => buf.push_str("\\W"),
-        GroupName::Space => buf.push_str("\\S"),
-        GroupName::Digit => buf.push_str("\\D"),
         GroupName::HorizSpace | GroupName::VertSpace => {
             buf.push_str("[^");
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
@@ -376,12 +389,33 @@ fn compile_named_class_negative(
         }
         GroupName::CodeBlock(c) => {
             buf.push_str("\\P{");
-            if flavor == RegexFlavor::DotNet {
-                buf.push_str("Is");
-            } else {
-                buf.push_str("In");
+            match flavor {
+                RegexFlavor::DotNet => {
+                    buf.push_str("Is");
+                    buf.push_str(&c.as_str().replace('_', ""));
+                }
+                RegexFlavor::Java => {
+                    buf.push_str("In");
+                    buf.push_str(&c.as_str().replace('-', ""));
+                }
+                RegexFlavor::Ruby => {
+                    buf.push_str("In");
+                    buf.push_str(c.as_str());
+                }
+                _ => {
+                    return Err(
+                        CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)
+                    )
+                }
             }
-            buf.push_str(c.as_str());
+            buf.push('}');
+        }
+        GroupName::OtherProperties(o) => {
+            if flavor == RegexFlavor::Pcre {
+                return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+            }
+            buf.push_str("\\P{");
+            buf.push_str(o.as_str());
             buf.push('}');
         }
     }
