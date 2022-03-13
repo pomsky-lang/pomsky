@@ -6,13 +6,9 @@
 
 A new, portable, regular expression language
 
+Read **[the book](https://aloso.github.io/rulex)** to get started!
+
 </div>
-
-See also
-
-- **[Procedural macro](./rulex-macro/README.md)**
-- **[Rulex CLI](./rulex-bin/README.md)**
-- **[Formal grammar](./GRAMMAR.md)**
 
 ## Examples
 
@@ -75,7 +71,8 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 
 ## Usage
 
-Check out the [CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
+Read **[the book](https://aloso.github.io/rulex)** to get started, or check out the
+[CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
 [procedural macro](./rulex-macro/).
 
 ## Why use this instead of normal regexes?

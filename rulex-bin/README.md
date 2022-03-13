@@ -1,12 +1,24 @@
 # rulex CLI
 
 This CLI allows you to compile [rulex expressions](../README.md) to regexes in the command line.
-It currently requires that [Rust](https://www.rust-lang.org/tools/install) is installed.
+
+## Use pre-built binaries
+
+Binaries are available for Windows, Linux and macOS. Download them from the
+[releases page](https://github.com/Aloso/rulex/releases).
+
+## Install from source
+
+This requires that a recent Rust toolchain is installed. Instructions for how to install Rust can be
+found [here](https://www.rust-lang.org/tools/install).
+
 Install the CLI with
 
 ```sh
 cargo install rulex-bin
 ```
+
+## Usage
 
 Then you can compile rulex expressions to a regex flavor of your choice; the default is PCRE.
 

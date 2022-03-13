@@ -1,0 +1,384 @@
+# Unicode Properties
+
+Rulex supports the following kinds of Unicode properties:
+
+- [General categories](#list-of-general-categories)
+- [Scripts](#list-of-scripts)
+- [Blocks](#list-of-blocks)
+- [Other boolean properties](#list-of-other-supported-properties)
+
+However, not all regex engines support all of them. In particular, _blocks_ and _other properties_
+are poorly supported.
+
+Note that regex requires underscores, and hyphens must be substituted with underscores.
+
+## List of General Categories
+
+Each line contains one category and its aliases. The words in each line can be used interchangeably.
+
+- `Cased_Letter`, `LC`
+- `Close_Punctuation`, `Pe`
+- `Connector_Punctuation`, `Pc`
+- `Control`, `Cc`, `cntrl`
+- `Currency_Symbol`, `Sc`
+- `Dash_Punctuation`, `Pd`
+- `Decimal_Number`, `Nd`, `digit`, `d`
+- `Enclosing_Mark`, `Me`
+- `Final_Punctuation`, `Pf`
+- `Format`, `Cf`
+- `Initial_Punctuation`, `Pi`
+- `Letter`, `L`
+- `Letter_Number`, `Nl`
+- `Line_Separator`, `Zl`
+- `Lowercase_Letter`, `Ll`
+- `Mark`, `M`, `Combining_Mark`
+- `Math_Symbol`, `Sm`
+- `Modifier_Letter`, `Lm`
+- `Modifier_Symbol`, `Sk`
+- `Nonspacing_Mark`, `Mn`
+- `Number`, `N`
+- `Open_Punctuation`, `Ps`
+- `Other`, `C`
+- `Other_Letter`, `Lo`
+- `Other_Number`, `No`
+- `Other_Punctuation`, `Po`
+- `Other_Symbol`, `So`
+- `Paragraph_Separator`, `Zp`
+- `Private_Use`, `Co`
+- `Punctuation`, `P`, `punct`
+- `Separator`, `Z`, `space`, `s`
+- `Space_Separator`, `Zs`
+- `Spacing_Mark`, `Mc`
+- `Surrogate`, `Cs`
+- `Symbol`, `S`
+- `Titlecase_Letter`, `Lt`
+- `Unassigned`, `Cn`
+- `Uppercase_Letter`, `Lu`
+
+## List of Scripts
+
+Each line contains one script and its abbreviation, if it has one.
+The words in each line can be used interchangeably.
+
+- `Adlam`, `Adlm`
+- `Ahom`
+- `Anatolian_Hieroglyphs`, `Hluw`
+- `Arabic`, `Arab`
+- `Armenian`, `Armn`
+- `Avestan`, `Avst`
+- `Balinese`, `Bali`
+- `Bamum`, `Bamu`
+- `Bassa_Vah`, `Bass`
+- `Batak`, `Batk`
+- `Bengali`, `Beng`
+- `Bhaiksuki`, `Bhks`
+- `Bopomofo`, `Bopo`
+- `Brahmi`, `Brah`
+- `Braille`, `Brai`
+- `Buginese`, `Bugi`
+- `Buhid`, `Buhd`
+- `Canadian_Aboriginal`, `Cans`
+- `Carian`, `Cari`
+- `Caucasian_Albanian`, `Aghb`
+- `Chakma`, `Cakm`
+- `Cham`
+- `Chorasmian`, `Chrs`
+- `Cherokee`, `Cher`
+- `Common`, `Zyyy`
+- `Coptic`, `Copt`
+- `Cuneiform`, `Xsux`
+- `Cypriot`, `Cprt`
+- `Cypro_Minoan`, `Cpmn`
+- `Cyrillic`, `Cyrl`
+- `Deseret`, `Dsrt`
+- `Devanagari`, `Deva`
+- `Dives_Akuru`, `Diak`
+- `Dogra`, `Dogr`
+- `Duployan`, `Dupl`
+- `Egyptian_Hieroglyphs`, `Egyp`
+- `Elbasan`, `Elba`
+- `Elymaic`, `Elym`
+- `Ethiopic`, `Ethi`
+- `Georgian`, `Geor`
+- `Glagolitic`, `Glag`
+- `Gothic`, `Goth`
+- `Grantha`, `Gran`
+- `Greek`, `Grek`
+- `Gujarati`, `Gujr`
+- `Gunjala_Gondi`, `Gong`
+- `Gurmukhi`, `Guru`
+- `Han`, `Hani`
+- `Hangul`, `Hang`
+- `Hanifi_Rohingya`, `Rohg`
+- `Hanunoo`, `Hano`
+- `Hatran`, `Hatr`
+- `Hebrew`, `Hebr`
+- `Hiragana`, `Hira`
+- `Imperial_Aramaic`, `Armi`
+- `Inherited`, `Zinh`
+- `Inscriptional_Pahlavi`, `Phli`
+- `Inscriptional_Parthian`, `Prti`
+- `Javanese`, `Java`
+- `Kaithi`, `Kthi`
+- `Kannada`, `Knda`
+- `Katakana`, `Kana`
+- `Kayah_Li`, `Kali`
+- `Kharoshthi`, `Khar`
+- `Khitan_Small_Script`, `Kits`
+- `Khmer`, `Khmr`
+- `Khojki`, `Khoj`
+- `Khudawadi`, `Sind`
+- `Lao`, `Laoo`
+- `Latin`, `Latn`
+- `Lepcha`, `Lepc`
+- `Limbu`, `Limb`
+- `Linear_A`, `Lina`
+- `Linear_B`, `Linb`
+- `Lisu`
+- `Lycian`, `Lyci`
+- `Lydian`, `Lydi`
+- `Mahajani`, `Mahj`
+- `Makasar`, `Maka`
+- `Malayalam`, `Mlym`
+- `Mandaic`, `Mand`
+- `Manichaean`, `Mani`
+- `Marchen`, `Marc`
+- `Medefaidrin`, `Medf`
+- `Masaram_Gondi`, `Gonm`
+- `Meetei_Mayek`, `Mtei`
+- `Mende_Kikakui`, `Mend`
+- `Meroitic_Cursive`, `Merc`
+- `Meroitic_Hieroglyphs`, `Mero`
+- `Miao`, `Plrd`
+- `Modi`
+- `Mongolian`, `Mong`
+- `Mro`, `Mroo`
+- `Multani`, `Mult`
+- `Myanmar`, `Mymr`
+- `Nabataean`, `Nbat`
+- `Nandinagari`, `Nand`
+- `New_Tai_Lue`, `Talu`
+- `Newa`
+- `Nko`, `Nkoo`
+- `Nushu`, `Nshu`
+- `Nyiakeng_Puachue_Hmong`, `Hmnp`
+- `Ogham`, `Ogam`
+- `Ol_Chiki`, `Olck`
+- `Old_Hungarian`, `Hung`
+- `Old_Italic`, `Ital`
+- `Old_North_Arabian`, `Narb`
+- `Old_Permic`, `Perm`
+- `Old_Persian`, `Xpeo`
+- `Old_Sogdian`, `Sogo`
+- `Old_South_Arabian`, `Sarb`
+- `Old_Turkic`, `Orkh`
+- `Old_Uyghur`, `Ougr`
+- `Oriya`, `Orya`
+- `Osage`, `Osge`
+- `Osmanya`, `Osma`
+- `Pahawh_Hmong`, `Hmng`
+- `Palmyrene`, `Palm`
+- `Pau_Cin_Hau`, `Pauc`
+- `Phags_Pa`, `Phag`
+- `Phoenician`, `Phnx`
+- `Psalter_Pahlavi`, `Phlp`
+- `Rejang`, `Rjng`
+- `Runic`, `Runr`
+- `Samaritan`, `Samr`
+- `Saurashtra`, `Saur`
+- `Sharada`, `Shrd`
+- `Shavian`, `Shaw`
+- `Siddham`, `Sidd`
+- `SignWriting`, `Sgnw`
+- `Sinhala`, `Sinh`
+- `Sogdian`, `Sogd`
+- `Sora_Sompeng`, `Sora`
+- `Soyombo`, `Soyo`
+- `Sundanese`, `Sund`
+- `Syloti_Nagri`, `Sylo`
+- `Syriac`, `Syrc`
+- `Tagalog`, `Tglg`
+- `Tagbanwa`, `Tagb`
+- `Tai_Le`, `Tale`
+- `Tai_Tham`, `Lana`
+- `Tai_Viet`, `Tavt`
+- `Takri`, `Takr`
+- `Tamil`, `Taml`
+- `Tangsa`, `Tnsa`
+- `Tangut`, `Tang`
+- `Telugu`, `Telu`
+- `Thaana`, `Thaa`
+- `Thai`
+- `Tibetan`, `Tibt`
+- `Tifinagh`, `Tfng`
+- `Tirhuta`, `Tirh`
+- `Toto`
+- `Ugaritic`, `Ugar`
+- `Vai`, `Vaii`
+- `Vithkuqi`, `Vith`
+- `Wancho`, `Wcho`
+- `Warang_Citi`, `Wara`
+- `Yezidi`, `Yezi`
+- `Yi`, `Yiii`
+- `Zanabazar_Square`, `Zanb`
+
+## List of Blocks
+
+- `Basic_Latin`
+- `Latin_1_Supplement`
+- `Latin_Extended_A`
+- `Latin_Extended_B`
+- `IPA_Extensions`
+- `Spacing_Modifier_Letters`
+- `Combining_Diacritical_Marks`
+- `Greek_and_Coptic`
+- `Cyrillic`
+- `Cyrillic_Supplementary`
+- `Armenian`
+- `Hebrew`
+- `Arabic`
+- `Syriac`
+- `Thaana`
+- `Devanagari`
+- `Bengali`
+- `Gurmukhi`
+- `Gujarati`
+- `Oriya`
+- `Tamil`
+- `Telugu`
+- `Kannada`
+- `Malayalam`
+- `Sinhala`
+- `Thai`
+- `Lao`
+- `Tibetan`
+- `Myanmar`
+- `Georgian`
+- `Hangul_Jamo`
+- `Ethiopic`
+- `Cherokee`
+- `Unified_Canadian_Aboriginal_Syllabics`
+- `Ogham`
+- `Runic`
+- `Tagalog`
+- `Hanunoo`
+- `Buhid`
+- `Tagbanwa`
+- `Khmer`
+- `Mongolian`
+- `Limbu`
+- `Tai_Le`
+- `Khmer_Symbols`
+- `Phonetic_Extensions`
+- `Latin_Extended_Additional`
+- `Greek_Extended`
+- `General_Punctuation`
+- `Superscripts_and_Subscripts`
+- `Currency_Symbols`
+- `Combining_Diacritical_Marks_for_Symbols`
+- `Letterlike_Symbols`
+- `Number_Forms`
+- `Arrows`
+- `Mathematical_Operators`
+- `Miscellaneous_Technical`
+- `Control_Pictures`
+- `Optical_Character_Recognition`
+- `Enclosed_Alphanumerics`
+- `Box_Drawing`
+- `Block_Elements`
+- `Geometric_Shapes`
+- `Miscellaneous_Symbols`
+- `Dingbats`
+- `Miscellaneous_Mathematical_Symbols_A`
+- `Supplemental_Arrows_A`
+- `Braille_Patterns`
+- `Supplemental_Arrows_B`
+- `Miscellaneous_Mathematical_Symbols_B`
+- `Supplemental_Mathematical_Operators`
+- `Miscellaneous_Symbols_and_Arrows`
+- `CJK_Radicals_Supplement`
+- `Kangxi_Radicals`
+- `Ideographic_Description_Characters`
+- `CJK_Symbols_and_Punctuation`
+- `Hiragana`
+- `Katakana`
+- `Bopomofo`
+- `Hangul_Compatibility_Jamo`
+- `Kanbun`
+- `Bopomofo_Extended`
+- `Katakana_Phonetic_Extensions`
+- `Enclosed_CJK_Letters_and_Months`
+- `CJK_Compatibility`
+- `CJK_Unified_Ideographs_Extension_A`
+- `Yijing_Hexagram_Symbols`
+- `CJK_Unified_Ideographs`
+- `Yi_Syllables`
+- `Yi_Radicals`
+- `Hangul_Syllables`
+- `High_Surrogates`
+- `High_Private_Use_Surrogates`
+- `Low_Surrogates`
+- `Private_Use_Area`
+- `CJK_Compatibility_Ideographs`
+- `Alphabetic_Presentation_Forms`
+- `Arabic_Presentation_Forms_A`
+- `Variation_Selectors`
+- `Combining_Half_Marks`
+- `CJK_Compatibility_Forms`
+- `Small_Form_Variants`
+- `Arabic_Presentation_Forms_B`
+- `Halfwidth_and_Fullwidth_Forms`
+- `Specials`
+
+## List of Other Supported Properties
+
+- `White_Space`
+- `Alphabetic`, `alpha`
+- `Noncharacter_Code_Point`
+- `Default_Ignorable_Code_Point`
+- `Logical_Order_Exception`
+- `Deprecated`
+- `Variation_Selector`
+- `Uppercase`, `upper`
+- `Lowercase`, `lower`
+- `Soft_Dotted`
+- `Case_Ignorable`
+- `Changes_When_Lowercased`
+- `Changes_When_Uppercased`
+- `Changes_When_Titlecased`
+- `Changes_When_Casefolded`
+- `Changes_When_Casemapped`
+- `Emoji`
+- `Emoji_Presentation`
+- `Emoji_Modifier`
+- `Emoji_Modifier_Base`
+- `Emoji_Component`
+- `Extended_Pictographic`
+- `Hex_Digit`
+- `ASCII_Hex_Digit`
+- `Join_Control`
+- `Joining_Group`
+- `Bidi_Control`
+- `Bidi_Mirrored`
+- `Bidi_Mirroring_Glyph`
+- `ID_Continue`
+- `ID_Start`
+- `XID_Continue`
+- `XID_Start`
+- `Pattern_Syntax`
+- `Pattern_White_Space`
+- `Ideographic`
+- `Unified_Ideograph`
+- `Radical`
+- `IDS_Binary_Operator`
+- `IDS_Trinary_Operator`
+- `Math`
+- `Quotation_Mark`
+- `Dash`
+- `Sentence_Terminal`
+- `Terminal_Punctuation`
+- `Diacritic`
+- `Extender`
+- `Grapheme_Base`
+- `Grapheme_Extend`
+- `Regional_Indicator`

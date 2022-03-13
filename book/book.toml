@@ -1,0 +1,16 @@
+[book]
+title = "Rulex"
+authors = ["Ludwig Stecher"]
+language = "en"
+multilingual = false
+src = "src"
+edit-url-template = "https://github.com/Aloso/rulex/tree/main/book/{path}?mode=edit"
+
+[rust]
+edition = "2021"
+
+[output.html]
+cname = "aloso.github.io"
+site-url = "/rulex/"
+default-theme = "ayu"
+preferred-dark-theme = "ayu"
