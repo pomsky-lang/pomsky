@@ -98,7 +98,7 @@ Rulexes this complicated would profit from some features I have planned. They ar
 
 If these features were implemented, we could write the above as follows:
 
-```js
+```rulex
 CharBeforeAt = ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"];
 QuotedCharBeforeAt = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21 U+23-U+5b U+5d-U+7f];
 EscapedCharBeforeAt = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];

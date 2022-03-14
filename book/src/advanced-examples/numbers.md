@@ -9,7 +9,7 @@ with optional separating commas:
 
 Equivalent rulex:
 
-```js
+```rulex
 ['-+']?
 %
 ('0' | ['1'-'9'] (','? ['0'-'9'])* greedy)

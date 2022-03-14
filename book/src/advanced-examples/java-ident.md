@@ -14,7 +14,7 @@ With abbreviations:
 
 And as a rulex:
 
-```js
+```rulex
 [Pc Sc M Alphabetic]
 [Pc Sc M Alphabetic Numeric]* greedy
 ```

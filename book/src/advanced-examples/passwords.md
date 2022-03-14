@@ -9,7 +9,7 @@ lowercase letter, digit and punctuation/symbol code point, and is at least 8 cod
 
 Equivalent rulex:
 
-```js
+```rulex
 <%
 (>> [cp]* [digit])
 (>> [cp]* [Ll])
