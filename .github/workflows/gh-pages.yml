@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - book
+      - "book/**"
 
 jobs:
   deploy:
