@@ -1,6 +1,6 @@
 <div align="center">
 
-![Crown in double quotes logo](./assets/logo.svg)
+![Crown in double quotes logo](./book/src/assets/logo.svg)
 
 # rulex
 
