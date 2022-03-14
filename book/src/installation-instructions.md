@@ -34,7 +34,7 @@ Then you can import and use it with
 ```rs
 use rulex_macro::rulex;
 
-const MY_REGEX: &str = rulex!();
+const MY_REGEX: &str = rulex!(["great!"] | "great!");
 ```
 
 Documentation can be [found here](https://docs.rs/rulex-macro/latest/rulex_macro/).

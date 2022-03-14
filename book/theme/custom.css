@@ -1,0 +1,11 @@
+:root {
+  font-size: 70%;
+}
+
+.sidebar {
+  font-size: 0.95em;
+}
+
+.chapter > li.chapter-item {
+  line-height: 1.8em;
+}

@@ -14,3 +14,7 @@ cname = "aloso.github.io"
 site-url = "/rulex/"
 default-theme = "ayu"
 preferred-dark-theme = "ayu"
+additional-css = ["theme/custom.css"]
+additional-js = ["javascript/highlightjs-rulex.js"]
+git-repository-url = "https://github.com/Aloso/rulex"
+git-repository-icon = "fa-github"

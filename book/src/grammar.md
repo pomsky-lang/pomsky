@@ -43,7 +43,7 @@ Whitespace is required between consecutive words and code points, e.g. `[a n Lat
 
 ### Expression
 
-```js
+```rulex
 Expression = Alternative ('|' Alternative)*
 
 Alternative = FixExpression+
@@ -53,20 +53,20 @@ Alternative = FixExpression+
 
 An expression which can have a prefix or suffix.
 
-```js
+```rulex
 FixExpression = LookaroundPrefix Expression
               | AtomExpression RepetitionSuffix
 ```
 
 ### Lookaround
 
-```js
+```rulex
 LookaroundPrefix = '!'? ('<<' | '>>')
 ```
 
 ### Repetitions
 
-```js
+```rulex
 RepetitionSuffix = ('*' | '+' | '?' | RepetitionBraces) Quantifier?
 
 RepetitionBraces = '{' Number '}'
@@ -81,13 +81,13 @@ Quantifier = 'greedy'
 
 ### AtomExpression
 
-```js
+```rulex
 AtomExpression = Group | String | CharacterClass | Grapheme | Boundary;
 ```
 
 ### Group
 
-```js
+```rulex
 Group = Capture? '(' Expression ')'
 
 Capture = ':' Name?
@@ -97,14 +97,14 @@ Name = [w]+
 
 ### String
 
-```js
+```rulex
 String = '"' !['"']* '"'
        | "'" !["'"]* "'"
 ```
 
 ### CharacterClass
 
-```js
+```rulex
 CharacterClass = '!'? '[' CharacterGroup ']'
 
 CharacterGroup = '.' | 'cp' | CharacterGroupMulti+
@@ -127,7 +127,7 @@ Character = '"' !['"'] '"'
           | CodePoint
           | NonPrintable
 
-CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,5}
+CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
 
 NonPrintable = 'n' | 'r' | 't' | 'a' | 'e' | 'f'
 
@@ -148,18 +148,18 @@ PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
 
 Details about supported Unicode properties can be [found here](unicode-properties.md).
 
-```js
+```rulex
 UnicodeProperty = '!'? [w]+
 ```
 
 ### Grapheme
 
-```py
+```rulex
 Grapheme = 'Grapheme' | 'X'
 ```
 
 ### Boundary
 
-```js
+```rulex
 Boundary = '%' | '!' '%' | '<%' | '%>'
 ```
