@@ -48,7 +48,7 @@ If your regex engine supports insiginificant whitespace mode (?x), it can be wri
 
 Here's a straightforward translation into rulex:
 
-```regexp
+```rulex
 (
   ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+ greedy
   ('.' ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+ greedy )* greedy
