@@ -8,6 +8,7 @@ pub mod literal;
 pub mod lookaround;
 pub mod options;
 pub mod parse;
+pub mod range;
 pub mod reference;
 pub mod repetition;
 pub mod span;

@@ -67,6 +67,10 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 # Backreferences
 :('test') ::1                 # (test)\1
 :name('test') ::name          # (?P<name>test)\k<name>
+
+# Ranges
+range '0'-'999'               # 0|[1-9][0-9]{0,2}
+range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
 ```
 
 ## Usage

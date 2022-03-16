@@ -9,6 +9,7 @@ use crate::{
     literal::Literal,
     lookaround::Lookaround,
     options::{CompileOptions, ParseOptions},
+    range::Range,
     reference::Reference,
     repetition::Repetition,
     span::Span,
@@ -37,6 +38,8 @@ pub enum Rulex<'i> {
     Lookaround(Box<Lookaround<'i>>),
     /// A backreference or forward reference.
     Reference(Reference<'i>),
+    /// A range of integers
+    Range(Range),
 }
 
 impl<'i> Rulex<'i> {
@@ -65,7 +68,7 @@ impl<'i> Rulex<'i> {
         match self {
             Rulex::Literal(l) => l.needs_parens_before_repetition(),
             Rulex::Group(g) => g.needs_parens_before_repetition(),
-            Rulex::Alternation(_) => true,
+            Rulex::Alternation(_) | Rulex::Range(_) => true,
             Rulex::CharClass(_)
             | Rulex::Grapheme(_)
             | Rulex::Repetition(_)
@@ -85,7 +88,8 @@ impl<'i> Rulex<'i> {
             | Rulex::Repetition(_)
             | Rulex::Boundary(_)
             | Rulex::Lookaround(_)
-            | Rulex::Reference(_) => false,
+            | Rulex::Reference(_)
+            | Rulex::Range(_) => false,
         }
     }
 
@@ -100,6 +104,7 @@ impl<'i> Rulex<'i> {
             Rulex::Boundary(b) => b.span,
             Rulex::Lookaround(l) => l.span,
             Rulex::Reference(r) => r.span,
+            Rulex::Range(r) => r.span,
         }
     }
 }
@@ -117,6 +122,7 @@ impl core::fmt::Debug for Rulex<'_> {
             Rulex::Boundary(arg0) => arg0.fmt(f),
             Rulex::Lookaround(arg0) => arg0.fmt(f),
             Rulex::Reference(arg0) => arg0.fmt(f),
+            Rulex::Range(arg0) => arg0.fmt(f),
         }
     }
 }
@@ -138,6 +144,7 @@ impl Compile for Rulex<'_> {
             Rulex::Boundary(b) => b.comp(options, state, buf),
             Rulex::Lookaround(l) => l.comp(options, state, buf),
             Rulex::Reference(r) => r.comp(options, state, buf),
+            Rulex::Range(r) => r.comp(options, state, buf),
         }
     }
 }

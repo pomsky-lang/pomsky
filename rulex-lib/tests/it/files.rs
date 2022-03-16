@@ -1,4 +1,7 @@
-use std::{panic::catch_unwind, path::Path};
+use std::{
+    panic::{catch_unwind, UnwindSafe},
+    path::Path,
+};
 
 use rulex::options::{CompileOptions, RegexFlavor};
 
@@ -96,22 +99,13 @@ impl Outcome {
 }
 
 pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
-    let (mut input, expected) = content.split_once("\n-----").unwrap();
-    let expected = expected.trim_start_matches('-').trim_start_matches('\n');
-
-    let options = if input.starts_with("#!") {
-        let (first_line, new_input) = input.split_once('\n').unwrap_or_default();
-        input = new_input;
-        Options::parse(first_line, path)
-    } else {
-        Options::default()
-    };
+    let (input, expected, options) = process_content(content, path);
 
     if options.ignore && !args.include_ignored {
         return TestResult::Ignored;
     }
 
-    catch_unwind(|| {
+    catch_panics(|| {
         let parsed = rulex::Rulex::parse_and_compile(
             input,
             CompileOptions { flavor: options.flavor, ..Default::default() },
@@ -137,12 +131,21 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
             },
         }
     })
-    .unwrap_or_else(|err| TestResult::Panic {
-        message: err
-            .downcast_ref::<String>()
-            .map(ToOwned::to_owned)
-            .or_else(|| err.downcast_ref::<&str>().map(|s| s.to_string())),
-    })
+    .unwrap_or_else(|message| TestResult::Panic { message })
+}
+
+fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Options) {
+    let (mut input, expected) = content.split_once("\n-----").unwrap();
+    let expected = expected.trim_start_matches('-').trim_start_matches('\n');
+
+    let options = if input.starts_with("#!") {
+        let (first_line, new_input) = input.split_once('\n').unwrap_or_default();
+        input = new_input;
+        Options::parse(first_line, path)
+    } else {
+        Options::default()
+    };
+    (input, expected, options)
 }
 
 fn strip_input(input: &str) -> String {
@@ -153,4 +156,12 @@ fn strip_input(input: &str) -> String {
             !l.is_empty() && !l.starts_with('#')
         })
         .collect()
+}
+
+fn catch_panics<R>(f: impl Fn() -> R + UnwindSafe) -> Result<R, Option<String>> {
+    catch_unwind(f).map_err(|err| {
+        err.downcast_ref::<String>()
+            .map(ToOwned::to_owned)
+            .or_else(|| err.downcast_ref::<&str>().map(|s| s.to_string()))
+    })
 }

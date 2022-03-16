@@ -35,8 +35,12 @@ recommend [this introduction](https://www.regular-expressions.info/quickstart.ht
 - [Character classes](#character-classes)
   - [About Unicode ranges](#about-unicode-ranges)
 - [Unicode support](#unicode-support)
+- [Negation](#negation)
+- [Special character classes](#special-character-classes)
+- [Non-printable characters](#non-printable-characters)
 - [Boundaries](#boundaries)
 - [Lookaround](#lookaround)
+- [Range](#range)
 - [Grapheme](#grapheme)
 
 ### Summary
@@ -99,6 +103,10 @@ On the left are rulex expressions, on the right are the equivalent regexes:
 # Backreferences
 :('test') ::1                 # (test)\1
 :name('test') ::name          # (?P<name>test)\k<name>
+
+# Ranges
+range '0'-'999'               # 0|[1-9][0-9]{0,2}
+range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
 ```
 
 ### Strings
@@ -362,18 +370,18 @@ the most useful ones are
 
 You can see the full list of Unicode properties [here](./unicode-properties.md).
 
-#### Negation
+### Negation
 
 TODO
 
-#### Special character classes
+### Special character classes
 
 TODO
 
 <!-- Mention w, d, s, v, h, l, [.] and [cp] -->
 <!-- Mention ascii_* POSIX classes -->
 
-#### Special characters
+### Non-printable characters
 
 TODO
 
@@ -385,6 +393,10 @@ TODO
 TODO
 
 ### Lookaround
+
+TODO
+
+### Range
 
 TODO
 

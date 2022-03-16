@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use nom::{
     branch::alt,
     combinator::{cut, map, opt, value},
@@ -17,6 +19,7 @@ use crate::{
     group::{Capture, Group},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
+    range::Range,
     reference::{Reference, ReferenceTarget},
     repetition::{Quantifier, Repetition, RepetitionKind},
     span::Span,
@@ -117,7 +120,7 @@ pub(super) fn parse_braced_repetition<'i, 'b>(
     input: Input<'i, 'b>,
 ) -> PResult<'i, 'b, (RepetitionKind, Span)> {
     fn parse_u32<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, u32> {
-        try_map(Token::Number, |(s, _)| str_to_u32(s), nom::Err::Failure)(input)
+        try_map(Token::Number, |(s, _)| from_str(s), nom::Err::Failure)(input)
     }
 
     map(
@@ -148,6 +151,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
         map(parse_code_point, |(c, span)| {
             Rulex::CharClass(CharClass::new(CharGroup::from_char(c), span))
         }),
+        parse_range,
         try_map(Token::Dot, |_| Err(ParseErrorKind::Dot), nom::Err::Failure),
         err(|| ParseErrorKind::Expected("expression")),
     ))(input)
@@ -323,6 +327,76 @@ pub(super) fn parse_code_point<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     ))(input)
 }
 
+pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    fn parse_base<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (u8, Span)> {
+        preceded(
+            "base",
+            try_map(
+                cut(Token::Number),
+                |(s, span)| {
+                    let n = s.parse().map_err(NumberError::from)?;
+                    if n > 36 {
+                        Err(ParseErrorKind::Number(NumberError::TooLarge))
+                    } else if n < 2 {
+                        Err(ParseErrorKind::Number(NumberError::TooSmall))
+                    } else {
+                        Ok((n, span))
+                    }
+                },
+                nom::Err::Failure,
+            ),
+        )(input)
+    }
+
+    fn parse_number(src: &str, radix: u8) -> Result<Vec<u8>, NumberError> {
+        let mut digits = Vec::with_capacity(src.len());
+        for c in src.bytes() {
+            let n = match c {
+                b'0'..=b'9' => c - b'0',
+                b'a'..=b'z' => c - b'a' + 10,
+                b'A'..=b'Z' => c - b'A' + 10,
+                _ => return Err(NumberError::InvalidDigit),
+            };
+            if n >= radix {
+                return Err(NumberError::InvalidDigit);
+            }
+            digits.push(n);
+        }
+        Ok(digits)
+    }
+
+    map(
+        pair(
+            "range",
+            try_map(
+                pair(
+                    cut(separated_pair(Token::String, Token::Dash, Token::String)),
+                    opt(parse_base),
+                ),
+                |(((start, span1), (end, span2)), base)| {
+                    let (radix, span) = match base {
+                        Some((base, span3)) => (base, span1.join(span3)),
+                        None => (10, span1.join(span2)),
+                    };
+                    let start = parse_number(strip_first_last(start), radix)?;
+                    let end = parse_number(strip_first_last(end), radix)?;
+
+                    if start.len() > end.len() || (start.len() == end.len() && start > end) {
+                        return Err(ParseErrorKind::RangeIsNotIncreasing);
+                    }
+
+                    Ok(Range::new(start, end, radix, span))
+                },
+                nom::Err::Failure,
+            ),
+        ),
+        |((_, span), mut range)| {
+            range.span = range.span.join(span);
+            Rulex::Range(range)
+        },
+    )(input)
+}
+
 pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
     try_map(
         Token::Identifier,
@@ -366,7 +440,7 @@ pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, R
             try_map(
                 Token::Number,
                 |(s, span)| {
-                    let target = ReferenceTarget::Number(str_to_u32(s)?);
+                    let target = ReferenceTarget::Number(from_str(s)?);
                     Ok(Rulex::Reference(Reference::new(target, span)))
                 },
                 nom::Err::Failure,
@@ -378,8 +452,7 @@ pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, R
             try_map(
                 pair(alt((Token::Plus, Token::Dash)), Token::Number),
                 |((sign, span1), (s, span2))| {
-                    let num =
-                        if sign == "-" { str_to_i32(&format!("-{s}")) } else { str_to_i32(s) }?;
+                    let num = if sign == "-" { from_str(&format!("-{s}")) } else { from_str(s) }?;
                     let target = ReferenceTarget::Relative(num);
                     Ok(Rulex::Reference(Reference::new(target, span1.join(span2))))
                 },
@@ -390,11 +463,7 @@ pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, R
     )(input)
 }
 
-fn str_to_u32(s: &str) -> Result<u32, ParseErrorKind> {
-    str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
-}
-
-fn str_to_i32(s: &str) -> Result<i32, ParseErrorKind> {
+fn from_str<T: FromStr>(s: &str) -> Result<T, ParseErrorKind> {
     str::parse(s).map_err(|_| ParseErrorKind::Number(NumberError::TooLarge))
 }
 

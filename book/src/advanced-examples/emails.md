@@ -65,20 +65,9 @@ Here's a straightforward translation into rulex:
   ['a'-'z' '0'-'9']
   ( ['a'-'z' '0'-'9' '-']* greedy ['a'-'z' '0'-'9'] )? greedy
 | '['
+  (:(range '0'-'255') '.'){3}
   (
-    :(
-      '2' :('5' ['0'-'5'] | ['0'-'4'] ['0'-'9'])
-    | '1' ['0'-'9'] ['0'-'9']
-    | ['1'-'9']? greedy ['0'-'9']
-    )
-    '.'
-  ){3}
-  (
-    :(
-      '2' :('5' ['0'-'5'] | ['0'-'4'] ['0'-'9'])
-    | '1' ['0'-'9'] ['0'-'9']
-    | ['1'-'9']? greedy ['0'-'9']
-    )
+    :(range '0'-'255')
   | ['a'-'z' '0'-'9' '-']* greedy
     ['a'-'z' '0'-'9']
     ':'
@@ -91,12 +80,13 @@ Here's a straightforward translation into rulex:
 )
 ```
 
-Rulexes this complicated would profit from some features I have planned. They are
+Notice how the complex logic for matching a number between '0' and '255' is replaced by a simple
+`range` expression in rulex.
 
-- Variables
-- Matching a range of decimal numbers
+Rulexes this complicated would also profit from a feature I have planned, but not yet implemented:
+Variables.
 
-If these features were implemented, we could write the above as follows:
+With variables, we could write the above as follows:
 
 ```rulex
 CharBeforeAt = ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"];

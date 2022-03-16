@@ -1,7 +1,7 @@
 use std::{
     fmt, fs, io,
     path::{Path, PathBuf},
-    process,
+    process::{self, exit},
     sync::mpsc::Sender,
     time::Instant,
 };
@@ -11,25 +11,53 @@ use crate::{color::Color::*, files::TestResult};
 #[macro_use]
 mod color;
 mod files;
+mod fuzzer;
 mod timeout;
 
 struct Args {
     include_ignored: bool,
     filter: String,
+
+    fuzz_ranges: bool,
+    thoroughness: usize,
 }
 
 impl Args {
     fn parse() -> Self {
         let mut include_ignored = false;
         let mut filter = String::new();
+        let mut fuzz_ranges = false;
+        let mut thoroughness = 40;
+
         for arg in std::env::args().skip(1) {
             match arg.as_str() {
                 "-i" | "--ignored" | "--include-ignored" => include_ignored = true,
+                "--fuzz-ranges" => fuzz_ranges = true,
+                "help" | "--help" | "-h" => {
+                    eprintln!(
+                        "USAGE:\n    \
+                            cargo test --test it -- [OPTIONS]\n\
+                        \n\
+                        OPTIONS:\n    \
+                            -i,--ignored            Include ignored test cases\n    \
+                            --fuzz-ranges           Fuzz the `range '...'-'...' syntax`\n    \
+                            --thoroughness=<NUMBER> Specify how thorough each range is fuzzed [default: 40]\n    \
+                            -h,--help               Show usage information"
+                    );
+                    exit(0);
+                }
+                s if s.starts_with("--thoroughness=") => {
+                    let s = s.strip_prefix("--thoroughness=").unwrap();
+                    thoroughness = s.parse().unwrap();
+                }
                 s if !s.starts_with('-') => filter = arg,
-                option => eprintln!("{}: unrecognized option {option:?}", Yellow("Warning")),
+                option => eprintln!(
+                    "{}: unrecognized option {option:?}\ntry `--help` help",
+                    Yellow("Warning")
+                ),
             }
         }
-        Args { include_ignored, filter }
+        Args { include_ignored, filter, fuzz_ranges, thoroughness }
     }
 }
 
@@ -57,7 +85,7 @@ fn defer_main() -> Result<(), io::Error> {
 
     println!();
     let start = Instant::now();
-    walk_dir_recursive("./tests/testcases".into(), &mut results, tx, &args)?;
+    test_dir_recursive("./tests/testcases".into(), &mut results, tx, &args)?;
     let elapsed = start.elapsed();
     println!();
 
@@ -123,10 +151,30 @@ fn defer_main() -> Result<(), io::Error> {
         process::exit(failed);
     }
 
+    if args.fuzz_ranges {
+        println!("\nfuzzing ranges (thoroughness: {})", args.thoroughness);
+
+        let mut errors = Vec::new();
+        println!();
+        let start = Instant::now();
+        fuzzer::fuzz_ranges(&mut errors, args.thoroughness);
+        let elapsed = start.elapsed();
+        println!();
+
+        let failed = errors.len();
+
+        println!(
+            "fuzz result: {}. {}; finished in {:.2?}\n",
+            if failed == 0 { Green("ok") } else { Red("FAILED") },
+            color!(Red if failed > 0; failed, " failed"),
+            elapsed,
+        );
+    }
+
     Ok(())
 }
 
-fn walk_dir_recursive(
+fn test_dir_recursive(
     path: PathBuf,
     results: &mut Vec<(PathBuf, TestResult)>,
     tx: Sender<PathBuf>,
@@ -141,7 +189,7 @@ fn walk_dir_recursive(
     }
     if path.is_dir() {
         for test in fs::read_dir(path)? {
-            walk_dir_recursive(test?.path(), results, tx.clone(), args)?;
+            test_dir_recursive(test?.path(), results, tx.clone(), args)?;
         }
         Ok(())
     } else if path.is_file() {

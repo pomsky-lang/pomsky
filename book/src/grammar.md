@@ -116,6 +116,7 @@ CharacterGroupMulti = Range
                     | Shorthand
                     | UnicodeProperty
                     | PosixClass
+                    | Range
 
 Range = Character '-' Character
 
@@ -162,4 +163,11 @@ Grapheme = 'Grapheme' | 'X'
 
 ```rulex
 Boundary = '%' | '!' '%' | '<%' | '%>'
+```
+
+### Range
+
+```rulex
+Range = 'range' String '-' String Base?
+Base = 'base' Number
 ```

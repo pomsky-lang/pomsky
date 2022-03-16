@@ -31,8 +31,7 @@ impl CharGroup {
     /// `last` is lower than `first`.
     pub(crate) fn try_from_range(first: char, last: char) -> Option<Self> {
         if first <= last {
-            let range = GroupItem::Range { first, last };
-            Some(CharGroup::Items(vec![range]))
+            Some(CharGroup::Items(vec![GroupItem::Range { first, last }]))
         } else {
             None
         }
@@ -130,7 +129,7 @@ pub(crate) enum GroupItem {
 }
 
 impl GroupItem {
-    pub(super) fn range_unchecked(first: char, last: char) -> Self {
+    pub(crate) fn range_unchecked(first: char, last: char) -> Self {
         GroupItem::Range { first, last }
     }
 }

@@ -1,3 +1,5 @@
+use std::num::{IntErrorKind, ParseIntError};
+
 use crate::{
     parse::{Input, ParseErrorMsg, Token},
     repetition::RepetitionError,
@@ -77,6 +79,8 @@ pub enum ParseErrorKind {
     ExpectedOneOf(Box<[Token]>),
     #[error("This token can't be negated")]
     InvalidNot,
+    #[error("The first number in a range must be smaller than the second")]
+    RangeIsNotIncreasing,
     #[error(transparent)]
     CharString(CharStringError),
     #[error(transparent)]
@@ -84,7 +88,7 @@ pub enum ParseErrorKind {
     #[error(transparent)]
     CodePoint(CodePointError),
     #[error(transparent)]
-    Number(NumberError),
+    Number(#[from] NumberError),
     #[error(transparent)]
     Repetition(RepetitionError),
 
@@ -138,11 +142,32 @@ pub enum CodePointError {
     InvalidRange,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum NumberError {
-    #[error("Numbers this large are not supported")]
+    #[error("cannot parse integer from empty string")]
+    Empty,
+    #[error("invalid digit found in string")]
+    InvalidDigit,
+    #[error("number too large")]
     TooLarge,
+    #[error("number too small")]
+    TooSmall,
+    #[error("number would be zero for non-zero type")]
+    Zero,
+}
+
+impl From<ParseIntError> for NumberError {
+    fn from(e: ParseIntError) -> Self {
+        match e.kind() {
+            IntErrorKind::Empty => NumberError::Empty,
+            IntErrorKind::InvalidDigit => NumberError::InvalidDigit,
+            IntErrorKind::PosOverflow => NumberError::TooLarge,
+            IntErrorKind::NegOverflow => NumberError::TooSmall,
+            IntErrorKind::Zero => NumberError::Zero,
+            _ => unimplemented!(),
+        }
+    }
 }
 
 struct ListWithoutBrackets<'a, T>(&'a [T]);

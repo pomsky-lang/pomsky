@@ -42,6 +42,9 @@ impl Compile for Repetition<'_> {
         let mut omit_lazy = false;
 
         match self.kind {
+            RepetitionKind { lower_bound: 1, upper_bound: Some(1) } => {
+                return Ok(());
+            }
             RepetitionKind { lower_bound: 0, upper_bound: Some(1) } => buf.push('?'),
             RepetitionKind { lower_bound: 0, upper_bound: None } => buf.push('*'),
             RepetitionKind { lower_bound: 1, upper_bound: None } => buf.push('+'),
@@ -55,7 +58,7 @@ impl Compile for Repetition<'_> {
                 omit_lazy = true;
             }
             RepetitionKind { lower_bound: 0, upper_bound: Some(upper_bound) } => {
-                write!(buf, "{{,{upper_bound}}}").unwrap();
+                write!(buf, "{{0,{upper_bound}}}").unwrap();
             }
             RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
                 write!(buf, "{{{lower_bound},{upper_bound}}}").unwrap();
@@ -112,7 +115,7 @@ pub struct RepetitionKind {
     /// The lower bound, e.g. `{4,}`
     lower_bound: u32,
 
-    /// The upper bound, e.g. `{,7}`. `None` means infinity.
+    /// The upper bound, e.g. `{0,7}`. `None` means infinity.
     upper_bound: Option<u32>,
 }
 
