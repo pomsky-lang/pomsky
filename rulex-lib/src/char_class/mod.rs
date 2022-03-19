@@ -29,10 +29,11 @@
 //!     Supported are `[w]`, `[d]`, `[s]`, `[h]`, `[v]` and `[R]`.
 //!
 //!   - a [POSIX class](https://www.regular-expressions.info/posixbrackets.html#class).\
-//!     Supported are `[alnum]`, `[alpha]`, `[ascii]`, `[blank]`, `[cntrl]`, `[digit]`, `[graph]`,
-//!     `[lower]`, `[print]`, `[punct]`, `[space]`, `[upper]`, `[word]` and `[xdigit]`.\
+//!     Supported are `[ascii_alnum]`, `[ascii_alpha]`, `[ascii]`, `[ascii_blank]`, `[ascii_cntrl]`,
+//!     `[ascii_digit]`, `[ascii_graph]`, `[ascii_lower]`, `[ascii_print]`, `[ascii_punct]`, ´
+//!     `[ascii_space]`, `[ascii_upper]`, `[ascii_word]` and `[ascii_xdigit]`.\
 //!     _Note_: POSIX classes are not Unicode aware!\
-//!     _Note_: They're converted to ranges, e.g. `[alpha]` = `[a-zA-Z]`.
+//!     _Note_: They're converted to ranges, e.g. `[ascii_alpha]` = `[a-zA-Z]`.
 //!
 //!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
 //!     For example: `[Letter]` compiles to `\p{Letter}`. Rulex currently treats any uppercase

@@ -388,7 +388,7 @@ data! {
     #OtherProperties(""):
 
     White_Space -> "White_Space";
-    Alphabetic, alpha -> "Alphabetic";
+    Alphabetic, Alpha -> "Alphabetic";
     Noncharacter_Code_Point -> "Noncharacter_Code_Point";
     Default_Ignorable_Code_Point -> "Default_Ignorable_Code_Point";
     Logical_Order_Exception -> "Logical_Order_Exception";
@@ -646,6 +646,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Adlm", GroupName::Script(Script::Adlam)),
     ("Aghb", GroupName::Script(Script::Caucasian_Albanian)),
     ("Ahom", GroupName::Script(Script::Ahom)),
+    ("Alpha", GroupName::OtherProperties(OtherProperties::Alphabetic)),
     ("Alphabetic", GroupName::OtherProperties(OtherProperties::Alphabetic)),
     ("Anatolian_Hieroglyphs", GroupName::Script(Script::Anatolian_Hieroglyphs)),
     ("Arab", GroupName::Script(Script::Arabic)),

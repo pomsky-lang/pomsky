@@ -333,7 +333,7 @@ The words in each line can be used interchangeably.
 ## List of Other Supported Properties
 
 - `White_Space`
-- `Alphabetic`, `alpha`
+- `Alphabetic`, `Alpha`
 - `Noncharacter_Code_Point`
 - `Default_Ignorable_Code_Point`
 - `Logical_Order_Exception`

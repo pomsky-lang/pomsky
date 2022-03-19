@@ -384,29 +384,87 @@ There are a few _shorthand character classes_: `word`, `digit`, `space`, `horiz_
 `vert_space`. They can be abbreviated with their first, letter: `w`, `d`, `s`, `h` and `v`. Like
 Unicode properties, they must appear in square brackets.
 
-These character classes exist to be compatible with regex engines, but using them is not always a
-good idea, because their behavior is not consistent across all regex engines:
+The character classes `word`, `digit` and `space` exist to be compatible with regex engines, but
+using them is not always a good idea, because their behavior is not consistent across all regex
+engines:
 
 - `word` matches a _word character_, i.e. a letter, digit or underscore. On regex engines with
   Unicode support, this should be equivalent to `[Alphabetic Mark Decimal_Number Connector_Punctuation Join_Control]`.
 - `digit` matches a digit. Equivalent to `Decimal_Number` if the regex engine supports Unicode.
 - `space` matches whitespace. Equivalent to `White_Space` if the regex engine supports Unicode.
+
+The `vert_space` and `horiz_space` shorthands are consistent across regex engines:
+
 - `horiz_space` matches horizontal whitespace (tabs and spaces). This is equivalent to
-  `[U+09 Space_Separator]` in all regex engines.
-- `vert_space` matches vertical whitespace. This is equivalent to `[U+0A-U+0D U+85 U+2028 U+2029]`
-  in all regex engines.
+  `[U+09 Space_Separator]`.
+- `vert_space` matches vertical whitespace. This is equivalent to `[U+0A-U+0D U+85 U+2028 U+2029]`.
+
+There are two more shorthands: `[codepoint]` (or `[cp]` for short), matches any Unicode code point;
+`[.]` matches any Unicode code point, _except_ the ASCII line break `\n`.
+
+#### Unicode support by regex engines
 
 Now, what regex engines support Unicode, and how do we make use of it? Here's a summary:
 
-- In JavaScript you may set the `u` flag, for example `/[\w\s]/u`. However, `[w]` and `[d]` are NOT
-  Unicode aware even when the `u` flag is enabled! `[s]` is always Unicode aware, however.
-- PCRE supports Unicode quite well, but to make `[w]`, `[d]` and `[s]` Unicode-aware, you need to
-  enable both `PCRE_UTF8` and `PCRE_UCP`.
-- The Rust `regex` crate is Unicode-aware by default.
-- Ruby
+- In JavaScript, set the `u` flag, for example `/[\w\s]/u`. However, `[w]` and `[d]` are NOT
+  Unicode aware even when the `u` flag is enabled! `[s]` is always Unicode aware.
 
-<!-- Mention l, [.] and [cp] -->
-<!-- Mention ascii_* POSIX classes -->
+  As an alternative, you may substitute
+
+  - `[word]` with `[Alphabetic Mark Decimal_Number Connector_Punctuation]` (or `[Alpha M Nd Pc]`
+    for short)
+  - `[digit]` with `[Decimal_Number]` (or `[Nd]` for short)
+  - `[space]` with `[White_Space]`
+
+  This will be done automatically in the next version for JavaScript.
+
+- PHP is Unicode-aware if the `u` flag is set, and this also applies to `[w]`, `[d]` and `[s]`. For
+  example, `'/\w+/u'` matches a word in any script.
+
+- PCRE supports Unicode, but to make `[w]`, `[d]` and `[s]` Unicode-aware, you need to enable both
+  `PCRE_UTF8` and `PCRE_UCP`.
+
+- In Java, add `(?U)` in front of the regex to make it Unicode-aware. For example, `"(?U)\\w+"`
+  matches a word in any script.
+
+- In Ruby, add `(?u)` in front of the regex to make it Unicode-aware. For example, `/(?u)\w+/`
+  matches a word in any script.
+
+- In the Python `re` module, `[w]`, `[d]` and `[s]` are Unicode-aware since Python 3. If you're
+  still using Python 2, you can use the [regex](https://pypi.org/project/regex/2021.11.10/) module
+  from November 2021; releases newer than that don't support Python 2.
+
+- The Rust `regex` crate is Unicode-aware by default. There's nothing you need to do.
+
+#### What if I don't need Unicode support?
+
+You don't have to use `[word]`, `[digit]` or `[space]` if you know that the input is only ASCII.
+Unicode-aware matching can be considerably slower. For example, the `[word]` character class
+includes more than 100,000 code points, so matching a `[ascii_word]`, which includes only 63 code
+points, is faster.
+
+Rulex supports a number of ASCII-only shorthands:
+
+| Character class  | Equivalent                              |
+| ---------------- | --------------------------------------- |
+| `[ascii]`        | `[U+00-U+7F]`                           |
+| `[ascii_alpha]`  | `['a'-'z' 'A'-'Z']`                     |
+| `[ascii_alnum]`  | `['0'-'9' 'a'-'z' 'A'-'Z']`             |
+| `[ascii_blank]`  | `[' ' U+09],`                           |
+| `[ascii_cntrl]`  | `[U+00-U+1F U+7F]`                      |
+| `[ascii_digit]`  | `['0'-'9']`                             |
+| `[ascii_graph]`  | `['!'-'~']`                             |
+| `[ascii_lower]`  | `['a'-'z']`                             |
+| `[ascii_print]`  | `[' '-'~']`                             |
+| `[ascii_punct]`  | `` ['!'-'/' ':'-'@' '['-'`' '{'-'~'] `` |
+| `[ascii_space]`  | `[' ' U+09-U+0D]`                       |
+| `[ascii_upper]`  | `['A'-'Z']`                             |
+| `[ascii_word]`   | `['0'-'9' 'a'-'z' 'A'-'Z' '_']`         |
+| `[ascii_xdigit]` | `['0'-'9' 'a'-'f' 'A'-'F']`             |
+
+Using them can improve performance, but be careful when you use them. If you aren't sure if the
+input will ever contain non-ASCII characters, it's better to err on the side of correctness, and
+use Unicode-aware character classes.
 
 ### Non-printable characters
 
