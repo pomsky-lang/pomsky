@@ -372,13 +372,40 @@ You can see the full list of Unicode properties [here](./unicode-properties.md).
 
 ### Negation
 
-TODO
+Character classes are negated by putting a `!` in front of it. For example, `!['a'-'f']` matches
+anything except a letter in the range from `a` to `f`.
+
+It's also possible to negate Unicode properties individually. For example, `[Latin !Alphabetic]`
+matches a code point that is either in the Latin script, or is not alphabetic.
 
 ### Special character classes
 
-TODO
+There are a few _shorthand character classes_: `word`, `digit`, `space`, `horiz_space` and
+`vert_space`. They can be abbreviated with their first, letter: `w`, `d`, `s`, `h` and `v`. Like
+Unicode properties, they must appear in square brackets.
 
-<!-- Mention w, d, s, v, h, l, [.] and [cp] -->
+These character classes exist to be compatible with regex engines, but using them is not always a
+good idea, because their behavior is not consistent across all regex engines:
+
+- `word` matches a _word character_, i.e. a letter, digit or underscore. On regex engines with
+  Unicode support, this should be equivalent to `[Alphabetic Mark Decimal_Number Connector_Punctuation Join_Control]`.
+- `digit` matches a digit. Equivalent to `Decimal_Number` if the regex engine supports Unicode.
+- `space` matches whitespace. Equivalent to `White_Space` if the regex engine supports Unicode.
+- `horiz_space` matches horizontal whitespace (tabs and spaces). This is equivalent to
+  `[U+09 Space_Separator]` in all regex engines.
+- `vert_space` matches vertical whitespace. This is equivalent to `[U+0A-U+0D U+85 U+2028 U+2029]`
+  in all regex engines.
+
+Now, what regex engines support Unicode, and how do we make use of it? Here's a summary:
+
+- In JavaScript you may set the `u` flag, for example `/[\w\s]/u`. However, `[w]` and `[d]` are NOT
+  Unicode aware even when the `u` flag is enabled! `[s]` is always Unicode aware, however.
+- PCRE supports Unicode quite well, but to make `[w]`, `[d]` and `[s]` Unicode-aware, you need to
+  enable both `PCRE_UTF8` and `PCRE_UCP`.
+- The Rust `regex` crate is Unicode-aware by default.
+- Ruby
+
+<!-- Mention l, [.] and [cp] -->
 <!-- Mention ascii_* POSIX classes -->
 
 ### Non-printable characters

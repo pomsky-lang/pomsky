@@ -1,0 +1,4 @@
+#! flavor=.net
+[InBasic_Latin] ![InLatin_Extended_A]
+-----
+\p{IsBasicLatin}\P{IsLatinExtended-A}

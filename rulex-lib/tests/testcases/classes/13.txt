@@ -1,0 +1,4 @@
+#! flavor=ruby
+[InBasic_Latin] ![InLatin_Extended_A]
+-----
+\p{InBasic_Latin}\P{InLatin_Extended-A}

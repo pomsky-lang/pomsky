@@ -277,8 +277,12 @@ fn compile_named_class(
     match group {
         GroupName::Word if negative => buf.push_str("\\W"),
         GroupName::Word => buf.push_str("\\w"),
+        GroupName::Digit if negative => buf.push_str("\\D"),
+        GroupName::Digit => buf.push_str("\\d"),
+        GroupName::Space if negative => buf.push_str("\\S"),
+        GroupName::Space => buf.push_str("\\s"),
 
-        GroupName::HorizSpace | GroupName::VertSpace | GroupName::LineBreak if negative => {
+        GroupName::HorizSpace | GroupName::VertSpace if negative => {
             let s = group.as_str().to_string();
             return Err(CompileErrorKind::UnsupportedNegatedClass(s).at(span));
         }
@@ -300,10 +304,6 @@ fn compile_named_class(
                 }
             }
         }
-        GroupName::LineBreak if flavor == RegexFlavor::JavaScript => {
-            return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
-        }
-        GroupName::LineBreak => buf.push_str("\\R"),
         _ => {
             if negative {
                 buf.push_str("\\P{");
@@ -361,6 +361,8 @@ fn compile_named_class_negative(
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word => buf.push_str("\\W"),
+        GroupName::Digit => buf.push_str("\\D"),
+        GroupName::Space => buf.push_str("\\S"),
         GroupName::HorizSpace | GroupName::VertSpace => {
             buf.push_str("[^");
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
@@ -372,10 +374,6 @@ fn compile_named_class_negative(
             }
             buf.push(']');
         }
-        GroupName::LineBreak if flavor == RegexFlavor::JavaScript => {
-            return Err(CompileErrorKind::Unsupported(Feature::UnicodeLineBreak, flavor).at(span));
-        }
-        GroupName::LineBreak => buf.push_str("[^\\R]"),
 
         GroupName::Category(c) => {
             buf.push_str("\\P{");

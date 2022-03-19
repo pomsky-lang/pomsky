@@ -1,0 +1,3 @@
+[Greek] [Grek] ![Latin] [!Latn]
+-----
+\p{Greek}\p{Greek}\P{Latin}\P{Latin}

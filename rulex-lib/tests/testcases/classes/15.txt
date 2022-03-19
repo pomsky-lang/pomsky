@@ -1,0 +1,3 @@
+['a'-'f' 'hijkl' !w]
+-----
+[a-fhijkl\W]

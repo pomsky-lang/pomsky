@@ -64,9 +64,10 @@ macro_rules! data {
 // https://tc39.es/ecma262/multipage/text-processing.html#table-unicode-script-values
 data! {
     "word", "w" => GroupName::Word;
+    "digit", "d" => GroupName::Digit;
+    "space", "s" => GroupName::Space;
     "horiz_space", "h" => GroupName::HorizSpace;
     "vert_space", "v" => GroupName::VertSpace;
-    "line_break", "l" => GroupName::LineBreak;
 
     #Category(""):
 
@@ -76,7 +77,7 @@ data! {
     Control, Cc, cntrl -> "Cc";
     Currency_Symbol, Sc -> "Sc";
     Dash_Punctuation, Pd -> "Pd";
-    Decimal_Number, Nd, digit, d -> "Nd";
+    Decimal_Number, Nd -> "Nd";
     Enclosing_Mark, Me -> "Me";
     Final_Punctuation, Pf -> "Pf";
     Format, Cf -> "Cf";
@@ -100,7 +101,7 @@ data! {
     Paragraph_Separator, Zp  -> "Zp";
     Private_Use, Co  -> "Co";
     Punctuation, P, punct  -> "P";
-    Separator, Z, space, s  -> "Z";
+    Separator, Z  -> "Z";
     Space_Separator, Zs  -> "Zs";
     Spacing_Mark, Mc  -> "Mc";
     Surrogate, Cs  -> "Cs";
@@ -1256,15 +1257,13 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("Zs", GroupName::Category(Category::Space_Separator)),
     ("Zyyy", GroupName::Script(Script::Common)),
     ("cntrl", GroupName::Category(Category::Control)),
-    ("d", GroupName::Category(Category::Decimal_Number)),
-    ("digit", GroupName::Category(Category::Decimal_Number)),
+    ("d", GroupName::Digit),
+    ("digit", GroupName::Digit),
     ("h", (GroupName::HorizSpace)),
     ("horiz_space", (GroupName::HorizSpace)),
-    ("l", (GroupName::LineBreak)),
-    ("line_break", (GroupName::LineBreak)),
     ("punct", GroupName::Category(Category::Punctuation)),
-    ("s", GroupName::Category(Category::Separator)),
-    ("space", GroupName::Category(Category::Separator)),
+    ("s", GroupName::Space),
+    ("space", GroupName::Space),
     ("v", (GroupName::VertSpace)),
     ("vert_space", (GroupName::VertSpace)),
     ("w", (GroupName::Word)),

@@ -146,9 +146,10 @@ impl core::fmt::Debug for GroupItem {
                 }
                 let name = match name {
                     GroupName::Word => "word",
+                    GroupName::Digit => "digit",
+                    GroupName::Space => "space",
                     GroupName::HorizSpace => "horiz_space",
                     GroupName::VertSpace => "vert_space",
-                    GroupName::LineBreak => "line_break",
                     GroupName::Category(c) => {
                         f.write_str("category=")?;
                         c.as_str()
@@ -176,9 +177,10 @@ impl core::fmt::Debug for GroupItem {
 #[repr(u16)]
 pub(crate) enum GroupName {
     Word,
+    Digit,
+    Space,
     HorizSpace,
     VertSpace,
-    LineBreak,
     Category(Category),
     Script(Script),
     CodeBlock(CodeBlock),
@@ -189,9 +191,10 @@ impl GroupName {
     pub(super) fn as_str(self) -> &'static str {
         match self {
             GroupName::Word => "w",
+            GroupName::Digit => "d",
+            GroupName::Space => "s",
             GroupName::HorizSpace => "h",
             GroupName::VertSpace => "v",
-            GroupName::LineBreak => "R",
             GroupName::Category(c) => c.as_str(),
             GroupName::Script(s) => s.as_str(),
             GroupName::CodeBlock(c) => c.as_str(),
