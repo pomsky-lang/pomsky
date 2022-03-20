@@ -14,6 +14,9 @@ will likely change substantially in the next few releases.
 Rulex can be used with a CLI or a Rust macro. See
 [installation instructions](installation-instructions.md).
 
+You should also enable Unicode support in your regex engine if it isn't supported by default.
+[See instructions](./enabling-unicode-support.md).
+
 ## Basics
 
 Rulex expressions (_rulexes_ for short) describe the syntactical structure of a text. There are
@@ -402,40 +405,6 @@ The `vert_space` and `horiz_space` shorthands are consistent across regex engine
 There are two more shorthands: `[codepoint]` (or `[cp]` for short), matches any Unicode code point;
 `[.]` matches any Unicode code point, _except_ the ASCII line break `\n`.
 
-#### Unicode support by regex engines
-
-Now, what regex engines support Unicode, and how do we make use of it? Here's a summary:
-
-- In JavaScript, set the `u` flag, for example `/[\w\s]/u`. However, `[w]` and `[d]` are NOT
-  Unicode aware even when the `u` flag is enabled! `[s]` is always Unicode aware.
-
-  As an alternative, you may substitute
-
-  - `[word]` with `[Alphabetic Mark Decimal_Number Connector_Punctuation]` (or `[Alpha M Nd Pc]`
-    for short)
-  - `[digit]` with `[Decimal_Number]` (or `[Nd]` for short)
-  - `[space]` with `[White_Space]`
-
-  This will be done automatically in the next version for JavaScript.
-
-- PHP is Unicode-aware if the `u` flag is set, and this also applies to `[w]`, `[d]` and `[s]`. For
-  example, `'/\w+/u'` matches a word in any script.
-
-- PCRE supports Unicode, but to make `[w]`, `[d]` and `[s]` Unicode-aware, you need to enable both
-  `PCRE_UTF8` and `PCRE_UCP`.
-
-- In Java, add `(?U)` in front of the regex to make it Unicode-aware. For example, `"(?U)\\w+"`
-  matches a word in any script.
-
-- In Ruby, add `(?u)` in front of the regex to make it Unicode-aware. For example, `/(?u)\w+/`
-  matches a word in any script.
-
-- In the Python `re` module, `[w]`, `[d]` and `[s]` are Unicode-aware since Python 3. If you're
-  still using Python 2, you can use the [regex](https://pypi.org/project/regex/2021.11.10/) module
-  from November 2021; releases newer than that don't support Python 2.
-
-- The Rust `regex` crate is Unicode-aware by default. There's nothing you need to do.
-
 #### What if I don't need Unicode support?
 
 You don't have to use `[word]`, `[digit]` or `[space]` if you know that the input is only ASCII.
@@ -468,18 +437,67 @@ use Unicode-aware character classes.
 
 ### Non-printable characters
 
-TODO
+Characters that can't be printed should be replaced with their hexadecimal Unicode code point. For
+example, you may write `U+FEFF` to match the
+[Zero Width No-Break Space](https://www.compart.com/en/unicode/U+FEFF).
 
-<!-- Mention n, r, t, a, e, f -->
-<!-- Mention U+XXXX -->
+There are also 6 non-printable characters with a name:
+
+- `[n]` is equivalent to `[U+0A]`, the `\n` line feed.
+- `[r]` is equivalent to `[U+0D]`, the `\r` carriage return.
+- `[f]` is equivalent to `[U+0C]`, the `\f` form feed.
+- `[a]` is equivalent to `[U+07]`, the "alert" or "bell" control character.
+- `[e]` is equivalent to `[U+0B]`, the "escape" control character.
+
+Other characters have to be written in their hexadecimal form. Note that you don't need to write
+leading zeroes, i.e. `U+0` is just as ok as `U+0000`. However, it is conventional to write ASCII
+characters with two digits and non-ASCII characters with 4, 5 or 6 digits depending on their length.
 
 ### Boundaries
 
-TODO
+Boundaries match a position in a string without consuming any code points. There are 4 boundaries:
+
+- `%` matches a word boundary. It matches successfully if it is preceded, but not succeeded by a
+  word character, or vice versa. For example, `[cp] % [cp]` matches `A;` and `;A`, but not `AA` or
+  `;;`.
+- `!%` matches a position that is _not_ a word boundary. For example, `[cp] !% [cp]` matches `aa`
+  and `::`, but not `a:` or `:a`.
+- `<%` matches the start of the string.
+- `%>` matches the end of the string.
+
+A word character is anything that matches `[word]`. If the regex engine is Unicode-aware, this is
+`[Alphabetic Mark Decimal_Number Connector_Punctuation]`. For some regex engines, Unicode-aware
+matching has to be enabled first ([see here](./enabling-unicode-support.md)).
+
+In JavaScript, `%` and `!%` is _never_ Unicode-aware, even when the `u` flag is set.
+[See here](./enabling-unicode-support.md#javascript) for more information.
 
 ### Lookaround
 
-TODO
+Lookarounds provide the ability to see if the characters before or after the current position
+match a certain expression. There are four variants:
+
+- `>>`, a positive lookahead. For example, `(>> [w])` matches if the position is followed by a word
+  character. That character isn't included in the match.
+- `<<`, a positive lookbehind. For example, `(<< [w])` matches if the position is directly after
+  a word character.
+- `!>>`, a negative lookahead. For example `(!>> [w])` matches if the position is _not_ followed by
+  a word character. Note that this also matches at the end of the string, so it's not the same as
+  `(>> ![w])`, which would require that the position is followed by at least one character.
+- `!<<`, a negative lookbehind. For example `(!<< [w])` matches if the position is _not_ directly
+  after a word character. This also matches at the start of the string, so it's not the same as
+  `(<< ![w])`.
+
+Lookaround makes it possible to match a string multiple times. For example,
+<code class="language-rulex">(!>> ('_' | 'for' | 'while' | 'if') %) [w]+ %></code> matches a string
+consisting of word characters, but not one of the keywords `_`, `for`, `while`and`if`. Be careful when using this technique, because the lookahead might not match the same length as the expression after it. Here, we ensured that both match until the end of the word with `%`.
+
+Some regex engines don't allow arbitrary expressions in a lookbehind. For example, they might
+forbid repetitions or expressions with an unknown length, such as `'hi' | 'world'`. The reason for
+this is that they don't support backwards matching; instead, when they see a lookbehind such as
+`(<< 'foo')`, they see that it has a length of 3 code points, so they go back 3 characters in the
+string and match the expression `'foo'` forwards. This requires that the length of the match is
+known. Rulex currently doesn't validates this for regex engines with such a requirement.
 
 ### Range
 

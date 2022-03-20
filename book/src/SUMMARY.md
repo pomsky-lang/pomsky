@@ -2,6 +2,7 @@
 
 - [Introduction](./introduction.md)
 - [Installation instructions](./installation-instructions.md)
+- [Enabling Unicode support](./enabling-unicode-support.md)
 - [Rulex Grammar](./grammar.md)
 - [Unicode Properties](./unicode-properties.md)
 - [Advanced Examples](./advanced-examples/README.md)
