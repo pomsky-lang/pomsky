@@ -1,5 +1,5 @@
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     error::CompileErrorKind,
     options::{CompileOptions, RegexFlavor},
     span::Span,
@@ -35,6 +35,10 @@ impl<'i> Group<'i> {
 
     pub(crate) fn is_capturing(&self) -> bool {
         self.capture.is_some()
+    }
+
+    pub(crate) fn count_capturing_groups(&self) -> u32 {
+        self.parts.iter().map(Rulex::count_capturing_groups).sum()
     }
 }
 
@@ -100,6 +104,18 @@ impl Compile for Group<'_> {
                 Ok(())
             }
         }
+    }
+}
+
+impl Transform for Group<'_> {
+    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
+        if self.capture.is_some() {
+            state.next_idx += 1;
+        }
+        for rulex in &mut self.parts {
+            rulex.transform(options, state)?;
+        }
+        Ok(())
     }
 }
 

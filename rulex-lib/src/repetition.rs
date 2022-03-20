@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Parens},
+    compile::{Compile, CompileResult, CompileState, Parens, Transform, TransformState},
     options::CompileOptions,
     span::Span,
     Rulex,
@@ -23,6 +23,10 @@ impl<'i> Repetition<'i> {
         span: Span,
     ) -> Self {
         Repetition { rule, kind, greedy, span }
+    }
+
+    pub(crate) fn count_capturing_groups(&self) -> u32 {
+        self.rule.count_capturing_groups()
     }
 }
 
@@ -72,6 +76,12 @@ impl Compile for Repetition<'_> {
         }
 
         Ok(())
+    }
+}
+
+impl Transform for Repetition<'_> {
+    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
+        self.rule.transform(options, state)
     }
 }
 

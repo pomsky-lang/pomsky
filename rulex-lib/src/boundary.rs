@@ -3,7 +3,7 @@
 //! [anchors](https://www.regular-expressions.info/anchors.html).
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     options::CompileOptions,
     span::Span,
 };
@@ -50,6 +50,12 @@ impl Compile for Boundary {
             BoundaryKind::NotWord => buf.push_str("\\B"),
             BoundaryKind::End => buf.push('$'),
         }
+        Ok(())
+    }
+}
+
+impl Transform for Boundary {
+    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
         Ok(())
     }
 }

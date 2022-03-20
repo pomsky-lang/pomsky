@@ -3,8 +3,8 @@ use std::cmp::Ordering;
 use crate::{
     alternation::Alternation,
     char_class::{CharClass, CharGroup, GroupItem},
-    compile::{Compile, CompileResult, CompileState},
-    error::CompileErrorKind,
+    compile::{Compile, CompileResult, CompileState, TransformState},
+    error::{CompileError, CompileErrorKind},
     group::Group,
     literal::Literal,
     options::CompileOptions,
@@ -25,17 +25,14 @@ impl Range {
     pub(crate) fn new(start: Vec<u8>, end: Vec<u8>, radix: u8, span: Span) -> Self {
         Range { start, end, radix, span }
     }
-}
 
-impl Compile for Range {
-    fn comp(
+    pub(crate) fn transform(
         &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
+        _: CompileOptions,
+        _: &mut TransformState,
+    ) -> Result<Rulex<'static>, CompileError> {
         match range(&self.start, &self.end, 0, self.radix) {
-            Ok(rule) => rule.comp(options, state, buf),
+            Ok(rule) => Ok(rule.to_rulex()),
             Err(Error) => {
                 Err(CompileErrorKind::Other("Expanding the range yielded an unexpected error")
                     .at(self.span))

@@ -2,7 +2,7 @@
 //! `('alt1' | 'alt2' | 'alt3')`.
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     literal::Literal,
     options::CompileOptions,
     span::Span,
@@ -45,6 +45,10 @@ impl<'i> Alternation<'i> {
             })
             .unwrap_or_else(|| Rulex::Literal(Literal::new("", Span::default())))
     }
+
+    pub(crate) fn count_capturing_groups(&self) -> u32 {
+        self.rules.iter().map(Rulex::count_capturing_groups).sum()
+    }
 }
 
 #[cfg(feature = "dbg")]
@@ -71,6 +75,15 @@ impl Compile for Alternation<'_> {
             buf.push('|');
         }
         let _ = buf.pop();
+        Ok(())
+    }
+}
+
+impl Transform for Alternation<'_> {
+    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
+        for alt in &mut self.rules {
+            alt.transform(options, state)?;
+        }
         Ok(())
     }
 }

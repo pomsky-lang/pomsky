@@ -98,7 +98,7 @@
 //!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use crate::{
-    compile::{Compile, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     error::{CompileError, CompileErrorKind, Feature},
     literal::{compile_char, compile_char_esc},
     options::{CompileOptions, RegexFlavor},
@@ -246,6 +246,12 @@ impl Compile for CharClass {
                 }
             },
         }
+        Ok(())
+    }
+}
+
+impl Transform for CharClass {
+    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
         Ok(())
     }
 }

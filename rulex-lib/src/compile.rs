@@ -17,6 +17,10 @@ pub(crate) trait Compile {
     ) -> CompileResult;
 }
 
+pub(crate) trait Transform {
+    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult;
+}
+
 pub(crate) struct Parens<'a, T>(pub(crate) &'a T);
 
 impl<T: Compile> Compile for Parens<'_, T> {
@@ -55,12 +59,24 @@ impl CompileState {
     pub(crate) fn check_validity(self) -> Result<(), CompileError> {
         for (group, span) in self.unknown_groups {
             if group >= self.next_idx {
-                return Err(CompileErrorKind::UnknownReferenceNumber(group).at(span));
+                return Err(CompileErrorKind::UnknownReferenceNumber(group as i32).at(span));
             }
         }
         if let Some((reference, span)) = self.unknown_references.into_iter().next() {
             return Err(CompileErrorKind::UnknownReferenceName(reference).at(span));
         }
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct TransformState {
+    pub(crate) next_idx: u32,
+    pub(crate) capturing_groups: u32,
+}
+
+impl TransformState {
+    pub(crate) fn new(capturing_groups: u32) -> Self {
+        Self { next_idx: 1, capturing_groups }
     }
 }

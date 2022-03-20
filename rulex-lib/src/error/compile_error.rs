@@ -37,7 +37,7 @@ pub enum CompileErrorKind {
     HugeReference,
 
     #[error("Reference to unknown group. There is no group number {}", .0)]
-    UnknownReferenceNumber(u32),
+    UnknownReferenceNumber(i32),
 
     #[error("Reference to unknown group. There is no group named `{}`", .0)]
     UnknownReferenceName(String),

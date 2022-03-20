@@ -1,5 +1,5 @@
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     span::Span,
@@ -167,5 +167,29 @@ impl Compile for Reference<'_> {
             }
             _ => Ok(()),
         }
+    }
+}
+
+impl Transform for Reference<'_> {
+    fn transform(&mut self, _: CompileOptions, state: &mut TransformState) -> CompileResult {
+        match self.target {
+            ReferenceTarget::Named(_) | ReferenceTarget::Number(_) => {}
+            ReferenceTarget::Relative(n) => {
+                let num = match n {
+                    0 => {
+                        return Err(
+                            CompileErrorKind::Other("Relative references can't be 0").at(self.span)
+                        )
+                    }
+                    i32::MIN..=-1 => n + (state.next_idx as i32),
+                    1..=i32::MAX => n + (state.next_idx as i32) - 1,
+                };
+                if num <= 0 || (num as u32) > state.capturing_groups {
+                    return Err(CompileErrorKind::UnknownReferenceNumber(num).at(self.span));
+                }
+                self.target = ReferenceTarget::Number(num as u32);
+            }
+        }
+        Ok(())
     }
 }

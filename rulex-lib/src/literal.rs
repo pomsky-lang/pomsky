@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     options::{CompileOptions, RegexFlavor},
     span::Span,
 };
@@ -39,6 +39,12 @@ impl Compile for Literal<'_> {
         for c in self.content.chars() {
             compile_char_esc(c, buf, options.flavor);
         }
+        Ok(())
+    }
+}
+
+impl Transform for Literal<'_> {
+    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
         Ok(())
     }
 }

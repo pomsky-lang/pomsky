@@ -2,7 +2,7 @@
 //! [Unicode grapheme](https://www.regular-expressions.info/unicode.html#grapheme).
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     span::Span,
@@ -29,6 +29,12 @@ impl Compile for Grapheme {
             );
         }
         buf.push_str("\\X");
+        Ok(())
+    }
+}
+
+impl Transform for Grapheme {
+    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
         Ok(())
     }
 }

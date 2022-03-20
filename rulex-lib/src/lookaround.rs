@@ -1,5 +1,5 @@
 use crate::{
-    compile::{Compile, CompileResult, CompileState},
+    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
     error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     span::Span,
@@ -11,6 +11,12 @@ pub struct Lookaround<'i> {
     kind: LookaroundKind,
     rule: Rulex<'i>,
     pub(crate) span: Span,
+}
+
+impl Lookaround<'_> {
+    pub(crate) fn count_capturing_groups(&self) -> u32 {
+        self.rule.count_capturing_groups()
+    }
 }
 
 #[cfg(feature = "dbg")]
@@ -63,5 +69,11 @@ impl Compile for Lookaround<'_> {
         self.rule.comp(options, state, buf)?;
         buf.push(')');
         Ok(())
+    }
+}
+
+impl Transform for Lookaround<'_> {
+    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
+        self.rule.transform(options, state)
     }
 }
