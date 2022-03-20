@@ -136,6 +136,8 @@ hljs.registerLanguage("regexp", function (hljs) {
   };
 });
 
-document.querySelectorAll("code.language-rulex").forEach((code) => {
-  hljs.highlightBlock(code);
-});
+document
+  .querySelectorAll("code.language-rulex, code.language-regexp")
+  .forEach((code) => {
+    hljs.highlightBlock(code);
+  });
