@@ -82,7 +82,7 @@ Quantifier = 'greedy'
 ### AtomExpression
 
 ```rulex
-AtomExpression = Group | String | CharacterClass | Grapheme | Boundary;
+AtomExpression = Group | String | CharacterClass | Grapheme | Boundary | NumberRange;
 ```
 
 ### Group
@@ -116,7 +116,6 @@ CharacterGroupMulti = Range
                     | Shorthand
                     | UnicodeProperty
                     | PosixClass
-                    | Range
 
 Range = Character '-' Character
 
@@ -168,6 +167,6 @@ Boundary = '%' | '!' '%' | '<%' | '%>'
 ### Range
 
 ```rulex
-Range = 'range' String '-' String Base?
+NumberRange = 'range' String '-' String Base?
 Base = 'base' Number
 ```
