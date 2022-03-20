@@ -2,9 +2,12 @@
 
 First, let's get familiar with the basic building blocks of the language.
 
-In Rulex, whitespace is insignificant, except between quotes. This means that can add spaces
-and line breaks to make it look clearer. We can also add comments to explain what the expressions
-are doing. They start with a `#` and span until the end of the line:
+Rulex expressions (_rulexes_ for short) describe the syntactical structure of a text. There are
+several kinds of expressions, which will be explained now.
+
+In Rulex, whitespace is insignificant, except between quotes. This means that we can add spaces
+and line breaks to make the code look clearer. We can also add comments to explain what the
+expressions are doing. They start with a `#` and span until the end of the line:
 
 ```rulex
 # this is a comment

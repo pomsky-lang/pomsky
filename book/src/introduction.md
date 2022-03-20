@@ -17,39 +17,10 @@ Rulex can be used with a CLI or a Rust macro. See
 You should also enable Unicode support in your regex engine if it isn't supported by default.
 [See instructions](./enabling-unicode-support.md).
 
-## Basics
-
-Rulex expressions (_rulexes_ for short) describe the syntactical structure of a text. There are
-several kinds of expressions, which will be explained now.
-
-This introduction assumes basic knowledge of regexes. If you aren't familiar with them, I highly
-recommend [this introduction](https://www.regular-expressions.info/quickstart.html).
-
-### Table of contents:
-
-- [Summary](#summary)
-- [Strings](#strings)
-- [Concatenate expressions](#concatenate-expressions)
-- [Alternatives](#alternatives)
-- [Groups](#groups)
-- [Repetitions](#repetitions)
-  - [Greedy and lazy matching](#greedy-and-lazy-matching)
-  - [Variants of repetition](#variants-of-repetition)
-- [Character classes](#character-classes)
-  - [About Unicode ranges](#about-unicode-ranges)
-- [Unicode support](#unicode-support)
-- [Negation](#negation)
-- [Special character classes](#special-character-classes)
-- [Non-printable characters](#non-printable-characters)
-- [Boundaries](#boundaries)
-- [Lookaround](#lookaround)
-- [Range](#range)
-- [Grapheme](#grapheme)
-
-### Summary
+## Summary
 
 Here you can see all the features at a glance. Don't worry, they will be explained in more detail
-below.
+in the [language tour](./language-tour/README.md).
 
 On the left are rulex expressions, on the right are the equivalent regexes:
 
