@@ -1,8 +1,10 @@
-use std::fmt::Write;
+use std::collections::HashMap;
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Parens, Transform, TransformState},
-    options::CompileOptions,
+    compile::{CompileResult, CompileState},
+    error::CompileError,
+    options::{CompileOptions, RegexFlavor},
+    regex::Regex,
     span::Span,
     Rulex,
 };
@@ -11,7 +13,7 @@ use crate::{
 pub struct Repetition<'i> {
     rule: Rulex<'i>,
     kind: RepetitionKind,
-    greedy: Quantifier,
+    quantifier: Quantifier,
     pub(crate) span: Span,
 }
 
@@ -19,69 +21,30 @@ impl<'i> Repetition<'i> {
     pub(crate) fn new(
         rule: Rulex<'i>,
         kind: RepetitionKind,
-        greedy: Quantifier,
+        quantifier: Quantifier,
         span: Span,
     ) -> Self {
-        Repetition { rule, kind, greedy, span }
+        Repetition { rule, kind, quantifier, span }
     }
 
-    pub(crate) fn count_capturing_groups(&self) -> u32 {
-        self.rule.count_capturing_groups()
+    pub(crate) fn get_capturing_groups(
+        &self,
+        count: &mut u32,
+        map: &'i mut HashMap<String, u32>,
+    ) -> Result<(), CompileError> {
+        self.rule.get_capturing_groups(count, map)
     }
-}
 
-impl Compile for Repetition<'_> {
-    fn comp(
+    pub(crate) fn compile(
         &self,
         options: CompileOptions,
         state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        if self.rule.needs_parens_before_repetition() {
-            Parens(&self.rule).comp(options, state, buf)?;
-        } else {
-            self.rule.comp(options, state, buf)?;
-        }
-
-        let mut omit_lazy = false;
-
-        match self.kind {
-            RepetitionKind { lower_bound: 1, upper_bound: Some(1) } => {
-                return Ok(());
-            }
-            RepetitionKind { lower_bound: 0, upper_bound: Some(1) } => buf.push('?'),
-            RepetitionKind { lower_bound: 0, upper_bound: None } => buf.push('*'),
-            RepetitionKind { lower_bound: 1, upper_bound: None } => buf.push('+'),
-            RepetitionKind { lower_bound, upper_bound: None } => {
-                write!(buf, "{{{lower_bound},}}").unwrap();
-            }
-            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) }
-                if lower_bound == upper_bound =>
-            {
-                write!(buf, "{{{lower_bound}}}").unwrap();
-                omit_lazy = true;
-            }
-            RepetitionKind { lower_bound: 0, upper_bound: Some(upper_bound) } => {
-                write!(buf, "{{0,{upper_bound}}}").unwrap();
-            }
-            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
-                write!(buf, "{{{lower_bound},{upper_bound}}}").unwrap();
-            }
-        }
-
-        if let Quantifier::Lazy = self.greedy {
-            if !omit_lazy {
-                buf.push('?');
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl Transform for Repetition<'_> {
-    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
-        self.rule.transform(options, state)
+    ) -> CompileResult<'i> {
+        Ok(Regex::Repetition(Box::new(RegexRepetition {
+            content: self.rule.comp(options, state)?,
+            kind: self.kind,
+            quantifier: self.quantifier,
+        })))
     }
 }
 
@@ -97,7 +60,7 @@ impl core::fmt::Debug for Repetition<'_> {
                 write!(f, "{{{lower_bound}, {upper_bound}}}")
             }
         }?;
-        if let Quantifier::Greedy = self.greedy {
+        if let Quantifier::Greedy = self.quantifier {
             write!(f, " greedy")?;
         }
         Ok(())
@@ -162,5 +125,65 @@ impl TryFrom<(u32, Option<u32>)> for RepetitionKind {
         }
 
         Ok(RepetitionKind { lower_bound, upper_bound })
+    }
+}
+
+pub(crate) struct RegexRepetition<'i> {
+    content: Regex<'i>,
+    kind: RepetitionKind,
+    quantifier: Quantifier,
+}
+
+impl<'i> RegexRepetition<'i> {
+    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
+        use std::fmt::Write;
+
+        if self.content.needs_parens_before_repetition() {
+            buf.push_str("(?:");
+            self.content.codegen(buf, flavor);
+            buf.push(')');
+        } else {
+            self.content.codegen(buf, flavor);
+        }
+
+        let omit_lazy = match self.kind {
+            RepetitionKind { lower_bound: 1, upper_bound: Some(1) } => return,
+            RepetitionKind { lower_bound: 0, upper_bound: Some(1) } => {
+                buf.push('?');
+                false
+            }
+            RepetitionKind { lower_bound: 0, upper_bound: None } => {
+                buf.push('*');
+                false
+            }
+            RepetitionKind { lower_bound: 1, upper_bound: None } => {
+                buf.push('+');
+                false
+            }
+            RepetitionKind { lower_bound, upper_bound: None } => {
+                write!(buf, "{{{lower_bound},}}").unwrap();
+                false
+            }
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) }
+                if lower_bound == upper_bound =>
+            {
+                write!(buf, "{{{lower_bound}}}").unwrap();
+                true
+            }
+            RepetitionKind { lower_bound: 0, upper_bound: Some(upper_bound) } => {
+                write!(buf, "{{0,{upper_bound}}}").unwrap();
+                false
+            }
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
+                write!(buf, "{{{lower_bound},{upper_bound}}}").unwrap();
+                false
+            }
+        };
+
+        if let Quantifier::Lazy = self.quantifier {
+            if !omit_lazy {
+                buf.push('?');
+            }
+        }
     }
 }

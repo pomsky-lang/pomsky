@@ -1,10 +1,4 @@
-use std::fmt::Write;
-
-use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
-    options::{CompileOptions, RegexFlavor},
-    span::Span,
-};
+use crate::{compile::CompileResult, options::RegexFlavor, regex::Regex, span::Span};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Literal<'i> {
@@ -17,8 +11,8 @@ impl<'i> Literal<'i> {
         Literal { content, span }
     }
 
-    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
-        self.content.chars().nth(1).is_some()
+    pub(crate) fn compile(&self) -> CompileResult<'i> {
+        Ok(Regex::Literal(self.content))
     }
 }
 
@@ -29,29 +23,21 @@ impl core::fmt::Debug for Literal<'_> {
     }
 }
 
-impl Compile for Literal<'_> {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        _state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        for c in self.content.chars() {
-            compile_char_esc(c, buf, options.flavor);
-        }
-        Ok(())
-    }
-}
-
-impl Transform for Literal<'_> {
-    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
-        Ok(())
+/// Write a char to the output buffer with proper escaping. Assumes the char is inside a
+/// character class.
+pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: RegexFlavor) {
+    match c {
+        '\\' => buf.push_str(r#"\\"#),
+        '-' => buf.push_str(r#"\-"#),
+        ']' => buf.push_str(r#"\]"#),
+        '^' => buf.push_str(r#"\^"#),
+        c => compile_char(c, buf, flavor),
     }
 }
 
 /// Write a char to the output buffer with proper escaping. Assumes the char is not in a
 /// character class.
-pub(crate) fn compile_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
+pub(crate) fn codegen_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '[' => buf.push_str(r#"\["#),
@@ -73,6 +59,8 @@ pub(crate) fn compile_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
 /// printable ASCII characters. It does _not_ escape characters like `(` or `]` that have a
 /// special meaning.
 pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
+    use std::fmt::Write;
+
     match c {
         '\n' => buf.push_str("\\n"),
         '\r' => buf.push_str("\\r"),
@@ -91,16 +79,19 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         _ if c.is_alphanumeric() && c.len_utf16() == 1 => {
             buf.push(c);
         }
+        _ if c.len_utf16() == 1 && !matches!(flavor, RegexFlavor::Pcre) => {
+            write!(buf, "\\u{:04X}", c as u32).unwrap();
+        }
         _ => {
             match flavor {
                 RegexFlavor::Pcre => buf.push_str("\\x"),
                 _ => buf.push_str("\\u"),
             }
-            if c.len_utf16() == 1 {
-                write!(buf, "{:X}", c as u32).unwrap();
-            } else {
-                write!(buf, "{{{:X}}}", c as u32).unwrap();
-            }
+            write!(buf, "{{{:X}}}", c as u32).unwrap();
         }
     }
+}
+
+pub(super) fn needs_parens_before_repetition(s: &str) -> bool {
+    s.chars().nth(1).is_some()
 }

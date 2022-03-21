@@ -2,11 +2,7 @@
 //! [word boundaries](https://www.regular-expressions.info/wordboundaries.html) and
 //! [anchors](https://www.regular-expressions.info/anchors.html).
 
-use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
-    options::CompileOptions,
-    span::Span,
-};
+use crate::{compile::CompileResult, regex::Regex, span::Span};
 
 /// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
 /// [anchor](https://www.regular-expressions.info/anchors.html), which we combine under the term
@@ -25,6 +21,24 @@ impl Boundary {
     }
 }
 
+impl Boundary {
+    pub(crate) fn compile(&self) -> CompileResult<'static> {
+        Ok(Regex::Boundary(self.kind))
+    }
+}
+
+#[cfg(feature = "dbg")]
+impl core::fmt::Debug for Boundary {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self.kind {
+            BoundaryKind::Start => write!(f, "<%"),
+            BoundaryKind::Word => write!(f, "%"),
+            BoundaryKind::NotWord => write!(f, "!%"),
+            BoundaryKind::End => write!(f, "%>"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum BoundaryKind {
     /// `<%`, the start of the string (or start of line in single-line mode)
@@ -37,37 +51,13 @@ pub enum BoundaryKind {
     End,
 }
 
-impl Compile for Boundary {
-    fn comp(
-        &self,
-        _options: CompileOptions,
-        _state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        match self.kind {
+impl BoundaryKind {
+    pub(crate) fn codegen(&self, buf: &mut String) {
+        match self {
             BoundaryKind::Start => buf.push('^'),
             BoundaryKind::Word => buf.push_str("\\b"),
             BoundaryKind::NotWord => buf.push_str("\\B"),
             BoundaryKind::End => buf.push('$'),
-        }
-        Ok(())
-    }
-}
-
-impl Transform for Boundary {
-    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
-        Ok(())
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl core::fmt::Debug for Boundary {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self.kind {
-            BoundaryKind::Start => write!(f, "<%"),
-            BoundaryKind::Word => write!(f, "%"),
-            BoundaryKind::NotWord => write!(f, "!%"),
-            BoundaryKind::End => write!(f, "%>"),
         }
     }
 }

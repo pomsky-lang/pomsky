@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
-    error::CompileErrorKind,
+    compile::{CompileResult, CompileState},
+    error::{CompileError, CompileErrorKind},
     options::{CompileOptions, RegexFlavor},
+    regex::Regex,
     span::Span,
     Rulex,
 };
@@ -25,97 +28,57 @@ impl<'i> Group<'i> {
     pub(crate) fn set_capture(&mut self, capture: Capture<'i>) {
         self.capture = Some(capture);
     }
-
-    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
-        if self.capture.is_none() && self.parts.len() == 1 {
-            return self.parts[0].needs_parens_before_repetition();
-        }
-        true
-    }
-
     pub(crate) fn is_capturing(&self) -> bool {
         self.capture.is_some()
     }
 
-    pub(crate) fn count_capturing_groups(&self) -> u32 {
-        self.parts.iter().map(Rulex::count_capturing_groups).sum()
-    }
-}
-
-impl Compile for Group<'_> {
-    fn comp(
+    pub(crate) fn get_capturing_groups(
         &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
+        count: &mut u32,
+        map: &mut HashMap<String, u32>,
+    ) -> Result<(), CompileError> {
         match self.capture {
             Some(Capture { name: Some(name) }) => {
-                if state.used_names.contains_key(name) {
+                if map.contains_key(name) {
                     return Err(
                         CompileErrorKind::NameUsedMultipleTimes(name.to_string()).at(self.span)
                     );
                 }
-                state.used_names.insert(name.to_string(), state.next_idx);
-                state.unknown_references.retain(|(s, _)| s != name);
-                state.next_idx += 1;
 
-                // https://www.regular-expressions.info/named.html
-                match options.flavor {
-                    RegexFlavor::Python | RegexFlavor::Pcre | RegexFlavor::Rust => {
-                        buf.push_str("(?P<");
-                    }
-                    RegexFlavor::DotNet
-                    | RegexFlavor::Java
-                    | RegexFlavor::Ruby
-                    | RegexFlavor::JavaScript => {
-                        buf.push_str("(?<");
-                    }
-                }
-                buf.push_str(name);
-                buf.push('>');
-                for part in &self.parts {
-                    part.comp(options, state, buf)?;
-                }
-                buf.push(')');
-                Ok(())
+                *count += 1;
+                map.insert(name.to_string(), *count);
             }
             Some(Capture { name: None }) => {
-                state.next_idx += 1;
-
-                buf.push('(');
-                for part in &self.parts {
-                    part.comp(options, state, buf)?;
-                }
-                buf.push(')');
-                Ok(())
+                *count += 1;
             }
-            None => {
-                for part in &self.parts {
-                    let needs_parens = part.needs_parens_in_group();
-                    if needs_parens {
-                        buf.push_str("(?:");
-                    }
-                    part.comp(options, state, buf)?;
-                    if needs_parens {
-                        buf.push(')');
-                    }
-                }
-                Ok(())
-            }
-        }
-    }
-}
-
-impl Transform for Group<'_> {
-    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
-        if self.capture.is_some() {
-            state.next_idx += 1;
-        }
-        for rulex in &mut self.parts {
-            rulex.transform(options, state)?;
+            None => {}
+        };
+        for rulex in &self.parts {
+            rulex.get_capturing_groups(count, map)?;
         }
         Ok(())
+    }
+
+    pub(crate) fn compile(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+    ) -> CompileResult<'i> {
+        match self.capture {
+            Some(_) => {
+                state.next_idx += 1;
+            }
+            None => {}
+        }
+
+        Ok(Regex::Group(RegexGroup {
+            parts: self
+                .parts
+                .iter()
+                .map(|part| part.comp(options, state))
+                .collect::<Result<_, _>>()?,
+            capture: self.capture,
+        }))
     }
 }
 
@@ -140,14 +103,72 @@ impl core::fmt::Debug for Group<'_> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub struct Capture<'i> {
-    name: Option<&'i str>,
+    pub(crate) name: Option<&'i str>,
 }
 
 impl<'i> Capture<'i> {
     pub(crate) fn new(name: Option<&'i str>) -> Self {
         Capture { name }
+    }
+}
+
+pub(crate) struct RegexGroup<'i> {
+    parts: Vec<Regex<'i>>,
+    capture: Option<Capture<'i>>,
+}
+
+impl<'i> RegexGroup<'i> {
+    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
+        match self.capture {
+            Some(Capture { name: Some(name) }) => {
+                // https://www.regular-expressions.info/named.html
+                match flavor {
+                    RegexFlavor::Python | RegexFlavor::Pcre | RegexFlavor::Rust => {
+                        buf.push_str("(?P<");
+                    }
+                    RegexFlavor::DotNet
+                    | RegexFlavor::Java
+                    | RegexFlavor::Ruby
+                    | RegexFlavor::JavaScript => {
+                        buf.push_str("(?<");
+                    }
+                }
+                buf.push_str(name);
+                buf.push('>');
+                for part in &self.parts {
+                    part.codegen(buf, flavor);
+                }
+                buf.push(')');
+            }
+            Some(Capture { name: None }) => {
+                buf.push('(');
+                for part in &self.parts {
+                    part.codegen(buf, flavor);
+                }
+                buf.push(')');
+            }
+            None => {
+                for part in &self.parts {
+                    let needs_parens = part.needs_parens_in_group();
+                    if needs_parens {
+                        buf.push_str("(?:");
+                    }
+                    part.codegen(buf, flavor);
+                    if needs_parens {
+                        buf.push(')');
+                    }
+                }
+            }
+        }
+    }
+
+    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
+        if self.capture.is_none() && self.parts.len() == 1 {
+            return self.parts[0].needs_parens_before_repetition();
+        }
+        true
     }
 }

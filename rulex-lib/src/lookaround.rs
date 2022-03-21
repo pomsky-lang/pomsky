@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
-    error::{CompileErrorKind, Feature},
+    compile::{CompileResult, CompileState},
+    error::{CompileError, CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
+    regex::Regex,
     span::Span,
     Rulex,
 };
@@ -13,9 +16,13 @@ pub struct Lookaround<'i> {
     pub(crate) span: Span,
 }
 
-impl Lookaround<'_> {
-    pub(crate) fn count_capturing_groups(&self) -> u32 {
-        self.rule.count_capturing_groups()
+impl<'i> Lookaround<'i> {
+    pub(crate) fn get_capturing_groups(
+        &self,
+        count: &mut u32,
+        map: &'i mut HashMap<String, u32>,
+    ) -> Result<(), CompileError> {
+        self.rule.get_capturing_groups(count, map)
     }
 }
 
@@ -45,35 +52,39 @@ impl<'i> Lookaround<'i> {
     pub fn new(rule: Rulex<'i>, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { rule, kind, span }
     }
-}
 
-impl Compile for Lookaround<'_> {
-    fn comp(
+    pub(crate) fn compile(
         &self,
         options: CompileOptions,
         state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
+    ) -> CompileResult<'i> {
         if options.flavor == RegexFlavor::Rust {
             return Err(
                 CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor).at(self.span)
             );
         }
 
+        Ok(Regex::Lookaround(Box::new(RegexLookaround {
+            content: self.rule.comp(options, state)?,
+            kind: self.kind,
+        })))
+    }
+}
+
+pub struct RegexLookaround<'i> {
+    content: Regex<'i>,
+    kind: LookaroundKind,
+}
+
+impl<'i> RegexLookaround<'i> {
+    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         buf.push_str(match self.kind {
             LookaroundKind::Ahead => "(?=",
             LookaroundKind::Behind => "(?<=",
             LookaroundKind::AheadNegative => "(?!",
             LookaroundKind::BehindNegative => "(?<!",
         });
-        self.rule.comp(options, state, buf)?;
+        self.content.codegen(buf, flavor);
         buf.push(')');
-        Ok(())
-    }
-}
-
-impl Transform for Lookaround<'_> {
-    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
-        self.rule.transform(options, state)
     }
 }

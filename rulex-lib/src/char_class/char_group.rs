@@ -186,19 +186,3 @@ pub(crate) enum GroupName {
     CodeBlock(CodeBlock),
     OtherProperties(OtherProperties),
 }
-
-impl GroupName {
-    pub(super) fn as_str(self) -> &'static str {
-        match self {
-            GroupName::Word => "w",
-            GroupName::Digit => "d",
-            GroupName::Space => "s",
-            GroupName::HorizSpace => "h",
-            GroupName::VertSpace => "v",
-            GroupName::Category(c) => c.as_str(),
-            GroupName::Script(s) => s.as_str(),
-            GroupName::CodeBlock(c) => c.as_str(),
-            GroupName::OtherProperties(o) => o.as_str(),
-        }
-    }
-}

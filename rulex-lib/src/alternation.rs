@@ -1,10 +1,14 @@
 //! Implements [alternation](https://www.regular-expressions.info/alternation.html):
 //! `('alt1' | 'alt2' | 'alt3')`.
 
+use std::collections::HashMap;
+
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
+    compile::{CompileResult, CompileState},
+    error::CompileError,
     literal::Literal,
-    options::CompileOptions,
+    options::{CompileOptions, RegexFlavor},
+    regex::Regex,
     span::Span,
     Rulex,
 };
@@ -46,8 +50,29 @@ impl<'i> Alternation<'i> {
             .unwrap_or_else(|| Rulex::Literal(Literal::new("", Span::default())))
     }
 
-    pub(crate) fn count_capturing_groups(&self) -> u32 {
-        self.rules.iter().map(Rulex::count_capturing_groups).sum()
+    pub(crate) fn get_capturing_groups(
+        &self,
+        count: &mut u32,
+        map: &'i mut HashMap<String, u32>,
+    ) -> Result<(), CompileError> {
+        for rule in &self.rules {
+            rule.get_capturing_groups(count, map)?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn compile(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+    ) -> CompileResult<'i> {
+        Ok(Regex::Alternation(RegexAlternation {
+            parts: self
+                .rules
+                .iter()
+                .map(|rule| rule.comp(options, state))
+                .collect::<Result<_, _>>()?,
+        }))
     }
 }
 
@@ -63,27 +88,16 @@ impl core::fmt::Debug for Alternation<'_> {
     }
 }
 
-impl Compile for Alternation<'_> {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        for rule in &self.rules {
-            rule.comp(options, state, buf)?;
+pub(crate) struct RegexAlternation<'i> {
+    parts: Vec<Regex<'i>>,
+}
+
+impl<'i> RegexAlternation<'i> {
+    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
+        for rule in &self.parts {
+            rule.codegen(buf, flavor);
             buf.push('|');
         }
         let _ = buf.pop();
-        Ok(())
-    }
-}
-
-impl Transform for Alternation<'_> {
-    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
-        for alt in &mut self.rules {
-            alt.transform(options, state)?;
-        }
-        Ok(())
     }
 }

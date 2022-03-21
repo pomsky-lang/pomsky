@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
     alternation::Alternation,
     boundary::Boundary,
     char_class::CharClass,
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
+    compile::{CompileResult, CompileState},
     error::{CompileError, ParseError},
     grapheme::Grapheme,
     group::Group,
@@ -47,50 +49,22 @@ impl<'i> Rulex<'i> {
         crate::parse::parse(input)
     }
 
-    pub fn compile(mut self, options: CompileOptions) -> Result<String, CompileError> {
-        let capturing_groups = self.count_capturing_groups();
-        let mut transform_state = TransformState::new(capturing_groups);
-        self.transform(options, &mut transform_state)?;
+    pub fn compile(self, options: CompileOptions) -> Result<String, CompileError> {
+        let mut used_names = HashMap::new();
+        let mut groups_count = 0;
+        self.get_capturing_groups(&mut groups_count, &mut used_names)?;
+
+        let mut state = CompileState { next_idx: 1, used_names, groups_count };
+        let compiled = self.comp(options, &mut state)?;
 
         let mut buf = String::new();
-        let mut state = CompileState::new();
-        self.comp(options, &mut state, &mut buf)?;
-        state.check_validity()?;
+        compiled.codegen(&mut buf, options.flavor);
         Ok(buf)
     }
 
     pub fn parse_and_compile(input: &str, options: CompileOptions) -> Result<String, CompileError> {
         let parsed = Rulex::parse(input, options.parse_options)?;
         parsed.compile(options)
-    }
-
-    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
-        match self {
-            Rulex::Literal(l) => l.needs_parens_before_repetition(),
-            Rulex::Group(g) => g.needs_parens_before_repetition(),
-            Rulex::Alternation(_) | Rulex::Range(_) => true,
-            Rulex::CharClass(_)
-            | Rulex::Grapheme(_)
-            | Rulex::Repetition(_)
-            | Rulex::Boundary(_)
-            | Rulex::Lookaround(_)
-            | Rulex::Reference(_) => false,
-        }
-    }
-
-    pub(crate) fn needs_parens_in_group(&self) -> bool {
-        match self {
-            Rulex::Alternation(_) => true,
-            Rulex::Literal(_)
-            | Rulex::Group(_)
-            | Rulex::CharClass(_)
-            | Rulex::Grapheme(_)
-            | Rulex::Repetition(_)
-            | Rulex::Boundary(_)
-            | Rulex::Lookaround(_)
-            | Rulex::Reference(_)
-            | Rulex::Range(_) => false,
-        }
     }
 
     pub(crate) fn span(&self) -> Span {
@@ -108,18 +82,45 @@ impl<'i> Rulex<'i> {
         }
     }
 
-    pub(crate) fn count_capturing_groups(&self) -> u32 {
+    pub(crate) fn get_capturing_groups(
+        &self,
+        count: &mut u32,
+        map: &mut HashMap<String, u32>,
+    ) -> Result<(), CompileError> {
         match self {
-            Rulex::Literal(_) => 0,
-            Rulex::CharClass(_) => 0,
-            Rulex::Grapheme(_) => 0,
-            Rulex::Group(g) => (if g.is_capturing() { 1 } else { 0 }) + g.count_capturing_groups(),
-            Rulex::Alternation(a) => a.count_capturing_groups(),
-            Rulex::Repetition(r) => r.count_capturing_groups(),
-            Rulex::Boundary(_) => 0,
-            Rulex::Lookaround(l) => l.count_capturing_groups(),
-            Rulex::Reference(_) => 0,
-            Rulex::Range(_) => 0,
+            Rulex::Literal(_) => {}
+            Rulex::CharClass(_) => {}
+            Rulex::Grapheme(_) => {}
+            Rulex::Group(g) => g.get_capturing_groups(count, map)?,
+            Rulex::Alternation(a) => a.get_capturing_groups(count, map)?,
+            Rulex::Repetition(r) => r.get_capturing_groups(count, map)?,
+            Rulex::Boundary(_) => {}
+            Rulex::Lookaround(l) => l.get_capturing_groups(count, map)?,
+            Rulex::Reference(_) => {}
+            Rulex::Range(_) => {}
+        }
+        Ok(())
+    }
+
+    pub(crate) fn comp(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState,
+    ) -> CompileResult<'i> {
+        match self {
+            Rulex::Literal(l) => l.compile(),
+            Rulex::CharClass(c) => c.compile(options),
+            Rulex::Group(g) => g.compile(options, state),
+            Rulex::Grapheme(g) => g.compile(options),
+            Rulex::Alternation(a) => a.compile(options, state),
+            Rulex::Repetition(r) => r.compile(options, state),
+            Rulex::Boundary(b) => b.compile(),
+            Rulex::Lookaround(l) => l.compile(options, state),
+            Rulex::Reference(r) => r.comp(options, state),
+            Rulex::Range(r) => {
+                let rulex = r.comp()?;
+                rulex.comp(options, state)
+            }
         }
     }
 }
@@ -138,50 +139,6 @@ impl core::fmt::Debug for Rulex<'_> {
             Rulex::Lookaround(arg0) => arg0.fmt(f),
             Rulex::Reference(arg0) => arg0.fmt(f),
             Rulex::Range(arg0) => arg0.fmt(f),
-        }
-    }
-}
-
-impl Transform for Rulex<'_> {
-    fn transform(&mut self, options: CompileOptions, state: &mut TransformState) -> CompileResult {
-        match self {
-            Rulex::Literal(l) => l.transform(options, state),
-            Rulex::CharClass(c) => c.transform(options, state),
-            Rulex::Grapheme(g) => g.transform(options, state),
-            Rulex::Group(g) => g.transform(options, state),
-            Rulex::Alternation(a) => a.transform(options, state),
-            Rulex::Repetition(r) => r.transform(options, state),
-            Rulex::Boundary(b) => b.transform(options, state),
-            Rulex::Lookaround(l) => l.transform(options, state),
-            Rulex::Reference(r) => r.transform(options, state),
-            Rulex::Range(r) => {
-                *self = r.transform(options, state)?;
-                Ok(())
-            }
-        }
-    }
-}
-
-impl Compile for Rulex<'_> {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        match self {
-            Rulex::Literal(l) => l.comp(options, state, buf),
-            Rulex::CharClass(c) => c.comp(options, state, buf),
-            Rulex::Group(g) => g.comp(options, state, buf),
-            Rulex::Grapheme(g) => g.comp(options, state, buf),
-            Rulex::Alternation(a) => a.comp(options, state, buf),
-            Rulex::Repetition(r) => r.comp(options, state, buf),
-            Rulex::Boundary(b) => b.comp(options, state, buf),
-            Rulex::Lookaround(l) => l.comp(options, state, buf),
-            Rulex::Reference(r) => r.comp(options, state, buf),
-            Rulex::Range(_) => {
-                panic!("Tried to compile a range that hasn't been transformed yet")
-            }
         }
     }
 }

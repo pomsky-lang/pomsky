@@ -3,11 +3,9 @@ use std::cmp::Ordering;
 use crate::{
     alternation::Alternation,
     char_class::{CharClass, CharGroup, GroupItem},
-    compile::{Compile, CompileResult, CompileState, TransformState},
     error::{CompileError, CompileErrorKind},
     group::Group,
     literal::Literal,
-    options::CompileOptions,
     repetition::{Quantifier, Repetition, RepetitionKind},
     span::Span,
     Rulex,
@@ -26,11 +24,7 @@ impl Range {
         Range { start, end, radix, span }
     }
 
-    pub(crate) fn transform(
-        &self,
-        _: CompileOptions,
-        _: &mut TransformState,
-    ) -> Result<Rulex<'static>, CompileError> {
+    pub(crate) fn comp(&self) -> Result<Rulex<'static>, CompileError> {
         match range(&self.start, &self.end, 0, self.radix) {
             Ok(rule) => Ok(rule.to_rulex()),
             Err(Error) => {
@@ -58,17 +52,6 @@ impl std::fmt::Debug for Range {
             self.start.iter().map(|&n| hex(n)).collect::<String>(),
             self.end.iter().map(|&n| hex(n)).collect::<String>(),
         )
-    }
-}
-
-impl Compile for Rule {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        self.to_rulex().comp(options, state, buf)
     }
 }
 

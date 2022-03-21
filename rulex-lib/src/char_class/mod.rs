@@ -98,20 +98,21 @@
 //!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
+    compile::CompileResult,
     error::{CompileError, CompileErrorKind, Feature},
-    literal::{compile_char, compile_char_esc},
+    literal,
     options::{CompileOptions, RegexFlavor},
+    regex::{Regex, RegexProperty, RegexShorthand},
     span::Span,
 };
 
 pub(crate) use char_group::{CharGroup, GroupItem};
 
-use self::char_group::GroupName;
+use self::{char_group::GroupName, unicode::Category};
 
 mod ascii;
-mod char_group;
-mod unicode;
+pub(crate) mod char_group;
+pub(crate) mod unicode;
 
 /// A _character class_. Refer to the [module-level documentation](self) for details.
 #[derive(Clone, PartialEq, Eq)]
@@ -130,6 +131,213 @@ impl CharClass {
     pub fn negate(&mut self) {
         self.negative = !self.negative;
     }
+
+    pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
+        let span = self.span;
+        match &self.inner {
+            CharGroup::Dot => Ok(if self.negative { Regex::Literal("\\n") } else { Regex::Dot }),
+            CharGroup::CodePoint => {
+                if self.negative {
+                    return Err(CompileErrorKind::EmptyClassNegated.at(span));
+                }
+                Ok(Regex::CharClass(RegexCharClass {
+                    negative: false,
+                    items: vec![
+                        RegexClassItem::Shorthand(RegexShorthand::Space),
+                        RegexClassItem::Shorthand(RegexShorthand::NotSpace),
+                    ],
+                }))
+            }
+            CharGroup::Items(items) => match (items.len(), self.negative) {
+                (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
+                (1, false) => match items[0] {
+                    GroupItem::Char(c) => Ok(Regex::Char(c)),
+                    GroupItem::Range { first, last } => Ok(Regex::CharClass(RegexCharClass {
+                        negative: false,
+                        items: vec![RegexClassItem::Range { first, last }],
+                    })),
+                    GroupItem::Named { name, negative } => {
+                        named_class_to_regex(name, negative, options.flavor, span)
+                    }
+                },
+                (1, true) => match items[0] {
+                    GroupItem::Char(c) => Ok(Regex::CharClass(RegexCharClass {
+                        negative: true,
+                        items: vec![RegexClassItem::Char(c)],
+                    })),
+                    GroupItem::Range { first, last } => Ok(Regex::CharClass(RegexCharClass {
+                        negative: true,
+                        items: vec![RegexClassItem::Range { first, last }],
+                    })),
+                    GroupItem::Named { name, negative } => {
+                        named_class_to_regex(name, !negative, options.flavor, span)
+                    }
+                },
+                (_, negative) => {
+                    let mut buf = Vec::new();
+                    for item in items {
+                        match *item {
+                            GroupItem::Char(c) => buf.push(RegexClassItem::Char(c)),
+                            GroupItem::Range { first, last } => {
+                                buf.push(RegexClassItem::Range { first, last })
+                            }
+                            GroupItem::Named { name, negative } => {
+                                named_class_to_regex_class_items(
+                                    name,
+                                    negative,
+                                    options.flavor,
+                                    span,
+                                    &mut buf,
+                                )?;
+                            }
+                        }
+                    }
+
+                    Ok(Regex::CharClass(RegexCharClass { negative, items: buf }))
+                }
+            },
+        }
+    }
+}
+
+/// Compiles a shorthand character class or Unicode category/script/block.
+///
+/// Refer to the [module-level documentation](self) for details about named character classes.
+fn named_class_to_regex(
+    group: GroupName,
+    negative: bool,
+    flavor: RegexFlavor,
+    span: Span,
+) -> CompileResult<'static> {
+    Ok(match group {
+        GroupName::Word if negative => Regex::Shorthand(RegexShorthand::NotWord),
+        GroupName::Word => Regex::Shorthand(RegexShorthand::Word),
+        GroupName::Digit if negative => Regex::Shorthand(RegexShorthand::NotDigit),
+        GroupName::Digit => Regex::Shorthand(RegexShorthand::Digit),
+        GroupName::Space if negative => Regex::Shorthand(RegexShorthand::NotSpace),
+        GroupName::Space => Regex::Shorthand(RegexShorthand::Space),
+
+        GroupName::HorizSpace | GroupName::VertSpace
+            if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) =>
+        {
+            let shorthand = if group == GroupName::HorizSpace {
+                RegexShorthand::HorizSpace
+            } else {
+                RegexShorthand::VertSpace
+            };
+
+            if negative {
+                Regex::CharClass(RegexCharClass {
+                    negative: true,
+                    items: vec![RegexClassItem::Shorthand(shorthand)],
+                })
+            } else {
+                Regex::Shorthand(shorthand)
+            }
+        }
+        GroupName::HorizSpace => Regex::CharClass(RegexCharClass {
+            negative,
+            items: vec![
+                RegexClassItem::Char('\t'),
+                RegexProperty::Category(Category::Space_Separator).negative_item(false),
+            ],
+        }),
+        GroupName::VertSpace => Regex::CharClass(RegexCharClass {
+            negative,
+            items: vec![
+                RegexClassItem::Range { first: '\x0A', last: '\x0D' },
+                RegexClassItem::Char('\u{85}'),
+                RegexClassItem::Char('\u{2028}'),
+                RegexClassItem::Char('\u{2029}'),
+            ],
+        }),
+
+        GroupName::Category(c) => RegexProperty::Category(c).negative(negative),
+        GroupName::Script(s) => RegexProperty::Script(s).negative(negative),
+        GroupName::CodeBlock(b) => match flavor {
+            RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
+                RegexProperty::Block(b).negative(negative)
+            }
+            _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
+        },
+        GroupName::OtherProperties(o) => {
+            // TODO: Find out which regex engines (other than PCRE) don't support these
+            if flavor == RegexFlavor::Pcre {
+                return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+            }
+            RegexProperty::Other(o).negative(negative)
+        }
+    })
+}
+
+fn named_class_to_regex_class_items(
+    group: GroupName,
+    negative: bool,
+    flavor: RegexFlavor,
+    span: Span,
+    buf: &mut Vec<RegexClassItem>,
+) -> Result<(), CompileError> {
+    match group {
+        GroupName::Word => buf.push(RegexClassItem::Shorthand(if negative {
+            RegexShorthand::NotWord
+        } else {
+            RegexShorthand::Word
+        })),
+        GroupName::Digit => buf.push(RegexClassItem::Shorthand(if negative {
+            RegexShorthand::NotDigit
+        } else {
+            RegexShorthand::Digit
+        })),
+        GroupName::Space => buf.push(RegexClassItem::Shorthand(if negative {
+            RegexShorthand::NotSpace
+        } else {
+            RegexShorthand::Space
+        })),
+
+        GroupName::HorizSpace | GroupName::VertSpace if negative => {
+            return Err(CompileErrorKind::Other(
+                "horiz_space and vert_space can't be negated within a character class",
+            )
+            .at(span));
+        }
+
+        GroupName::HorizSpace | GroupName::VertSpace
+            if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) =>
+        {
+            buf.push(RegexClassItem::Shorthand(if group == GroupName::HorizSpace {
+                RegexShorthand::HorizSpace
+            } else {
+                RegexShorthand::VertSpace
+            }));
+        }
+        GroupName::HorizSpace => {
+            buf.push(RegexClassItem::Char('\t'));
+            buf.push(RegexProperty::Category(Category::Space_Separator).negative_item(false));
+        }
+        GroupName::VertSpace => {
+            buf.push(RegexClassItem::Range { first: '\x0A', last: '\x0D' });
+            buf.push(RegexClassItem::Char('\u{85}'));
+            buf.push(RegexClassItem::Char('\u{2028}'));
+            buf.push(RegexClassItem::Char('\u{2029}'));
+        }
+
+        GroupName::Category(c) => buf.push(RegexProperty::Category(c).negative_item(negative)),
+        GroupName::Script(s) => buf.push(RegexProperty::Script(s).negative_item(negative)),
+        GroupName::CodeBlock(b) => match flavor {
+            RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
+                buf.push(RegexProperty::Block(b).negative_item(negative));
+            }
+            _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
+        },
+        GroupName::OtherProperties(o) => {
+            // TODO: Find out which regex engines (other than PCRE) don't support these
+            if flavor == RegexFlavor::Pcre {
+                return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+            }
+            buf.push(RegexProperty::Other(o).negative_item(negative));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(feature = "dbg")]
@@ -159,283 +367,44 @@ impl core::fmt::Debug for CharClass {
     }
 }
 
-impl Compile for CharClass {
-    fn comp(
-        &self,
-        options: CompileOptions,
-        _state: &mut CompileState,
-        buf: &mut String,
-    ) -> crate::compile::CompileResult {
-        let span = self.span;
-        match &self.inner {
-            CharGroup::Dot => {
-                buf.push_str(if self.negative { "\\n" } else { "." });
-            }
-            CharGroup::CodePoint => {
-                if self.negative {
-                    return Err(CompileErrorKind::EmptyClassNegated.at(span));
-                }
-                buf.push_str("[\\S\\s]");
-            }
-            CharGroup::Items(items) => match (items.len(), self.negative) {
-                (0, _) => return Err(CompileErrorKind::EmptyClass.at(span)),
-                (1, false) => match items[0] {
-                    GroupItem::Char(c) => compile_char_esc(c, buf, options.flavor),
-                    GroupItem::Range { first, last } => {
-                        buf.push('[');
-                        compile_char_esc_in_class(first, buf, options.flavor);
-                        buf.push('-');
-                        compile_char_esc_in_class(last, buf, options.flavor);
-                        buf.push(']');
-                    }
-                    GroupItem::Named { name, negative } => {
-                        if negative {
-                            compile_named_class_negative(name, buf, options.flavor, span)?;
-                        } else {
-                            compile_named_class(name, negative, buf, options.flavor, true, span)?;
-                        }
-                    }
-                },
-                (1, true) => match items[0] {
-                    GroupItem::Char(c) => {
-                        buf.push_str("[^");
-                        compile_char_esc_in_class(c, buf, options.flavor);
-                        buf.push(']');
-                    }
-                    GroupItem::Range { first, last } => {
-                        buf.push_str("[^");
-                        compile_char_esc_in_class(first, buf, options.flavor);
-                        buf.push('-');
-                        compile_char_esc_in_class(last, buf, options.flavor);
-                        buf.push(']');
-                    }
-                    GroupItem::Named { name, negative } => {
-                        if negative {
-                            compile_named_class(name, false, buf, options.flavor, true, span)?;
-                        } else {
-                            compile_named_class_negative(name, buf, options.flavor, span)?;
-                        }
-                    }
-                },
-                (_, _) => {
-                    buf.push('[');
-                    if self.negative {
-                        buf.push('^');
-                    }
-                    for item in items {
-                        match *item {
-                            GroupItem::Char(c) => compile_char_esc_in_class(c, buf, options.flavor),
-                            GroupItem::Range { first, last } => {
-                                compile_char_esc_in_class(first, buf, options.flavor);
-                                buf.push('-');
-                                compile_char_esc_in_class(last, buf, options.flavor);
-                            }
-                            GroupItem::Named { name, negative } => {
-                                compile_named_class(
-                                    name,
-                                    negative,
-                                    buf,
-                                    options.flavor,
-                                    false,
-                                    span,
-                                )?;
-                            }
-                        }
-                    }
-                    buf.push(']');
-                }
-            },
-        }
-        Ok(())
-    }
-}
-
-impl Transform for CharClass {
-    fn transform(&mut self, _: CompileOptions, _: &mut TransformState) -> CompileResult {
-        Ok(())
-    }
-}
-
-/// Compiles a shorthand character class or Unicode category/script/block.
-///
-/// Refer to the [module-level documentation](self) for details about named character classes.
-///
-/// The last argument is important. Set `is_single` to `true` if no square brackets are printed
-/// outside of this function call:
-///
-#[cfg_attr(doctest, doc = " ````no_test")]
-/// ```
-/// compile_named_class("h", buf, flavor, true);
-///
-/// // or:
-///
-/// buf.push('[');
-/// compile_named_class("h", buf, flavor, false);
-/// buf.push(']');
-/// ````
-fn compile_named_class(
-    group: GroupName,
+pub(crate) struct RegexCharClass {
     negative: bool,
-    buf: &mut String,
-    flavor: RegexFlavor,
-    is_single: bool,
-    span: Span,
-) -> Result<(), CompileError> {
-    match group {
-        GroupName::Word if negative => buf.push_str("\\W"),
-        GroupName::Word => buf.push_str("\\w"),
-        GroupName::Digit if negative => buf.push_str("\\D"),
-        GroupName::Digit => buf.push_str("\\d"),
-        GroupName::Space if negative => buf.push_str("\\S"),
-        GroupName::Space => buf.push_str("\\s"),
-
-        GroupName::HorizSpace | GroupName::VertSpace if negative => {
-            let s = group.as_str().to_string();
-            return Err(CompileErrorKind::UnsupportedNegatedClass(s).at(span));
-        }
-
-        GroupName::HorizSpace | GroupName::VertSpace => {
-            if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
-                buf.push_str(if group == GroupName::HorizSpace { "\\h" } else { "\\v" });
-            } else {
-                if is_single {
-                    buf.push('[');
-                }
-                if group == GroupName::HorizSpace {
-                    buf.push_str(r#"\t\p{Zs}"#);
-                } else {
-                    buf.push_str(r#"\n\x0B\f\r\x85\u2028\u2029"#);
-                }
-                if is_single {
-                    buf.push(']');
-                }
-            }
-        }
-        _ => {
-            if negative {
-                buf.push_str("\\P{");
-            } else {
-                buf.push_str("\\p{");
-            }
-            match group {
-                GroupName::Category(c) => buf.push_str(c.as_str()),
-                GroupName::Script(s) => buf.push_str(s.as_str()),
-                GroupName::CodeBlock(c) => match flavor {
-                    RegexFlavor::DotNet => {
-                        buf.push_str("Is");
-                        buf.push_str(&c.as_str().replace('_', ""));
-                    }
-                    RegexFlavor::Java => {
-                        buf.push_str("In");
-                        buf.push_str(&c.as_str().replace('-', ""));
-                    }
-                    RegexFlavor::Ruby => {
-                        buf.push_str("In");
-                        buf.push_str(c.as_str());
-                    }
-                    _ => {
-                        return Err(
-                            CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)
-                        )
-                    }
-                },
-                GroupName::OtherProperties(o) => {
-                    if flavor == RegexFlavor::Pcre {
-                        return Err(
-                            CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span)
-                        );
-                    }
-                    buf.push_str(o.as_str());
-                }
-                _ => unreachable!("The group is neither a Category, nor a Script, nor a CodeBlock"),
-            }
-            buf.push('}');
-        }
-    }
-
-    Ok(())
+    items: Vec<RegexClassItem>,
 }
 
-/// Compiles a negated shorthand character class or Unicode category/script/block.
-///
-/// Refer to the [module-level documentation](self) for details about named character classes
-/// and negation.
-fn compile_named_class_negative(
-    group: GroupName,
-    buf: &mut String,
-    flavor: RegexFlavor,
-    span: Span,
-) -> Result<(), CompileError> {
-    match group {
-        GroupName::Word => buf.push_str("\\W"),
-        GroupName::Digit => buf.push_str("\\D"),
-        GroupName::Space => buf.push_str("\\S"),
-        GroupName::HorizSpace | GroupName::VertSpace => {
+impl RegexCharClass {
+    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
+        if self.negative {
             buf.push_str("[^");
-            if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) {
-                buf.push_str(if group == GroupName::HorizSpace { "\\h" } else { "\\v" });
-            } else if group == GroupName::HorizSpace {
-                buf.push_str(r#"\t\p{Zs}"#);
-            } else {
-                buf.push_str(r#"\n\x0B\f\r\x85\u2028\u2029"#);
-            }
-            buf.push(']');
+        } else {
+            buf.push('[');
         }
 
-        GroupName::Category(c) => {
-            buf.push_str("\\P{");
-            buf.push_str(c.as_str());
-            buf.push('}');
-        }
-        GroupName::Script(s) => {
-            buf.push_str("\\P{");
-            buf.push_str(s.as_str());
-            buf.push('}');
-        }
-        GroupName::CodeBlock(c) => {
-            buf.push_str("\\P{");
-            match flavor {
-                RegexFlavor::DotNet => {
-                    buf.push_str("Is");
-                    buf.push_str(&c.as_str().replace('_', ""));
+        for item in &self.items {
+            match *item {
+                RegexClassItem::Char(c) => {
+                    literal::compile_char_esc_in_class(c, buf, flavor);
                 }
-                RegexFlavor::Java => {
-                    buf.push_str("In");
-                    buf.push_str(&c.as_str().replace('-', ""));
+                RegexClassItem::Range { first, last } => {
+                    literal::compile_char_esc_in_class(first, buf, flavor);
+                    buf.push('-');
+                    literal::compile_char_esc_in_class(last, buf, flavor);
                 }
-                RegexFlavor::Ruby => {
-                    buf.push_str("In");
-                    buf.push_str(c.as_str());
-                }
-                _ => {
-                    return Err(
-                        CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)
-                    )
+                RegexClassItem::Shorthand(s) => s.codegen(buf),
+                RegexClassItem::Property { negative, value } => {
+                    value.codegen(buf, negative, flavor)
                 }
             }
-            buf.push('}');
         }
-        GroupName::OtherProperties(o) => {
-            if flavor == RegexFlavor::Pcre {
-                return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
-            }
-            buf.push_str("\\P{");
-            buf.push_str(o.as_str());
-            buf.push('}');
-        }
+
+        buf.push(']');
     }
-
-    Ok(())
 }
 
-/// Write a char to the output buffer with proper escaping. Assumes the char is inside a
-/// character class.
-fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: RegexFlavor) {
-    match c {
-        '\\' => buf.push_str(r#"\\"#),
-        '-' => buf.push_str(r#"\-"#),
-        ']' => buf.push_str(r#"\]"#),
-        '^' => buf.push_str(r#"\^"#),
-        c => compile_char(c, buf, flavor),
-    }
+#[derive(Clone, Copy)]
+pub(crate) enum RegexClassItem {
+    Char(char),
+    Range { first: char, last: char },
+    Shorthand(RegexShorthand),
+    Property { negative: bool, value: RegexProperty },
 }

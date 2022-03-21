@@ -1,7 +1,8 @@
 use crate::{
-    compile::{Compile, CompileResult, CompileState, Transform, TransformState},
+    compile::{CompileResult, CompileState},
     error::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
+    regex::Regex,
     span::Span,
 };
 
@@ -31,122 +32,61 @@ enum ReferenceDirection {
     Forwards,
 }
 
-#[cfg(feature = "dbg")]
-impl std::fmt::Debug for Reference<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.target {
-            ReferenceTarget::Named(n) => write!(f, "::{}", n),
-            ReferenceTarget::Number(i) => write!(f, "::{}", i),
-            ReferenceTarget::Relative(o) => write!(f, "::{}{}", if o < 0 { '-' } else { '+' }, o),
-        }
-    }
-}
-
-impl Compile for Reference<'_> {
-    fn comp(
+impl<'i> Reference<'i> {
+    pub(crate) fn comp(
         &self,
         options: CompileOptions,
         state: &mut CompileState,
-        buf: &mut String,
-    ) -> CompileResult {
-        use std::fmt::Write;
-
-        //TODO: Warn in JS mode when referencing an optional group
-
-        let direction = match self.target {
-            ReferenceTarget::Named(name) => {
-                match options.flavor {
-                    RegexFlavor::Pcre
-                    | RegexFlavor::JavaScript
-                    | RegexFlavor::Java
-                    | RegexFlavor::DotNet
-                    | RegexFlavor::Ruby => {
-                        buf.push_str("\\k<");
-                        buf.push_str(name);
-                        buf.push('>');
-                    }
-                    RegexFlavor::Python => {
-                        buf.push_str("(?P=");
-                        buf.push_str(name);
-                        buf.push(')');
-                    }
-
-                    // return error below
-                    RegexFlavor::Rust => {}
+    ) -> CompileResult<'i> {
+        let (direction, number) = match self.target {
+            ReferenceTarget::Named(name) => match state.used_names.get(name) {
+                Some(&n) => {
+                    let direction = if n >= state.next_idx {
+                        ReferenceDirection::Forwards
+                    } else {
+                        ReferenceDirection::Backwards
+                    };
+                    (direction, n)
                 }
-
-                if state.used_names.contains_key(name) {
-                    ReferenceDirection::Backwards
-                } else {
-                    state.unknown_references.push((name.to_string(), self.span));
-                    ReferenceDirection::Forwards
+                None => {
+                    return Err(
+                        CompileErrorKind::UnknownReferenceName(name.to_string()).at(self.span)
+                    );
                 }
-            }
+            },
             ReferenceTarget::Number(idx) => {
-                if idx > 99 {
+                let direction = if idx > 99 {
                     return Err(CompileErrorKind::HugeReference.at(self.span));
-                }
-
-                match options.flavor {
-                    RegexFlavor::Pcre
-                    | RegexFlavor::JavaScript
-                    | RegexFlavor::Java
-                    | RegexFlavor::DotNet
-                    | RegexFlavor::Ruby
-                    | RegexFlavor::Python => {
-                        write!(buf, "\\{idx}").unwrap();
-                    }
-
-                    // return error below
-                    RegexFlavor::Rust => {}
-                }
-
-                if idx >= state.next_idx {
-                    state.unknown_groups.push((idx, self.span));
+                } else if idx > state.groups_count {
+                    return Err(CompileErrorKind::UnknownReferenceNumber(idx as i32).at(self.span));
+                } else if idx >= state.next_idx {
                     ReferenceDirection::Forwards
                 } else {
                     ReferenceDirection::Backwards
-                }
+                };
+                (direction, idx)
             }
             ReferenceTarget::Relative(offset) => {
-                //TODO convert relative to absolute references
-
-                if offset >= 0 {
-                    return Err(CompileErrorKind::Unsupported(
-                        Feature::NonNegativeRelativeReference,
-                        options.flavor,
-                    )
-                    .at(self.span));
-                }
-
-                match options.flavor {
-                    RegexFlavor::Ruby => {
-                        write!(buf, "\\k<{offset}>").unwrap();
-                    }
-                    RegexFlavor::Pcre => {
-                        write!(buf, "\\g{{{offset}}}").unwrap();
-                    }
-
-                    RegexFlavor::DotNet
-                    | RegexFlavor::Java
-                    | RegexFlavor::JavaScript
-                    | RegexFlavor::Python => {
-                        return Err(CompileErrorKind::Unsupported(
-                            Feature::RelativeReference,
-                            options.flavor,
-                        )
-                        .at(self.span));
-                    }
-
-                    // return error below
-                    RegexFlavor::Rust => {}
-                }
-
-                if offset >= 0 {
+                let direction = if offset >= 0 {
                     ReferenceDirection::Forwards
                 } else {
                     ReferenceDirection::Backwards
+                };
+
+                let num = match offset {
+                    0 => {
+                        return Err(
+                            CompileErrorKind::Other("Relative references can't be 0").at(self.span)
+                        )
+                    }
+                    i32::MIN..=-1 => offset + (state.next_idx as i32),
+                    1..=i32::MAX => offset + (state.next_idx as i32) - 1,
+                };
+                if num <= 0 || (num as u32) > state.groups_count {
+                    return Err(CompileErrorKind::UnknownReferenceNumber(num).at(self.span));
                 }
+
+                (direction, num as u32)
             }
         };
 
@@ -161,35 +101,35 @@ impl Compile for Reference<'_> {
             )
             .at(self.span)),
             RegexFlavor::JavaScript if direction == ReferenceDirection::Forwards => {
-                //TODO: Return "unknown group name" if this name isn't found
                 Err(CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
                     .at(self.span))
             }
-            _ => Ok(()),
+            _ => Ok(Regex::Reference(RegexReference { number })),
         }
     }
 }
 
-impl Transform for Reference<'_> {
-    fn transform(&mut self, _: CompileOptions, state: &mut TransformState) -> CompileResult {
+#[cfg(feature = "dbg")]
+impl std::fmt::Debug for Reference<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.target {
-            ReferenceTarget::Named(_) | ReferenceTarget::Number(_) => {}
-            ReferenceTarget::Relative(n) => {
-                let num = match n {
-                    0 => {
-                        return Err(
-                            CompileErrorKind::Other("Relative references can't be 0").at(self.span)
-                        )
-                    }
-                    i32::MIN..=-1 => n + (state.next_idx as i32),
-                    1..=i32::MAX => n + (state.next_idx as i32) - 1,
-                };
-                if num <= 0 || (num as u32) > state.capturing_groups {
-                    return Err(CompileErrorKind::UnknownReferenceNumber(num).at(self.span));
-                }
-                self.target = ReferenceTarget::Number(num as u32);
-            }
+            ReferenceTarget::Named(n) => write!(f, "::{}", n),
+            ReferenceTarget::Number(i) => write!(f, "::{}", i),
+            ReferenceTarget::Relative(o) => write!(f, "::{}{}", if o < 0 { '-' } else { '+' }, o),
         }
-        Ok(())
+    }
+}
+
+pub(crate) struct RegexReference {
+    number: u32,
+}
+
+impl<'i> RegexReference {
+    pub(crate) fn codegen(&self, buf: &mut String, _: RegexFlavor) {
+        use std::fmt::Write;
+
+        debug_assert!(self.number <= 99);
+
+        write!(buf, "\\{}", self.number).unwrap();
     }
 }

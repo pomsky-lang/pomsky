@@ -14,6 +14,7 @@ pub mod repetition;
 pub mod span;
 
 mod compile;
+mod regex;
 mod rule;
 
 pub use rule::Rulex;

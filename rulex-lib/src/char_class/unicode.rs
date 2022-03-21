@@ -36,7 +36,7 @@ macro_rules! data {
             }
 
             impl $kind {
-                pub(super) fn as_str(self) -> &'static str {
+                pub(crate) fn as_str(self) -> &'static str {
                     static LUT: &[&str] = &[
                         $( $default_repr, )*
                     ];
@@ -466,7 +466,7 @@ pub(crate) enum Category {
 }
 
 impl Category {
-    pub(super) fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "LC", "Pe", "Pc", "Cc", "Sc", "Pd", "Nd", "Me", "Pf", "Cf", "Pi", "L", "Nl", "Zl",
@@ -504,7 +504,7 @@ pub(crate) enum Script {
 }
 
 impl Script {
-    pub(super) fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "Adlam", "Ahom", "Anatolian_Hieroglyphs", "Arabic", "Armenian", "Avestan", "Balinese",
@@ -566,7 +566,7 @@ pub(crate) enum CodeBlock {
 }
 
 impl CodeBlock {
-    pub(super) fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "Basic_Latin", "Latin-1_Supplement", "Latin_Extended-A", "Latin_Extended-B",
@@ -620,7 +620,7 @@ pub(crate) enum OtherProperties {
 }
 
 impl OtherProperties {
-    pub(super) fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "White_Space", "Alphabetic", "Noncharacter_Code_Point", "Default_Ignorable_Code_Point",
