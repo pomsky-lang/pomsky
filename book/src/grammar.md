@@ -82,7 +82,14 @@ Quantifier = 'greedy'
 ### AtomExpression
 
 ```rulex
-AtomExpression = Group | String | CharacterClass | Grapheme | Boundary | NumberRange;
+AtomExpression = Group
+               | String
+               | CharacterClass
+               | Grapheme
+               | Boundary
+               | Reference
+               | CodePoint
+               | NumberRange;
 ```
 
 ### Group
@@ -127,8 +134,6 @@ Character = '"' !['"'] '"'
           | CodePoint
           | NonPrintable
 
-CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
-
 NonPrintable = 'n' | 'r' | 't' | 'a' | 'e' | 'f'
 
 Shorthand = '!'? ('w' | 'word' |
@@ -143,6 +148,15 @@ PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
            | 'ascii_print' | 'ascii_punct' | 'ascii_space' | 'ascii_upper'
            | 'ascii_word'  | 'ascii_xdigit'
 ```
+
+### Code points
+
+```rulex
+CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
+          | 'U' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
+```
+
+Note that the second syntax exists mainly to be compatible with Rust tokenization.
 
 ### Unicode properties
 
