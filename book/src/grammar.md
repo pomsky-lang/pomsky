@@ -44,7 +44,16 @@ Whitespace is required between consecutive words and code points, e.g. `[a n Lat
 ### Expression
 
 ```rulex
-Expression = Alternative ('|' Alternative)*
+Expression = Modifier? OrExpression
+
+Modifier = ('enable' | 'disable') BooleanSetting ';'
+BooleanSetting = 'lazy'
+```
+
+### OrExpression
+
+```rulex
+OrExpression = Alternative ('|' Alternative)*
 
 Alternative = FixExpression+
 ```
@@ -76,7 +85,7 @@ RepetitionBraces = '{' Number '}'
 
 Number = '1'-'9' ('0'-'9')*
 
-Quantifier = 'greedy'
+Quantifier = 'greedy' | 'lazy'
 ```
 
 ### AtomExpression
@@ -149,7 +158,7 @@ PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
            | 'ascii_word'  | 'ascii_xdigit'
 ```
 
-### Code points
+### CodePoint
 
 ```rulex
 CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
@@ -158,7 +167,7 @@ CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
 
 Note that the second syntax exists mainly to be compatible with Rust tokenization.
 
-### Unicode properties
+### UnicodeProperty
 
 Details about supported Unicode properties can be [found here](unicode-properties.md).
 
@@ -178,7 +187,7 @@ Grapheme = 'Grapheme' | 'X'
 Boundary = '%' | '!' '%' | '<%' | '%>'
 ```
 
-### Range
+### NumberRange
 
 ```rulex
 NumberRange = 'range' String '-' String Base?

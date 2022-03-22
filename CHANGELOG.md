@@ -23,20 +23,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `w`, `d`, `s`, `h` and `v` now have aliases: `word`, `digit`, `space`, `horiz_space` and
   `vert_space`.
 
+- `enable lazy;` and `disable lazy;` to enable or disable lazy matching by default at the global
+  scope or in a group.
+
 ### Changed
 
+- **Made `greedy` the default** for repetitions. You can opt into lazy matching with the `lazy`
+  keyword or globally with `enable lazy;`.
+
+- **POSIX classes (e.g. `alnum`) have been renamed** to start with `ascii_`, since they only support
+  Basic Latin
+
+- **`X` was renamed to `Grapheme`**
+
 - Improved Unicode support
+
   - In addition to Unicode general categories and scripts, rulex now supports blocks and other
     boolean properties
   - Rulex now validates properties and tells you when a property isn't supported by the target
     regex flavor
   - Shorthands (`[h]` and `[v]`) are substituted with character classes when required to support
     Unicode everywhere
+
 - Named references compile to numeric references (like relative references), which are better
   supported
-- POSIX classes (e.g. `alnum`) have been renamed to start with `ascii_`, since they only support
-  Basic Latin
-- `X` was renamed to `Grapheme`
 
 ### Removed
 

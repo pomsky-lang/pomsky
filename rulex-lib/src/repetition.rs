@@ -43,7 +43,11 @@ impl<'i> Repetition<'i> {
         Ok(Regex::Repetition(Box::new(RegexRepetition {
             content: self.rule.comp(options, state)?,
             kind: self.kind,
-            quantifier: self.quantifier,
+            quantifier: match self.quantifier {
+                Quantifier::Greedy => RegexQuantifier::Greedy,
+                Quantifier::Lazy => RegexQuantifier::Lazy,
+                Quantifier::Default => state.default_quantifier,
+            },
         })))
     }
 }
@@ -60,8 +64,10 @@ impl core::fmt::Debug for Repetition<'_> {
                 write!(f, "{{{lower_bound}, {upper_bound}}}")
             }
         }?;
-        if let Quantifier::Greedy = self.quantifier {
-            write!(f, " greedy")?;
+        match self.quantifier {
+            Quantifier::Greedy => write!(f, " greedy")?,
+            Quantifier::Lazy => write!(f, " lazy")?,
+            Quantifier::Default => {}
         }
         Ok(())
     }
@@ -73,6 +79,7 @@ impl core::fmt::Debug for Repetition<'_> {
 pub enum Quantifier {
     Greedy,
     Lazy,
+    Default,
 }
 
 /// A repetition in its most canonical form, `{x,y}`.
@@ -131,11 +138,21 @@ impl TryFrom<(u32, Option<u32>)> for RepetitionKind {
 pub(crate) struct RegexRepetition<'i> {
     content: Regex<'i>,
     kind: RepetitionKind,
-    quantifier: Quantifier,
+    quantifier: RegexQuantifier,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum RegexQuantifier {
+    Greedy,
+    Lazy,
 }
 
 impl<'i> RegexRepetition<'i> {
-    pub(crate) fn new(content: Regex<'i>, kind: RepetitionKind, quantifier: Quantifier) -> Self {
+    pub(crate) fn new(
+        content: Regex<'i>,
+        kind: RepetitionKind,
+        quantifier: RegexQuantifier,
+    ) -> Self {
         Self { content, kind, quantifier }
     }
 
@@ -184,7 +201,7 @@ impl<'i> RegexRepetition<'i> {
             }
         };
 
-        if let Quantifier::Lazy = self.quantifier {
+        if let RegexQuantifier::Lazy = self.quantifier {
             if !omit_lazy {
                 buf.push('?');
             }

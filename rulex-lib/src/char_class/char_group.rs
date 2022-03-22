@@ -66,7 +66,7 @@ impl CharGroup {
             "codepoint" | "cp" | "." if negative => {
                 return Err(CharClassError::Negative);
             }
-            "let" | "lazy" | "greedy" | "atomic" | "enable" | "disable" => {
+            "let" | "lazy" | "greedy" | "range" | "atomic" | "enable" | "disable" => {
                 // Reserved words. Some are currently unused.
                 return Err(CharClassError::Keyword(name.to_string()));
             }

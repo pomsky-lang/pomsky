@@ -64,6 +64,9 @@ pub enum Token {
     /// `::` (back reference)
     Backref,
 
+    /// `;` (delimits modifiers)
+    Semicolon,
+
     /// `"Hello"` or `'Hello'` (`Hello`)
     String,
 
@@ -129,6 +132,7 @@ impl core::fmt::Display for Token {
             Token::Dash => "`-`",
             Token::CloseBracket => "`]`",
             Token::Dot => "`.`",
+            Token::Semicolon => "`;`",
             Token::String => "string",
             Token::CodePoint => "code point",
             Token::Number => "number",

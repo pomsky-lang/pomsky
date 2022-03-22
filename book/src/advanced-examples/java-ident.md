@@ -16,5 +16,5 @@ And as a rulex:
 
 ```rulex
 [Pc Sc M Alphabetic]
-[Pc Sc M Alphabetic Numeric]* greedy
+[Pc Sc M Alphabetic Numeric]*
 ```

@@ -10,10 +10,11 @@ use crate::{
     group::Group,
     literal::Literal,
     lookaround::Lookaround,
+    modified::Modified,
     options::{CompileOptions, ParseOptions},
     range::Range,
     reference::Reference,
-    repetition::Repetition,
+    repetition::{RegexQuantifier, Repetition},
     span::Span,
 };
 
@@ -42,6 +43,8 @@ pub enum Rulex<'i> {
     Reference(Reference<'i>),
     /// A range of integers
     Range(Range),
+    /// An expression preceded by a modifier such as `enable lazy;`
+    Modified(Box<Modified<'i>>),
 }
 
 impl<'i> Rulex<'i> {
@@ -54,7 +57,12 @@ impl<'i> Rulex<'i> {
         let mut groups_count = 0;
         self.get_capturing_groups(&mut groups_count, &mut used_names)?;
 
-        let mut state = CompileState { next_idx: 1, used_names, groups_count };
+        let mut state = CompileState {
+            next_idx: 1,
+            used_names,
+            groups_count,
+            default_quantifier: RegexQuantifier::Greedy,
+        };
         let compiled = self.comp(options, &mut state)?;
 
         let mut buf = String::new();
@@ -79,6 +87,7 @@ impl<'i> Rulex<'i> {
             Rulex::Lookaround(l) => l.span,
             Rulex::Reference(r) => r.span,
             Rulex::Range(r) => r.span,
+            Rulex::Modified(m) => m.span,
         }
     }
 
@@ -98,6 +107,7 @@ impl<'i> Rulex<'i> {
             Rulex::Lookaround(l) => l.get_capturing_groups(count, map)?,
             Rulex::Reference(_) => {}
             Rulex::Range(_) => {}
+            Rulex::Modified(m) => m.get_capturing_groups(count, map)?,
         }
         Ok(())
     }
@@ -116,8 +126,9 @@ impl<'i> Rulex<'i> {
             Rulex::Repetition(r) => r.compile(options, state),
             Rulex::Boundary(b) => b.compile(),
             Rulex::Lookaround(l) => l.compile(options, state),
-            Rulex::Reference(r) => r.comp(options, state),
-            Rulex::Range(r) => r.comp(),
+            Rulex::Reference(r) => r.compile(options, state),
+            Rulex::Range(r) => r.compile(),
+            Rulex::Modified(m) => m.compile(options, state),
         }
     }
 }
@@ -136,6 +147,7 @@ impl core::fmt::Debug for Rulex<'_> {
             Rulex::Lookaround(arg0) => arg0.fmt(f),
             Rulex::Reference(arg0) => arg0.fmt(f),
             Rulex::Range(arg0) => arg0.fmt(f),
+            Rulex::Modified(arg0) => arg0.fmt(f),
         }
     }
 }

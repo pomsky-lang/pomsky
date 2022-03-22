@@ -1,5 +1,5 @@
-# Repetitions have the same syntax as in regexes, except that they are lazy.
+# code points
 
-'a'{1} 'b'{2} 'c'{3,} 'd'{2,4} 'e'{,4}
+U+6 U+60 U+600 U+6000 U+F0000
 -----
-ab{2}c{3,}?d{2,4}?e{0,4}?
+\x06`\x{600}怀\x{F0000}

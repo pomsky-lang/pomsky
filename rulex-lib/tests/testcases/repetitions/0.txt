@@ -1,0 +1,5 @@
+# non-capturing groups are added when necessary
+
+'hello'+ | 'world'*
+-----
+(?:hello)+|(?:world)*

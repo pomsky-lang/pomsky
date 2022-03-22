@@ -19,6 +19,7 @@ use crate::{
     group::{Capture, Group},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
+    modified::{BooleanSetting, Modified, Modifier},
     range::Range,
     reference::{Reference, ReferenceTarget},
     repetition::{Quantifier, Repetition, RepetitionKind},
@@ -34,12 +35,35 @@ pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
     let tokens = super::tokenize::tokenize(source);
     let input = Input::from(source, &tokens)?;
 
-    let (rest, rules) = parse_or(input)?;
+    let (rest, rules) = parse_modified(input)?;
     if rest.is_empty() {
         Ok(rules)
     } else {
         Err(ParseErrorKind::LeftoverTokens.at(rest.span()))
     }
+}
+
+pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    map(
+        pair(
+            opt(tuple((
+                alt((
+                    map("enable", |(_, span)| (Modifier::Enable(BooleanSetting::Lazy), span)),
+                    map("disable", |(_, span)| (Modifier::Disable(BooleanSetting::Lazy), span)),
+                )),
+                "lazy",
+                Token::Semicolon,
+            ))),
+            parse_or,
+        ),
+        |(modifier, rule)| match modifier {
+            Some(((modifier, span1), _, _)) => {
+                let span2 = rule.span();
+                Rulex::Modified(Box::new(Modified::new(modifier, rule, span1.join(span2))))
+            }
+            None => rule,
+        },
+    )(input)
 }
 
 pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
@@ -67,14 +91,14 @@ pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 
 pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
     alt((
-        map(pair(parse_lookaround, parse_or), |((kind, span), rule)| {
+        map(pair(parse_lookaround, parse_modified), |((kind, span), rule)| {
             let span = span.join(rule.span());
             Rulex::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
         }),
         map(pair(parse_atom, many0(parse_repetition)), |(mut rule, repetitions)| {
-            for (kind, greedy, span) in repetitions {
+            for (kind, quantifier, span) in repetitions {
                 let span = rule.span().join(span);
-                rule = Rulex::Repetition(Box::new(Repetition::new(rule, kind, greedy, span)));
+                rule = Rulex::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
             }
             rule
         }),
@@ -107,12 +131,18 @@ pub(super) fn parse_repetition<'i, 'b>(
                 map(Token::Plus, |(_, span)| (RepetitionKind::one_inf(), span)),
                 parse_braced_repetition,
             )),
-            map(opt("greedy"), |a| match a {
-                Some((_, span)) => (Quantifier::Greedy, span),
-                None => (Quantifier::Lazy, Span::default()),
-            }),
+            map(
+                opt(alt((
+                    map("greedy", |(_, span)| (Quantifier::Greedy, span)),
+                    map("lazy", |(_, span)| (Quantifier::Lazy, span)),
+                ))),
+                |a| match a {
+                    Some((q, span)) => (q, span),
+                    None => (Quantifier::Default, Span::default()),
+                },
+            ),
         ),
-        |((kind, span1), (greedy, span2))| (kind, greedy, span1.join(span2)),
+        |((kind, span1), (quantifier, span2))| (kind, quantifier, span1.join(span2)),
     )(input)
 }
 
@@ -165,7 +195,7 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
     }
 
     map(
-        pair(opt(parse_capture), tuple((Token::OpenParen, parse_or, cut(Token::CloseParen)))),
+        pair(opt(parse_capture), tuple((Token::OpenParen, parse_modified, cut(Token::CloseParen)))),
         |(capture, (_, rule, (_, close_paren)))| match (capture, rule) {
             (None, rule) => rule,
             (Some((capture, c_span)), Rulex::Group(mut g)) if !g.is_capturing() => {

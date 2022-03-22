@@ -50,25 +50,25 @@ Here's a straightforward translation into rulex:
 
 ```rulex
 (
-  ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+ greedy
-  ('.' ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+ greedy )* greedy
+  ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+
+  ('.' ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"]+ )*
 | '"'
   (
     [U+01-U+08 U+0b U+0c U+0e-U+1f U+21 U+23-U+5b U+5d-U+7f]
   | '\' [U+01-U+09 U+0b U+0c U+0e-U+7f]
-  )* greedy
+  )*
   '"'
 )
 '@'
 (
-  ( ['a'-'z' '0'-'9'] ( ['a'-'z' '0'-'9' '-']* greedy ['a'-'z' '0'-'9'] )? greedy '.' )+ greedy
+  ( ['a'-'z' '0'-'9'] ( ['a'-'z' '0'-'9' '-']* ['a'-'z' '0'-'9'] )? '.' )+
   ['a'-'z' '0'-'9']
-  ( ['a'-'z' '0'-'9' '-']* greedy ['a'-'z' '0'-'9'] )? greedy
+  ( ['a'-'z' '0'-'9' '-']* ['a'-'z' '0'-'9'] )?
 | '['
   (:(range '0'-'255') '.'){3}
   (
     :(range '0'-'255')
-  | ['a'-'z' '0'-'9' '-']* greedy
+  | ['a'-'z' '0'-'9' '-']*
     ['a'-'z' '0'-'9']
     ':'
     (
@@ -101,19 +101,19 @@ EscapedPortChar = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
 
 
 (
-  CharBeforeAt+ greedy ('.' CharBeforeAt+ greedy)* greedy
-| '"' (QuotedCharBeforeAt | EscapedCharBeforeAt)* greedy '"'
+  CharBeforeAt+ ('.' CharBeforeAt+)*
+| '"' (QuotedCharBeforeAt | EscapedCharBeforeAt)* '"'
 )
 '@'
 (
-  (Lower_Digit (Lower_Digit_Dash* greedy Lower_Digit)? greedy '.')+ greedy
+  (Lower_Digit (Lower_Digit_Dash* Lower_Digit)? '.')+
   Lower_Digit
-  (Lower_Digit_Dash* greedy Lower_Digit)? greedy
+  (Lower_Digit_Dash* Lower_Digit)?
 | '['
   (:(range '0'-'255') '.'){3}
   (
     :(range '0'-'255')
-  | Lower_Digit_Dash* greedy
+  | Lower_Digit_Dash*
     Lower_Digit
     ':'
     (PortDigit | EscapedPortChar)+

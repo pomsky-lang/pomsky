@@ -6,6 +6,7 @@ pub mod grapheme;
 pub mod group;
 pub mod literal;
 pub mod lookaround;
+pub mod modified;
 pub mod options;
 pub mod parse;
 pub mod range;

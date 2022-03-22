@@ -18,15 +18,15 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 # String
 'hello world'                 # hello world
 
-# Lazy repetition
-'hello'{1,5}                  # (?:hello){1,5}?
-'hello'*                      # (?:hello)*?
-'hello'+                      # (?:hello)+?
-
 # Greedy repetition
-'hello'{1,5} greedy           # (?:hello){1,5}
-'hello'* greedy               # (?:hello)*
-'hello'+ greedy               # (?:hello)+
+'hello'{1,5}                  # (?:hello){1,5}
+'hello'*                      # (?:hello)*
+'hello'+                      # (?:hello)+
+
+# Lazy repetition
+'hello'{1,5} lazy             # (?:hello){1,5}?
+'hello'* lazy                 # (?:hello)*?
+'hello'+ lazy                 # (?:hello)+?
 
 # Alternation
 'hello' | 'world'             # hello|world
@@ -66,7 +66,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 
 # Backreferences
 :('test') ::1                 # (test)\1
-:name('test') ::name          # (?P<name>test)\k<name>
+:name('test') ::name          # (?P<name>test)\1
 
 # Ranges
 range '0'-'999'               # 0|[1-9][0-9]{0,2}

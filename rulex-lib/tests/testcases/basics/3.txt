@@ -1,5 +1,5 @@
-# The `greedy` keyword makes a quantifier greedy, which is the default in regexes.
+# unneeded parentheses are eliminated
 
-'hello'? greedy
+'hello' | ('world') | ((['!?'] '!'))
 -----
-(?:hello)?
+hello|world|[!?]!

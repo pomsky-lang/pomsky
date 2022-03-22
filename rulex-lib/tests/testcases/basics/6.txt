@@ -1,4 +1,0 @@
-# this is a comment
-'test' # so is this
------
-test

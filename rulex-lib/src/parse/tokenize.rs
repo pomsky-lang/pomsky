@@ -71,6 +71,7 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if c == '-' => (1, Token::Dash);
                     if c == ']' => (1, Token::CloseBracket);
                     if c == '.' => (1, Token::Dot);
+                    if c == ';' => (1, Token::Semicolon);
 
                     if c == '"' || c == '\'' => match input[1..].find(c) {
                         Some(len_inner) => (len_inner + 2, Token::String),

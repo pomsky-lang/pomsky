@@ -33,7 +33,7 @@ enum ReferenceDirection {
 }
 
 impl<'i> Reference<'i> {
-    pub(crate) fn comp(
+    pub(crate) fn compile(
         &self,
         options: CompileOptions,
         state: &mut CompileState,

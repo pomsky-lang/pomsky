@@ -42,7 +42,7 @@ However, forward references can be used in repetitions to match what the referen
 in the previous repetition:
 
 ```rulex
-(::forward | :forward('test')  '!')* greedy
+(::forward | :forward('test')  '!')*
 ```
 
 This matches the text `test!test`, for example. In the first repetition, the second alternative

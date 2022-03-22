@@ -7,7 +7,7 @@ use crate::{
     error::CompileErrorKind,
     group::RegexGroup,
     regex::Regex,
-    repetition::{Quantifier, RegexRepetition, RepetitionKind},
+    repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
     span::Span,
 };
 
@@ -24,7 +24,7 @@ impl Range {
         Range { start, end, radix, span }
     }
 
-    pub(crate) fn comp(&self) -> CompileResult<'static> {
+    pub(crate) fn compile(&self) -> CompileResult<'static> {
         match range(&self.start, &self.end, 0, self.radix) {
             Ok(rule) => Ok(rule.to_regex()),
             Err(Error) => {
@@ -463,7 +463,7 @@ impl Repeat {
         Regex::Repetition(Box::new(RegexRepetition::new(
             self.rule.to_regex(),
             RepetitionKind::try_from((self.min as u32, Some(self.max as u32))).unwrap(),
-            Quantifier::Greedy,
+            RegexQuantifier::Greedy,
         )))
     }
 }

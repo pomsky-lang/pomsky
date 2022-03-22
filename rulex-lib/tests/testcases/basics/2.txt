@@ -1,5 +1,4 @@
-# non-capturing groups are added when necessary
-
-'hello'? | 'world'?
+# this is a comment
+'test' # so is this
 -----
-(?:hello)??|(?:world)??
+test
