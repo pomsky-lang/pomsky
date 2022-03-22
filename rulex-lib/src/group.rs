@@ -121,6 +121,10 @@ pub(crate) struct RegexGroup<'i> {
 }
 
 impl<'i> RegexGroup<'i> {
+    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: Option<Capture<'i>>) -> Self {
+        Self { parts, capture }
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         match self.capture {
             Some(Capture { name: Some(name) }) => {

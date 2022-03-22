@@ -135,6 +135,10 @@ pub(crate) struct RegexRepetition<'i> {
 }
 
 impl<'i> RegexRepetition<'i> {
+    pub(crate) fn new(content: Regex<'i>, kind: RepetitionKind, quantifier: Quantifier) -> Self {
+        Self { content, kind, quantifier }
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         use std::fmt::Write;
 

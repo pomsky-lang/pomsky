@@ -373,6 +373,10 @@ pub(crate) struct RegexCharClass {
 }
 
 impl RegexCharClass {
+    pub(crate) fn new(items: Vec<RegexClassItem>) -> Self {
+        Self { negative: false, items }
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         if self.negative {
             buf.push_str("[^");
@@ -407,4 +411,10 @@ pub(crate) enum RegexClassItem {
     Range { first: char, last: char },
     Shorthand(RegexShorthand),
     Property { negative: bool, value: RegexProperty },
+}
+
+impl RegexClassItem {
+    pub(crate) fn range_unchecked(first: char, last: char) -> Self {
+        Self::Range { first, last }
+    }
 }

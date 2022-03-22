@@ -26,10 +26,6 @@ pub struct Alternation<'i> {
 }
 
 impl<'i> Alternation<'i> {
-    pub(crate) fn new(rules: Vec<Rulex<'i>>, span: Span) -> Self {
-        Alternation { rules, span }
-    }
-
     pub(crate) fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex<'i> {
         rules
             .into_iter()
@@ -93,6 +89,10 @@ pub(crate) struct RegexAlternation<'i> {
 }
 
 impl<'i> RegexAlternation<'i> {
+    pub(crate) fn new(parts: Vec<Regex<'i>>) -> Self {
+        Self { parts }
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         for rule in &self.parts {
             rule.codegen(buf, flavor);

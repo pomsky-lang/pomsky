@@ -117,10 +117,7 @@ impl<'i> Rulex<'i> {
             Rulex::Boundary(b) => b.compile(),
             Rulex::Lookaround(l) => l.compile(options, state),
             Rulex::Reference(r) => r.comp(options, state),
-            Rulex::Range(r) => {
-                let rulex = r.comp()?;
-                rulex.comp(options, state)
-            }
+            Rulex::Range(r) => r.comp(),
         }
     }
 }
