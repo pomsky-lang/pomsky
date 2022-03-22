@@ -69,7 +69,7 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         '\x1B' => buf.push_str("\\e"),
         '\x0C' => buf.push_str("\\f"),
         ' ' => buf.push(' '),
-        _ if c.is_ascii() => {
+        _ if c <= '\u{FF}' => {
             if c.is_ascii_graphic() {
                 buf.push(c);
             } else {
