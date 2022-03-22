@@ -11,6 +11,7 @@
   - [Boundaries](./language-tour/boundaries.md)
   - [Lookaround](./language-tour/lookaround.md)
   - [Ranges](./language-tour/range.md)
+  - [References](./language-tour/references.md)
   - [Graphemes](./language-tour/graphemes.md)
 - [Rulex Grammar](./grammar.md)
 - [Unicode Properties](./unicode-properties.md)
