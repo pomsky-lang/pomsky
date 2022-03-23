@@ -1,91 +1,110 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rulex::Rulex;
+use std::time::Duration;
 
-const PARSE_INPUT: &str = r#"
-[.] [w] [s] [cp] [ascii_alpha] [.] [w] [s] [cp] [Latn] [punct]
-(['ab'] | ['+-*/%' '[' ']' '0'-'9'] | ['f'-'o' 'j'-'z'])
-([.] | [w] | :() | % "tests" % | % "test" %)
-((((((((((((((((((((((((('a')))))))))))))))))))))))))
-:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:(:("test")))))))))))))))))))))))))
-"hello"{2}{3}{4}{5}{6}?{1,4}{2,9} greedy {,3}* greedy
+use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
+use rulex::{
+    options::{CompileOptions, RegexFlavor},
+    Rulex,
+};
+
+const STRINGS: &str = r#"'hello' "world" 'this is great!' "I absolutely love it!" '"'"#;
+
+const PROPERTIES: &str = "
+[Adlam] [Adlm] [Alphabetic] ![InBasic_Latin]
+[Tibetan] ![Tibt] [!Uppercase_Letter] [Z] ![!Zl] ![cntrl] [ascii_digit] [.] [w]
+";
+
+const GROUPS: &str = r#"
+( ( ( ( ( ( ( () ) ) ( ( ( ( ( ( ('hello') ) ) ) ) ) ) ) ) ) ( ( ( ( ( () ) ) 'world') ) ) ) )
 "#;
 
-const NAMES_INPUT: &str = "
-[Adlam] [Adlm] [Aghb] [Ahom] [Anatolian_Hieroglyphs] [Arab] [Arabic] [Armenian] [Armi] [Armn]
-[Avestan] [Avst] [Bali] [Balinese] [Bamu] [Bamum] [Bass] [Bassa_Vah] [Batak] [Batk] [Beng] [Bengali]
-[Bhaiksuki] [Bhks] [Bopo] [Bopomofo] [Brah] [Brahmi] [Brai] [Braille] [Bugi] [Buginese] [Buhd]
-[Buhid] [C] [Cakm] [Canadian_Aboriginal] [Cans] [Cari] [Carian] [Cased_Letter] [Caucasian_Albanian]
-[Cc] [Cf] [Chakma] [Cham] [Cher] [Cherokee] [Chorasmian] [Chrs] [Close_Punctuation] [Cn] [Co]
-[Combining_Mark] [Common] [Connector_Punctuation] [Control] [Copt] [Coptic] [Cpmn] [Cprt] [Cs]
-[Cuneiform] [Currency_Symbol] [Cypriot] [Cypro_Minoan] [Cyrillic] [Cyrl] [Dash_Punctuation]
-[Decimal_Number] [Deseret] [Deva] [Devanagari] [Diak] [Dives_Akuru] [Dogr] [Dogra] [Dsrt] [Dupl]
-[Duployan] [Egyp] [Egyptian_Hieroglyphs] [Elba] [Elbasan] [Elym] [Elymaic] [Enclosing_Mark] [Ethi]
-[Ethiopic] [Final_Punctuation] [Format] [Geor] [Georgian] [Glag] [Glagolitic] [Gong] [Gonm] [Goth]
-[Gothic] [Gran] [Grantha] [Greek] [Grek] [Gujarati] [Gujr] [Gunjala_Gondi] [Gurmukhi] [Guru] [Han]
-[Hang] [Hangul] [Hani] [Hanifi_Rohingya] [Hano] [Hanunoo] [Hatr] [Hatran] [Hebr] [Hebrew] [Hira]
-[Hiragana] [Hluw] [Hmng] [Hmnp] [Hung] [Imperial_Aramaic] [InAlphabetic_Presentation_Forms]
-[InArabic] [InArabic_Presentation_Forms_A] [InArabic_Presentation_Forms_B] [InArmenian] [InArrows]
-[InBasic_Latin] [InBengali] [InBlock_Elements] [InBopomofo] [InBopomofo_Extended] [InBox_Drawing]
-[InBraille_Patterns] [InBuhid] [InCJK_Compatibility] [InCJK_Compatibility_Forms]
-[InCJK_Compatibility_Ideographs] [InCJK_Radicals_Supplement] [InCJK_Symbols_and_Punctuation]
-[InCJK_Unified_Ideographs] [InCJK_Unified_Ideographs_Extension_A] [InCherokee]
-[InCombining_Diacritical_Marks] [InCombining_Diacritical_Marks_for_Symbols] [InCombining_Half_Marks]
-[InControl_Pictures] [InCurrency_Symbols] [InCyrillic] [InCyrillic_Supplementary] [InDevanagari]
-[InDingbats] [InEnclosed_Alphanumerics] [InEnclosed_CJK_Letters_and_Months] [InEthiopic]
-[InGeneral_Punctuation] [InGeometric_Shapes] [InGeorgian] [InGreek_Extended] [InGreek_and_Coptic]
-[InGujarati] [InGurmukhi] [InHalfwidth_and_Fullwidth_Forms] [InHangul_Compatibility_Jamo]
-[InHangul_Jamo] [InHangul_Syllables] [InHanunoo] [InHebrew] [InHigh_Private_Use_Surrogates]
-[InHigh_Surrogates] [InHiragana] [InIPA_Extensions] [InIdeographic_Description_Characters]
-[InKanbun] [InKangxi_Radicals] [InKannada] [InKatakana] [InKatakana_Phonetic_Extensions] [InKhmer]
-[InKhmer_Symbols] [InLao] [InLatin_1_Supplement] [InLatin_Extended_A] [InLatin_Extended_Additional]
-[InLatin_Extended_B] [InLetterlike_Symbols] [InLimbu] [InLow_Surrogates] [InMalayalam]
-[InMathematical_Operators] [InMiscellaneous_Mathematical_Symbols_A]
-[InMiscellaneous_Mathematical_Symbols_B] [InMiscellaneous_Symbols]
-[InMiscellaneous_Symbols_and_Arrows] [InMiscellaneous_Technical] [InMongolian] [InMyanmar]
-[InNumber_Forms] [InOgham] [InOptical_Character_Recognition] [InOriya] [InPhonetic_Extensions]
-[InPrivate_Use_Area] [InRunic] [InSinhala] [InSmall_Form_Variants] [InSpacing_Modifier_Letters]
-[InSpecials] [InSuperscripts_and_Subscripts] [InSupplemental_Arrows_A] [InSupplemental_Arrows_B]
-[InSupplemental_Mathematical_Operators] [InSyriac] [InTagalog] [InTagbanwa] [InTai_Le] [InTamil]
-[InTelugu] [InThaana] [InThai] [InTibetan] [InUnified_Canadian_Aboriginal_Syllabics]
-[InVariation_Selectors] [InYi_Radicals] [InYi_Syllables] [InYijing_Hexagram_Symbols] [Inherited]
-[Initial_Punctuation] [Inscriptional_Pahlavi] [Inscriptional_Parthian] [Ital] [Java] [Javanese]
-[Kaithi] [Kali] [Kana] [Kannada] [Katakana] [Kayah_Li] [Khar] [Kharoshthi] [Khitan_Small_Script]
-[Khmer] [Khmr] [Khoj] [Khojki] [Khudawadi] [Kits] [Knda] [Kthi] [L] [LC] [Lana] [Lao] [Laoo] [Latin]
-[Latn] [Lepc] [Lepcha] [Letter] [Letter_Number] [Limb] [Limbu] [Lina] [Linb] [Line_Separator]
-[Linear_A] [Linear_B] [Lisu] [Ll] [Lm] [Lo] [Lowercase_Letter] [Lt] [Lu] [Lyci] [Lycian] [Lydi]
-[Lydian] [M] [Mahajani] [Mahj] [Maka] [Makasar] [Malayalam] [Mand] [Mandaic] [Mani] [Manichaean]
-[Marc] [Marchen] [Mark] [Masaram_Gondi] [Math_Symbol] [Mc] [Me] [Medefaidrin] [Medf] [Meetei_Mayek]
-[Mend] [Mende_Kikakui] [Merc] [Mero] [Meroitic_Cursive] [Meroitic_Hieroglyphs] [Miao] [Mlym] [Mn]
-[Modi] [Modifier_Letter] [Modifier_Symbol] [Mong] [Mongolian] [Mro] [Mroo] [Mtei] [Mult] [Multani]
-[Myanmar] [Mymr] [N] [Nabataean] [Nand] [Nandinagari] [Narb] [Nbat] [Nd] [New_Tai_Lue] [Newa] [Nko]
-[Nkoo] [Nl] [No] [Nonspacing_Mark] [Nshu] [Number] [Nushu] [Nyiakeng_Puachue_Hmong] [Ogam] [Ogham]
-[Ol_Chiki] [Olck] [Old_Hungarian] [Old_Italic] [Old_North_Arabian] [Old_Permic] [Old_Persian]
-[Old_Sogdian] [Old_South_Arabian] [Old_Turkic] [Old_Uyghur] [Open_Punctuation] [Oriya] [Orkh]
-[Orya] [Osage] [Osge] [Osma] [Osmanya] [Other] [Other_Letter] [Other_Number] [Other_Punctuation]
-[Other_Symbol] [Ougr] [P] [Pahawh_Hmong] [Palm] [Palmyrene] [Paragraph_Separator] [Pau_Cin_Hau]
-[Pauc] [Pc] [Pd] [Pe] [Perm] [Pf] [Phag] [Phags_Pa] [Phli] [Phlp] [Phnx] [Phoenician] [Pi] [Plrd]
-[Po] [Private_Use] [Prti] [Ps] [Psalter_Pahlavi] [Punctuation] [Qaac] [Qaai] [Rejang] [Rjng] [Rohg]
-[Runic] [Runr] [S] [Samaritan] [Samr] [Sarb] [Saur] [Saurashtra] [Sc] [Separator] [Sgnw] [Sharada]
-[Shavian] [Shaw] [Shrd] [Sidd] [Siddham] [SignWriting] [Sind] [Sinh] [Sinhala] [Sk] [Sm] [So] [Sogd]
-[Sogdian] [Sogo] [Sora] [Sora_Sompeng] [Soyo] [Soyombo] [Space_Separator] [Spacing_Mark] [Sund]
-[Sundanese] [Surrogate] [Sylo] [Syloti_Nagri] [Symbol] [Syrc] [Syriac] [Tagalog] [Tagb] [Tagbanwa]
-[Tai_Le] [Tai_Tham] [Tai_Viet] [Takr] [Takri] [Tale] [Talu] [Tamil] [Taml] [Tang] [Tangsa] [Tangut]
-[Tavt] [Telu] [Telugu] [Tfng] [Tglg] [Thaa] [Thaana] [Thai] [Tibetan] [Tibt] [Tifinagh] [Tirh]
-[Tirhuta] [Titlecase_Letter] [Tnsa] [Toto] [Ugar] [Ugaritic] [Unassigned] [Uppercase_Letter] [Vai]
-[Vaii] [Vith] [Vithkuqi] [Wancho] [Wara] [Warang_Citi] [Wcho] [Xpeo] [Xsux] [Yezi] [Yezidi] [Yi]
-[Yiii] [Z] [Zanabazar_Square] [Zanb] [Zinh] [Zl] [Zp] [Zs] [Zyyy] [cntrl] [digit] [punct]";
+const CAPT_GROUPS: &str = r#"
+:test(:foo(:this_is_a_really_long_capturing_group_name() :bar() :() :baz('test' :(:(:()):())):()))
+"#;
 
-pub fn everything(c: &mut Criterion) {
-    c.bench_function("parse everything", |b| {
-        b.iter(|| Rulex::parse(black_box(PARSE_INPUT), Default::default()).unwrap())
-    });
+const CLASSES: &str = r#"
+['a' '0'-'9' 'a'-'z' Greek !InBasic_Latin U+09-U+0D U+10FFFF '"' "'"]
+"#;
+
+const REPETITIONS: &str = r#"
+[w]{4}{3}{7,}{1,2}? [w]+ greedy [w]* lazy{500}
+"#;
+
+const SPECIAL: &str = r#"
+% !% <% %> Grapheme !>> 'this is' | 'a test'
+"#;
+
+const MODES: &str = r#"
+enable lazy; disable lazy; enable lazy; disable lazy; enable lazy;
+(disable lazy; enable lazy; 'w'+)
+"#;
+
+static SAMPLES: &[(&str, &str)] = &[
+    ("strings", STRINGS),
+    ("properties", PROPERTIES),
+    ("groups", GROUPS),
+    ("capturing groups", CAPT_GROUPS),
+    ("classes", CLASSES),
+    ("repetitions", REPETITIONS),
+    ("special", SPECIAL),
+    ("modes", MODES),
+];
+
+pub fn parse(c: &mut Criterion) {
+    let mut group = c.benchmark_group("parse");
+
+    for &(sample_name, sample) in SAMPLES {
+        group.throughput(Throughput::Bytes(sample.len() as u64));
+        group.bench_function(sample_name, |b| {
+            b.iter(|| Rulex::parse(black_box(sample), Default::default()).unwrap())
+        });
+    }
 }
 
-pub fn named_classes(c: &mut Criterion) {
-    c.bench_function("parse named_classes", |b| {
-        b.iter(|| Rulex::parse(black_box(NAMES_INPUT), Default::default()).unwrap())
-    });
+pub fn compile(c: &mut Criterion) {
+    let mut group = c.benchmark_group("compile");
+
+    for &(sample_name, sample) in SAMPLES {
+        group.throughput(Throughput::Bytes(sample.len() as u64));
+        group.bench_function(sample_name, |b| {
+            let rulex = Rulex::parse(black_box(sample), Default::default()).unwrap();
+            b.iter(|| black_box(&rulex).compile(ruby()).unwrap())
+        });
+    }
 }
 
-criterion_group!(benches, everything, named_classes);
-criterion_main!(benches);
+pub fn range(c: &mut Criterion) {
+    let mut group = c.benchmark_group("range");
+    group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
+
+    for size in 1..=15 {
+        group.throughput(Throughput::Elements(size));
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+            let max = "3458709621".repeat(((size + 9) / 10) as usize);
+            let max = &max[..size as usize];
+            let input = format!("range '0'-'{max}'");
+            let rulex = Rulex::parse(black_box(&input), Default::default()).unwrap();
+
+            b.iter(|| black_box(&rulex).compile(Default::default()).unwrap())
+        });
+    }
+}
+
+fn ruby() -> CompileOptions {
+    CompileOptions { flavor: RegexFlavor::Ruby, ..Default::default() }
+}
+
+pub fn benches(c: &mut Criterion) {
+    parse(c);
+    compile(c);
+    range(c);
+}
+
+fn main() {
+    let mut c = Criterion::default()
+        .measurement_time(Duration::from_secs(3))
+        .warm_up_time(Duration::from_secs(1))
+        .configure_from_args();
+
+    benches(&mut c);
+    c.final_summary();
+}

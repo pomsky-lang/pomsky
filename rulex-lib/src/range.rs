@@ -25,7 +25,7 @@ impl Range {
     }
 
     pub(crate) fn compile(&self) -> CompileResult<'static> {
-        match range(&self.start, &self.end, 0, self.radix) {
+        match range(&self.start, &self.end, true, self.radix) {
             Ok(rule) => Ok(rule.to_regex()),
             Err(Error) => {
                 Err(CompileErrorKind::Other("Expanding the range yielded an unexpected error")
@@ -202,16 +202,16 @@ impl std::fmt::Debug for Range {
 /// because when we check whether two expressions are equal, it only works if they have the exact
 /// same structure: `[0-9][0-9]` is not considered equal to `[0-9]{2}`. So this optimization also
 /// serves as a _normalization_, to ensure that equal alternatives can be merged.
-fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
+fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
     let hi_digit = radix - 1;
-    let lo_digit = if level == 0 { 1 } else { 0 };
+    let lo_digit = if is_first { 1 } else { 0 };
 
     debug_assert!(a.len() <= b.len() && (a.len() < b.len() || a <= b));
 
     Ok(match (a.split_first(), b.split_first()) {
         (None, None) => Rule::Empty,
         (Some(_), None) => return Err(Error),
-        (None, Some(_)) => range(&[0], b, level + 1, radix)?.optional(),
+        (None, Some(_)) => range(&[0], b, false, radix)?.optional(),
         (Some((&ax, [])), Some((&bx, []))) => Rule::class(ax, bx),
         (Some((&ax, a_rest)), Some((&bx, b_rest))) => {
             let (min, max) = (u8::min(ax, bx), u8::max(ax, bx));
@@ -230,18 +230,18 @@ fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
                 Ordering::Equal => {
                     // 2.
                     alternatives
-                        .push(vec![Rule::class(ax, bx), range(a_rest, b_rest, level + 1, radix)?]);
+                        .push(vec![Rule::class(ax, bx), range(a_rest, b_rest, false, radix)?]);
                 }
                 // ax < bx:
                 Ordering::Less => {
-                    if level == 0 && ax == 0 && a_rest.is_empty() {
+                    if is_first && ax == 0 && a_rest.is_empty() {
                         // add zero once
                         alternatives.push(vec![Rule::class(0, 0)]);
                     } else {
                         // 2.
                         alternatives.push(vec![
                             Rule::class(min, min),
-                            range(a_rest, &vec![hi_digit; b_rest.len()], level + 1, radix)?,
+                            range(a_rest, &vec![hi_digit; b_rest.len()], false, radix)?,
                         ]);
                     }
                     if max - min >= 2 {
@@ -254,7 +254,7 @@ fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
                     // 4.
                     alternatives.push(vec![
                         Rule::class(max, max),
-                        range(&vec![0; a_rest.len()], b_rest, level + 1, radix)?,
+                        range(&vec![0; a_rest.len()], b_rest, false, radix)?,
                     ]);
                 }
                 // ax > bx:
@@ -262,7 +262,7 @@ fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
                     // 2.
                     alternatives.push(vec![
                         Rule::class(min, min),
-                        range(&vec![0; a.len()], b_rest, level + 1, radix)?,
+                        range(&vec![0; a.len()], b_rest, false, radix)?,
                     ]);
                     if max - min >= 2 && a_rest.len() + 2 <= b_rest.len() {
                         // 3.
@@ -274,7 +274,7 @@ fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
                     // 4.
                     alternatives.push(vec![
                         Rule::class(max, max),
-                        range(a_rest, &vec![hi_digit; b_rest.len() - 1], level + 1, radix)?,
+                        range(a_rest, &vec![hi_digit; b_rest.len() - 1], false, radix)?,
                     ]);
                 }
             }
@@ -293,19 +293,14 @@ fn range(a: &[u8], b: &[u8], level: usize, radix: u8) -> Result<Rule, Error> {
 }
 
 fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
-    let mut alternatives =
-        alternatives.into_iter().fold(vec![], |mut acc: Vec<Vec<Rule>>, mut rules| {
+    let capacity = alternatives.len();
+    let mut alternatives = alternatives.into_iter().fold(
+        Vec::with_capacity(capacity),
+        |mut acc: Vec<Vec<Rule>>, mut rules| {
             if let [this1, this2] = rules.as_slice() {
                 if this1 == this2 {
                     let rule = rules.pop().unwrap();
                     rules[0] = rule.repeat(2, 2);
-                } else if let Rule::Repeat(r) = this2 {
-                    if r.rule == *this1 {
-                        let (min, max) = (r.min, r.max);
-                        let _ = rules.pop();
-                        let rule = rules.pop().unwrap();
-                        rules.push(rule.repeat(min + 1, max + 1));
-                    }
                 } else if *this2 == Rule::Empty {
                     rules.pop();
                 }
@@ -343,7 +338,8 @@ fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
 
             acc.push(rules);
             acc
-        });
+        },
+    );
 
     if alternatives.len() == 1 && alternatives[0].len() == 1 {
         alternatives.pop().unwrap().pop().unwrap()
@@ -421,7 +417,7 @@ impl Rule {
                 repeat.min = 0;
                 Rule::Repeat(repeat)
             }
-            rule => Rule::repeat(rule, 0, 1),
+            rule => rule.repeat(0, 1),
         }
     }
 

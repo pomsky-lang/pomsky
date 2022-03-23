@@ -52,7 +52,7 @@ impl<'i> Rulex<'i> {
         crate::parse::parse(input)
     }
 
-    pub fn compile(self, options: CompileOptions) -> Result<String, CompileError> {
+    pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
         let mut used_names = HashMap::new();
         let mut groups_count = 0;
         self.get_capturing_groups(&mut groups_count, &mut used_names)?;

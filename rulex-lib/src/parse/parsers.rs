@@ -44,24 +44,33 @@ pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
 }
 
 pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    enum ModifierKind {
+        Enable,
+        Disable,
+    }
+
     map(
         pair(
-            opt(tuple((
+            many0(tuple((
                 alt((
-                    map("enable", |(_, span)| (Modifier::Enable(BooleanSetting::Lazy), span)),
-                    map("disable", |(_, span)| (Modifier::Disable(BooleanSetting::Lazy), span)),
+                    map("enable", |(_, span)| (ModifierKind::Enable, span)),
+                    map("disable", |(_, span)| (ModifierKind::Disable, span)),
                 )),
-                "lazy",
+                value(BooleanSetting::Lazy, "lazy"),
                 Token::Semicolon,
             ))),
             parse_or,
         ),
-        |(modifier, rule)| match modifier {
-            Some(((modifier, span1), _, _)) => {
-                let span2 = rule.span();
-                Rulex::Modified(Box::new(Modified::new(modifier, rule, span1.join(span2))))
+        |(modifiers, mut rule)| {
+            let span2 = rule.span();
+            for ((kind, span1), value, _) in modifiers.into_iter().rev() {
+                let modifier = match kind {
+                    ModifierKind::Enable => Modifier::Enable(value),
+                    ModifierKind::Disable => Modifier::Disable(value),
+                };
+                rule = Rulex::Modified(Box::new(Modified::new(modifier, rule, span1.join(span2))));
             }
-            None => rule,
+            rule
         },
     )(input)
 }
