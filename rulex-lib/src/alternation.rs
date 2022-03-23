@@ -31,10 +31,12 @@ impl<'i> Alternation<'i> {
             .into_iter()
             .reduce(|a, b| match (a, b) {
                 (Rulex::Alternation(mut a), Rulex::Alternation(b)) => {
+                    a.span = a.span.join(b.span);
                     a.rules.extend(b.rules);
                     Rulex::Alternation(a)
                 }
                 (Rulex::Alternation(mut a), b) => {
+                    a.span = a.span.join(b.span());
                     a.rules.push(b);
                     Rulex::Alternation(a)
                 }
