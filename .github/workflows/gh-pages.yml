@@ -19,6 +19,11 @@ jobs:
           mdbook-version: "latest"
           # mdbook-version: '0.4.8'
 
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+
       - run: mdbook build book
 
       - name: Deploy
