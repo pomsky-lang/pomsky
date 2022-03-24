@@ -19,6 +19,8 @@ struct Args {
     filter: String,
 
     fuzz_ranges: bool,
+    fuzz_start: usize,
+    fuzz_step: usize,
     thoroughness: usize,
 }
 
@@ -27,6 +29,8 @@ impl Args {
         let mut include_ignored = false;
         let mut filter = String::new();
         let mut fuzz_ranges = false;
+        let mut fuzz_start = 0;
+        let mut fuzz_step = 1;
         let mut thoroughness = 40;
 
         for arg in std::env::args().skip(1) {
@@ -42,6 +46,8 @@ impl Args {
                             -i,--ignored            Include ignored test cases\n    \
                             --fuzz-ranges           Fuzz the `range '...'-'...' syntax`\n    \
                             --thoroughness=<NUMBER> Specify how thorough each range is fuzzed [default: 40]\n    \
+                            --fuzz-start=<NUMBER>   Specify the bound where to start fuzzing [default: 0]\n    \
+                            --fuzz-step=<NUMBER>    Only fuzz every n-th number (use prime number to make samples more arbitrary)\n    \
                             -h,--help               Show usage information"
                     );
                     exit(0);
@@ -50,6 +56,14 @@ impl Args {
                     let s = s.strip_prefix("--thoroughness=").unwrap();
                     thoroughness = s.parse().unwrap();
                 }
+                s if s.starts_with("--fuzz-start=") => {
+                    let s = s.strip_prefix("--fuzz-start=").unwrap();
+                    fuzz_start = s.parse().unwrap();
+                }
+                s if s.starts_with("--fuzz-step=") => {
+                    let s = s.strip_prefix("--fuzz-step=").unwrap();
+                    fuzz_step = s.parse().unwrap();
+                }
                 s if !s.starts_with('-') => filter = arg,
                 option => eprintln!(
                     "{}: unrecognized option {option:?}\ntry `--help` help",
@@ -57,7 +71,7 @@ impl Args {
                 ),
             }
         }
-        Args { include_ignored, filter, fuzz_ranges, thoroughness }
+        Args { include_ignored, filter, fuzz_ranges, fuzz_start, fuzz_step, thoroughness }
     }
 }
 
@@ -152,12 +166,15 @@ fn defer_main() -> Result<(), io::Error> {
     }
 
     if args.fuzz_ranges {
-        println!("\nfuzzing ranges (thoroughness: {})", args.thoroughness);
+        println!(
+            "\nfuzzing ranges (thoroughness: {}, step: {})",
+            args.thoroughness, args.fuzz_step
+        );
 
         let mut errors = Vec::new();
         println!();
         let start = Instant::now();
-        fuzzer::fuzz_ranges(&mut errors, args.thoroughness);
+        fuzzer::fuzz_ranges(&mut errors, args.thoroughness, args.fuzz_start, args.fuzz_step);
         let elapsed = start.elapsed();
         println!();
 

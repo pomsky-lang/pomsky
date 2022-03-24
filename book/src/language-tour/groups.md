@@ -1,7 +1,7 @@
 # Groups
 
-Multiple expressions can be grouped together by wrapping them in `()`. This is useful when we have
-multiple alternatives that all start or end with the same thing:
+Multiple expressions can be grouped together by wrapping them in <rulex>`()`. This is useful
+when we have multiple alternatives that all start or end with the same thing:
 
 ```rulex
 'tang' ('ible' | 'ent' | 'o')

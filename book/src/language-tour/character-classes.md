@@ -40,8 +40,8 @@ put them into the same quotes:
 ['$_' 'a'-'z' 'A'-'Z']
 ```
 
-This is equivalent to <code class="language-rulex">('$' | '\_' | ['a'-'z' 'A'-'Z'])</code>, but
-it's shorter and may be more efficient.
+This is equivalent to <rulex>`('$' | '_' | ['a'-'z' 'A'-'Z'])`, but it's shorter and may be
+more efficient.
 
 ### Character ranges and Unicode
 
@@ -56,10 +56,11 @@ This doesn't seem to make sense, but does work. If you compile it to a regex and
 letters. However, it also matches a few other characters, e.g. the question mark `?`.
 
 The reason is that rulex uses Unicode, a standard that assigns every character a numeric value.
-When we write `'0'-'z'`, rulex assumes that we want to match any character whose numeric value
-is somewhere between the value of `'0'` and the value of `'z'`. This works well for letters (e.g.
-`'a'-'Z'`) and numbers (`'0'-'9'`), because these have consecutive numbers in Unicode. However,
-there are some special characters between digits, uppercase letters and lowercase letters:
+When we write <rulex>`'0'-'z'`, rulex assumes that we want to match any character whose
+numeric value is somewhere between the value of <rulex>`'0'` and the value of <rulex>`'z'`.
+This works well for letters (e.g. <rulex>`'a'-'Z'`) and numbers (<rulex>`'0'-'9'`), because
+these have consecutive numbers in Unicode. However, there are some special characters
+between digits, uppercase letters and lowercase letters:
 
 | Character | Unicode value |
 | --------- | ------------- |
@@ -99,8 +100,8 @@ of them use languages with different alphabets. To support them, Unicode include
 covering 159 different scripts. Since we have a standard that makes it really easy to support
 different languages, there's no excuse for not use it.
 
-The character class `['a'-'z' 'A'-'Z']` only recognizes Latin characters. What should we do instead?
-We should use a
+The character class <rulex>`['a'-'z' 'A'-'Z']` only recognizes Latin characters. What should we
+do instead? We should use a
 [Unicode category](https://en.wikipedia.org/wiki/Unicode_character_property#General_Category).
 In this case, `Letter` seems like an obvious candidate. Rulex makes it very easy to use Unicode
 categories:
@@ -130,8 +131,8 @@ You can see the full list of Unicode properties [here](./unicode-properties.md).
 
 ## Negation
 
-Character classes are negated by putting a `!` in front of it. For example, `!['a'-'f']` matches
-anything except a letter in the range from `a` to `f`.
+Character classes are negated by putting a <rulex>`!` in front of it. For example,
+<rulex>`!['a'-'f']` matches anything except a letter in the range from `a` to `f`.
 
 It's also possible to negate Unicode properties individually. For example, `[Latin !Alphabetic]`
 matches a code point that is either in the Latin script, or is not alphabetic.
@@ -143,47 +144,48 @@ There are a few _shorthand character classes_: `word`, `digit`, `space`, `horiz_
 Unicode properties, they must appear in square brackets.
 
 - `word` matches a _word character_, i.e. a letter, digit or underscore. It's equivalent to
-  `[Alphabetic Mark Decimal_Number Connector_Punctuation Join_Control]`.
+  <rulex>`[Alphabetic Mark Decimal_Number Connector_Punctuation Join_Control]`.
 - `digit` matches a digit. It's equivalent to `Decimal_Number`.
 - `space` matches whitespace. It's equivalent to `White_Space`.
 - `horiz_space` matches horizontal whitespace (tabs and spaces). It's equivalent to
-  `[U+09 Space_Separator]`.
-- `vert_space` matches vertical whitespace. It's equivalent to `[U+0A-U+0D U+85 U+2028 U+2029]`.
+  <rulex>`[U+09 Space_Separator]`.
+- `vert_space` matches vertical whitespace. It's equivalent to
+  <rulex>`[U+0A-U+0D U+85 U+2028 U+2029]`.
 
 Note that `word`, `digit` and `space` only match ASCII characters, if the regex engine isn't
 configured to be Unicode-aware. How to enable Unicode support is
 [described here](../enabling-unicode-support.md).
 
-There are two more shorthands: `[codepoint]` (or `[cp]` for short), matches any Unicode code point;
-`[.]` matches any Unicode code point, _except_ the ASCII line break `\n`. These two shorthands
-are special, because they have to be the only thing in a character class; for example, `[. 'x']`
-would be illegal, but also kind of useless.
+There are two more shorthands: <rulex>`[codepoint]` (or <rulex>`[cp]` for short), matches
+any Unicode code point; <rulex>`[.]` matches any Unicode code point, _except_ the ASCII
+line break `\n`. These two shorthands are special, because they have to be the only thing
+in a character class; for example, <rulex>`[. 'x']` would be illegal, but also kind of useless.
 
 ### What if I don't need Unicode support?
 
-You don't have to use Unicode-aware character classes such as `[word]` if you know that the input
-is only ASCII. Unicode-aware matching can be considerably slower. For example, the `[word]`
-character class includes more than 100,000 code points, so matching a `[ascii_word]`, which
-includes only 63 code points, is faster.
+You don't have to use Unicode-aware character classes such as <rulex>`[word]` if you know
+that the input is only ASCII. Unicode-aware matching can be considerably slower. For example,
+the <rulex>`[word]` character class includes more than 100,000 code points, so matching a
+<rulex>`[ascii_word]`, which includes only 63 code points, is faster.
 
 Rulex supports a number of ASCII-only shorthands:
 
-| Character class  | Equivalent                              |
-| ---------------- | --------------------------------------- |
-| `[ascii]`        | `[U+00-U+7F]`                           |
-| `[ascii_alpha]`  | `['a'-'z' 'A'-'Z']`                     |
-| `[ascii_alnum]`  | `['0'-'9' 'a'-'z' 'A'-'Z']`             |
-| `[ascii_blank]`  | `[' ' U+09],`                           |
-| `[ascii_cntrl]`  | `[U+00-U+1F U+7F]`                      |
-| `[ascii_digit]`  | `['0'-'9']`                             |
-| `[ascii_graph]`  | `['!'-'~']`                             |
-| `[ascii_lower]`  | `['a'-'z']`                             |
-| `[ascii_print]`  | `[' '-'~']`                             |
-| `[ascii_punct]`  | `` ['!'-'/' ':'-'@' '['-'`' '{'-'~'] `` |
-| `[ascii_space]`  | `[' ' U+09-U+0D]`                       |
-| `[ascii_upper]`  | `['A'-'Z']`                             |
-| `[ascii_word]`   | `['0'-'9' 'a'-'z' 'A'-'Z' '_']`         |
-| `[ascii_xdigit]` | `['0'-'9' 'a'-'f' 'A'-'F']`             |
+| Character class         | Equivalent                                     |
+| ----------------------- | ---------------------------------------------- |
+| <rulex>`[ascii]`        | <rulex>`[U+00-U+7F]`                           |
+| <rulex>`[ascii_alpha]`  | <rulex>`['a'-'z' 'A'-'Z']`                     |
+| <rulex>`[ascii_alnum]`  | <rulex>`['0'-'9' 'a'-'z' 'A'-'Z']`             |
+| <rulex>`[ascii_blank]`  | <rulex>`[' ' U+09],`                           |
+| <rulex>`[ascii_cntrl]`  | <rulex>`[U+00-U+1F U+7F]`                      |
+| <rulex>`[ascii_digit]`  | <rulex>`['0'-'9']`                             |
+| <rulex>`[ascii_graph]`  | <rulex>`['!'-'~']`                             |
+| <rulex>`[ascii_lower]`  | <rulex>`['a'-'z']`                             |
+| <rulex>`[ascii_print]`  | <rulex>`[' '-'~']`                             |
+| <rulex>`[ascii_punct]`  | <rulex>`` ['!'-'/' ':'-'@' '['-'`' '{'-'~'] `` |
+| <rulex>`[ascii_space]`  | <rulex>`[' ' U+09-U+0D]`                       |
+| <rulex>`[ascii_upper]`  | <rulex>`['A'-'Z']`                             |
+| <rulex>`[ascii_word]`   | <rulex>`['0'-'9' 'a'-'z' 'A'-'Z' '_']`         |
+| <rulex>`[ascii_xdigit]` | <rulex>`['0'-'9' 'a'-'f' 'A'-'F']`             |
 
 Using them can improve performance, but be careful when you use them. If you aren't sure if the
 input will ever contain non-ASCII characters, it's better to err on the side of correctness, and
@@ -192,20 +194,21 @@ use Unicode-aware character classes.
 ## Non-printable characters
 
 Characters that can't be printed should be replaced with their hexadecimal Unicode code point. For
-example, you may write `U+FEFF` to match the
+example, you may write <rulex>`U+FEFF` to match the
 [Zero Width No-Break Space](https://www.compart.com/en/unicode/U+FEFF).
 
 There are also 6 non-printable characters with a name:
 
-- `[n]` is equivalent to `[U+0A]`, the `\n` line feed.
-- `[r]` is equivalent to `[U+0D]`, the `\r` carriage return.
-- `[f]` is equivalent to `[U+0C]`, the `\f` form feed.
-- `[a]` is equivalent to `[U+07]`, the "alert" or "bell" control character.
-- `[e]` is equivalent to `[U+0B]`, the "escape" control character.
+- <rulex>`[n]` is equivalent to <rulex>`[U+0A]`, the `\n` line feed.
+- <rulex>`[r]` is equivalent to <rulex>`[U+0D]`, the `\r` carriage return.
+- <rulex>`[f]` is equivalent to <rulex>`[U+0C]`, the `\f` form feed.
+- <rulex>`[a]` is equivalent to <rulex>`[U+07]`, the "alert" or "bell" control character.
+- <rulex>`[e]` is equivalent to <rulex>`[U+0B]`, the "escape" control character.
 
 Other characters have to be written in their hexadecimal form. Note that you don't need to write
-leading zeroes, i.e. `U+0` is just as ok as `U+0000`. However, it is conventional to write ASCII
-characters with two digits and non-ASCII characters with 4, 5 or 6 digits depending on their length.
+leading zeroes, i.e. <rulex>`U+0` is just as ok as <rulex>`U+0000`. However, it is conventional
+to write ASCII characters with two digits and non-ASCII characters with 4, 5 or 6 digits
+depending on their length.
 
 ## Examples
 
@@ -230,6 +233,6 @@ Another solution is to use negation to exclude the underscore from the `word` sh
 ```
 
 How does this work? Since the character class is negated, the part within the square bracket has
-to match anything _except_ the things we want: Letters and digits. Since `!word` also doesn't match
-underscores, we add `'_'` to get the desired result. This "double negation trick" can be used to
-remove some things from a shorthand.
+to match anything _except_ the things we want: Letters and digits. Since <rulex>`!word` also
+doesn't match underscores, we add <rulex>`'_'` to get the desired result.
+This "double negation trick" can be used to remove some things from a shorthand.

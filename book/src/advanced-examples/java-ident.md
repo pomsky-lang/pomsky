@@ -9,12 +9,12 @@ Regex matching a Java identifier:
 With abbreviations:
 
 ```regexp
-[\p{Pc}\p{Sc}\p{M}\p{Alphabetic}][\p{Pc}\p{Sc}\p{M}\p{Alphabetic}\p{Numeric}]*
+[\p{Pc}\p{Sc}\p{M}\p{Alpha}][\p{Pc}\p{Sc}\p{M}\p{Alpha}\p{Numeric}]*
 ```
 
 And as a rulex:
 
 ```rulex
-[Pc Sc M Alphabetic]
-[Pc Sc M Alphabetic Numeric]*
+[Pc Sc M Alpha]
+[Pc Sc M Alpha Numeric]*
 ```

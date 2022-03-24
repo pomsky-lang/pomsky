@@ -18,3 +18,6 @@ additional-css = ["theme/custom.css"]
 additional-js = ["javascript/highlightjs-rulex-regex.js"]
 git-repository-url = "https://github.com/Aloso/rulex"
 git-repository-icon = "fa-github"
+
+[preprocessor.inline-hl]
+command = "node ./book/javascript/preprocessor-inline-hl.js"

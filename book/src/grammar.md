@@ -3,41 +3,42 @@
 ## Summary
 
 This document uses rulex syntax, extended with variables. A variable assigns a rule to a name.
-For example, `Hello = 'world'` assigns the `'world'` rule to the name `Hello`.
+For example, <rulex>`Hello = 'world'` assigns the <rulex>`'world'` rule to the name <rulex>`Hello`.
 
 Here's an incomplete summary of the syntax, which should be enough to read the grammar:
 
-- Verbatim text is wrapped in double quotes (`""`) or single quotes (`''`).
+- Verbatim text is wrapped in double quotes (<rulex>`""`) or single quotes (<rulex>`''`).
 
-- A `*` after a rule indicates that it repeats 0 or more times.
+- A <rulex>`*` after a rule indicates that it repeats 0 or more times.
 
-- A `+` after a rule indicates that it repeats 1 or more times.
+- A <rulex>`+` after a rule indicates that it repeats 1 or more times.
 
-- A `?` after a rule indicates that the rule is optional.
+- A <rulex>`?` after a rule indicates that the rule is optional.
 
-- Consecutive rules can be grouped together by wrapping them in parentheses (`()`).
+- Consecutive rules can be grouped together by wrapping them in parentheses (<rulex>`()`).
 
-- Alternative rules are separated with a vertical bar (`|`).
+- Alternative rules are separated with a vertical bar (<rulex>`|`).
 
-- Character classes are wrapped in square brackets (`[]`).
+- Character classes are wrapped in square brackets (<rulex>`[]`).
   A character class matches exactly one code point. It can contain
 
-  - sequences of characters (e.g. `'abdf'`, which matches either `a`, `b`, `d` or `f`)
-  - Unicode ranges (e.g. `'0'-'9'`, which is equivalent to `'0123456789'`)
-  - shorthands (e.g. `w`, which matches a letter, digit or the ASCII underscore `_`)
+  - sequences of characters (e.g. <rulex>`'abdf'`, which matches either `a`, `b`, `d` or `f`)
+  - Unicode ranges (e.g. <rulex>`'0'-'9'`, which is equivalent to <rulex>`'0123456789'`)
+  - shorthands (e.g. <rulex>`w`, which matches a letter, digit or the ASCII underscore `_`)
 
-  An exclamation mark (`!`) in front of the character class negates it. For example, `![w]` matches
-  anything _except_ a letter, digit or ASCII underscore.
+  An exclamation mark (<rulex>`!`) in front of the character class negates it. For example,
+  <rulex>`![w]` matches anything _except_ a letter, digit or ASCII underscore.
 
 ### Whitespace
 
 Comments start with `#` and end at the end of the same line.
 
 Comments and whitespace are ignored; they can be added anywhere, except in strings, in tokens
-(such as `>>`), in words, numbers and code points (such as `U+306F`). For example, `>>` can't be
-written as `> >`, but `!>>'test'+` can be written as `! >> 'test' +`.
+(such as <rulex>`>>`), in words, numbers and code points (such as <rulex>`U+306F`). For example,
+<rulex>`>>` can't be written as <rulex>`> >`, but <rulex>`!>>'test'+` can be written as
+<rulex>`! >> 'test' +`.
 
-Whitespace is required between consecutive words and code points, e.g. `[a n Latin U+50]`.
+Whitespace is required between consecutive words and code points, e.g. <rulex>`[a n Latin U+50]`.
 
 ## Formal grammar
 

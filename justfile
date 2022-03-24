@@ -1,6 +1,8 @@
+set positional-arguments
+
 # run rulex (debug mode)
 run S *args:
-    cargo run -- '{{S}}' {{args}}
+    cargo run -- "$@"
 
 # install rulex
 install:

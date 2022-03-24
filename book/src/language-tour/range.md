@@ -22,7 +22,8 @@ range '0'-'255'
 
 Rulex creates a **DFA** (deterministic finite automaton) from this, so the generated regex is
 optimal in terms of matching performance. Since the algorithm for creating this regex is extensively
-tested, you can also rely on it's correctness. Here's the regex generated from `range '0'-'255'`:
+tested, you can also rely on it's correctness. Here's the regex generated from
+<rulex>`range '0'-'255'`:
 
 ```regexp
 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?

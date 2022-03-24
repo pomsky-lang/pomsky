@@ -17,7 +17,7 @@ hljs.registerLanguage("rulex", function (hljs) {
       },
       {
         className: "keyword",
-        begin: ":\\s*[A-Za-z0-9]*",
+        begin: "::?\\s*[+-]?[A-Za-z0-9]*",
       },
       {
         className: "literal",
@@ -65,7 +65,7 @@ hljs.registerLanguage("regexp", function (hljs) {
   };
   const LITERAL = {
     className: "literal",
-    begin: "\\\\x\\w\\w|\\\\u\\w\\w\\w\\w|\\\\[xu]\\{\\w+\\}",
+    begin: "\\\\x\\w\\w|\\\\u\\w\\w\\w\\w|\\\\[xu]\\{[\\w.]+\\}",
   };
   const SPECIAL_ESCAPE = {
     className: "literal",
@@ -104,6 +104,10 @@ hljs.registerLanguage("regexp", function (hljs) {
       LITERAL,
       SPECIAL_ESCAPE,
       CHAR_ESCAPE,
+      {
+        className: "keyword",
+        begin: "\\(\\?\\w\\)",
+      },
       {
         className: "punctuation",
         begin: "\\((\\?:|\\?<\\w+>|\\?=|\\?!|\\?<=|\\?<!)?|\\)",

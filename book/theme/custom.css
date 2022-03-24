@@ -9,3 +9,8 @@
 .chapter > li.chapter-item {
   line-height: 1.8em;
 }
+
+code.language-rulex,
+code.language-regexp {
+  color: inherit !important;
+}

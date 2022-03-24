@@ -17,8 +17,8 @@ expressions are doing. They start with a `#` and span until the end of the line:
 ## Strings
 
 In Rulex, characters that should be matched as-is, are always wrapped in quotes. We can use
-double quotes (`""`) or single quotes (`''`). Text wrapped in quotes we call a _string_. It matches
-the exact content of the string:
+double quotes (<rulex>`""`) or single quotes (<rulex>`''`). Text wrapped in quotes we call a
+_string_. It matches the exact content of the string:
 
 ```rulex
 "test"
@@ -36,7 +36,7 @@ expressions in a row, they are matched one after the other:
 ## Alternatives
 
 What if we want to match multiple strings? In a regex, we can enumerate multiple alternatives,
-divided by a `|`:
+divided by a <rulex>`|`:
 
 ```regexp
 one|two|three|four|five

@@ -27,12 +27,17 @@ impl fmt::Display for FuzzError {
     }
 }
 
-pub(crate) fn fuzz_ranges(errors: &mut Vec<FuzzError>, thoroughness: usize) {
+pub(crate) fn fuzz_ranges(
+    errors: &mut Vec<FuzzError>,
+    thoroughness: usize,
+    start: usize,
+    step: usize,
+) {
     let mut strings = vec![];
-    let mut max_lo = 0;
-    let mut max_hi = 0;
-    let mut lo = 0;
-    let mut hi = 0;
+    let mut max_lo = start;
+    let mut max_hi = start;
+    let mut lo = start;
+    let mut hi = start;
 
     let mut start = Instant::now();
     loop {
@@ -48,7 +53,7 @@ pub(crate) fn fuzz_ranges(errors: &mut Vec<FuzzError>, thoroughness: usize) {
             }
         };
 
-        for i in 0..100 + lo.max(hi) * thoroughness {
+        for i in ((lo % step)..100 + lo.max(hi) * thoroughness).step_by(step) {
             while i >= strings.len() {
                 strings.push(strings.len().to_string());
             }
@@ -78,15 +83,25 @@ pub(crate) fn fuzz_ranges(errors: &mut Vec<FuzzError>, thoroughness: usize) {
 
         if lo < max_lo {
             lo += 1;
+
+            if start.elapsed().as_secs() >= 10 {
+                eprintln!("     - at {lo}-{hi}");
+                start = Instant::now();
+            }
         } else if hi < max_hi {
             hi += 1;
+
+            if start.elapsed().as_secs() >= 10 {
+                eprintln!("     - at {lo}-{hi}");
+                start = Instant::now();
+            }
         } else {
             if start.elapsed().as_secs() >= 3 {
                 eprintln!("completed {max_lo}-{max_hi}");
                 start = Instant::now();
             }
 
-            if max_lo + 100 < max_hi {
+            if max_lo < max_hi {
                 max_lo += 1;
                 lo += max_lo;
                 hi = lo;
