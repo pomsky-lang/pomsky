@@ -108,7 +108,10 @@ use crate::{
 
 pub(crate) use char_group::{CharGroup, GroupItem};
 
-use self::{char_group::GroupName, unicode::Category};
+use self::{
+    char_group::GroupName,
+    unicode::{Category, OtherProperties},
+};
 
 mod ascii;
 pub(crate) mod char_group;
@@ -210,10 +213,37 @@ fn named_class_to_regex(
     span: Span,
 ) -> CompileResult<'static> {
     Ok(match group {
-        GroupName::Word if negative => Regex::Shorthand(RegexShorthand::NotWord),
-        GroupName::Word => Regex::Shorthand(RegexShorthand::Word),
-        GroupName::Digit if negative => Regex::Shorthand(RegexShorthand::NotDigit),
-        GroupName::Digit => Regex::Shorthand(RegexShorthand::Digit),
+        GroupName::Word => {
+            if flavor == RegexFlavor::JavaScript {
+                Regex::CharClass(RegexCharClass {
+                    negative,
+                    items: vec![
+                        RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false),
+                        RegexProperty::Category(Category::Mark).negative_item(false),
+                        RegexProperty::Category(Category::Decimal_Number).negative_item(false),
+                        RegexProperty::Category(Category::Connector_Punctuation)
+                            .negative_item(false),
+                    ],
+                })
+            } else {
+                Regex::Shorthand(if negative {
+                    RegexShorthand::NotWord
+                } else {
+                    RegexShorthand::Word
+                })
+            }
+        }
+        GroupName::Digit => {
+            if flavor == RegexFlavor::JavaScript {
+                RegexProperty::Category(Category::Decimal_Number).negative(negative)
+            } else {
+                Regex::Shorthand(if negative {
+                    RegexShorthand::NotDigit
+                } else {
+                    RegexShorthand::Digit
+                })
+            }
+        }
         GroupName::Space if negative => Regex::Shorthand(RegexShorthand::NotSpace),
         GroupName::Space => Regex::Shorthand(RegexShorthand::Space),
 
@@ -278,16 +308,36 @@ fn named_class_to_regex_class_items(
     buf: &mut Vec<RegexClassItem>,
 ) -> Result<(), CompileError> {
     match group {
-        GroupName::Word => buf.push(RegexClassItem::Shorthand(if negative {
-            RegexShorthand::NotWord
-        } else {
-            RegexShorthand::Word
-        })),
-        GroupName::Digit => buf.push(RegexClassItem::Shorthand(if negative {
-            RegexShorthand::NotDigit
-        } else {
-            RegexShorthand::Digit
-        })),
+        GroupName::Word => {
+            if let RegexFlavor::JavaScript = flavor {
+                if negative {
+                    return Err(
+                        CompileErrorKind::Unsupported(Feature::NegativeShorthandW, flavor).at(span)
+                    );
+                }
+                buf.push(RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false));
+                buf.push(RegexProperty::Category(Category::Mark).negative_item(false));
+                buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(false));
+                buf.push(
+                    RegexProperty::Category(Category::Connector_Punctuation).negative_item(false),
+                );
+            } else {
+                buf.push(RegexClassItem::Shorthand(if negative {
+                    RegexShorthand::NotWord
+                } else {
+                    RegexShorthand::Word
+                }))
+            }
+        }
+        GroupName::Digit => {
+            if flavor == RegexFlavor::JavaScript {
+                buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(negative));
+            } else if negative {
+                buf.push(RegexClassItem::Shorthand(RegexShorthand::NotDigit));
+            } else {
+                buf.push(RegexClassItem::Shorthand(RegexShorthand::Digit));
+            }
+        }
         GroupName::Space => buf.push(RegexClassItem::Shorthand(if negative {
             RegexShorthand::NotSpace
         } else {

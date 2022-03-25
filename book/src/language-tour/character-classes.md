@@ -98,7 +98,7 @@ Why, you might ask? This is for [historical](https://en.wikipedia.org/wiki/ASCII
 The reason why Unicode was invented is that most people in the world don't speak English, and many
 of them use languages with different alphabets. To support them, Unicode includes 144,697 characters
 covering 159 different scripts. Since we have a standard that makes it really easy to support
-different languages, there's no excuse for not use it.
+different languages, there's no excuse for not using it.
 
 The character class <rulex>`['a'-'z' 'A'-'Z']` only recognizes Latin characters. What should we
 do instead? We should use a
@@ -140,7 +140,7 @@ matches a code point that is either in the Latin script, or is not alphabetic.
 ## Shorthand character classes
 
 There are a few _shorthand character classes_: `word`, `digit`, `space`, `horiz_space` and
-`vert_space`. They can be abbreviated with their first, letter: `w`, `d`, `s`, `h` and `v`. Like
+`vert_space`. They can be abbreviated with their first letter: `w`, `d`, `s`, `h` and `v`. Like
 Unicode properties, they must appear in square brackets.
 
 - `word` matches a _word character_, i.e. a letter, digit or underscore. It's equivalent to
@@ -159,7 +159,7 @@ configured to be Unicode-aware. How to enable Unicode support is
 There are two more shorthands: <rulex>`[codepoint]` (or <rulex>`[cp]` for short), matches
 any Unicode code point; <rulex>`[.]` matches any Unicode code point, _except_ the ASCII
 line break `\n`. These two shorthands are special, because they have to be the only thing
-in a character class; for example, <rulex>`[. 'x']` would be illegal, but also kind of useless.
+in a character class; for example, <rulex>`[. 'x']` would be illegal, and also kind of useless.
 
 ### What if I don't need Unicode support?
 

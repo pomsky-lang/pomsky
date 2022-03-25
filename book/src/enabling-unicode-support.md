@@ -17,36 +17,26 @@ The Rust `regex` crate is Unicode-aware by default. There's nothing you need to 
 In JavaScript, set the `u` flag, for example <regexp>`/[\w\s]/u`. This makes it possible to use
 Unicode properties (<regexp>`\p{...}`) and code points outside of the BMP (<regexp>`\u{...}`).
 
-However, <rulex>`[w]` and <rulex>`[d]` are _not_ Unicode aware even when the `u` flag is enabled!
-<rulex>`[s]` is always Unicode aware.
-
-As an alternative, you may substitute
-
-- <rulex>`[word]` with <rulex>`[Alphabetic Mark Decimal_Number Connector_Punctuation]`
-  (or <rulex>`[Alpha M Nd Pc]` for short)
-- <rulex>`[digit]` with <rulex>`[Decimal_Number]` (or <rulex>`[Nd]` for short)
-
-To make word boundaries behave correctly, you also need to substitute
+Since `\w` and `\d` are _not_ Unicode aware even when the `u` flag is enabled, rulex polyfills them.
+However, word boundaries aren't Unicode aware, and there's no straightforward solution for this.
+To make word boundaries behave correctly, you need to substitute <rulex>`%` and <rulex>`!%` with
 
 ```rulex
-# %
-(<< [Alpha M Nd Pc]) (!>> [Alpha M Nd Pc]) | (!<< [Alpha M Nd Pc]) (>> [Alpha M Nd Pc])
-
-# !%
-(<< [Alpha M Nd Pc]) (>> [Alpha M Nd Pc]) | (!<< [Alpha M Nd Pc]) (!>> [Alpha M Nd Pc])
+(<< [w]) (!>> [w]) | (!<< [w]) (>> [w])
+# and
+(<< [w]) (>> [w]) | (!<< [w]) (!>> [w])
 ```
 
-Substituting <rulex>`[word]` and <rulex>`[digit]` will be done automatically in the next version
-for JavaScript. For word boundaries, we're currently looking for a better alternative.
+respectively.
 
 ## PHP
 
-PHP is Unicode-aware if the `u` flag is set, and this also applies to <rulex>`[w]`, <rulex>`[d]`,
-<rulex>`[s]` and <rulex>`%`. For example, <rulex>`'/\w+/u'` matches a word in any script.
+PHP is Unicode-aware if the `u` flag is set, and this also applies to <regexp>`\w`, <regexp>`\d`,
+<regexp>`\s` and <regexp>`\b`. For example, <regexp>`'/\w+/u'` matches a word in any script.
 
 ## PCRE
 
-PCRE supports Unicode, but to make <rulex>`[w]`, <rulex>`[d]`, <rulex>`[s]` and <rulex>`%`
+PCRE supports Unicode, but to make <regexp>`\w`, <regexp>`\d`, <regexp>`\s` and <regexp>`\b`
 Unicode-aware, you need to enable both `PCRE_UTF8` and `PCRE_UCP`.
 
 ## Java
@@ -61,7 +51,7 @@ In Ruby, add <regexp>`(?u)` in front of the regex to make it Unicode-aware. For 
 
 ## Python
 
-In the Python `re` module, <rulex>`[w]`, <rulex>`[d]`, <rulex>`[s]` and <rulex>`%` are
+In the Python `re` module, <regexp>`\w`, <regexp>`\d`, <regexp>`\s` and <regexp>`\b` are
 Unicode-aware since Python 3.
 
 If you're still using Python 2, you can use the [regex](https://pypi.org/project/regex/2021.11.10/)

@@ -70,6 +70,7 @@ pub enum Feature {
     ForwardReference,
     RelativeReference,
     NonNegativeRelativeReference,
+    NegativeShorthandW,
 }
 
 impl Feature {
@@ -84,6 +85,7 @@ impl Feature {
             Feature::ForwardReference => "Forward reference",
             Feature::RelativeReference => "Relative backreference",
             Feature::NonNegativeRelativeReference => "Non-negative relative backreference",
+            Feature::NegativeShorthandW => "Negative `\\w` shorthand in character class",
         }
     }
 }
