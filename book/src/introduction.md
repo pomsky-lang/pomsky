@@ -7,7 +7,7 @@
 </div>
 
 Rulex is a language that compiles to regular expressions. It is currently in an alpha stage and
-will likely change substantially in the next few releases.
+will likely change in the next few releases.
 
 ## Usage
 

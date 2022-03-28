@@ -12,16 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A [**book**](https://aloso.github.io/rulex/), with instructions, a language tour and a formal
   grammar!
 
-- Number range expressions! For example, `range '0'-'255'` generates this regex:
+- **Variables**! For example, `let x = 'test';` declares a variable `x` that can be used below. Read
+  [this chapter](https://aloso.github.io/rulex/language-tour/variables.html) from the book to find
+  out more.
+
+- **Number range expressions**! For example, `range '0'-'255'` generates this regex:
 
   ```regexp
   0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
   ```
 
-- Relative references: `::-1` refers to the previous capturing group, `::+1` to the next one
+- **Relative references**: `::-1` refers to the previous capturing group, `::+1` to the next one
 
-- `w`, `d`, `s`, `h` and `v` now have aliases: `word`, `digit`, `space`, `horiz_space` and
-  `vert_space`.
+- `w`, `d`, `s`, `h`, `v` and `X` now have aliases: `word`, `digit`, `space`, `horiz_space`,
+  `vert_space` and `Grapheme`.
 
 - `enable lazy;` and `disable lazy;` to enable or disable lazy matching by default at the global
   scope or in a group.
@@ -34,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **POSIX classes (e.g. `alnum`) have been renamed** to start with `ascii_`, since they only support
   Basic Latin
 
-- **`X` was renamed to `Grapheme`**
+- Double quoted strings can now contain escaped quotes, e.g. `"\"test\""`. Backslashes now must be
+  escaped. Single quoted strings were not changed.
 
 - Improved Unicode support
 
@@ -48,10 +53,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Named references compile to numeric references (like relative references), which are better
   supported
 
+- A `?` after a repetition is now forbidden, because it easy confuse to with a lazy quantifier.
+
 ### Removed
 
 - `R` was removed, because it didn't work properly, and I'm still unsure about the best syntax
-  and behavior.
+  and behavior. The error can be silenced by wrapping the inner expression in parentheses, e.g.
+  `([w]{3})?`.
+
+### Fixed
+
+- A `?` following a repetition no longer miscompiles: `([w]{3})?` now correctly emits `(?:\w{3})?`
+  instead of `\w{3}?`.
+- A `{0,42}` repetition no longer miscompiles (it previously emitted `{,42}`).
 
 ## [0.2.0] - 2022-03-12
 
