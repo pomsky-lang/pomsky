@@ -1,8 +1,8 @@
+use std::io::Write;
 use std::{
     io::{self, Read},
     path::PathBuf,
 };
-use std::io::Write;
 
 use atty::Stream;
 use clap::{ArgEnum, Parser};
@@ -102,7 +102,12 @@ pub fn main() -> miette::Result<()> {
     Ok(())
 }
 
-fn compile(input: &str, debug: bool, flavor: Option<Flavor>, no_new_line: bool) -> miette::Result<()> {
+fn compile(
+    input: &str,
+    debug: bool,
+    flavor: Option<Flavor>,
+    no_new_line: bool,
+) -> miette::Result<()> {
     let parsed = Rulex::parse(input, Default::default())
         .map_err(|e| Diagnostic::from_parse_error(e, input))?;
 
