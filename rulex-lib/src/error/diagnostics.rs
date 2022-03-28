@@ -48,7 +48,7 @@ impl Diagnostic {
     pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
         let range = error.span.map(Span::range).unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
-        let span = Span::from(range);
+        let mut span = Span::from(range);
 
         let help = match error.kind {
             ParseErrorKind::LexErrorWithMessage(msg) => match msg {
@@ -67,6 +67,11 @@ impl Diagnostic {
                 If this is intentional, consider adding parentheses around the inner repetition."
                     .into(),
             ),
+            ParseErrorKind::InvalidEscapeInStringAt(offset) => {
+                let span_start = span.range().start;
+                span = Span::new(span_start + offset - 1, span_start + offset + 1);
+                None
+            }
             _ => None,
         };
 

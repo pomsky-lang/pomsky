@@ -12,7 +12,7 @@ Boundaries match a position in a string without consuming any code points. There
 
 A word character is anything that matches <rulex>`[word]`. If the regex engine is Unicode-aware,
 this is <rulex>`[Alphabetic Mark Decimal_Number Connector_Punctuation]`. For some regex engines,
-Unicode-aware matching has to be enabled first ([see here](./enabling-unicode-support.md)).
+Unicode-aware matching has to be enabled first ([see here](../enabling-unicode-support.md)).
 
 In JavaScript, <rulex>`%` and <rulex>`!%` is _never_ Unicode-aware, even when the `u` flag is set.
-[See here](./enabling-unicode-support.md#javascript) for more information.
+[See here](../enabling-unicode-support.md#javascript) for more information.

@@ -97,6 +97,8 @@
 //!   When a negated character class only contains 1 item, which is also negated, the class is
 //!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
+use std::borrow::Cow;
+
 use crate::{
     compile::CompileResult,
     error::{CompileError, CompileErrorKind, Feature},
@@ -138,7 +140,9 @@ impl CharClass {
     pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
         let span = self.span;
         match &self.inner {
-            CharGroup::Dot => Ok(if self.negative { Regex::Literal("\\n") } else { Regex::Dot }),
+            CharGroup::Dot => {
+                Ok(if self.negative { Regex::Literal(Cow::Borrowed("\\n")) } else { Regex::Dot })
+            }
             CharGroup::CodePoint => {
                 if self.negative {
                     return Err(CompileErrorKind::EmptyClassNegated.at(span));

@@ -1,0 +1,5 @@
+#! expect=error
+"a\ "
+-----
+Parse error: Unsupported escape sequence in string
+  at 0..5

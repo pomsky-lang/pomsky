@@ -7,7 +7,11 @@ hljs.registerLanguage("rulex", function (hljs) {
       {
         className: "string",
         variants: [
-          { begin: /"/, end: /"/ },
+          {
+            begin: /"/,
+            contains: [{ begin: /\\./, className: "keyword" }],
+            end: /"/,
+          },
           { begin: /'/, end: /'/ },
         ],
       },

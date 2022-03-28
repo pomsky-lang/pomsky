@@ -24,6 +24,15 @@ _string_. It matches the exact content of the string:
 "test"
 ```
 
+In double quoted strings (<rulex>`"..."`), double quotes can be escaped by prepending a backslash.
+Backslashes also must be escaped:
+
+```rulex
+"\"C:\\windows\""
+# is equivalent to
+'"C:\windows"'
+```
+
 ## Concatenate expressions
 
 Rulex consists of _expressions_. For example, a string is an expression. If we write several

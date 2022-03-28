@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{borrow::Cow, cmp::Ordering};
 
 use crate::{
     alternation::RegexAlternation,
@@ -423,7 +423,7 @@ impl Rule {
 
     fn to_regex(&self) -> Regex<'static> {
         match self {
-            Rule::Empty => Regex::Literal(""),
+            Rule::Empty => Regex::Literal(Cow::Borrowed("")),
             Rule::Class(c) => c.to_regex(),
             Rule::Repeat(r) => r.to_regex(),
             Rule::Alt(a) => a.to_regex(),

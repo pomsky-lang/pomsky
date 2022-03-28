@@ -1,0 +1,5 @@
+#! expect=error
+"a\"
+-----
+Parse error: This string literal doesn't have a closing quote
+  at 0..4

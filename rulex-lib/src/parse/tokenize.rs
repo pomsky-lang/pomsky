@@ -74,7 +74,12 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if c == ';' => (1, Token::Semicolon);
                     if c == '=' => (1, Token::Equals);
 
-                    if c == '"' || c == '\'' => match input[1..].find(c) {
+                    if c == '\'' => match input[1..].find('\'') {
+                        Some(len_inner) => (len_inner + 2, Token::String),
+                        None => (input.len(), Token::ErrorMsg(ParseErrorMsg::UnclosedString)),
+                    };
+
+                    if c == '"' => match find_unescaped_quote(&input[1..]) {
                         Some(len_inner) => (len_inner + 2, Token::String),
                         None => (input.len(), Token::ErrorMsg(ParseErrorMsg::UnclosedString)),
                     };
@@ -147,4 +152,23 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
     }
 
     result
+}
+
+fn find_unescaped_quote(input: &str) -> Option<usize> {
+    let mut s = input;
+
+    loop {
+        match s.find(|c| c == '\\' || c == '"') {
+            Some(n) => {
+                if s.as_bytes()[n] == b'"' {
+                    return Some(n + (input.len() - s.len()));
+                } else if n + 2 <= s.len() {
+                    s = &s[n + 2..];
+                } else {
+                    return None;
+                }
+            }
+            None => return None,
+        }
+    }
 }

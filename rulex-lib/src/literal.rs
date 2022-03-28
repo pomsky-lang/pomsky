@@ -1,18 +1,20 @@
+use std::borrow::Cow;
+
 use crate::{compile::CompileResult, options::RegexFlavor, regex::Regex, span::Span};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Literal<'i> {
-    content: &'i str,
+    content: Cow<'i, str>,
     pub(crate) span: Span,
 }
 
 impl<'i> Literal<'i> {
-    pub(crate) fn new(content: &'i str, span: Span) -> Self {
+    pub(crate) fn new(content: Cow<'i, str>, span: Span) -> Self {
         Literal { content, span }
     }
 
     pub(crate) fn compile(&self) -> CompileResult<'i> {
-        Ok(Regex::Literal(self.content))
+        Ok(Regex::Literal(self.content.clone()))
     }
 }
 

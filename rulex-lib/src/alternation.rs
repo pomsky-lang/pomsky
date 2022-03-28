@@ -1,7 +1,7 @@
 //! Implements [alternation](https://www.regular-expressions.info/alternation.html):
 //! `('alt1' | 'alt2' | 'alt3')`.
 
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -45,7 +45,7 @@ impl<'i> Alternation<'i> {
                     Rulex::Alternation(Alternation { rules: vec![a, b], span })
                 }
             })
-            .unwrap_or_else(|| Rulex::Literal(Literal::new("", Span::default())))
+            .unwrap_or_else(|| Rulex::Literal(Literal::new(Cow::Borrowed(""), Span::default())))
     }
 
     pub(crate) fn get_capturing_groups(

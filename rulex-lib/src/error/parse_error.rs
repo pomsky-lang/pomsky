@@ -83,6 +83,8 @@ pub enum ParseErrorKind {
     RangeIsNotIncreasing,
     #[error("A variable with the same name already exists in this scope")]
     LetBindingExists,
+    #[error("Unsupported escape sequence in string")]
+    InvalidEscapeInStringAt(usize),
     #[error(transparent)]
     CharString(CharStringError),
     #[error(transparent)]

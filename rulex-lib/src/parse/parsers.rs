@@ -1,4 +1,8 @@
-use std::{collections::HashSet, str::FromStr};
+use std::{
+    borrow::{Borrow, Cow},
+    collections::HashSet,
+    str::FromStr,
+};
 
 use nom::{
     branch::alt,
@@ -290,7 +294,11 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
 }
 
 pub(super) fn parse_string<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(Token::String, |(s, span)| Rulex::Literal(Literal::new(strip_first_last(s), span)))(input)
+    try_map(
+        Token::String,
+        |(s, span)| Ok(Rulex::Literal(Literal::new(parse_quoted_text(s)?, span))),
+        nom::Err::Failure,
+    )(input)
 }
 
 pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
@@ -305,7 +313,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             Err(ParseErrorKind::CharString(match self {
                 StringOrChar::Char(c) => return Ok(c),
                 StringOrChar::String(s) => {
-                    let s = strip_first_last(s);
+                    let s = parse_quoted_text(s)?;
                     let mut iter = s.chars();
                     match iter.next() {
                         Some(c) if matches!(iter.next(), None) => return Ok(c),
@@ -347,7 +355,9 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             Ok((input, group))
         } else {
             let group = match first {
-                StringOrChar::String(s) => CharGroup::from_chars(strip_first_last(s)),
+                StringOrChar::String(s) => CharGroup::from_chars(
+                    parse_quoted_text(s).map_err(|k| nom::Err::Failure(k.at(span1)))?.borrow(),
+                ),
                 StringOrChar::Char(c) => CharGroup::from_char(c),
             };
             Ok((input, group))
@@ -582,6 +592,41 @@ fn from_str<T: FromStr>(s: &str) -> Result<T, ParseErrorKind> {
 
 fn strip_first_last(s: &str) -> &str {
     &s[1..s.len() - 1]
+}
+
+fn parse_quoted_text(input: &str) -> Result<Cow<'_, str>, ParseErrorKind> {
+    Ok(match input.as_bytes()[0] {
+        b'"' => {
+            let mut s = strip_first_last(input);
+            let mut buf = String::new();
+
+            loop {
+                let mut chars = s.chars();
+                match chars.next() {
+                    Some('\\') => match chars.next() {
+                        Some('\\') => {
+                            buf.push('\\');
+                            s = &s[1..];
+                        }
+                        Some('"') => {
+                            buf.push('"');
+                            s = &s[1..];
+                        }
+                        _ => {
+                            return Err(ParseErrorKind::InvalidEscapeInStringAt(
+                                input.len() - s.len(),
+                            ));
+                        }
+                    },
+                    Some(c) => buf.push(c),
+                    None => break,
+                }
+                s = &s[1..];
+            }
+            Cow::Owned(buf)
+        }
+        _ => Cow::Borrowed(strip_first_last(input)),
+    })
 }
 
 fn try_map<'i, 'b, O1, O2, P, M, EM>(

@@ -4,7 +4,7 @@ use crate::{error::CompileError, regex::Regex, repetition::RegexQuantifier, Rule
 
 pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) struct CompileState<'c, 'i> {
     pub(crate) next_idx: u32,
     pub(crate) used_names: HashMap<String, u32>,

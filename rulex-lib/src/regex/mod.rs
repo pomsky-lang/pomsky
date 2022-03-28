@@ -1,3 +1,5 @@
+use std::borrow::{Borrow, Cow};
+
 use crate::{
     alternation::RegexAlternation,
     boundary::BoundaryKind,
@@ -15,7 +17,7 @@ use crate::{
 
 pub(crate) enum Regex<'i> {
     /// A literal string
-    Literal(&'i str),
+    Literal(Cow<'i, str>),
     /// A literal char
     Char(char),
     /// A character class, delimited with square brackets
@@ -76,7 +78,7 @@ impl RegexProperty {
 impl<'i> Regex<'i> {
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         match self {
-            &Regex::Literal(l) => {
+            Regex::Literal(l) => {
                 for c in l.chars() {
                     literal::codegen_char_esc(c, buf, flavor);
                 }
@@ -118,7 +120,7 @@ impl<'i> Regex<'i> {
 
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
         match self {
-            &Regex::Literal(l) => literal::needs_parens_before_repetition(l),
+            Regex::Literal(l) => literal::needs_parens_before_repetition(l.borrow()),
             Regex::Group(g) => g.needs_parens_before_repetition(),
             Regex::Alternation(_) => true,
             Regex::CharClass(_)
