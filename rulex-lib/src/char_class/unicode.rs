@@ -29,6 +29,7 @@ macro_rules! data {
         $(
             #[derive(Clone, Copy, PartialEq, Eq)]
             #[allow(non_camel_case_types)]
+            #[allow(clippy::enum_variant_names)]
             #[repr(u8)]
             #[rustfmt::skip]
             pub(crate) enum $kind {
@@ -453,6 +454,7 @@ data! {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum Category {
@@ -479,6 +481,7 @@ impl Category {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum Script {
@@ -538,6 +541,7 @@ impl Script {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum CodeBlock {
@@ -604,6 +608,7 @@ impl CodeBlock {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
 pub(crate) enum OtherProperties {

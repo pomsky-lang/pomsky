@@ -73,11 +73,8 @@ impl<'i> Group<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        match self.capture {
-            Some(_) => {
-                state.next_idx += 1;
-            }
-            None => {}
+        if self.capture.is_some() {
+            state.next_idx += 1;
         }
 
         Ok(Regex::Group(RegexGroup {

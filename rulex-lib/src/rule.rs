@@ -5,7 +5,7 @@ use crate::{
     boundary::Boundary,
     char_class::CharClass,
     compile::{CompileResult, CompileState},
-    error::{CompileError, ParseError},
+    error::{CompileError, CompileErrorKind, ParseError},
     grapheme::Grapheme,
     group::Group,
     literal::Literal,
@@ -113,7 +113,11 @@ impl<'i> Rulex<'i> {
             Rulex::Boundary(_) => {}
             Rulex::Lookaround(l) => l.get_capturing_groups(count, map, within_variable)?,
             Rulex::Variable(_) => {}
-            Rulex::Reference(_) => {}
+            Rulex::Reference(r) => {
+                if within_variable {
+                    return Err(CompileErrorKind::ReferenceInLet.at(r.span));
+                }
+            }
             Rulex::Range(_) => {}
             Rulex::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
         }

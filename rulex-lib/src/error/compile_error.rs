@@ -57,6 +57,9 @@ pub enum CompileErrorKind {
     #[error("Capturing groups within `let` statements are currently not supported")]
     CaptureInLet,
 
+    #[error("References within `let` statements are currently not supported")]
+    ReferenceInLet,
+
     #[error("Variable doesn't exist")]
     UnknownVariable,
 
