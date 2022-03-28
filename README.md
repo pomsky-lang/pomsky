@@ -75,7 +75,7 @@ range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3
 
 ## Variables
 
-```rulex
+```rust
 let operator = '+' | '-' | '*' | '/';
 let number = '-'? [digit]+;
 
@@ -134,9 +134,8 @@ Rulex looks for mistakes and displays helpful diagnostics:
 You can contribute by using rulex and providing feedback. If you find a bug or have a question,
 please create an issue.
 
-I also gladly accept code contributions. If you want to contribute, please upvote or comment on
-[this issue](https://github.com/Aloso/rulex/issues/9), so I will prioritize documenting the code
-and writing a Contributor's Guide.
+I also gladly accept code contributions. To make sure that CI succeeds, please run `cargo fmt`,
+`cargo clippy` and `cargo test` before creating a pull request.
 
 ## License
 
