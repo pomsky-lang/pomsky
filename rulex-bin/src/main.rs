@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::{
     io::{self, Read},
     path::PathBuf,
@@ -29,6 +30,10 @@ struct Args {
     /// Regex flavor
     #[clap(long, short, arg_enum, ignore_case(true))]
     flavor: Option<Flavor>,
+
+    /// Does not print a new-line at the end of the compiled regular expression
+    #[clap(long, short)]
+    no_new_line: bool,
 }
 
 /// Regex flavor
@@ -75,9 +80,9 @@ pub fn main() -> miette::Result<()> {
     let args = Args::parse();
 
     match (args.input, args.path) {
-        (Some(input), None) => compile(&input, args.debug, args.flavor)?,
+        (Some(input), None) => compile(&input, args.debug, args.flavor, args.no_new_line)?,
         (None, Some(path)) => match std::fs::read_to_string(&path) {
-            Ok(input) => compile(&input, args.debug, args.flavor)?,
+            Ok(input) => compile(&input, args.debug, args.flavor, args.no_new_line)?,
             Err(error) => return Err(MyError::Io { error, path }.into()),
         },
         (None, None) if atty::isnt(Stream::Stdin) => {
@@ -85,7 +90,7 @@ pub fn main() -> miette::Result<()> {
             std::io::stdin().read_to_end(&mut buf).unwrap();
 
             match String::from_utf8(buf) {
-                Ok(input) => compile(&input, args.debug, args.flavor)?,
+                Ok(input) => compile(&input, args.debug, args.flavor, args.no_new_line)?,
                 Err(e) => return Err(MyError::Other(format!("error parsing stdin: {e}")).into()),
             }
         }
@@ -97,7 +102,12 @@ pub fn main() -> miette::Result<()> {
     Ok(())
 }
 
-fn compile(input: &str, debug: bool, flavor: Option<Flavor>) -> miette::Result<()> {
+fn compile(
+    input: &str,
+    debug: bool,
+    flavor: Option<Flavor>,
+    no_new_line: bool,
+) -> miette::Result<()> {
     let parsed = Rulex::parse(input, Default::default())
         .map_err(|e| Diagnostic::from_parse_error(e, input))?;
 
@@ -110,6 +120,11 @@ fn compile(input: &str, debug: bool, flavor: Option<Flavor>) -> miette::Result<(
         CompileOptions { flavor: flavor.unwrap_or(Flavor::Pcre).into(), ..Default::default() };
     let compiled = parsed.compile(options).map_err(|e| Diagnostic::from_compile_error(e, input))?;
 
-    println!("{compiled}");
+    if no_new_line {
+        print!("{compiled}");
+        io::stdout().flush().unwrap();
+    } else {
+        println!("{compiled}");
+    }
     Ok(())
 }
