@@ -1,4 +1,4 @@
-use crate::{parse::ParseErrorMsg, span::Span};
+use crate::{parse::ParseErrorMsg, repetition::RepetitionError, span::Span};
 
 use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErrorKind};
 
@@ -62,6 +62,11 @@ impl Diagnostic {
                 ParseErrorMsg::Dollar => None,
                 ParseErrorMsg::UnclosedString => None,
             },
+            ParseErrorKind::Repetition(RepetitionError::QuestionMarkAfterRepetition) => Some(
+                "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
+                If this is intentional, consider adding parentheses around the inner repetition."
+                    .into(),
+            ),
             _ => None,
         };
 

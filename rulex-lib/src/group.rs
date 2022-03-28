@@ -83,7 +83,11 @@ impl<'i> Group<'i> {
                 .iter()
                 .map(|part| part.comp(options, state))
                 .collect::<Result<_, _>>()?,
-            capture: self.capture,
+            capture: match self.capture {
+                Some(Capture { name: Some(name) }) => RegexCapture::NamedCapture(name),
+                Some(Capture { name: None }) => RegexCapture::Capture,
+                None => RegexCapture::None,
+            },
         }))
     }
 }
@@ -123,17 +127,24 @@ impl<'i> Capture<'i> {
 
 pub(crate) struct RegexGroup<'i> {
     parts: Vec<Regex<'i>>,
-    capture: Option<Capture<'i>>,
+    capture: RegexCapture<'i>,
+}
+
+pub(crate) enum RegexCapture<'i> {
+    Capture,
+    NamedCapture(&'i str),
+    None,
+    NoneWithParens,
 }
 
 impl<'i> RegexGroup<'i> {
-    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: Option<Capture<'i>>) -> Self {
+    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: RegexCapture<'i>) -> Self {
         Self { parts, capture }
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         match self.capture {
-            Some(Capture { name: Some(name) }) => {
+            RegexCapture::NamedCapture(name) => {
                 // https://www.regular-expressions.info/named.html
                 match flavor {
                     RegexFlavor::Python | RegexFlavor::Pcre | RegexFlavor::Rust => {
@@ -153,14 +164,14 @@ impl<'i> RegexGroup<'i> {
                 }
                 buf.push(')');
             }
-            Some(Capture { name: None }) => {
+            RegexCapture::Capture => {
                 buf.push('(');
                 for part in &self.parts {
                     part.codegen(buf, flavor);
                 }
                 buf.push(')');
             }
-            None => {
+            RegexCapture::None => {
                 for part in &self.parts {
                     let needs_parens = part.needs_parens_in_group();
                     if needs_parens {
@@ -172,13 +183,23 @@ impl<'i> RegexGroup<'i> {
                     }
                 }
             }
+            RegexCapture::NoneWithParens => {
+                for part in &self.parts {
+                    buf.push_str("(?:");
+                    part.codegen(buf, flavor);
+                    buf.push(')');
+                }
+            }
         }
     }
 
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
-        if self.capture.is_none() && self.parts.len() == 1 {
-            return self.parts[0].needs_parens_before_repetition();
+        match self.capture {
+            RegexCapture::None if self.parts.len() == 1 => {
+                self.parts[0].needs_parens_before_repetition()
+            }
+            RegexCapture::NoneWithParens => false,
+            _ => true,
         }
-        true
     }
 }

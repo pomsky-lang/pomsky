@@ -1,4 +1,4 @@
-#! ignore=yes, expect=error
+#! expect=error
 'hello'??
 -----
 Parse error: Unexpected `?` following a repetition

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{
     compile::{CompileResult, CompileState},
     error::CompileError,
+    group::{RegexCapture, RegexGroup},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
     span::Span,
@@ -41,15 +42,22 @@ impl<'i> Repetition<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        Ok(Regex::Repetition(Box::new(RegexRepetition {
-            content: self.rule.comp(options, state)?,
-            kind: self.kind,
-            quantifier: match self.quantifier {
-                Quantifier::Greedy => RegexQuantifier::Greedy,
-                Quantifier::Lazy => RegexQuantifier::Lazy,
-                Quantifier::Default => state.default_quantifier,
-            },
-        })))
+        let mut content = self.rule.comp(options, state)?;
+
+        if let RepetitionKind { lower_bound: 0, upper_bound: Some(1) } = self.kind {
+            if let Rulex::Repetition(_) = &self.rule {
+                content =
+                    Regex::Group(RegexGroup::new(vec![content], RegexCapture::NoneWithParens));
+            }
+        }
+
+        let quantifier = match self.quantifier {
+            Quantifier::Greedy => RegexQuantifier::Greedy,
+            Quantifier::Lazy => RegexQuantifier::Lazy,
+            Quantifier::Default => state.default_quantifier,
+        };
+
+        Ok(Regex::Repetition(Box::new(RegexRepetition { content, kind: self.kind, quantifier })))
     }
 }
 
@@ -122,6 +130,8 @@ impl RepetitionKind {
 pub enum RepetitionError {
     #[error("Lower bound can't be greater than the upper bound")]
     NotAscending,
+    #[error("Unexpected `?` following a repetition")]
+    QuestionMarkAfterRepetition,
 }
 
 impl TryFrom<(u32, Option<u32>)> for RepetitionKind {

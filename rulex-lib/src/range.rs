@@ -5,7 +5,7 @@ use crate::{
     char_class::{RegexCharClass, RegexClassItem},
     compile::CompileResult,
     error::CompileErrorKind,
-    group::RegexGroup,
+    group::{RegexCapture, RegexGroup},
     regex::Regex,
     repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
     span::Span,
@@ -473,7 +473,10 @@ impl Alt {
             self.0
                 .iter()
                 .map(|v| {
-                    Regex::Group(RegexGroup::new(v.iter().map(|r| r.to_regex()).collect(), None))
+                    Regex::Group(RegexGroup::new(
+                        v.iter().map(|r| r.to_regex()).collect(),
+                        RegexCapture::None,
+                    ))
                 })
                 .collect(),
         ))
