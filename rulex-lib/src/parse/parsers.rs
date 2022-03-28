@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 use nom::{
     branch::alt,
@@ -19,11 +19,12 @@ use crate::{
     group::{Capture, Group},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
-    modified::{BooleanSetting, Modified, Modifier},
     range::Range,
     reference::{Reference, ReferenceTarget},
     repetition::{Quantifier, Repetition, RepetitionKind},
     span::Span,
+    stmt::{BooleanSetting, Let, Stmt, StmtExpr},
+    var::Variable,
     Rulex,
 };
 
@@ -49,29 +50,61 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
         Disable,
     }
 
-    map(
+    try_map2(
         pair(
-            many0(tuple((
-                alt((
-                    map("enable", |(_, span)| (ModifierKind::Enable, span)),
-                    map("disable", |(_, span)| (ModifierKind::Disable, span)),
-                )),
-                value(BooleanSetting::Lazy, "lazy"),
-                Token::Semicolon,
+            many0(alt((
+                map(
+                    tuple((
+                        alt((
+                            map("enable", |(_, span)| (ModifierKind::Enable, span)),
+                            map("disable", |(_, span)| (ModifierKind::Disable, span)),
+                        )),
+                        value(BooleanSetting::Lazy, "lazy"),
+                        Token::Semicolon,
+                    )),
+                    |((kind, span_start), value, (_, span_end))| {
+                        let stmt = match kind {
+                            ModifierKind::Enable => Stmt::Enable(value),
+                            ModifierKind::Disable => Stmt::Disable(value),
+                        };
+                        (stmt, span_start.join(span_end))
+                    },
+                ),
+                map(
+                    tuple((
+                        "let",
+                        cut(Token::Identifier),
+                        cut(Token::Equals),
+                        cut(parse_or),
+                        cut(Token::Semicolon),
+                    )),
+                    |((_, span_start), (name, name_span), _, rule, (_, span_end))| {
+                        (Stmt::Let(Let::new(name, rule, name_span)), span_start.join(span_end))
+                    },
+                ),
             ))),
             parse_or,
         ),
-        |(modifiers, mut rule)| {
-            let span2 = rule.span();
-            for ((kind, span1), value, _) in modifiers.into_iter().rev() {
-                let modifier = match kind {
-                    ModifierKind::Enable => Modifier::Enable(value),
-                    ModifierKind::Disable => Modifier::Disable(value),
-                };
-                rule = Rulex::Modified(Box::new(Modified::new(modifier, rule, span1.join(span2))));
+        |(stmts, mut rule): (Vec<(Stmt, Span)>, _)| {
+            if stmts.len() > 1 {
+                let mut set = HashSet::new();
+                for (stmt, _) in &stmts {
+                    if let Stmt::Let(l) = stmt {
+                        if set.contains(l.name()) {
+                            return Err(ParseErrorKind::LetBindingExists.at(l.name_span));
+                        }
+                        set.insert(l.name());
+                    }
+                }
             }
-            rule
+
+            let span_end = rule.span();
+            for (stmt, span) in stmts.into_iter().rev() {
+                rule = Rulex::StmtExpr(Box::new(StmtExpr::new(stmt, rule, span.join(span_end))));
+            }
+            Ok(rule)
         },
+        nom::Err::Failure,
     )(input)
 }
 
@@ -191,6 +224,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
             Rulex::CharClass(CharClass::new(CharGroup::from_char(c), span))
         }),
         parse_range,
+        parse_variable,
         try_map(Token::Dot, |_| Err(ParseErrorKind::Dot), nom::Err::Failure),
         err(|| ParseErrorKind::Expected("expression")),
     ))(input)
@@ -436,6 +470,10 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
     )(input)
 }
 
+pub(super) fn parse_variable<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+    map(Token::Identifier, |(name, span)| Rulex::Variable(Variable::new(name, span)))(input)
+}
+
 pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
     try_map(
         Token::Identifier,
@@ -524,6 +562,23 @@ where
         let span = input.span();
         let (rest, o1) = parser.parse(input)?;
         let o2 = map(o1).map_err(|e| err_kind(e.at(span)))?;
+        Ok((rest, o2))
+    }
+}
+
+fn try_map2<'i, 'b, O1, O2, P, M, EM>(
+    mut parser: P,
+    mut map: M,
+    err_kind: EM,
+) -> impl FnMut(Input<'i, 'b>) -> IResult<Input<'i, 'b>, O2, ParseError>
+where
+    P: Parser<Input<'i, 'b>, O1, ParseError>,
+    M: FnMut(O1) -> Result<O2, ParseError>,
+    EM: Copy + FnOnce(ParseError) -> nom::Err<ParseError>,
+{
+    move |input| {
+        let (rest, o1) = parser.parse(input)?;
+        let o2 = map(o1).map_err(err_kind)?;
         Ok((rest, o2))
     }
 }

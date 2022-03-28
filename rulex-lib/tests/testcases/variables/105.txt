@@ -1,0 +1,7 @@
+#! expect=error
+let x = y;
+let y = x;
+x
+-----
+Variables can't be used recursively
+  at 19..20

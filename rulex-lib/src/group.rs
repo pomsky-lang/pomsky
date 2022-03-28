@@ -36,9 +36,14 @@ impl<'i> Group<'i> {
         &self,
         count: &mut u32,
         map: &mut HashMap<String, u32>,
+        within_variable: bool,
     ) -> Result<(), CompileError> {
         match self.capture {
             Some(Capture { name: Some(name) }) => {
+                if within_variable {
+                    return Err(CompileErrorKind::CaptureInLet.at(self.span));
+                }
+
                 if map.contains_key(name) {
                     return Err(
                         CompileErrorKind::NameUsedMultipleTimes(name.to_string()).at(self.span)
@@ -49,20 +54,24 @@ impl<'i> Group<'i> {
                 map.insert(name.to_string(), *count);
             }
             Some(Capture { name: None }) => {
+                if within_variable {
+                    return Err(CompileErrorKind::CaptureInLet.at(self.span));
+                }
+
                 *count += 1;
             }
             None => {}
         };
         for rulex in &self.parts {
-            rulex.get_capturing_groups(count, map)?;
+            rulex.get_capturing_groups(count, map, within_variable)?;
         }
         Ok(())
     }
 
-    pub(crate) fn compile(
-        &self,
+    pub(crate) fn compile<'c>(
+        &'c self,
         options: CompileOptions,
-        state: &mut CompileState,
+        state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         match self.capture {
             Some(_) => {

@@ -81,4 +81,14 @@ On the left are rulex expressions, on the right are the equivalent regexes:
 # Ranges
 range '0'-'999'               # 0|[1-9][0-9]{0,2}
 range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
+
+```
+
+## Variables
+
+```rulex
+let operator = '+' | '-' | '*' | '/';
+let number = '-'? [digit]+;
+
+number (operator number)*
 ```

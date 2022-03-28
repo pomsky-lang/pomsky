@@ -1,0 +1,6 @@
+#! expect=error
+let x = y;
+x
+-----
+Variable doesn't exist
+  at 8..9

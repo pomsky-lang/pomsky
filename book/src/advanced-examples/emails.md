@@ -84,40 +84,37 @@ Here's a straightforward translation into rulex:
 Notice how the complex logic for matching a number between '0' and '255' is replaced by a simple
 `range` expression in rulex.
 
-Rulexes this complicated would also profit from a feature I have planned, but not yet implemented:
-Variables.
-
-With variables, we could write the above as follows:
+We can also write the above as follows using variables:
 
 ```rulex
-CharBeforeAt = ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"];
-QuotedCharBeforeAt = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21 U+23-U+5b U+5d-U+7f];
-EscapedCharBeforeAt = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
+let char_before_at = ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"];
+let quoted_char_before_at = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21 U+23-U+5b U+5d-U+7f];
+let escaped_char_before_at = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
 
-Lower_Digit = ['a'-'z' '0'-'9'];
-Lower_Digit_Dash = ['a'-'z' '0'-'9' '-'];
+let lower_digit = ['a'-'z' '0'-'9'];
+let lower_digit_dash = ['a'-'z' '0'-'9' '-'];
 
-PortDigit = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21-U+5a U+53-U+7f];
-EscapedPortChar = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
+let port_digit = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21-U+5a U+53-U+7f];
+let escaped_port_char = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
 
 
 (
-  CharBeforeAt+ ('.' CharBeforeAt+)*
-| '"' (QuotedCharBeforeAt | EscapedCharBeforeAt)* '"'
+  char_before_at+ ('.' char_before_at+)*
+| '"' (quoted_char_before_at | escaped_char_before_at)* '"'
 )
 '@'
 (
-  (Lower_Digit (Lower_Digit_Dash* Lower_Digit)? '.')+
-  Lower_Digit
-  (Lower_Digit_Dash* Lower_Digit)?
+  (lower_digit (lower_digit_dash* lower_digit)? '.')+
+  lower_digit
+  (lower_digit_dash* lower_digit)?
 | '['
   (:(range '0'-'255') '.'){3}
   (
     :(range '0'-'255')
-  | Lower_Digit_Dash*
-    Lower_Digit
+  | lower_digit_dash*
+    lower_digit
     ':'
-    (PortDigit | EscapedPortChar)+
+    (port_digit | escaped_port_char)+
   )
   ']'
 )

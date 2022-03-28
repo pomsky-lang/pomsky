@@ -1,0 +1,9 @@
+#! expect=error
+let _ = (
+  let a = 'a';
+  let a = 'b';
+);
+a
+-----
+Parse error: A variable with the same name already exists in this scope
+  at 31..32

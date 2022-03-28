@@ -1,0 +1,11 @@
+let c = (
+    let b = (
+        let a = 'hello';
+        a a
+    );
+    b b
+);
+
+c c
+-----
+hellohellohellohellohellohellohellohello

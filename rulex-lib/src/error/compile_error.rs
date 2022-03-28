@@ -54,6 +54,15 @@ pub enum CompileErrorKind {
     #[error("Compile error: `{}` can't be negated within a character class", .0)]
     UnsupportedNegatedClass(String),
 
+    #[error("Capturing groups within `let` statements are currently not supported")]
+    CaptureInLet,
+
+    #[error("Variable doesn't exist")]
+    UnknownVariable,
+
+    #[error("Variables can't be used recursively")]
+    RecursiveVariable,
+
     #[error("Compile error: {}", .0)]
     Other(&'static str),
 }

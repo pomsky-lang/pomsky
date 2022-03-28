@@ -2,10 +2,11 @@
 
 ## Summary
 
-This document uses rulex syntax, extended with variables. A variable assigns a rule to a name.
-For example, <rulex>`Hello = 'world'` assigns the <rulex>`'world'` rule to the name <rulex>`Hello`.
+This document uses rulex syntax. Here's an incomplete summary of the syntax, which should be enough
+to read the grammar:
 
-Here's an incomplete summary of the syntax, which should be enough to read the grammar:
+- Variables are declared as <rulex>`let var_name = expression;`. This assigns `expression` to the
+  variable `var_name`.
 
 - Verbatim text is wrapped in double quotes (<rulex>`""`) or single quotes (<rulex>`''`).
 
@@ -45,18 +46,21 @@ Whitespace is required between consecutive words and code points, e.g. <rulex>`[
 ### Expression
 
 ```rulex
-Expression = Modifier? OrExpression
+let Expression = Statement* OrExpression;
 
-Modifier = ('enable' | 'disable') BooleanSetting ';'
-BooleanSetting = 'lazy'
+let Statement = LetDeclaration | Modifier;
+
+let LetDeclaration = 'let' VariableName '=' OrExpression ';';
+let Modifier = ('enable' | 'disable') BooleanSetting ';';
+let BooleanSetting = 'lazy';
 ```
 
 ### OrExpression
 
 ```rulex
-OrExpression = Alternative ('|' Alternative)*
+let OrExpression = Alternative ('|' Alternative)*;
 
-Alternative = FixExpression+
+let Alternative = FixExpression+;
 ```
 
 ### FixExpression
@@ -64,106 +68,107 @@ Alternative = FixExpression+
 An expression which can have a prefix or suffix.
 
 ```rulex
-FixExpression = LookaroundPrefix Expression
-              | AtomExpression RepetitionSuffix
+let FixExpression = LookaroundPrefix Expression
+                  | AtomExpression RepetitionSuffix;
 ```
 
 ### Lookaround
 
 ```rulex
-LookaroundPrefix = '!'? ('<<' | '>>')
+let LookaroundPrefix = '!'? ('<<' | '>>');
 ```
 
 ### Repetitions
 
 ```rulex
-RepetitionSuffix = ('*' | '+' | '?' | RepetitionBraces) Quantifier?
+let RepetitionSuffix = ('*' | '+' | '?' | RepetitionBraces) Quantifier?;
 
-RepetitionBraces = '{' Number '}'
-                 | '{' Number ',' Number '}'
-                 | '{' Number ',' '}'
-                 | '{' ',' Number '}'
+let RepetitionBraces = '{' Number '}'
+                     | '{' Number ',' Number '}'
+                     | '{' Number ',' '}'
+                     | '{' ',' Number '}';
 
-Number = '1'-'9' ('0'-'9')*
+let Number = '1'-'9' ('0'-'9')*;
 
-Quantifier = 'greedy' | 'lazy'
+let Quantifier = 'greedy' | 'lazy';
 ```
 
 ### AtomExpression
 
 ```rulex
-AtomExpression = Group
-               | String
-               | CharacterClass
-               | Grapheme
-               | Boundary
-               | Reference
-               | CodePoint
-               | NumberRange;
+let AtomExpression = Group
+                   | String
+                   | CharacterClass
+                   | Grapheme
+                   | Boundary
+                   | Reference
+                   | CodePoint
+                   | NumberRange
+                   | VariableName;
 ```
 
 ### Group
 
 ```rulex
-Group = Capture? '(' Expression ')'
+let Group = Capture? '(' Expression ')';
 
-Capture = ':' Name?
+let Capture = ':' Name?;
 
-Name = [w]+
+let Name = [w]+;
 ```
 
 ### String
 
 ```rulex
-String = '"' !['"']* '"'
-       | "'" !["'"]* "'"
+let String = '"' !['"']* '"'
+           | "'" !["'"]* "'";
 ```
 
 ### CharacterClass
 
 ```rulex
-CharacterClass = '!'? '[' CharacterGroup ']'
+let CharacterClass = '!'? '[' CharacterGroup ']';
 
-CharacterGroup = '.' | 'cp' | CharacterGroupMulti+
+let CharacterGroup = '.' | 'cp' | CharacterGroupMulti+;
 
-CharacterGroupMulti = Range
-                    | Characters
-                    | CodePoint
-                    | NonPrintable
-                    | Shorthand
-                    | UnicodeProperty
-                    | PosixClass
+let CharacterGroupMulti = Range
+                        | Characters
+                        | CodePoint
+                        | NonPrintable
+                        | Shorthand
+                        | UnicodeProperty
+                        | PosixClass;
 
-Range = Character '-' Character
+let Range = Character '-' Character;
 
-Characters = '"' !['"']* '"'
-           | "'" !["'"]* "'"
+let Characters = '"' !['"']* '"'
+               | "'" !["'"]* "'";
 
-Character = '"' !['"'] '"'
-          | "'" !["'"] "'"
-          | CodePoint
-          | NonPrintable
+let Character = '"' !['"'] '"'
+              | "'" !["'"] "'"
+              | CodePoint
+              | NonPrintable;
 
-NonPrintable = 'n' | 'r' | 't' | 'a' | 'e' | 'f'
+let NonPrintable = 'n' | 'r' | 't' | 'a' | 'e' | 'f';
 
-Shorthand = '!'? ('w' | 'word' |
-                  'd' | 'digit' |
-                  's' | 'space' |
-                  'h' | 'horiz_space' |
-                  'v' | 'vert_space' |
-                  'l' | 'line_break')
+let Shorthand = '!'? ('w' | 'word' |
+                      'd' | 'digit' |
+                      's' | 'space' |
+                      'h' | 'horiz_space' |
+                      'v' | 'vert_space' |
+                      'l' | 'line_break');
 
-PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
-           | 'ascii_cntrl' | 'ascii_digit' | 'ascii_graph' | 'ascii_lower'
-           | 'ascii_print' | 'ascii_punct' | 'ascii_space' | 'ascii_upper'
-           | 'ascii_word'  | 'ascii_xdigit'
+let PosixClass = 'ascii_alpha' | 'ascii_alnum' | 'ascii' | 'ascii_blank'
+               | 'ascii_cntrl' | 'ascii_digit' | 'ascii_graph' | 'ascii_lower'
+               | 'ascii_print' | 'ascii_punct' | 'ascii_space' | 'ascii_upper'
+               | 'ascii_word'  | 'ascii_xdigit';
 ```
 
 ### CodePoint
 
 ```rulex
-CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
-          | 'U' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
+let CodePoint = 'U+' ['0'-'9' 'a'-'f' 'A'-'F']{1,6}
+              | 'U' ['0'-'9' 'a'-'f' 'A'-'F']{1,6};
 ```
 
 Note that the second syntax exists mainly to be compatible with Rust tokenization.
@@ -173,24 +178,35 @@ Note that the second syntax exists mainly to be compatible with Rust tokenizatio
 Details about supported Unicode properties can be [found here](unicode-properties.md).
 
 ```rulex
-UnicodeProperty = '!'? [w]+
+let UnicodeProperty = '!'? [w]+;
 ```
 
 ### Grapheme
 
 ```rulex
-Grapheme = 'Grapheme' | 'X'
+let Grapheme = 'Grapheme' | 'X';
 ```
 
 ### Boundary
 
 ```rulex
-Boundary = '%' | '!' '%' | '<%' | '%>'
+let Boundary = '%' | '!' '%' | '<%' | '%>';
 ```
 
 ### NumberRange
 
 ```rulex
-NumberRange = 'range' String '-' String Base?
-Base = 'base' Number
+let NumberRange = 'range' String '-' String Base?;
+let Base = 'base' Number;
 ```
+
+### VariableName
+
+```rulex
+let VariableName = [w]+;
+```
+
+## Note about this grammar
+
+Even though this grammar is written using rulex syntax, it isn't actually accepted by the rulex
+compiler, because it uses cyclic variables.

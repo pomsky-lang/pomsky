@@ -1,0 +1,7 @@
+let x = (enable lazy;
+    'a'+
+);
+
+x 'b'+
+-----
+a+?b+

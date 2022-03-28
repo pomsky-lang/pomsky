@@ -67,6 +67,9 @@ pub enum Token {
     /// `;` (delimits modifiers)
     Semicolon,
 
+    /// `=` (for assignments)
+    Equals,
+
     /// `"Hello"` or `'Hello'` (`Hello`)
     String,
 
@@ -133,6 +136,7 @@ impl core::fmt::Display for Token {
             Token::CloseBracket => "`]`",
             Token::Dot => "`.`",
             Token::Semicolon => "`;`",
+            Token::Equals => "`=`",
             Token::String => "string",
             Token::CodePoint => "code point",
             Token::Number => "number",

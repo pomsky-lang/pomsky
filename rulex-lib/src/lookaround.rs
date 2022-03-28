@@ -21,8 +21,9 @@ impl<'i> Lookaround<'i> {
         &self,
         count: &mut u32,
         map: &'i mut HashMap<String, u32>,
+        within_variable: bool,
     ) -> Result<(), CompileError> {
-        self.rule.get_capturing_groups(count, map)
+        self.rule.get_capturing_groups(count, map, within_variable)
     }
 }
 
@@ -53,10 +54,10 @@ impl<'i> Lookaround<'i> {
         Lookaround { rule, kind, span }
     }
 
-    pub(crate) fn compile(
-        &self,
+    pub(crate) fn compile<'c>(
+        &'c self,
         options: CompileOptions,
-        state: &mut CompileState,
+        state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         if options.flavor == RegexFlavor::Rust {
             return Err(

@@ -1,0 +1,7 @@
+let a = 'hello';
+let b = a a;
+let c = b b;
+
+c c
+-----
+hellohellohellohellohellohellohellohello

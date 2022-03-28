@@ -31,14 +31,15 @@ impl<'i> Repetition<'i> {
         &self,
         count: &mut u32,
         map: &'i mut HashMap<String, u32>,
+        within_variable: bool,
     ) -> Result<(), CompileError> {
-        self.rule.get_capturing_groups(count, map)
+        self.rule.get_capturing_groups(count, map, within_variable)
     }
 
-    pub(crate) fn compile(
-        &self,
+    pub(crate) fn compile<'c>(
+        &'c self,
         options: CompileOptions,
-        state: &mut CompileState,
+        state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         Ok(Regex::Repetition(Box::new(RegexRepetition {
             content: self.rule.comp(options, state)?,

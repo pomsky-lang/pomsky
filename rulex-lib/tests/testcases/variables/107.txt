@@ -1,0 +1,8 @@
+#! expect=error
+let _ = (
+  let a = 'a';
+);
+a
+-----
+Variable doesn't exist
+  at 28..29

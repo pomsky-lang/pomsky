@@ -81,6 +81,8 @@ pub enum ParseErrorKind {
     InvalidNot,
     #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
+    #[error("A variable with the same name already exists in this scope")]
+    LetBindingExists,
     #[error(transparent)]
     CharString(CharStringError),
     #[error(transparent)]

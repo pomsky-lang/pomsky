@@ -10,12 +10,13 @@ use crate::{
     group::Group,
     literal::Literal,
     lookaround::Lookaround,
-    modified::Modified,
     options::{CompileOptions, ParseOptions},
     range::Range,
     reference::Reference,
     repetition::{RegexQuantifier, Repetition},
     span::Span,
+    stmt::StmtExpr,
+    var::Variable,
 };
 
 /// A parsed rulex expression, which might contain more sub-expressions.
@@ -39,12 +40,14 @@ pub enum Rulex<'i> {
     Boundary(Boundary),
     /// A (positive or negative) lookahead or lookbehind.
     Lookaround(Box<Lookaround<'i>>),
+    /// An variable that has been declared before.
+    Variable(Variable<'i>),
     /// A backreference or forward reference.
     Reference(Reference<'i>),
     /// A range of integers
     Range(Range),
     /// An expression preceded by a modifier such as `enable lazy;`
-    Modified(Box<Modified<'i>>),
+    StmtExpr(Box<StmtExpr<'i>>),
 }
 
 impl<'i> Rulex<'i> {
@@ -55,13 +58,15 @@ impl<'i> Rulex<'i> {
     pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
         let mut used_names = HashMap::new();
         let mut groups_count = 0;
-        self.get_capturing_groups(&mut groups_count, &mut used_names)?;
+        self.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
 
         let mut state = CompileState {
             next_idx: 1,
             used_names,
             groups_count,
             default_quantifier: RegexQuantifier::Greedy,
+            variables: vec![],
+            current_vars: Default::default(),
         };
         let compiled = self.comp(options, &mut state)?;
 
@@ -85,9 +90,10 @@ impl<'i> Rulex<'i> {
             Rulex::Repetition(r) => r.span,
             Rulex::Boundary(b) => b.span,
             Rulex::Lookaround(l) => l.span,
+            Rulex::Variable(v) => v.span,
             Rulex::Reference(r) => r.span,
             Rulex::Range(r) => r.span,
-            Rulex::Modified(m) => m.span,
+            Rulex::StmtExpr(m) => m.span,
         }
     }
 
@@ -95,27 +101,29 @@ impl<'i> Rulex<'i> {
         &self,
         count: &mut u32,
         map: &mut HashMap<String, u32>,
+        within_variable: bool,
     ) -> Result<(), CompileError> {
         match self {
             Rulex::Literal(_) => {}
             Rulex::CharClass(_) => {}
             Rulex::Grapheme(_) => {}
-            Rulex::Group(g) => g.get_capturing_groups(count, map)?,
-            Rulex::Alternation(a) => a.get_capturing_groups(count, map)?,
-            Rulex::Repetition(r) => r.get_capturing_groups(count, map)?,
+            Rulex::Group(g) => g.get_capturing_groups(count, map, within_variable)?,
+            Rulex::Alternation(a) => a.get_capturing_groups(count, map, within_variable)?,
+            Rulex::Repetition(r) => r.get_capturing_groups(count, map, within_variable)?,
             Rulex::Boundary(_) => {}
-            Rulex::Lookaround(l) => l.get_capturing_groups(count, map)?,
+            Rulex::Lookaround(l) => l.get_capturing_groups(count, map, within_variable)?,
+            Rulex::Variable(_) => {}
             Rulex::Reference(_) => {}
             Rulex::Range(_) => {}
-            Rulex::Modified(m) => m.get_capturing_groups(count, map)?,
+            Rulex::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
         }
         Ok(())
     }
 
-    pub(crate) fn comp(
-        &self,
+    pub(crate) fn comp<'c>(
+        &'c self,
         options: CompileOptions,
-        state: &mut CompileState,
+        state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         match self {
             Rulex::Literal(l) => l.compile(),
@@ -126,9 +134,10 @@ impl<'i> Rulex<'i> {
             Rulex::Repetition(r) => r.compile(options, state),
             Rulex::Boundary(b) => b.compile(),
             Rulex::Lookaround(l) => l.compile(options, state),
+            Rulex::Variable(v) => v.compile(options, state),
             Rulex::Reference(r) => r.compile(options, state),
             Rulex::Range(r) => r.compile(),
-            Rulex::Modified(m) => m.compile(options, state),
+            Rulex::StmtExpr(m) => m.compile(options, state),
         }
     }
 }
@@ -145,9 +154,10 @@ impl core::fmt::Debug for Rulex<'_> {
             Rulex::Repetition(arg0) => arg0.fmt(f),
             Rulex::Boundary(arg0) => arg0.fmt(f),
             Rulex::Lookaround(arg0) => arg0.fmt(f),
+            Rulex::Variable(arg0) => arg0.fmt(f),
             Rulex::Reference(arg0) => arg0.fmt(f),
             Rulex::Range(arg0) => arg0.fmt(f),
-            Rulex::Modified(arg0) => arg0.fmt(f),
+            Rulex::StmtExpr(arg0) => arg0.fmt(f),
         }
     }
 }

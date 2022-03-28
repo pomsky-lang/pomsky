@@ -13,7 +13,7 @@ hljs.registerLanguage("rulex", function (hljs) {
       },
       {
         className: "keyword",
-        beginKeywords: "greedy lazy range base Grapheme X enable disable %",
+        beginKeywords: "let enable disable greedy lazy range base Grapheme X",
       },
       {
         className: "keyword",

@@ -73,6 +73,15 @@ range '0'-'999'               # 0|[1-9][0-9]{0,2}
 range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
 ```
 
+## Variables
+
+```rulex
+let operator = '+' | '-' | '*' | '/';
+let number = '-'? [digit]+;
+
+number (operator number)*
+```
+
 ## Usage
 
 Read **[the book](https://aloso.github.io/rulex)** to get started, or check out the
@@ -87,13 +96,14 @@ plethora of sigils and backslash escapes that follow no discernible system:
 `(?<=) (?P<>) .?? \N \p{} \k<> \g''` and so on. And with various inconsistencies between regex
 implementations, it's the perfect recipe for confusion.
 
-Rulex solves these problems with a new, simpler syntax:
+Rulex solves these problems with a new, simpler but also more powerful syntax:
 
 - It's not whitespace sensitive and allows comments
 - Text must appear in quotes. This makes expressions longer, but also much easier to read
 - There are no backslash escapes
 - Non-capturing groups are the default
 - More consistent syntax
+- Variables to make expressions DRY
 
 ## Compatibility
 

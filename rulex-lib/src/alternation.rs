@@ -52,17 +52,18 @@ impl<'i> Alternation<'i> {
         &self,
         count: &mut u32,
         map: &'i mut HashMap<String, u32>,
+        within_variable: bool,
     ) -> Result<(), CompileError> {
         for rule in &self.rules {
-            rule.get_capturing_groups(count, map)?;
+            rule.get_capturing_groups(count, map, within_variable)?;
         }
         Ok(())
     }
 
-    pub(crate) fn compile(
-        &self,
+    pub(crate) fn compile<'c>(
+        &'c self,
         options: CompileOptions,
-        state: &mut CompileState,
+        state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         Ok(Regex::Alternation(RegexAlternation {
             parts: self
