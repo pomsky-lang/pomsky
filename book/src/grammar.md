@@ -84,11 +84,9 @@ let LookaroundPrefix = '!'? ('<<' | '>>');
 let RepetitionSuffix = ('*' | '+' | '?' | RepetitionBraces) Quantifier?;
 
 let RepetitionBraces = '{' Number '}'
-                     | '{' Number ',' Number '}'
-                     | '{' Number ',' '}'
-                     | '{' ',' Number '}';
+                     | '{' Number ',' Number? '}';
 
-let Number = '1'-'9' ('0'-'9')*;
+let Number = '0' | '1'-'9' ('0'-'9')*;
 
 let Quantifier = 'greedy' | 'lazy';
 ```
