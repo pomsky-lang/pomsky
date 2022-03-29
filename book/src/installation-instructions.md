@@ -26,7 +26,7 @@ If you want to write a rulex directly in your Rust source code, the
 [rulex-macro](https://crates.io/crates/rulex-macro) got you covered. Add this to your `Cargo.toml`:
 
 ```toml
-rulex-macro = "0.1"
+rulex-macro = "0.3"
 ```
 
 Then you can import and use it with
