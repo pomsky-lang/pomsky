@@ -13,7 +13,7 @@ use crate::{
 /// [Unicode grapheme](https://www.regular-expressions.info/unicode.html#grapheme).
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub struct Grapheme {
+pub(crate) struct Grapheme {
     pub(crate) span: Span,
 }
 

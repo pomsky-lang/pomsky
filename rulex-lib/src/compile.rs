@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{error::CompileError, regex::Regex, repetition::RegexQuantifier, Rulex};
+use crate::{error::CompileError, regex::Regex, repetition::RegexQuantifier, rule::Rule};
 
 pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
 
@@ -11,6 +11,6 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) groups_count: u32,
 
     pub(crate) default_quantifier: RegexQuantifier,
-    pub(crate) variables: Vec<(&'i str, &'c Rulex<'i>)>,
+    pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
     pub(crate) current_vars: HashSet<usize>,
 }

@@ -1,16 +1,18 @@
 use crate::{options::RegexFlavor, span::Span};
 
-use super::{ParseError, ParseErrorKind};
+use super::{Diagnostic, ParseError, ParseErrorKind};
 
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+/// An error that can occur during parsing or compiling
+#[derive(Debug, Clone, thiserror::Error)]
 pub struct CompileError {
     pub(super) kind: CompileErrorKind,
     pub(super) span: Option<Span>,
 }
 
-impl CompileErrorKind {
-    pub(crate) fn at(self, span: Span) -> CompileError {
-        CompileError { kind: self, span: Some(span) }
+impl CompileError {
+    /// Create a [Diagnostic] from this error.
+    pub fn diagnostic(self, source_code: &str) -> Diagnostic {
+        Diagnostic::from_compile_error(self, source_code)
     }
 }
 
@@ -24,9 +26,16 @@ impl core::fmt::Display for CompileError {
     }
 }
 
+impl From<ParseError> for CompileError {
+    fn from(e: ParseError) -> Self {
+        CompileError { kind: CompileErrorKind::ParseError(e.kind), span: e.span }
+    }
+}
+
+/// An error kind (without span) that can occur during parsing or compiling
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum CompileErrorKind {
+pub(crate) enum CompileErrorKind {
     #[error("Parse error: {}", .0)]
     ParseError(ParseErrorKind),
 
@@ -51,9 +60,6 @@ pub enum CompileErrorKind {
     #[error("Compile error: This negated character class matches nothing")]
     EmptyClassNegated,
 
-    #[error("Compile error: `{}` can't be negated within a character class", .0)]
-    UnsupportedNegatedClass(String),
-
     #[error("Capturing groups within `let` statements are currently not supported")]
     CaptureInLet,
 
@@ -70,6 +76,13 @@ pub enum CompileErrorKind {
     Other(&'static str),
 }
 
+impl CompileErrorKind {
+    pub(crate) fn at(self, span: Span) -> CompileError {
+        CompileError { kind: self, span: Some(span) }
+    }
+}
+
+/// Regex feature, possibly unsupported
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Feature {
@@ -99,11 +112,5 @@ impl Feature {
             Feature::NonNegativeRelativeReference => "Non-negative relative backreference",
             Feature::NegativeShorthandW => "Negative `\\w` shorthand in character class",
         }
-    }
-}
-
-impl From<ParseError> for CompileError {
-    fn from(e: ParseError) -> Self {
-        CompileError { kind: CompileErrorKind::ParseError(e.kind), span: e.span }
     }
 }

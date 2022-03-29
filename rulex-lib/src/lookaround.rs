@@ -5,14 +5,14 @@ use crate::{
     error::{CompileError, CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
+    rule::Rule,
     span::Span,
-    Rulex,
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct Lookaround<'i> {
+#[derive(Clone)]
+pub(crate) struct Lookaround<'i> {
     kind: LookaroundKind,
-    rule: Rulex<'i>,
+    rule: Rule<'i>,
     pub(crate) span: Span,
 }
 
@@ -42,7 +42,7 @@ impl core::fmt::Debug for Lookaround<'_> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum LookaroundKind {
+pub(crate) enum LookaroundKind {
     Ahead,
     Behind,
     AheadNegative,
@@ -50,7 +50,7 @@ pub enum LookaroundKind {
 }
 
 impl<'i> Lookaround<'i> {
-    pub fn new(rule: Rulex<'i>, kind: LookaroundKind, span: Span) -> Self {
+    pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { rule, kind, span }
     }
 
@@ -72,7 +72,7 @@ impl<'i> Lookaround<'i> {
     }
 }
 
-pub struct RegexLookaround<'i> {
+pub(crate) struct RegexLookaround<'i> {
     content: Regex<'i>,
     kind: LookaroundKind,
 }

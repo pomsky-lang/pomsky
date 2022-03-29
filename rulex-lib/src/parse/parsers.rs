@@ -26,17 +26,17 @@ use crate::{
     range::Range,
     reference::{Reference, ReferenceTarget},
     repetition::{Quantifier, Repetition, RepetitionError, RepetitionKind},
+    rule::Rule,
     span::Span,
     stmt::{BooleanSetting, Let, Stmt, StmtExpr},
     var::Variable,
-    Rulex,
 };
 
 use super::{Input, Token};
 
 pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
-pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
+pub(crate) fn parse(source: &str) -> Result<Rule<'_>, ParseError> {
     let tokens = super::tokenize::tokenize(source);
     let input = Input::from(source, &tokens)?;
 
@@ -48,7 +48,7 @@ pub(crate) fn parse(source: &str) -> Result<Rulex<'_>, ParseError> {
     }
 }
 
-pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     enum ModifierKind {
         Enable,
         Disable,
@@ -104,7 +104,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 
             let span_end = rule.span();
             for (stmt, span) in stmts.into_iter().rev() {
-                rule = Rulex::StmtExpr(Box::new(StmtExpr::new(stmt, rule, span.join(span_end))));
+                rule = Rule::StmtExpr(Box::new(StmtExpr::new(stmt, rule, span.join(span_end))));
             }
             Ok(rule)
         },
@@ -112,7 +112,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
     )(input)
 }
 
-pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     map(separated_list0(Token::Pipe, parse_sequence), |mut rules| {
         if rules.len() == 1 {
             rules.pop().unwrap()
@@ -122,7 +122,7 @@ pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i
     })(input)
 }
 
-pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     map(many1(parse_fixes), |mut rules| {
         if rules.len() == 1 {
             rules.pop().unwrap()
@@ -130,16 +130,16 @@ pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
             let start = rules.first().map(|f| f.span()).unwrap_or_default();
             let end = rules.last().map(|f| f.span()).unwrap_or_default();
 
-            Rulex::Group(Group::new(rules, None, start.join(end)))
+            Rule::Group(Group::new(rules, None, start.join(end)))
         }
     })(input)
 }
 
-pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     alt((
         map(pair(parse_lookaround, parse_modified), |((kind, span), rule)| {
             let span = span.join(rule.span());
-            Rulex::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
+            Rule::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
         }),
         try_map2(
             pair(parse_atom, many0(parse_repetition)),
@@ -159,7 +159,7 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
 
                     let span = rule.span().join(span);
                     rule =
-                        Rulex::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
+                        Rule::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
                 }
                 Ok(rule)
             },
@@ -252,7 +252,7 @@ pub(super) fn parse_braced_repetition<'i, 'b>(
     )(input)
 }
 
-pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     alt((
         parse_group,
         parse_string,
@@ -261,7 +261,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
         parse_boundary,
         parse_reference,
         map(parse_code_point, |(c, span)| {
-            Rulex::CharClass(CharClass::new(CharGroup::from_char(c), span))
+            Rule::CharClass(CharClass::new(CharGroup::from_char(c), span))
         }),
         parse_range,
         parse_variable,
@@ -270,7 +270,7 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<
     ))(input)
 }
 
-pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     fn parse_capture<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (Capture<'i>, Span)> {
         map(pair(Token::Colon, opt(Token::Identifier)), |((_, span1), name)| {
             (Capture::new(name.map(|(s, _)| s)), span1)
@@ -281,27 +281,27 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
         pair(opt(parse_capture), tuple((Token::OpenParen, parse_modified, cut(Token::CloseParen)))),
         |(capture, (_, rule, (_, close_paren)))| match (capture, rule) {
             (None, rule) => rule,
-            (Some((capture, c_span)), Rulex::Group(mut g)) if !g.is_capturing() => {
+            (Some((capture, c_span)), Rule::Group(mut g)) if !g.is_capturing() => {
                 g.set_capture(capture);
                 g.span = c_span.join(g.span);
-                Rulex::Group(g)
+                Rule::Group(g)
             }
             (Some((capture, c_span)), rule) => {
-                Rulex::Group(Group::new(vec![rule], Some(capture), c_span.join(close_paren)))
+                Rule::Group(Group::new(vec![rule], Some(capture), c_span.join(close_paren)))
             }
         },
     )(input)
 }
 
-pub(super) fn parse_string<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_string<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     try_map(
         Token::String,
-        |(s, span)| Ok(Rulex::Literal(Literal::new(parse_quoted_text(s)?, span))),
+        |(s, span)| Ok(Rule::Literal(Literal::new(parse_quoted_text(s)?, span))),
         nom::Err::Failure,
     )(input)
 }
 
-pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     #[derive(Clone, Copy)]
     enum StringOrChar<'i> {
         String(&'i str),
@@ -404,7 +404,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             if not.is_some() {
                 class.negate();
             }
-            Rulex::CharClass(class)
+            Rule::CharClass(class)
         },
     )(input)
 }
@@ -446,7 +446,7 @@ pub(super) fn parse_code_point<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     ))(input)
 }
 
-pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     fn parse_base<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (u8, Span)> {
         preceded(
             "base",
@@ -511,13 +511,13 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex
         ),
         |((_, span), mut range)| {
             range.span = range.span.join(span);
-            Rulex::Range(range)
+            Rule::Range(range)
         },
     )(input)
 }
 
-pub(super) fn parse_variable<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(Token::Identifier, |(name, span)| Rulex::Variable(Variable::new(name, span)))(input)
+pub(super) fn parse_variable<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
+    map(Token::Identifier, |(name, span)| Rule::Variable(Variable::new(name, span)))(input)
 }
 
 pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
@@ -538,11 +538,11 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
     )(input)
 }
 
-pub(super) fn parse_grapheme<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
-    map(alt(("Grapheme", "X")), |(_, span)| Rulex::Grapheme(Grapheme { span }))(input)
+pub(super) fn parse_grapheme<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
+    map(alt(("Grapheme", "X")), |(_, span)| Rule::Grapheme(Grapheme { span }))(input)
 }
 
-pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     map(
         alt((
             map(Token::BStart, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
@@ -552,11 +552,11 @@ pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                 Boundary::new(BoundaryKind::NotWord, span1.join(span2))
             }),
         )),
-        Rulex::Boundary,
+        Rule::Boundary,
     )(input)
 }
 
-pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rulex<'i>> {
+pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     preceded(
         Token::Backref,
         alt((
@@ -564,20 +564,20 @@ pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, R
                 Token::Number,
                 |(s, span)| {
                     let target = ReferenceTarget::Number(from_str(s)?);
-                    Ok(Rulex::Reference(Reference::new(target, span)))
+                    Ok(Rule::Reference(Reference::new(target, span)))
                 },
                 nom::Err::Failure,
             ),
             map(Token::Identifier, |(s, span)| {
                 let target = ReferenceTarget::Named(s);
-                Rulex::Reference(Reference::new(target, span))
+                Rule::Reference(Reference::new(target, span))
             }),
             try_map(
                 pair(alt((Token::Plus, Token::Dash)), Token::Number),
                 |((sign, span1), (s, span2))| {
                     let num = if sign == "-" { from_str(&format!("-{s}")) } else { from_str(s) }?;
                     let target = ReferenceTarget::Relative(num);
-                    Ok(Rulex::Reference(Reference::new(target, span1.join(span2))))
+                    Ok(Rule::Reference(Reference::new(target, span1.join(span2))))
                 },
                 nom::Err::Failure,
             ),

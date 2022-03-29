@@ -6,19 +6,19 @@ use crate::{
     span::Span,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+use super::Diagnostic;
+
+/// An error than can occur only during parsing
+#[derive(Debug, Clone)]
 pub struct ParseError {
     pub(super) kind: ParseErrorKind,
     pub(super) span: Option<Span>,
 }
 
-impl ParseErrorKind {
-    pub(crate) fn at(self, span: Span) -> ParseError {
-        ParseError { kind: self, span: Some(span) }
-    }
-
-    pub(crate) fn unknown_index(self) -> ParseError {
-        ParseError { kind: self, span: None }
+impl ParseError {
+    /// Create a [Diagnostic] from this error.
+    pub fn diagnostic(self, source_code: &str) -> Diagnostic {
+        Diagnostic::from_parse_error(self, source_code)
     }
 }
 
@@ -41,12 +41,6 @@ impl From<nom::Err<ParseError>> for ParseError {
     }
 }
 
-impl From<RepetitionError> for ParseErrorKind {
-    fn from(e: RepetitionError) -> Self {
-        ParseErrorKind::Repetition(e)
-    }
-}
-
 impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
     fn from_error_kind(i: Input<'i, 'b>, kind: nom::error::ErrorKind) -> Self {
         ParseErrorKind::Nom(kind).at(i.span())
@@ -57,9 +51,10 @@ impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
     }
 }
 
+/// An error kind (without a span) than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum ParseErrorKind {
+pub(crate) enum ParseErrorKind {
     #[error("Unknown token")]
     UnknownToken,
     #[error(transparent)]
@@ -75,10 +70,6 @@ pub enum ParseErrorKind {
     ExpectedToken(Token),
     #[error("Expected code point or character")]
     ExpectedCodePointOrChar,
-    #[error("Expected on of: {}", ListWithoutBrackets(.0))]
-    ExpectedOneOf(Box<[Token]>),
-    #[error("This token can't be negated")]
-    InvalidNot,
     #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
     #[error("A variable with the same name already exists in this scope")]
@@ -102,6 +93,23 @@ pub enum ParseErrorKind {
     Incomplete,
 }
 
+impl ParseErrorKind {
+    pub(crate) fn at(self, span: Span) -> ParseError {
+        ParseError { kind: self, span: Some(span) }
+    }
+
+    pub(crate) fn unknown_index(self) -> ParseError {
+        ParseError { kind: self, span: None }
+    }
+}
+
+impl From<RepetitionError> for ParseErrorKind {
+    fn from(e: RepetitionError) -> Self {
+        ParseErrorKind::Repetition(e)
+    }
+}
+
+/// An error that relates to a character string
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CharStringError {
@@ -111,6 +119,7 @@ pub enum CharStringError {
     TooManyCodePoints,
 }
 
+/// An error that relates to a character class
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CharClassError {
@@ -137,6 +146,7 @@ pub enum CharClassError {
     Keyword(String),
 }
 
+/// An error that relates to a Unicode code point
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CodePointError {
@@ -146,6 +156,7 @@ pub enum CodePointError {
     InvalidRange,
 }
 
+/// An error that relates to a number
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum NumberError {

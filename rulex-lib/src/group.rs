@@ -5,23 +5,23 @@ use crate::{
     error::{CompileError, CompileErrorKind},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
+    rule::Rule,
     span::Span,
-    Rulex,
 };
 
 /// A group, i.e. sequence of rules. A group is either capturing or non-capturing.
 ///
 /// If it is capturing, it must be wrapped in parentheses, and can have a name.
 /// If it is non-capturing, the parentheses can be omitted in same cases.
-#[derive(Clone, PartialEq, Eq)]
-pub struct Group<'i> {
-    parts: Vec<Rulex<'i>>,
+#[derive(Clone)]
+pub(crate) struct Group<'i> {
+    parts: Vec<Rule<'i>>,
     capture: Option<Capture<'i>>,
     pub(crate) span: Span,
 }
 
 impl<'i> Group<'i> {
-    pub(crate) fn new(parts: Vec<Rulex<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
+    pub(crate) fn new(parts: Vec<Rule<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
         Group { parts, capture, span }
     }
 
@@ -115,7 +115,7 @@ impl core::fmt::Debug for Group<'_> {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub struct Capture<'i> {
+pub(crate) struct Capture<'i> {
     pub(crate) name: Option<&'i str>,
 }
 

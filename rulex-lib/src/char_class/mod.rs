@@ -121,7 +121,7 @@ pub(crate) mod unicode;
 
 /// A _character class_. Refer to the [module-level documentation](self) for details.
 #[derive(Clone, PartialEq, Eq)]
-pub struct CharClass {
+pub(crate) struct CharClass {
     negative: bool,
     inner: CharGroup,
     pub(crate) span: Span,
@@ -133,7 +133,7 @@ impl CharClass {
     }
 
     /// Makes a positive character class negative and vice versa.
-    pub fn negate(&mut self) {
+    pub(crate) fn negate(&mut self) {
         self.negative = !self.negative;
     }
 

@@ -5,4 +5,4 @@ mod tokenize;
 
 pub(crate) use input::Input;
 pub(crate) use parsers::parse;
-pub use token::{ParseErrorMsg, Token};
+pub(crate) use token::{ParseErrorMsg, Token};

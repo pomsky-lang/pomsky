@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Range {
+pub(crate) struct Range {
     start: Vec<u8>,
     end: Vec<u8>,
     radix: u8,

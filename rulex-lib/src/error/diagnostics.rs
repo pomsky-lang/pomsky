@@ -5,6 +5,8 @@ use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErro
 #[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]
 #[cfg_attr(feature = "miette", error("{}", .msg))]
 #[non_exhaustive]
+/// A struct containing detailed information about an error, which can be displayed beautifully
+/// with [miette](https://docs.rs/miette/latest/miette/).
 pub struct Diagnostic {
     pub msg: String,
     pub code: Option<String>,
@@ -45,6 +47,7 @@ impl miette::Diagnostic for Diagnostic {
 }
 
 impl Diagnostic {
+    /// Create a `Diagnostic` from a [`ParseError`]
     pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
         let range = error.span.map(Span::range).unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
@@ -84,6 +87,7 @@ impl Diagnostic {
         }
     }
 
+    /// Create a `Diagnostic` from a [`CompileError`]
     pub fn from_compile_error(
         CompileError { kind, span }: CompileError,
         source_code: &str,

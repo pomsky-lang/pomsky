@@ -5,38 +5,38 @@ use crate::{
     error::CompileError,
     options::CompileOptions,
     repetition::RegexQuantifier,
+    rule::Rule,
     span::Span,
-    Rulex,
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct StmtExpr<'i> {
+#[derive(Clone)]
+pub(crate) struct StmtExpr<'i> {
     stmt: Stmt<'i>,
-    rule: Rulex<'i>,
+    rule: Rule<'i>,
     pub(crate) span: Span,
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum Stmt<'i> {
+#[derive(Clone)]
+pub(crate) enum Stmt<'i> {
     Enable(BooleanSetting),
     Disable(BooleanSetting),
     Let(Let<'i>),
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum BooleanSetting {
+pub(crate) enum BooleanSetting {
     Lazy,
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct Let<'i> {
+#[derive(Clone)]
+pub(crate) struct Let<'i> {
     name: &'i str,
-    rule: Rulex<'i>,
+    rule: Rule<'i>,
     pub(crate) name_span: Span,
 }
 
 impl<'i> Let<'i> {
-    pub(crate) fn new(name: &'i str, rule: Rulex<'i>, name_span: Span) -> Self {
+    pub(crate) fn new(name: &'i str, rule: Rule<'i>, name_span: Span) -> Self {
         Self { name, rule, name_span }
     }
 
@@ -46,7 +46,7 @@ impl<'i> Let<'i> {
 }
 
 impl<'i> StmtExpr<'i> {
-    pub(crate) fn new(stmt: Stmt<'i>, rule: Rulex<'i>, span: Span) -> Self {
+    pub(crate) fn new(stmt: Stmt<'i>, rule: Rule<'i>, span: Span) -> Self {
         Self { stmt, rule, span }
     }
 

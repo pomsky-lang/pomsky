@@ -9,8 +9,8 @@ use crate::{
     literal::Literal,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
+    rule::Rule,
     span::Span,
-    Rulex,
 };
 
 /// An [alternation](https://www.regular-expressions.info/alternation.html). This is a list of
@@ -19,33 +19,33 @@ use crate::{
 /// If an alternative consists of multiple expressions (e.g. `'a' | 'b' 'c'`), that alternative is
 /// a [`Rulex::Group`]. Note that a group's parentheses are removed when compiling to a regex if
 /// they aren't required. In other words, `'a' | ('b' 'c')` compiles to `a|bc`.
-#[derive(Clone, PartialEq, Eq)]
-pub struct Alternation<'i> {
-    rules: Vec<Rulex<'i>>,
+#[derive(Clone)]
+pub(crate) struct Alternation<'i> {
+    rules: Vec<Rule<'i>>,
     pub(crate) span: Span,
 }
 
 impl<'i> Alternation<'i> {
-    pub(crate) fn new_rulex(rules: Vec<Rulex<'i>>) -> Rulex<'i> {
+    pub(crate) fn new_rulex(rules: Vec<Rule<'i>>) -> Rule<'i> {
         rules
             .into_iter()
             .reduce(|a, b| match (a, b) {
-                (Rulex::Alternation(mut a), Rulex::Alternation(b)) => {
+                (Rule::Alternation(mut a), Rule::Alternation(b)) => {
                     a.span = a.span.join(b.span);
                     a.rules.extend(b.rules);
-                    Rulex::Alternation(a)
+                    Rule::Alternation(a)
                 }
-                (Rulex::Alternation(mut a), b) => {
+                (Rule::Alternation(mut a), b) => {
                     a.span = a.span.join(b.span());
                     a.rules.push(b);
-                    Rulex::Alternation(a)
+                    Rule::Alternation(a)
                 }
                 (a, b) => {
                     let span = a.span().join(b.span());
-                    Rulex::Alternation(Alternation { rules: vec![a, b], span })
+                    Rule::Alternation(Alternation { rules: vec![a, b], span })
                 }
             })
-            .unwrap_or_else(|| Rulex::Literal(Literal::new(Cow::Borrowed(""), Span::default())))
+            .unwrap_or_else(|| Rule::Literal(Literal::new(Cow::Borrowed(""), Span::default())))
     }
 
     pub(crate) fn get_capturing_groups(

@@ -6,13 +6,13 @@ use crate::{
     group::{RegexCapture, RegexGroup},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
+    rule::Rule,
     span::Span,
-    Rulex,
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct Repetition<'i> {
-    rule: Rulex<'i>,
+#[derive(Clone)]
+pub(crate) struct Repetition<'i> {
+    rule: Rule<'i>,
     kind: RepetitionKind,
     quantifier: Quantifier,
     pub(crate) span: Span,
@@ -20,7 +20,7 @@ pub struct Repetition<'i> {
 
 impl<'i> Repetition<'i> {
     pub(crate) fn new(
-        rule: Rulex<'i>,
+        rule: Rule<'i>,
         kind: RepetitionKind,
         quantifier: Quantifier,
         span: Span,
@@ -45,7 +45,7 @@ impl<'i> Repetition<'i> {
         let mut content = self.rule.comp(options, state)?;
 
         if let RepetitionKind { lower_bound: 0, upper_bound: Some(1) } = self.kind {
-            if let Rulex::Repetition(_) = &self.rule {
+            if let Rule::Repetition(_) = &self.rule {
                 content =
                     Regex::Group(RegexGroup::new(vec![content], RegexCapture::NoneWithParens));
             }
@@ -85,7 +85,7 @@ impl core::fmt::Debug for Repetition<'_> {
 #[derive(Clone, PartialEq, Eq, Copy)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[non_exhaustive]
-pub enum Quantifier {
+pub(crate) enum Quantifier {
     Greedy,
     Lazy,
     Default,
@@ -100,7 +100,7 @@ pub enum Quantifier {
 ///  * `'x'*` is equivalent to `'x'{0,}`
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub struct RepetitionKind {
+pub(crate) struct RepetitionKind {
     /// The lower bound, e.g. `{4,}`
     lower_bound: u32,
 
@@ -153,7 +153,7 @@ pub(crate) struct RegexRepetition<'i> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum RegexQuantifier {
+pub(crate) enum RegexQuantifier {
     Greedy,
     Lazy,
 }

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Variable<'i> {
+pub(crate) struct Variable<'i> {
     name: &'i str,
     pub(crate) span: Span,
 }

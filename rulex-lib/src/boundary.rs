@@ -10,7 +10,7 @@ use crate::{compile::CompileResult, regex::Regex, span::Span};
 ///
 /// All boundaries use a variation of the `%` sigil, so they are easy to remember.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Boundary {
+pub(crate) struct Boundary {
     kind: BoundaryKind,
     pub(crate) span: Span,
 }
@@ -40,7 +40,7 @@ impl core::fmt::Debug for Boundary {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum BoundaryKind {
+pub(crate) enum BoundaryKind {
     /// `<%`, the start of the string (or start of line in single-line mode)
     Start,
     /// `%`, a word boundary

@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Reference<'i> {
+pub(crate) struct Reference<'i> {
     pub(crate) target: ReferenceTarget<'i>,
     pub(crate) span: Span,
 }

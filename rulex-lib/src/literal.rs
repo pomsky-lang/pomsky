@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::{compile::CompileResult, options::RegexFlavor, regex::Regex, span::Span};
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Literal<'i> {
+pub(crate) struct Literal<'i> {
     content: Cow<'i, str>,
     pub(crate) span: Span,
 }
