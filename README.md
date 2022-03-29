@@ -100,9 +100,8 @@ Rulex solves these problems with a new, simpler but also more powerful syntax:
 
 - It's not whitespace sensitive and allows comments
 - Text must appear in quotes. This makes expressions longer, but also much easier to read
-- There are no backslash escapes
 - Non-capturing groups are the default
-- More consistent syntax
+- More intuitive, consistent syntax
 - Variables to make expressions DRY
 
 ## Compatibility
