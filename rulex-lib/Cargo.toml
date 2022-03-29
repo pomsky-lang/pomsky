@@ -11,6 +11,7 @@ documentation = "https://docs.rs/rulex"
 readme = "../README.md"
 keywords = ["regexp", "regex", "syntax", "parser", "rulex"]
 categories = ["text-processing", "parser-implementations"]
+exclude = ["tests/**"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
