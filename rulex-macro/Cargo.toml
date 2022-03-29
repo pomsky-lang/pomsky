@@ -1,7 +1,7 @@
 [package]
 name = "rulex-macro"
 description = "Macro for converting rulex expressions to regexes"
-version = "0.1.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
@@ -19,4 +19,4 @@ default = []
 diagnostics = []
 
 [dependencies]
-rulex = { version = "0.2.0", path = "../rulex-lib" }
+rulex = { version = "0.3.0", path = "../rulex-lib" }
