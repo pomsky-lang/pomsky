@@ -26,7 +26,7 @@ const CLASSES: &str = r#"
 "#;
 
 const REPETITIONS: &str = r#"
-[w]{4}{3}{7,}{1,2}? [w]+ greedy [w]* lazy{500}
+[w]{4}{3}{7,}{1,2}* [w]+ greedy [w]* lazy{500}
 "#;
 
 const SPECIAL: &str = r#"
