@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A [**book**](https://aloso.github.io/rulex/), with instructions, a language tour and a formal
+- A [**book**](https://rulex-rs.github.io/), with instructions, a language tour and a formal
   grammar!
 
 - **Variables**! For example, `let x = 'test';` declares a variable `x` that can be used below. Read
-  [this chapter](https://aloso.github.io/rulex/language-tour/variables.html) from the book to find
+  [this chapter](https://rulex-rs.github.io/docs/language-tour/variables) from the book to find
   out more.
 
 - **Number range expressions**! For example, `range '0'-'255'` generates this regex:
@@ -88,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[unreleased]: https://github.com/Aloso/rulex/compare/v0.3...HEAD
-[0.3.0]: https://github.com/Aloso/rulex/compare/v0.2...v0.3
-[0.2.0]: https://github.com/Aloso/rulex/compare/v0.1...v0.2
-[0.1.0]: https://github.com/Aloso/rulex/releases/tag/v0.1
+[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.3...HEAD
+[0.3.0]: https://github.com/rulex-rs/rulex/compare/v0.2...v0.3
+[0.2.0]: https://github.com/rulex-rs/rulex/compare/v0.1...v0.2
+[0.1.0]: https://github.com/rulex-rs/rulex/releases/tag/v0.1

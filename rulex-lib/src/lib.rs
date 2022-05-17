@@ -1,6 +1,6 @@
 //! # rulex
 //!
-//! To learn about the _rulex language_, please read [the book](https://aloso.github.io/rulex).
+//! To learn about the _rulex language_, please read [the book](https://rulex-rs.github.io/rulex).
 //!
 //! The _rulex macro_ can be [found here](https://docs.rs/rulex-macro/latest/rulex_macro/).
 //!

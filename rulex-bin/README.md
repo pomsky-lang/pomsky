@@ -5,7 +5,7 @@ This CLI allows you to compile [rulex expressions](../README.md) to regexes in t
 ## Use pre-built binaries
 
 Binaries are available for Windows, Linux and macOS. Download them from the
-[releases page](https://github.com/Aloso/rulex/releases).
+[releases page](https://github.com/rulex-rs/rulex/releases).
 
 ## Install from source
 

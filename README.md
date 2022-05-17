@@ -6,7 +6,7 @@
 
 A new, portable, regular expression language
 
-Read **[the book](https://aloso.github.io/rulex)** to get started!
+Read **[the book](https://rulex-rs.github.io/docs/)** to get started!
 
 </div>
 
@@ -84,7 +84,7 @@ number (operator number)*
 
 ## Usage
 
-Read **[the book](https://aloso.github.io/rulex)** to get started, or check out the
+Read **[the book](https://rulex-rs.github.io/docs)** to get started, or check out the
 [CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
 [procedural macro](./rulex-macro/).
 
