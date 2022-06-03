@@ -12,8 +12,8 @@
 //! use rulex::Rulex;
 //! use rulex::options::{CompileOptions, RegexFlavor};
 //!
-//! let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
-//! let regex: String = match Rulex::parse_and_compile("'test'", options) {
+//! let options = CompileOptions { flavor: RegexFlavor::Java };
+//! let regex: String = match Rulex::parse_and_compile("'test'", Default::default(), options) {
 //!     Ok(regex) => regex,
 //!     Err(_) => {
 //!         eprintln!("The input is not a valid rulex");
@@ -31,8 +31,8 @@
 //! use rulex::error::Diagnostic;
 //!
 //! pub fn compile(input: &str) -> miette::Result<String> {
-//!     let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
-//!     let compiled: String = Rulex::parse_and_compile(input, options)
+//!     let options = CompileOptions { flavor: RegexFlavor::Java };
+//!     let compiled: String = Rulex::parse_and_compile(input, Default::default(), options)
 //!         .map_err(|e| e.diagnostic(input))?;
 //!     Ok(compiled)
 //! }
