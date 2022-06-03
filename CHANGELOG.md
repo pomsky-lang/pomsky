@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-06-03
+
+The repository was moved to its own organization! 🎉 It also has a new website with an
+[online playground](https://rulex-rs.github.io/playground/)!
+
+### Added
+
+- API to selectively disable some language features
+
+- [Online playground](https://rulex-rs.github.io/playground/) to try out rulex. You can write
+  rulex expressions on the left and immediately see the output on the right.
+
+### Changed
+
+- Ranges now have a maximum number of digits. The default is 6, but can be configured.
+
+  This prevents DoS attacks when compiling untrusted input, since compiling ranges has exponential
+  runtime with regard to the number of digits.
+
+- `ParseOptions` was moved out of `CompileOptions`. This means that the
+  [`parse_and_compile`](https://docs.rs/rulex/latest/rulex/struct.Rulex.html#method.parse_and_compile)
+  method now expects three parameters instead of two.
+
+### Fixed
+
+- Fixed a miscompilation in situations where a variable followed by a `?` expands to a repetition
+
 ## [0.3.0] - 2022-03-29
 
 ### Added
@@ -88,7 +115,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.3...HEAD
+[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4...HEAD
+[0.4.0]: https://github.com/rulex-rs/rulex/compare/v0.3...v0.4
 [0.3.0]: https://github.com/rulex-rs/rulex/compare/v0.2...v0.3
 [0.2.0]: https://github.com/rulex-rs/rulex/compare/v0.1...v0.2
 [0.1.0]: https://github.com/rulex-rs/rulex/releases/tag/v0.1
