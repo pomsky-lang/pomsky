@@ -127,8 +127,7 @@ impl<'i> Regex<'i> {
         match self {
             Regex::Literal(l) => literal::needs_parens_before_repetition(l.borrow()),
             Regex::Group(g) => g.needs_parens_before_repetition(),
-            Regex::Repetition(r) => r.is_zero_one(),
-            Regex::Alternation(_) => true,
+            Regex::Repetition(_) | Regex::Alternation(_) => true,
             Regex::CharClass(_)
             | Regex::Char(_)
             | Regex::Grapheme
