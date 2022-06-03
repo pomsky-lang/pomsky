@@ -114,12 +114,12 @@ fn rulex_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error> 
         }
     };
 
-    let options = CompileOptions { flavor, ..Default::default() };
+    let input = input.trim_start_matches("/*«*/").trim_end_matches("/*»*/");
 
-    match Rulex::parse_and_compile(&input, options) {
+    match Rulex::parse_and_compile(input, Default::default(), CompileOptions { flavor }) {
         Ok(compiled) => Ok(Literal::string(&compiled)),
 
-        Err(e) => bail!(diagnostic::fmt(Diagnostic::from_compile_error(e, &input), group), span),
+        Err(e) => bail!(diagnostic::fmt(Diagnostic::from_compile_error(e, input), group), span),
     }
 }
 

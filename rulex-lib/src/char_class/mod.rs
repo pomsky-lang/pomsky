@@ -6,9 +6,9 @@
 //! [POSIX classes](https://www.regular-expressions.info/posixbrackets.html#class) and the
 //! [dot](https://www.regular-expressions.info/dot.html).
 //!
-//! All kinds of character classes mentioned above require `[` square brackets `]` in rulex.
-//! A character class can be negated by putting the keyword `not` after the opening bracket. For
-//! example, `![.]` compiles to `\n`.
+//! All kinds of character classes mentioned above require `[` square brackets
+//! `]` in rulex. A character class can be negated by putting the keyword `not`
+//! after the opening bracket. For example, `![.]` compiles to `\n`.
 //!
 //! ## Items
 //!
@@ -16,12 +16,11 @@
 //!
 //! - A __code point__, e.g. `['a']` or `[U+107]`
 //!
-//!   - This includes
-//!     [non-printable characters](https://www.regular-expressions.info/nonprint.html).\
+//!   - This includes [non-printable characters](https://www.regular-expressions.info/nonprint.html).\
 //!     Supported are `[n]`, `[r]`, `[t]`, `[a]`, `[e]` and `[f]`.
 //!
-//! - A __range of code points__. For example, `[U+10 - U+200]` matches any code point P where
-//!   `U+10 ≤ P ≤ U+200`
+//! - A __range of code points__. For example, `[U+10 - U+200]` matches any code
+//!   point P where `U+10 ≤ P ≤ U+200`
 //!
 //! - A __named character class__, which can be one of
 //!
@@ -29,35 +28,38 @@
 //!     Supported are `[w]`, `[d]`, `[s]`, `[h]`, `[v]` and `[R]`.
 //!
 //!   - a [POSIX class](https://www.regular-expressions.info/posixbrackets.html#class).\
-//!     Supported are `[ascii_alnum]`, `[ascii_alpha]`, `[ascii]`, `[ascii_blank]`, `[ascii_cntrl]`,
-//!     `[ascii_digit]`, `[ascii_graph]`, `[ascii_lower]`, `[ascii_print]`, `[ascii_punct]`, ´
-//!     `[ascii_space]`, `[ascii_upper]`, `[ascii_word]` and `[ascii_xdigit]`.\
-//!     _Note_: POSIX classes are not Unicode aware!\
-//!     _Note_: They're converted to ranges, e.g. `[ascii_alpha]` = `[a-zA-Z]`.
+//!     Supported are `[ascii_alnum]`, `[ascii_alpha]`, `[ascii]`,
+//!     `[ascii_blank]`, `[ascii_cntrl]`, `[ascii_digit]`, `[ascii_graph]`,
+//!     `[ascii_lower]`, `[ascii_print]`, `[ascii_punct]`, ´ `[ascii_space]`,
+//!     `[ascii_upper]`, `[ascii_word]` and `[ascii_xdigit]`.\ _Note_: POSIX
+//!     classes are not Unicode aware!\ _Note_: They're converted to ranges,
+//!     e.g. `[ascii_alpha]` = `[a-zA-Z]`.
 //!
 //!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
-//!     For example: `[Letter]` compiles to `\p{Letter}`. Rulex currently treats any uppercase
-//!     identifier except `R` as Unicode class.
+//!     For example: `[Letter]` compiles to `\p{Letter}`. Rulex currently treats
+//!     any uppercase identifier except `R` as Unicode class.
 //!
 //! ### "Special" items
 //!
 //! There are also three special variants:
 //!
 //! - `[cp]` or `[codepoint]`, matching a code point
-//! - `[.]` (the [dot](https://www.regular-expressions.info/dot.html)), matching any code point
-//!   except the ASCII line break (`\n`)
+//! - `[.]` (the [dot](https://www.regular-expressions.info/dot.html)), matching
+//!   any code point except the ASCII line break (`\n`)
 //!
-//! A character class containing `cp` or `.` can't contain anything else. Note that:
+//! A character class containing `cp` or `.` can't contain anything else. Note
+//! that:
 //!
 //! - combining `[cp]` with anything else would be equivalent to `[cp]`
-//! - combining `[.]` with anything other than `[cp]` or `[n]` would be equivalent to `[.]`
+//! - combining `[.]` with anything other than `[cp]` or `[n]` would be
+//!   equivalent to `[.]`
 //!
 //! They also require special treatment when negating them (see below).
 //!
 //! ## Compilation
 //!
-//! When a character class contains only a single item (e.g. `[w]`), the character class is
-//! "flattened":
+//! When a character class contains only a single item (e.g. `[w]`), the
+//! character class is "flattened":
 //!
 //! - `['a']` = `a`
 //! - `[w]` = `\w`
@@ -66,8 +68,8 @@
 //!
 //! The exception is `[cp]`, which compiles to `[\S\s]`.
 //!
-//! When there is more than one item or a range (e.g. `['a'-'z' '!']`), a regex character class is
-//! created:
+//! When there is more than one item or a range (e.g. `['a'-'z' '!']`), a regex
+//! character class is created:
 //!
 //! - `['a'-'z' '!']` = `[a-z!]`
 //! - `[w e Punctuation]` = `[\w\e\p{Punctuation}]`
@@ -76,26 +78,29 @@
 //!
 //! Negation is implemented as follows:
 //!
-//! - Ranges and chars such as `!['a'-'z' '!' e]` are wrapped in a negative character class,
-//!   e.g. `[^a-z!\e]`.
+//! - Ranges and chars such as `!['a'-'z' '!' e]` are wrapped in a negative
+//!   character class, e.g. `[^a-z!\e]`.
 //!
-//! - The `h`, `v` and `R` shorthands are also wrapped in a negative character class.
+//! - The `h`, `v` and `R` shorthands are also wrapped in a negative character
+//!   class.
 //!
-//! - The `w`, `d` and `s` shorthands are negated by making them uppercase (`![w]` = `\W`),
-//!   except when there is more than one item in the class (`![w '-']` = `[^\w\-]`)
+//! - The `w`, `d` and `s` shorthands are negated by making them uppercase
+//!   (`![w]` = `\W`), except when there is more than one item in the class
+//!   (`![w '-']` = `[^\w\-]`)
 //!
 //! - Special classes:
 //!   - `![.]` = `\n`
-//!   - `![cp]` is an error, as this would result in an empty group, which is only allowed in
-//!     JavaScript; instead we could return `[^\S\s]`, but this doesn't have a use case, since it
-//!     matches nothing (it always fails).
+//!   - `![cp]` is an error, as this would result in an empty group, which is
+//!     only allowed in JavaScript; instead we could return `[^\S\s]`, but this
+//!     doesn't have a use case, since it matches nothing (it always fails).
 //!
-//! - `w`, `s`, `d` and Unicode categories/scripts/blocks can be negated individually _within a
-//!   character class_, e.g. `[s !s]` = `[\s\S]` (equivalent to `[cp]`),
-//!   `![!Latin 'a']` = `[^\P{Latin}a]`.
+//! - `w`, `s`, `d` and Unicode categories/scripts/blocks can be negated
+//!   individually _within a character class_, e.g. `[s !s]` = `[\s\S]`
+//!   (equivalent to `[cp]`), `![!Latin 'a']` = `[^\P{Latin}a]`.
 //!
-//!   When a negated character class only contains 1 item, which is also negated, the class is
-//!   removed and the negations cancel each other out: `![!w]` = `\w`, `![!L]` = `\p{L}`.
+//!   When a negated character class only contains 1 item, which is also
+//! negated, the class is   removed and the negations cancel each other out:
+//! `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use std::borrow::Cow;
 
@@ -119,7 +124,8 @@ mod ascii;
 pub(crate) mod char_group;
 pub(crate) mod unicode;
 
-/// A _character class_. Refer to the [module-level documentation](self) for details.
+/// A _character class_. Refer to the [module-level documentation](self) for
+/// details.
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) struct CharClass {
     negative: bool,
@@ -209,7 +215,8 @@ impl CharClass {
 
 /// Compiles a shorthand character class or Unicode category/script/block.
 ///
-/// Refer to the [module-level documentation](self) for details about named character classes.
+/// Refer to the [module-level documentation](self) for details about named
+/// character classes.
 fn named_class_to_regex(
     group: GroupName,
     negative: bool,

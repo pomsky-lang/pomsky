@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, Feature},
-    options::{CompileOptions, RegexFlavor},
+    error::{CompileError, CompileErrorKind, Feature, ParseError},
+    features::RulexFeatures,
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
     rule::Rule,
     span::Span,
@@ -14,17 +15,6 @@ pub(crate) struct Lookaround<'i> {
     kind: LookaroundKind,
     rule: Rule<'i>,
     pub(crate) span: Span,
-}
-
-impl<'i> Lookaround<'i> {
-    pub(crate) fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &'i mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        self.rule.get_capturing_groups(count, map, within_variable)
-    }
 }
 
 #[cfg(feature = "dbg")]
@@ -50,6 +40,15 @@ pub(crate) enum LookaroundKind {
 }
 
 impl<'i> Lookaround<'i> {
+    pub(crate) fn get_capturing_groups(
+        &self,
+        count: &mut u32,
+        map: &'i mut HashMap<String, u32>,
+        within_variable: bool,
+    ) -> Result<(), CompileError> {
+        self.rule.get_capturing_groups(count, map, within_variable)
+    }
+
     pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { rule, kind, span }
     }
@@ -69,6 +68,16 @@ impl<'i> Lookaround<'i> {
             content: self.rule.comp(options, state)?,
             kind: self.kind,
         })))
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        let feature = match self.kind {
+            LookaroundKind::Ahead => RulexFeatures::LOOKAHEAD,
+            LookaroundKind::Behind => RulexFeatures::LOOKBEHIND,
+            LookaroundKind::AheadNegative => RulexFeatures::LOOKAHEAD,
+            LookaroundKind::BehindNegative => RulexFeatures::LOOKBEHIND,
+        };
+        options.allowed_features.require(feature, self.span)
     }
 }
 

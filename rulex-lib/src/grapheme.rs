@@ -3,8 +3,9 @@
 
 use crate::{
     compile::CompileResult,
-    error::{CompileErrorKind, Feature},
-    options::{CompileOptions, RegexFlavor},
+    error::{CompileErrorKind, Feature, ParseError},
+    features::RulexFeatures,
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
     span::Span,
 };
@@ -25,5 +26,10 @@ impl Grapheme {
             );
         }
         Ok(Regex::Grapheme)
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        options.allowed_features.require(RulexFeatures::GRAPHEME, self.span)?;
+        Ok(())
     }
 }

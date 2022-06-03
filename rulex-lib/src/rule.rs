@@ -5,12 +5,12 @@ use crate::{
     boundary::Boundary,
     char_class::CharClass,
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind},
+    error::{CompileError, CompileErrorKind, ParseError},
     grapheme::Grapheme,
     group::Group,
     literal::Literal,
     lookaround::Lookaround,
-    options::CompileOptions,
+    options::{CompileOptions, ParseOptions},
     range::Range,
     reference::Reference,
     repetition::Repetition,
@@ -31,10 +31,12 @@ pub(crate) enum Rule<'i> {
     Grapheme(Grapheme),
     /// A group, i.e. a sequence of rules, possibly wrapped in parentheses.
     Group(Group<'i>),
-    /// An alternation, i.e. a list of alternatives; at least one of them has to match.
+    /// An alternation, i.e. a list of alternatives; at least one of them has to
+    /// match.
     Alternation(Alternation<'i>),
-    /// A repetition, i.e. a expression that must be repeated. The number of required repetitions is
-    /// constrained by a lower and possibly an upper bound.
+    /// A repetition, i.e. a expression that must be repeated. The number of
+    /// required repetitions is constrained by a lower and possibly an upper
+    /// bound.
     Repetition(Box<Repetition<'i>>),
     /// A boundary (start of string, end of string or word boundary).
     Boundary(Boundary),
@@ -114,6 +116,25 @@ impl<'i> Rule<'i> {
             Rule::Range(r) => r.compile(),
             Rule::StmtExpr(m) => m.compile(options, state),
         }
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        match self {
+            Rule::Literal(_) => {}
+            Rule::CharClass(_) => {}
+            Rule::Grapheme(g) => g.validate(options)?,
+            Rule::Group(g) => g.validate(options)?,
+            Rule::Alternation(a) => a.validate(options)?,
+            Rule::Repetition(r) => r.validate(options)?,
+            Rule::Boundary(b) => b.validate(options)?,
+            Rule::Lookaround(l) => l.validate(options)?,
+            Rule::Variable(_) => {}
+            Rule::Reference(r) => r.validate(options)?,
+            Rule::Range(r) => r.validate(options)?,
+            Rule::StmtExpr(s) => s.validate(options)?,
+        }
+
+        Ok(())
     }
 }
 

@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
-    options::CompileOptions,
+    error::{CompileError, ParseError},
+    features::RulexFeatures,
+    options::{CompileOptions, ParseOptions},
     repetition::RegexQuantifier,
     rule::Rule,
     span::Span,
@@ -89,6 +90,21 @@ impl<'i> StmtExpr<'i> {
                 Ok(res)
             }
         }
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        match &self.stmt {
+            Stmt::Enable(BooleanSetting::Lazy) => {
+                options.allowed_features.require(RulexFeatures::LAZY_MODE, self.span)?;
+            }
+            Stmt::Disable(_) => {}
+            Stmt::Let(l) => {
+                options.allowed_features.require(RulexFeatures::VARIABLES, l.name_span)?;
+                l.rule.validate(options)?;
+            }
+        }
+
+        self.rule.validate(options)
     }
 }
 

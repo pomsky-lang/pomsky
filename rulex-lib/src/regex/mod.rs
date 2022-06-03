@@ -32,10 +32,12 @@ pub(crate) enum Regex<'i> {
     Dot,
     /// A group, i.e. a sequence of rules, possibly wrapped in parentheses.
     Group(RegexGroup<'i>),
-    /// An alternation, i.e. a list of alternatives; at least one of them has to match.
+    /// An alternation, i.e. a list of alternatives; at least one of them has to
+    /// match.
     Alternation(RegexAlternation<'i>),
-    /// A repetition, i.e. a expression that must be repeated. The number of required repetitions is
-    /// constrained by a lower and possibly an upper bound.
+    /// A repetition, i.e. a expression that must be repeated. The number of
+    /// required repetitions is constrained by a lower and possibly an upper
+    /// bound.
     Repetition(Box<RegexRepetition<'i>>),
     /// A boundary (start of string, end of string or word boundary).
     Boundary(BoundaryKind),

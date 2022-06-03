@@ -90,7 +90,7 @@ pub fn range(c: &mut Criterion) {
 }
 
 fn ruby() -> CompileOptions {
-    CompileOptions { flavor: RegexFlavor::Ruby, ..Default::default() }
+    CompileOptions { flavor: RegexFlavor::Ruby }
 }
 
 pub fn benches(c: &mut Criterion) {

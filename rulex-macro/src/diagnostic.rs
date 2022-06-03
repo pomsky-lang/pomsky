@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{fmt::Write, ops::Range};
 
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use rulex::error::Diagnostic;
@@ -21,13 +21,15 @@ pub(crate) fn fmt(diagnostic: Diagnostic, _: Group) -> String {
     let before_len = before.chars().count();
     let arrow_len = slice.chars().count().max(1);
 
-    buf.push_str(&format!(
+    write!(
+        &mut buf,
         "\
 {space:line_number_len$} |
 {line_number} | {before}{slice}{after}
 {space:line_number_len$} | {space:before_len$}{space:^<arrow_len$}",
         space = ""
-    ));
+    )
+    .unwrap();
     buf.push('\n');
 
     if let Some(help) = diagnostic.help {

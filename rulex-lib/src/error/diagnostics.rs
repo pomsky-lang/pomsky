@@ -5,8 +5,8 @@ use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErro
 #[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]
 #[cfg_attr(feature = "miette", error("{}", .msg))]
 #[non_exhaustive]
-/// A struct containing detailed information about an error, which can be displayed beautifully
-/// with [miette](https://docs.rs/miette/latest/miette/).
+/// A struct containing detailed information about an error, which can be
+/// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).
 pub struct Diagnostic {
     pub msg: String,
     pub code: Option<String>,

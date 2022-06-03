@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    error::{CompileError, ParseError},
     group::{RegexCapture, RegexGroup},
-    options::{CompileOptions, RegexFlavor},
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
     rule::Rule,
     span::Span,
@@ -58,6 +58,10 @@ impl<'i> Repetition<'i> {
         };
 
         Ok(Regex::Repetition(Box::new(RegexRepetition { content, kind: self.kind, quantifier })))
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        self.rule.validate(options)
     }
 }
 

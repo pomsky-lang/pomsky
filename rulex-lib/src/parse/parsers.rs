@@ -335,7 +335,8 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     }
 
     fn parse_chars_or_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
-        // this is not clean code, but using the combinators results in worse error spans
+        // this is not clean code, but using the combinators results in worse error
+        // spans
         let span1 = input.span();
         let (input, first) = parse_string_or_char(input)?;
 

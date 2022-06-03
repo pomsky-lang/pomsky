@@ -1,0 +1,6 @@
+#! expect=error
+
+range '3900'-'14624543753464573586756548465987458395465438794867457908587986476879064597646976'
+-----
+Parse error: Range is too big, it isn't allowed to contain more than 6 digits
+  at 1..96

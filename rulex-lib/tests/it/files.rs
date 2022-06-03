@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use rulex::options::{CompileOptions, RegexFlavor};
+use rulex::options::{CompileOptions, ParseOptions, RegexFlavor};
 
 use crate::{color::Color::*, Args};
 
@@ -108,7 +108,8 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
     catch_panics(|| {
         let parsed = rulex::Rulex::parse_and_compile(
             input,
-            CompileOptions { flavor: options.flavor, ..Default::default() },
+            ParseOptions::default(),
+            CompileOptions { flavor: options.flavor },
         );
         match parsed {
             Ok(got) => match options.expected_outcome {

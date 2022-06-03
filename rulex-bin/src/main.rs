@@ -1,6 +1,5 @@
-use std::io::Write;
 use std::{
-    io::{self, Read},
+    io::{self, Read, Write},
     path::PathBuf,
 };
 
@@ -8,7 +7,7 @@ use atty::Stream;
 use clap::{ArgEnum, Parser};
 use rulex::{
     error::Diagnostic,
-    options::{CompileOptions, RegexFlavor},
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     Rulex,
 };
 
@@ -108,17 +107,19 @@ fn compile(
     flavor: Option<Flavor>,
     no_new_line: bool,
 ) -> miette::Result<()> {
-    let parsed = Rulex::parse(input, Default::default())
-        .map_err(|e| Diagnostic::from_parse_error(e, input))?;
+    let parse_options = ParseOptions { max_range_size: 12, ..ParseOptions::default() };
+    let parsed = Rulex::parse(input, parse_options)
+        .map_err(|err| Diagnostic::from_parse_error(err, input))?;
 
     if debug {
         eprintln!("======================== debug ========================");
         eprintln!("{parsed:#?}\n");
     }
 
-    let options =
-        CompileOptions { flavor: flavor.unwrap_or(Flavor::Pcre).into(), ..Default::default() };
-    let compiled = parsed.compile(options).map_err(|e| Diagnostic::from_compile_error(e, input))?;
+    let compile_options = CompileOptions { flavor: flavor.unwrap_or(Flavor::Pcre).into() };
+    let compiled = parsed
+        .compile(compile_options)
+        .map_err(|err| Diagnostic::from_compile_error(err, input))?;
 
     if no_new_line {
         print!("{compiled}");

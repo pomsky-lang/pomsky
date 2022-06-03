@@ -25,8 +25,8 @@ impl core::fmt::Debug for Literal<'_> {
     }
 }
 
-/// Write a char to the output buffer with proper escaping. Assumes the char is inside a
-/// character class.
+/// Write a char to the output buffer with proper escaping. Assumes the char is
+/// inside a character class.
 pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
@@ -37,8 +37,8 @@ pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: Regex
     }
 }
 
-/// Write a char to the output buffer with proper escaping. Assumes the char is not in a
-/// character class.
+/// Write a char to the output buffer with proper escaping. Assumes the char is
+/// not in a character class.
 pub(crate) fn codegen_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
@@ -57,9 +57,9 @@ pub(crate) fn codegen_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
     }
 }
 
-/// Write a char to the output buffer. This escapes characters that are neither alphanumeric, nor
-/// printable ASCII characters. It does _not_ escape characters like `(` or `]` that have a
-/// special meaning.
+/// Write a char to the output buffer. This escapes characters that are neither
+/// alphanumeric, nor printable ASCII characters. It does _not_ escape
+/// characters like `(` or `]` that have a special meaning.
 pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
     use std::fmt::Write;
 

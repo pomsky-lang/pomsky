@@ -2,13 +2,17 @@
 //! [word boundaries](https://www.regular-expressions.info/wordboundaries.html) and
 //! [anchors](https://www.regular-expressions.info/anchors.html).
 
-use crate::{compile::CompileResult, regex::Regex, span::Span};
+use crate::{
+    compile::CompileResult, error::ParseError, features::RulexFeatures, options::ParseOptions,
+    regex::Regex, span::Span,
+};
 
 /// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
 /// [anchor](https://www.regular-expressions.info/anchors.html), which we combine under the term
 /// _boundary_.
 ///
-/// All boundaries use a variation of the `%` sigil, so they are easy to remember.
+/// All boundaries use a variation of the `%` sigil, so they are easy to
+/// remember.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Boundary {
     kind: BoundaryKind,
@@ -24,6 +28,10 @@ impl Boundary {
 impl Boundary {
     pub(crate) fn compile(&self) -> CompileResult<'static> {
         Ok(Regex::Boundary(self.kind))
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        options.allowed_features.require(RulexFeatures::BOUNDARIES, self.span)
     }
 }
 

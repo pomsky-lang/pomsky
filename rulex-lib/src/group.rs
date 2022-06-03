@@ -2,14 +2,15 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind},
-    options::{CompileOptions, RegexFlavor},
+    error::{CompileError, CompileErrorKind, ParseError},
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
     rule::Rule,
     span::Span,
 };
 
-/// A group, i.e. sequence of rules. A group is either capturing or non-capturing.
+/// A group, i.e. sequence of rules. A group is either capturing or
+/// non-capturing.
 ///
 /// If it is capturing, it must be wrapped in parentheses, and can have a name.
 /// If it is non-capturing, the parentheses can be omitted in same cases.
@@ -89,6 +90,13 @@ impl<'i> Group<'i> {
                 None => RegexCapture::None,
             },
         }))
+    }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        for rule in &self.parts {
+            rule.validate(options)?;
+        }
+        Ok(())
     }
 }
 

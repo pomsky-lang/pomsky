@@ -72,6 +72,8 @@ pub(crate) enum ParseErrorKind {
     ExpectedCodePointOrChar,
     #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
+    #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
+    RangeIsTooBig(u8),
     #[error("A variable with the same name already exists in this scope")]
     LetBindingExists,
     #[error("Unsupported escape sequence in string")]
@@ -86,6 +88,8 @@ pub(crate) enum ParseErrorKind {
     Number(#[from] NumberError),
     #[error(transparent)]
     Repetition(RepetitionError),
+    #[error(transparent)]
+    Unsupported(UnsupportedError),
 
     #[error("Unknown error: {:?}", .0)]
     Nom(nom::error::ErrorKind),
@@ -183,6 +187,32 @@ impl From<ParseIntError> for NumberError {
             _ => unimplemented!(),
         }
     }
+}
+
+/// An error that indicates that an unsupported feature was used
+#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum UnsupportedError {
+    #[error("Grapheme is not supported")]
+    Grapheme,
+    #[error("Numbered capturing groups is not supported")]
+    NumberedGroups,
+    #[error("Named capturing groups is not supported")]
+    NamedGroups,
+    #[error("References aren't supported")]
+    References,
+    #[error("Lazy mode isn't supported")]
+    LazyMode,
+    #[error("Ranges aren't supported")]
+    Ranges,
+    #[error("Variables aren't supported")]
+    Variables,
+    #[error("Lookahead isn't supported")]
+    Lookahead,
+    #[error("Lookbehind isn't supported")]
+    Lookbehind,
+    #[error("Word boundaries aren't supported")]
+    Boundaries,
 }
 
 struct ListWithoutBrackets<'a, T>(&'a [T]);

@@ -1,7 +1,8 @@
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileErrorKind, Feature},
-    options::{CompileOptions, RegexFlavor},
+    error::{CompileErrorKind, Feature, ParseError},
+    features::RulexFeatures,
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
     span::Span,
 };
@@ -10,12 +11,6 @@ use crate::{
 pub(crate) struct Reference<'i> {
     pub(crate) target: ReferenceTarget<'i>,
     pub(crate) span: Span,
-}
-
-impl<'i> Reference<'i> {
-    pub(crate) fn new(target: ReferenceTarget<'i>, span: Span) -> Self {
-        Reference { target, span }
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -33,6 +28,10 @@ enum ReferenceDirection {
 }
 
 impl<'i> Reference<'i> {
+    pub(crate) fn new(target: ReferenceTarget<'i>, span: Span) -> Self {
+        Reference { target, span }
+    }
+
     pub(crate) fn compile(
         &self,
         options: CompileOptions,
@@ -107,6 +106,10 @@ impl<'i> Reference<'i> {
             _ => Ok(Regex::Reference(RegexReference { number })),
         }
     }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        options.allowed_features.require(RulexFeatures::REFERENCES, self.span)
+    }
 }
 
 #[cfg(feature = "dbg")]
@@ -124,7 +127,7 @@ pub(crate) struct RegexReference {
     number: u32,
 }
 
-impl<'i> RegexReference {
+impl RegexReference {
     pub(crate) fn codegen(&self, buf: &mut String, _: RegexFlavor) {
         use std::fmt::Write;
 

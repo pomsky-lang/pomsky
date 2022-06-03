@@ -4,8 +4,10 @@ use crate::{
     alternation::RegexAlternation,
     char_class::{RegexCharClass, RegexClassItem},
     compile::CompileResult,
-    error::CompileErrorKind,
+    error::{CompileErrorKind, ParseError, ParseErrorKind},
+    features::RulexFeatures,
     group::{RegexCapture, RegexGroup},
+    options::ParseOptions,
     regex::Regex,
     repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
     span::Span,
@@ -33,6 +35,13 @@ impl Range {
             }
         }
     }
+
+    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+        if self.end.len() > options.max_range_size as usize {
+            return Err(ParseErrorKind::RangeIsTooBig(options.max_range_size).at(self.span));
+        }
+        options.allowed_features.require(RulexFeatures::RANGES, self.span)
+    }
 }
 
 #[cfg(feature = "dbg")]
@@ -55,49 +64,54 @@ impl std::fmt::Debug for Range {
     }
 }
 
-/// This generates a set of rules that exactly match a string containing a number in a certain
-/// range.
+/// This generates a set of rules that exactly match a string containing a
+/// number in a certain range.
 ///
 /// For example, `range(&[1,2,0], &[2,0,0], 0, 10)` matches "120", "125", "150",
 /// "199", "200", but not "119" or "201".
 ///
-/// The generated regex is always optimal in terms of search performance. However, it might be
-/// somewhat bigger than a regex optimized for size instead of performance.
+/// The generated regex is always optimal in terms of search performance.
+/// However, it might be somewhat bigger than a regex optimized for size instead
+/// of performance.
 ///
-/// This algorithm has been extensively fuzzed, so you can trust its correctness even in rare
-/// edge cases. The fuzzer generates all possible ranges and validates them by matching a large
-/// number of test strings against them using the `regex` crate. It starts with smaller ranges
-/// and tries larger and larger ranges with all permutations (0-0, 0-1, 1-1, 0-2, 1-2,
-/// 2-2, 0-3, 1-3, 2-3, 3-3, ...). Run the fuzzer with `cargo test --test it -- --fuzz-ranges`.
+/// This algorithm has been extensively fuzzed, so you can trust its correctness
+/// even in rare edge cases. The fuzzer generates all possible ranges and
+/// validates them by matching a large number of test strings against them using
+/// the `regex` crate. It starts with smaller ranges and tries larger and larger
+/// ranges with all permutations (0-0, 0-1, 1-1, 0-2, 1-2, 2-2, 0-3, 1-3, 2-3,
+/// 3-3, ...). Run the fuzzer with `cargo test --test it -- --fuzz-ranges`.
 ///
 /// ## How it works
 ///
-/// Lower and upper bound of the range are passed to this function as slices containing individual
-/// digits.
+/// Lower and upper bound of the range are passed to this function as slices
+/// containing individual digits.
 ///
-/// We always look only at the first digit of each bound; these digits are called `ax` (from lower
-/// bound) and `bx` (from upper bound). For simplicity, we assume that the radix is 10 (decimal).
-/// For example:
+/// We always look only at the first digit of each bound; these digits are
+/// called `ax` (from lower bound) and `bx` (from upper bound). For simplicity,
+/// we assume that the radix is 10 (decimal). For example:
 ///
 /// ```no_test
 /// a = [4]
 /// b = [7, 0, 5]
 /// ```
 ///
-/// This means we need a regex that matches a number between 10 and 799. By looking at the first
-/// digit, we can deduce:
+/// This means we need a regex that matches a number between 10 and 799. By
+/// looking at the first digit, we can deduce:
 ///
 /// - The number can't start with 0 (leading zeros aren't allowed)
-/// - The number can start with 1, 2 or 3, but must be followed 1 or 2 more digit in that case
+/// - The number can start with 1, 2 or 3, but must be followed 1 or 2 more
+///   digit in that case
 /// - The number can be 4, 5 or 6, and can be followed by 0, 1 or 2 more digits
 /// - If the number starts with 7, it can be followed by
 ///     - nothing
 ///     - a zero, and possibly a third digit that is at most 5
 ///     - a digit greater than zero, if there is no third digit.
-/// - If the number starts with 8 or 9, it can be followed by at most 1 more digit.
+/// - If the number starts with 8 or 9, it can be followed by at most 1 more
+///   digit.
 ///
-/// This is implemented recursively. We always remove the first digit from the slices. We then
-/// create a number of alternatives, each starting with a different digit or range of digits:
+/// This is implemented recursively. We always remove the first digit from the
+/// slices. We then create a number of alternatives, each starting with a
+/// different digit or range of digits:
 ///
 /// 1. `0 ..= ax-1`
 /// 2. `ax`
@@ -105,9 +119,10 @@ impl std::fmt::Debug for Range {
 /// 4. `bx`
 /// 5. `bx+1 ..= 9`
 ///
-/// If `ax` and `bx` are identical, 3. and 4. are omitted; if they're consecutive numbers, 3.
-/// is omitted. If `ax` is 0 or `bx` is 9, 1. or 5. is omitted, respectively. If `ax` is bigger
-/// than `bx`, the alternatives are a bit different, and this is important later:
+/// If `ax` and `bx` are identical, 3. and 4. are omitted; if they're
+/// consecutive numbers, 3. is omitted. If `ax` is 0 or `bx` is 9, 1. or 5. is
+/// omitted, respectively. If `ax` is bigger than `bx`, the alternatives are a
+/// bit different, and this is important later:
 ///
 /// 1. `0 ..= bx-1`
 /// 2. `bx`
@@ -115,37 +130,43 @@ impl std::fmt::Debug for Range {
 /// 4. `ax`
 /// 5. `ax+1 ..= 9`
 ///
-/// There is one more special case: The first digit in a number can't be 0, unless the range's
-/// lower bound is 0. So we check if we are currently looking at the first digit, and if that is
-/// the case, the first character class omits 0. If the lower bound is 0, then an alternative
-/// containing _only_ 0 is added _once_.
+/// There is one more special case: The first digit in a number can't be 0,
+/// unless the range's lower bound is 0. So we check if we are currently looking
+/// at the first digit, and if that is the case, the first character class omits
+/// 0. If the lower bound is 0, then an alternative containing _only_ 0 is added
+/// _once_.
 ///
-/// Now, for each of the above alternatives, we add two things: A character class matching the first
-/// digit, and _something_ matching the remaining digits. That _something_ is calculated by
-/// recursively calling the `range` function on the remaining digits. To make sure that this doesn't
-/// recurse for infinity, we must detect terminal calls (calls that stop recursing):
+/// Now, for each of the above alternatives, we add two things: A character
+/// class matching the first digit, and _something_ matching the remaining
+/// digits. That _something_ is calculated by recursively calling the `range`
+/// function on the remaining digits. To make sure that this doesn't recurse for
+/// infinity, we must detect terminal calls (calls that stop recursing):
 ///
 /// - If both slices are empty, we are done.
 ///
-/// - If both slices contain exactly 1 digit, we simply add a character class matching a digit in
-///   that range.
+/// - If both slices contain exactly 1 digit, we simply add a character class
+///   matching a digit in that range.
 ///
-/// - If the first slice is empty but not the second one, we apply a trick: We add a 0 to the lower
-///   bound and try again. Also, the returned sub-expression is made optional.
-///     - For example, `range([4], [400])` at some point adds an alternative starting with `4` and
-///       calls `range([], [0, 0])` recursively. We want this to match the empty string, any single
-///       digit, or two zeros, because a "4" matching the range 4-400 can be followed by nothing,
-///       any single digit or two zeros.
-///   If we just added a 0 to the lower bound, that would mean that the 4 MUST be followed by
-///   at least one more digit. We don't want that, so we make the expression following the 4
-///   optional.
+/// - If the first slice is empty but not the second one, we apply a trick: We
+///   add a 0 to the lower bound and try again. Also, the returned
+///   sub-expression is made optional.
 ///
-/// - If the second slice is empty but not the first, this is an error that should NEVER happen.
-///   The parser validates the input so that the upper bound can't be smaller/shorter than
-///   the lower bound.
+///     - For example, `range([4], [400])` at some point adds an alternative
+///       starting with `4` and calls `range([], [0, 0])` recursively. We want
+///       this to match the empty string, any single digit, or two zeros,
+///       because a "4" matching the range 4-400 can be followed by nothing, any
+///       single digit or two zeros.
 ///
-/// Now, about the alternatives: This part is quite interesting. To recap, the alternatives are
-/// either this:
+///   If we just added a 0 to the lower bound, that would mean that the 4 MUST
+///   be followed by at least one more digit. We don't want that, so we make the
+///   expression following the 4 optional.
+///
+/// - If the second slice is empty but not the first, this is an error that
+///   should NEVER happen. The parser validates the input so that the upper
+///   bound can't be smaller/shorter than the lower bound.
+///
+/// Now, about the alternatives: This part is quite interesting. To recap, the
+/// alternatives are either this:
 ///
 /// 1. `0 ..= ax-1`
 /// 2. `ax`
@@ -161,8 +182,8 @@ impl std::fmt::Debug for Range {
 /// 4. `ax`
 /// 5. `ax+1 ..= 9`
 ///
-/// Alternative 1 and 5 are the same, if we substitute `ax` and `bx` with `min(ax, bx)` in 1. and
-/// with `max(ax, bx)` in step 5:
+/// Alternative 1 and 5 are the same, if we substitute `ax` and `bx` with
+/// `min(ax, bx)` in 1. and with `max(ax, bx)` in step 5:
 ///
 /// ```no_test
 /// 1. [1-(min - 1)] [0-9]{la + 1, lb}  (first digit)
@@ -170,38 +191,43 @@ impl std::fmt::Debug for Range {
 /// 5. [(max + 1)-9] [0-9]{al, bl - 1}
 /// ```
 ///
-/// (`la` and `lb` are the lengths of the remaining digits in the lower and upper bound,
-/// respectively).
+/// (`la` and `lb` are the lengths of the remaining digits in the lower and
+/// upper bound, respectively).
 ///
-/// What is the deal with the added or subtracted 1's? If we have a lower bound such as 533, the
-/// number must be at least 3 digits long, because the lower bound is three digits long. However,
-/// if the first digit is less than 5, it must be at least 4 digits long to be greater than 533.
-/// With the upper bound, it's the exact opposite: For example, with an upper bound of 6111, the
+/// What is the deal with the added or subtracted 1's? If we have a lower bound
+/// such as 533, the number must be at least 3 digits long, because the lower
+/// bound is three digits long. However, if the first digit is less than 5, it
+/// must be at least 4 digits long to be greater than 533. With the upper bound,
+/// it's the exact opposite: For example, with an upper bound of 6111, the
 /// number can be at most 3 digits if it starts with 7, 8 or 9.
 ///
-/// I'm not going to explain the remaining alternatives (2 through 4), since you can understand
-/// them by reading the code.
+/// I'm not going to explain the remaining alternatives (2 through 4), since you
+/// can understand them by reading the code.
 ///
-/// The last step is to optimize the alternatives to be as compact as possible. This is achieved
-/// by simplifying and merging alternatives if possible. For example,
+/// The last step is to optimize the alternatives to be as compact as possible.
+/// This is achieved by simplifying and merging alternatives if possible. For
+/// example,
 ///
 /// ```no_test
 /// [0-4] [5-9] | 5 [5-9]
 /// ```
 ///
-/// This can be merged into `[0-5] [5-9]`. The rules are like addition and multiplication, where
-/// alternation (with `|`) is equivalent to `+` and concatenation is equivalent to `*`.
-/// This means we can use the distributive law: `a * x + b * x = (a + b) * x`. Note that we only
-/// do this if the first character class of each alternation are consecutive; for example,
-/// we merge `[0-4]` and `5`, but not `[0-4]` and `[6-9]`. This would be possible in theory, but
-/// would be computationally more expensive, since the second part of each alternation must be
-/// checked for equality.
+/// This can be merged into `[0-5] [5-9]`. The rules are like addition and
+/// multiplication, where alternation (with `|`) is equivalent to `+` and
+/// concatenation is equivalent to `*`. This means we can use the distributive
+/// law: `a * x + b * x = (a + b) * x`. Note that we only do this if the first
+/// character class of each alternation are consecutive; for example,
+/// we merge `[0-4]` and `5`, but not `[0-4]` and `[6-9]`. This would be
+/// possible in theory, but would be computationally more expensive, since the
+/// second part of each alternation must be checked for equality.
 ///
-/// The next optimization is to replace concatenation of equal elements with repetition. In other
-/// words, we replace `a + a` with `a * 2`, and `a + (a * 2)` with `a * 3`. This is important,
-/// because when we check whether two expressions are equal, it only works if they have the exact
-/// same structure: `[0-9][0-9]` is not considered equal to `[0-9]{2}`. So this optimization also
-/// serves as a _normalization_, to ensure that equal alternatives can be merged.
+/// The next optimization is to replace concatenation of equal elements with
+/// repetition. In other words, we replace `a + a` with `a * 2`, and `a + (a *
+/// 2)` with `a * 3`. This is important, because when we check whether two
+/// expressions are equal, it only works if they have the exact same structure:
+/// `[0-9][0-9]` is not considered equal to `[0-9]{2}`. So this optimization
+/// also serves as a _normalization_, to ensure that equal alternatives can be
+/// merged.
 fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
     let hi_digit = radix - 1;
     let lo_digit = if is_first { 1 } else { 0 };
@@ -358,7 +384,7 @@ enum Rule {
     Alt(Alt),
 }
 
-// #[cfg(FALSE)]
+#[cfg(FALSE)]
 impl std::fmt::Debug for Rule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -430,7 +456,7 @@ impl Rule {
         }
     }
 
-    // #[cfg(FALSE)]
+    #[cfg(FALSE)]
     fn debug_size(&self) -> u64 {
         match self {
             Rule::Empty => 1,

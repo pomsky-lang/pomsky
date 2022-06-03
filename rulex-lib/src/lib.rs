@@ -47,6 +47,7 @@ use repetition::RegexQuantifier;
 use rule::Rule;
 
 pub mod error;
+pub mod features;
 pub mod options;
 
 mod alternation;
@@ -74,9 +75,12 @@ pub struct Rulex<'i>(Rule<'i>);
 impl<'i> Rulex<'i> {
     /// Parse a `Rulex` without generating code.
     ///
-    /// The parsed `Rulex` can be displayed with `Debug` if the `dbg` feature is enabled.
-    pub fn parse(input: &'i str, _options: ParseOptions) -> Result<Self, ParseError> {
-        parse::parse(input).map(Self)
+    /// The parsed `Rulex` can be displayed with `Debug` if the `dbg` feature is
+    /// enabled.
+    pub fn parse(input: &'i str, options: ParseOptions) -> Result<Self, ParseError> {
+        let rule = parse::parse(input)?;
+        rule.validate(&options)?;
+        Ok(Rulex(rule))
     }
 
     /// Compile a `Rulex` that has been parsed, to a regex
@@ -103,10 +107,11 @@ impl<'i> Rulex<'i> {
     /// Parse a string to a `Rulex` and compile it to a regex.
     pub fn parse_and_compile(
         input: &'i str,
-        options: CompileOptions,
+        parse_options: ParseOptions,
+        compile_options: CompileOptions,
     ) -> Result<String, CompileError> {
-        let parsed = Self::parse(input, options.parse_options)?;
-        parsed.compile(options)
+        let parsed = Self::parse(input, parse_options)?;
+        parsed.compile(compile_options)
     }
 }
 
