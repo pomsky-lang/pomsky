@@ -3,14 +3,8 @@ name: Test
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "book/**"
-      - "README.md"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "book/**"
-      - "README.md"
 
 jobs:
   rustfmt:
@@ -21,7 +15,7 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Run `cargo fmt`
         uses: actions-rs/cargo@v1
         with:
@@ -38,7 +32,16 @@ jobs:
           override: true
           components: clippy
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - name: ⚡ Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run `cargo clippy`
         uses: actions-rs/clippy-check@v1
         with:
@@ -56,7 +59,16 @@ jobs:
           toolchain: stable
           override: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - name: ⚡ Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build and run tests
         run: |
           cargo test --verbose
