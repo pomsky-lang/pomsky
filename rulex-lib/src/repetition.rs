@@ -172,10 +172,6 @@ impl<'i> RegexRepetition<'i> {
         Self { content, kind, quantifier }
     }
 
-    pub(crate) fn is_zero_one(&self) -> bool {
-        matches!(self.kind, RepetitionKind { lower_bound: 0, upper_bound: Some(1) })
-    }
-
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         use std::fmt::Write;
 
