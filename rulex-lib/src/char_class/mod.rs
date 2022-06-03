@@ -428,6 +428,7 @@ impl core::fmt::Debug for CharClass {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexCharClass {
     negative: bool,
     items: Vec<RegexClassItem>,
@@ -467,6 +468,7 @@ impl RegexCharClass {
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexClassItem {
     Char(char),
     Range { first: char, last: char },

@@ -48,6 +48,7 @@ impl core::fmt::Debug for Boundary {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum BoundaryKind {
     /// `<%`, the start of the string (or start of line in single-line mode)
     Start,

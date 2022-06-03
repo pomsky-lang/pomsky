@@ -150,6 +150,7 @@ impl TryFrom<(u32, Option<u32>)> for RepetitionKind {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexRepetition<'i> {
     content: Regex<'i>,
     kind: RepetitionKind,
@@ -169,6 +170,10 @@ impl<'i> RegexRepetition<'i> {
         quantifier: RegexQuantifier,
     ) -> Self {
         Self { content, kind, quantifier }
+    }
+
+    pub(crate) fn is_zero_one(&self) -> bool {
+        matches!(self.kind, RepetitionKind { lower_bound: 0, upper_bound: Some(1) })
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {

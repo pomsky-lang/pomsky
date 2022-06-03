@@ -133,11 +133,13 @@ impl<'i> Capture<'i> {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexGroup<'i> {
     parts: Vec<Regex<'i>>,
     capture: RegexCapture<'i>,
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexCapture<'i> {
     Capture,
     NamedCapture(&'i str),

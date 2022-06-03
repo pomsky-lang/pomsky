@@ -123,6 +123,7 @@ impl std::fmt::Debug for Reference<'_> {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexReference {
     number: u32,
 }

@@ -95,6 +95,7 @@ impl core::fmt::Debug for Alternation<'_> {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexAlternation<'i> {
     parts: Vec<Regex<'i>>,
 }

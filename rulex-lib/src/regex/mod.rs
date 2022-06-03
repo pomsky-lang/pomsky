@@ -15,6 +15,7 @@ use crate::{
     repetition::RegexRepetition,
 };
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum Regex<'i> {
     /// A literal string
     Literal(Cow<'i, str>),
@@ -48,6 +49,7 @@ pub(crate) enum Regex<'i> {
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexShorthand {
     Word,
     Digit,
@@ -60,6 +62,7 @@ pub(crate) enum RegexShorthand {
 }
 
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexProperty {
     Category(Category),
     Script(Script),
@@ -124,11 +127,11 @@ impl<'i> Regex<'i> {
         match self {
             Regex::Literal(l) => literal::needs_parens_before_repetition(l.borrow()),
             Regex::Group(g) => g.needs_parens_before_repetition(),
+            Regex::Repetition(r) => r.is_zero_one(),
             Regex::Alternation(_) => true,
             Regex::CharClass(_)
             | Regex::Char(_)
             | Regex::Grapheme
-            | Regex::Repetition(_)
             | Regex::Boundary(_)
             | Regex::Lookaround(_)
             | Regex::Reference(_)

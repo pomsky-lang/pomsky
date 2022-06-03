@@ -32,6 +32,7 @@ impl core::fmt::Debug for Lookaround<'_> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum LookaroundKind {
     Ahead,
     Behind,
@@ -81,6 +82,7 @@ impl<'i> Lookaround<'i> {
     }
 }
 
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexLookaround<'i> {
     content: Regex<'i>,
     kind: LookaroundKind,

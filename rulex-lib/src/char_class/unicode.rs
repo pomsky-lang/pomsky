@@ -28,6 +28,7 @@ macro_rules! data {
     ) => {
         $(
             #[derive(Clone, Copy, PartialEq, Eq)]
+            #[cfg_attr(feature = "dbg", derive(Debug))]
             #[allow(non_camel_case_types)]
             #[allow(clippy::enum_variant_names)]
             #[repr(u8)]
@@ -453,6 +454,7 @@ data! {
 // ===================================
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
@@ -480,6 +482,7 @@ impl Category {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
@@ -540,6 +543,7 @@ impl Script {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
@@ -607,6 +611,7 @@ impl CodeBlock {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
