@@ -85,12 +85,12 @@ The repository was moved to its own organization! 🎉 It also has a new website
   supported
 
 - A `?` after a repetition is now forbidden, because it easy confuse to with a lazy quantifier.
+  The error can be silenced by wrapping the inner expression in parentheses, e.g. `([w]{3})?`.
 
 ### Removed
 
 - `R` was removed, because it didn't work properly, and I'm still unsure about the best syntax
-  and behavior. The error can be silenced by wrapping the inner expression in parentheses, e.g.
-  `([w]{3})?`.
+  and behavior.
 
 ### Fixed
 
