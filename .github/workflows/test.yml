@@ -10,7 +10,8 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
@@ -26,13 +27,16 @@ jobs:
     needs: rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: clippy
+
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: ⚡ Cache
         uses: actions/cache@v3
         with:
@@ -48,18 +52,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: clippy
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
+
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: ⚡ Cache
         uses: actions/cache@v3
         with:
