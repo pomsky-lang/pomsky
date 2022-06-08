@@ -19,7 +19,6 @@ use crate::{
     error::{
         CharClassError, CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind,
     },
-    grapheme::Grapheme,
     group::{Capture, Group},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
@@ -257,7 +256,6 @@ pub(super) fn parse_atom<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'
         parse_group,
         parse_string,
         parse_char_class,
-        parse_grapheme,
         parse_boundary,
         parse_reference,
         map(parse_code_point, |(c, span)| {
@@ -537,10 +535,6 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
         },
         nom::Err::Error,
     )(input)
-}
-
-pub(super) fn parse_grapheme<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
-    map(alt(("Grapheme", "X")), |(_, span)| Rule::Grapheme(Grapheme { span }))(input)
 }
 
 pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {

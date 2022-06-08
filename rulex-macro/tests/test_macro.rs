@@ -21,3 +21,12 @@ fn pcre() {
 
     assert_eq!(REGEX, "foo(?!bar)");
 }
+
+#[test]
+fn composite_tokens() {
+    const REGEX: &str = rulex!(
+        Start "Test" End
+    );
+
+    assert_eq!(REGEX, "^Test$");
+}

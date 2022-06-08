@@ -40,11 +40,14 @@
 
 use std::collections::HashMap;
 
+use boundary::{Boundary, BoundaryKind};
 use compile::CompileState;
 use error::{CompileError, ParseError};
+use grapheme::Grapheme;
 use options::{CompileOptions, ParseOptions};
 use repetition::RegexQuantifier;
 use rule::Rule;
+use span::Span;
 
 pub mod error;
 pub mod features;
@@ -89,12 +92,20 @@ impl<'i> Rulex<'i> {
         let mut groups_count = 0;
         self.0.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
 
+        let empty_span = Span::new(0, 0);
+        let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, empty_span));
+        let end = Rule::Boundary(Boundary::new(BoundaryKind::End, empty_span));
+        let grapheme = Rule::Grapheme(Grapheme { span: empty_span });
+
+        let builtins =
+            vec![("Start", &start), ("End", &end), ("Grapheme", &grapheme), ("X", &grapheme)];
+
         let mut state = CompileState {
             next_idx: 1,
             used_names,
             groups_count,
             default_quantifier: RegexQuantifier::Greedy,
-            variables: vec![],
+            variables: builtins,
             current_vars: Default::default(),
         };
         let compiled = self.0.comp(options, &mut state)?;
