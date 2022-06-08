@@ -126,7 +126,7 @@ Rulex looks for mistakes and displays helpful diagnostics:
 
 ## Roadmap
 
-[You can find the Roadmap here.](https://github.com/users/Aloso/projects/1/views/1)
+[You can find the Roadmap here.](https://github.com/orgs/rulex-rs/projects/1)
 
 ## Contributing
 
