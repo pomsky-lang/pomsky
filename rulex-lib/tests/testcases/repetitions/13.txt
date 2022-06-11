@@ -1,0 +1,5 @@
+# repetitions for groups with empty string literals should be ignored
+
+:('test') ()?
+-----
+(test)

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -174,6 +174,10 @@ impl<'i> RegexRepetition<'i> {
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         use std::fmt::Write;
+
+        if let Regex::Literal(Cow::Borrowed("")) = self.content {
+            return;
+        }
 
         if self.content.needs_parens_before_repetition() {
             buf.push_str("(?:");
