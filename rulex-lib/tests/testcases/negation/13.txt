@@ -1,0 +1,5 @@
+#! expect=error
+!range '0'-'9'
+-----
+ERROR: This expression can't be negated
+SPAN: 0..1

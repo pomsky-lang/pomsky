@@ -3,8 +3,12 @@
 //! [anchors](https://www.regular-expressions.info/anchors.html).
 
 use crate::{
-    compile::CompileResult, error::ParseError, features::RulexFeatures, options::ParseOptions,
-    regex::Regex, span::Span,
+    compile::CompileResult,
+    error::{ParseError, ParseErrorKind},
+    features::RulexFeatures,
+    options::ParseOptions,
+    regex::Regex,
+    span::Span,
 };
 
 /// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
@@ -22,6 +26,17 @@ pub(crate) struct Boundary {
 impl Boundary {
     pub(crate) fn new(kind: BoundaryKind, span: Span) -> Self {
         Boundary { kind, span }
+    }
+
+    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
+        match self.kind {
+            BoundaryKind::Start | BoundaryKind::End => Err(ParseErrorKind::UnallowedNot),
+            BoundaryKind::NotWord => Err(ParseErrorKind::UnallowedDoubleNot),
+            BoundaryKind::Word => {
+                self.kind = BoundaryKind::NotWord;
+                Ok(())
+            }
+        }
     }
 }
 

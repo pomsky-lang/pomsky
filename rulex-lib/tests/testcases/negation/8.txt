@@ -1,0 +1,6 @@
+#! expect=error
+let x = ['test'];
+!x
+-----
+ERROR: This expression can't be negated
+SPAN: 18..19

@@ -5,7 +5,7 @@ use crate::{
     boundary::Boundary,
     char_class::CharClass,
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, ParseError},
+    error::{CompileError, CompileErrorKind, ParseError, ParseErrorKind},
     grapheme::Grapheme,
     group::Group,
     literal::Literal,
@@ -67,6 +67,24 @@ impl<'i> Rule<'i> {
             Rule::Reference(r) => r.span,
             Rule::Range(r) => r.span,
             Rule::StmtExpr(m) => m.span,
+        }
+    }
+
+    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
+        match self {
+            Rule::Literal(_)
+            | Rule::Grapheme(_)
+            | Rule::Group(_)
+            | Rule::Alternation(_)
+            | Rule::Variable(_)
+            | Rule::Reference(_)
+            | Rule::Range(_)
+            | Rule::StmtExpr(_) => Err(ParseErrorKind::UnallowedNot),
+
+            Rule::CharClass(c) => c.negate(),
+            Rule::Repetition(r) => r.rule.negate(),
+            Rule::Boundary(b) => b.negate(),
+            Rule::Lookaround(l) => l.negate(),
         }
     }
 

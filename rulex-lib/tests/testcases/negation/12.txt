@@ -1,0 +1,5 @@
+#! expect=error
+!Grapheme
+-----
+ERROR: This expression can't be negated
+SPAN: 0..1

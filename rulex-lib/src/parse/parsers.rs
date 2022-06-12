@@ -136,6 +136,18 @@ pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 
 pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     alt((
+        try_map(
+            pair(Token::Not, opt(parse_fixes)),
+            |(_, rule)| {
+                if let Some(mut rule) = rule {
+                    rule.negate()?;
+                    Ok(rule)
+                } else {
+                    Err(ParseErrorKind::Expected("expression"))
+                }
+            },
+            nom::Err::Failure,
+        ),
         map(pair(parse_lookaround, parse_modified), |((kind, span), rule)| {
             let span = span.join(rule.span());
             Rule::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
@@ -173,12 +185,6 @@ pub(super) fn parse_lookaround<'i, 'b>(
     alt((
         map(Token::LookAhead, |(_, span)| (LookaroundKind::Ahead, span)),
         map(Token::LookBehind, |(_, span)| (LookaroundKind::Behind, span)),
-        map(pair(Token::Not, Token::LookAhead), |((_, span1), (_, span2))| {
-            (LookaroundKind::AheadNegative, span1.join(span2))
-        }),
-        map(pair(Token::Not, Token::LookBehind), |((_, span1), (_, span2))| {
-            (LookaroundKind::BehindNegative, span1.join(span2))
-        }),
     ))(input)
 }
 
@@ -394,17 +400,8 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     }
 
     map(
-        pair(
-            opt(Token::Not),
-            tuple((Token::OpenBracket, cut(parse_char_group), cut(Token::CloseBracket))),
-        ),
-        |(not, ((_, start), inner, (_, end)))| {
-            let mut class: CharClass = CharClass::new(inner, start.join(end));
-            if not.is_some() {
-                class.negate();
-            }
-            Rule::CharClass(class)
-        },
+        tuple((Token::OpenBracket, cut(parse_char_group), cut(Token::CloseBracket))),
+        |((_, start), inner, (_, end))| Rule::CharClass(CharClass::new(inner, start.join(end))),
     )(input)
 }
 

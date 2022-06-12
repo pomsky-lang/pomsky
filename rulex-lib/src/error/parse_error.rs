@@ -72,6 +72,10 @@ pub(crate) enum ParseErrorKind {
     ExpectedCodePointOrChar,
     #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
+    #[error("This expression can't be negated")]
+    UnallowedNot,
+    #[error("An expression can't be negated twice")]
+    UnallowedDoubleNot,
     #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
     RangeIsTooBig(u8),
     #[error("A variable with the same name already exists in this scope")]

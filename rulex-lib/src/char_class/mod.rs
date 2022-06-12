@@ -106,7 +106,7 @@ use std::borrow::Cow;
 
 use crate::{
     compile::CompileResult,
-    error::{CompileError, CompileErrorKind, Feature},
+    error::{CompileError, CompileErrorKind, Feature, ParseErrorKind},
     literal,
     options::{CompileOptions, RegexFlavor},
     regex::{Regex, RegexProperty, RegexShorthand},
@@ -139,8 +139,13 @@ impl CharClass {
     }
 
     /// Makes a positive character class negative and vice versa.
-    pub(crate) fn negate(&mut self) {
-        self.negative = !self.negative;
+    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
+        if self.negative {
+            Err(ParseErrorKind::UnallowedDoubleNot)
+        } else {
+            self.negative = !self.negative;
+            Ok(())
+        }
     }
 
     pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {

@@ -1,0 +1,5 @@
+#! expect=error
+!!%
+-----
+ERROR: An expression can't be negated twice
+SPAN: 0..1

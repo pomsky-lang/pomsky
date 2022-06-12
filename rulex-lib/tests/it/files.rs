@@ -88,7 +88,7 @@ impl Options {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Outcome {
     Success,
     Error,
@@ -116,9 +116,21 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
             ParseOptions::default(),
             CompileOptions { flavor: options.flavor },
         );
+
         match parsed {
             Ok(got) => match options.expected_outcome {
                 Outcome::Success if got == expected => TestResult::Success,
+                _ if bless => {
+                    let contents = create_content(
+                        input,
+                        &got,
+                        Options { expected_outcome: Outcome::Success, ..options },
+                    );
+                    std::fs::write(path, contents)
+                        .expect("Failed to bless test because of IO error");
+
+                    TestResult::Blessed
+                }
                 outcome => TestResult::IncorrectResult {
                     input: strip_input(input),
                     expected: outcome.of(expected.to_string()),
@@ -131,7 +143,11 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                 match options.expected_outcome {
                     Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
                     _ if bless => {
-                        let contents = create_content(input, &err, options);
+                        let contents = create_content(
+                            input,
+                            &err,
+                            Options { expected_outcome: Outcome::Error, ..options },
+                        );
                         std::fs::write(path, contents)
                             .expect("Failed to bless test because of IO error");
 

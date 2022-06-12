@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Clone)]
 pub(crate) struct Repetition<'i> {
-    rule: Rule<'i>,
+    pub(crate) rule: Rule<'i>,
     kind: RepetitionKind,
     quantifier: Quantifier,
     pub(crate) span: Span,

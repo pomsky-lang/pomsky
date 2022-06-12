@@ -170,6 +170,12 @@ fn defer_main() -> Result<(), io::Error> {
                 t_tip = Yellow("tip"),
                 t_filter = Blue("<filter>"),
             );
+            println!(
+                "{t_tip}: Automatically correct failed testcases with \
+                `cargo test --test it -- {t_bless}`\n",
+                t_tip = Yellow("tip"),
+                t_bless = Blue("--bless"),
+            );
         }
     } else if ignored > 0 {
         println!(

@@ -1,0 +1,5 @@
+#! expect=error
+!!
+-----
+ERROR: Expected expression
+SPAN: 1..2

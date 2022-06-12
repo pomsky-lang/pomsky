@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, Feature, ParseError},
+    error::{CompileError, CompileErrorKind, Feature, ParseError, ParseErrorKind},
     features::RulexFeatures,
     options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
@@ -52,6 +52,22 @@ impl<'i> Lookaround<'i> {
 
     pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { rule, kind, span }
+    }
+
+    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
+        match self.kind {
+            LookaroundKind::AheadNegative | LookaroundKind::BehindNegative => {
+                Err(ParseErrorKind::UnallowedDoubleNot)
+            }
+            LookaroundKind::Ahead => {
+                self.kind = LookaroundKind::AheadNegative;
+                Ok(())
+            }
+            LookaroundKind::Behind => {
+                self.kind = LookaroundKind::BehindNegative;
+                Ok(())
+            }
+        }
     }
 
     pub(crate) fn compile<'c>(
