@@ -1,7 +1,7 @@
 #! expect=error
-'hello'??
+('test')??
 -----
 ERROR: Unexpected `?` following a repetition
 HELP: If you meant to make the repetition lazy, append the `lazy` keyword instead.
 If this is intentional, consider adding parentheses around the inner repetition.
-SPAN: 8..9
+SPAN: 9..10

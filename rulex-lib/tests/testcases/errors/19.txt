@@ -1,5 +1,5 @@
 #! expect=error
 "test" 'test test
 -----
-Parse error: This string literal doesn't have a closing quote
-  at 7..17
+ERROR: This string literal doesn't have a closing quote
+SPAN: 7..17

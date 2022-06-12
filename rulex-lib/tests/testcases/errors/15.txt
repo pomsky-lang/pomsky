@@ -1,5 +1,5 @@
 #! expect=error
 'hello'{1
 -----
-Parse error: Expected `}`
-  at 9..9
+ERROR: Expected `}`
+SPAN: 9..9

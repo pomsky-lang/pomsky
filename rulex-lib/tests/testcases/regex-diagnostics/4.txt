@@ -1,0 +1,6 @@
+#! expect=error
+\X
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\X` with `Grapheme`
+SPAN: 0..2

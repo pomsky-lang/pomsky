@@ -1,5 +1,5 @@
 #! expect=error
 let r255 r256 r257 = 'a' 'b' 'c';
 -----
-Parse error: Expected `=`
-  at 9..13
+ERROR: Expected `=`
+SPAN: 9..13

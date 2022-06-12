@@ -5,5 +5,5 @@ let _ = (
 );
 a
 -----
-Parse error: A variable with the same name already exists in this scope
-  at 31..32
+ERROR: A variable with the same name already exists in this scope
+SPAN: 31..32

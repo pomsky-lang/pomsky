@@ -1,5 +1,5 @@
 #! expect=error
 ['abc']]
 -----
-Parse error: There are leftover tokens that couldn't be parsed
-  at 7..8
+ERROR: There are leftover tokens that couldn't be parsed
+SPAN: 7..8

@@ -1,0 +1,6 @@
+#! expect=error
+(?=test)
+-----
+ERROR: This syntax is not supported
+HELP: Lookahead uses the `>>` syntax. For example, `>> 'bob'` matches if the position is followed by bob.
+SPAN: 0..3

@@ -1,0 +1,6 @@
+#! expect=error
+(?<=test)
+-----
+ERROR: This syntax is not supported
+HELP: Lookbehind uses the `<<` syntax. For example, `<< 'bob'` matches if the position is preceded with bob.
+SPAN: 0..4

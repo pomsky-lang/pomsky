@@ -17,6 +17,7 @@ mod timeout;
 struct Args {
     include_ignored: bool,
     filter: String,
+    bless: bool,
 
     fuzz_ranges: bool,
     fuzz_start: usize,
@@ -28,6 +29,7 @@ impl Args {
     fn parse() -> Self {
         let mut include_ignored = false;
         let mut filter = String::new();
+        let mut bless = false;
         let mut fuzz_ranges = false;
         let mut fuzz_start = 0;
         let mut fuzz_step = 1;
@@ -35,8 +37,10 @@ impl Args {
 
         for arg in std::env::args().skip(1) {
             match arg.as_str() {
+                "--" => {}
                 "-i" | "--ignored" | "--include-ignored" => include_ignored = true,
                 "--fuzz-ranges" => fuzz_ranges = true,
+                "--bless" => bless = true,
                 "help" | "--help" | "-h" => {
                     eprintln!(
                         "USAGE:\n    \
@@ -44,6 +48,7 @@ impl Args {
                         \n\
                         OPTIONS:\n    \
                             -i,--ignored            Include ignored test cases\n    \
+                            --bless                 Bless failed test cases\n    \
                             --fuzz-ranges           Fuzz the `range '...'-'...' syntax`\n    \
                             --thoroughness=<NUMBER> Specify how thorough each range is fuzzed [default: 40]\n    \
                             --fuzz-start=<NUMBER>   Specify the bound where to start fuzzing [default: 0]\n    \
@@ -71,7 +76,7 @@ impl Args {
                 ),
             }
         }
-        Args { include_ignored, filter, fuzz_ranges, fuzz_start, fuzz_step, thoroughness }
+        Args { include_ignored, filter, bless, fuzz_ranges, fuzz_start, fuzz_step, thoroughness }
     }
 }
 
@@ -99,7 +104,7 @@ fn defer_main() -> Result<(), io::Error> {
 
     println!();
     let start = Instant::now();
-    test_dir_recursive("./tests/testcases".into(), &mut results, tx, &args)?;
+    test_dir_recursive("./tests/testcases".into(), &mut results, tx, &args, args.bless)?;
     let elapsed = start.elapsed();
     println!();
 
@@ -107,6 +112,7 @@ fn defer_main() -> Result<(), io::Error> {
 
     let mut ok = 0;
     let mut failed = 0;
+    let mut blessed = 0;
     let mut ignored = 0;
     let mut filtered = 0;
 
@@ -115,6 +121,7 @@ fn defer_main() -> Result<(), io::Error> {
             TestResult::Success => ok += 1,
             TestResult::Ignored => ignored += 1,
             TestResult::Filtered => filtered += 1,
+            TestResult::Blessed => blessed += 1,
             TestResult::IncorrectResult { input, expected, got } => {
                 failed += 1;
                 println!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
@@ -138,13 +145,23 @@ fn defer_main() -> Result<(), io::Error> {
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
         if failed == 0 { Green("ok") } else { Red("FAILED") },
         color!(Green if ok > 0; ok, " passed"),
-        color!(Red if failed > 0; failed, " failed"),
+        if blessed > 0 {
+            color!(Yellow if blessed > 0; blessed, " blessed")
+        } else {
+            color!(Red if failed > 0; failed, " failed")
+        },
         color!(Yellow if ignored > 0; ignored, " ignored"),
         color!(Yellow if filtered > 0; filtered, " filtered out"),
         elapsed,
     );
 
-    if failed > 0 {
+    if blessed > 0 {
+        println!(
+            "{t_warn}: Some failed tests were blessed. Check the git diff \
+            to see if their result is correct\n",
+            t_warn = Yellow("warning"),
+        );
+    } else if failed > 0 {
         if args.filter.is_empty() {
             println!(
                 "{t_tip}: you can rerun a specific test case with \
@@ -196,6 +213,7 @@ fn test_dir_recursive(
     results: &mut Vec<(PathBuf, TestResult)>,
     tx: Sender<PathBuf>,
     args: &Args,
+    bless: bool,
 ) -> Result<(), io::Error> {
     let path = &path;
     if !path.exists() {
@@ -206,7 +224,7 @@ fn test_dir_recursive(
     }
     if path.is_dir() {
         for test in fs::read_dir(path)? {
-            test_dir_recursive(test?.path(), results, tx.clone(), args)?;
+            test_dir_recursive(test?.path(), results, tx.clone(), args, bless)?;
         }
         Ok(())
     } else if path.is_file() {
@@ -216,7 +234,7 @@ fn test_dir_recursive(
             path.to_owned(),
             if filter_matches(&args.filter, path) {
                 tx.send(path.to_owned()).unwrap();
-                files::test_file(&content, path, args)
+                files::test_file(&content, path, args, bless)
             } else {
                 TestResult::Filtered
             },

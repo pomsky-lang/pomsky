@@ -1,5 +1,5 @@
 #! expect=error
 []
 -----
-Parse error: Expected string, range, code point or named character class
-  at 1..2
+ERROR: Expected string, range, code point or named character class
+SPAN: 1..2

@@ -1,0 +1,6 @@
+#! expect=error
+(?<!test)
+-----
+ERROR: This syntax is not supported
+HELP: Negative lookbehind uses the `!<<` syntax. For example, `!<< 'bob'` matches if the position is not preceded with bob.
+SPAN: 0..4

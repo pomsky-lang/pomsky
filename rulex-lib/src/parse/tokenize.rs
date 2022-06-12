@@ -107,7 +107,33 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 
                     if let Some(rest) = input.strip_prefix("(?") => (
                         match rest.chars().next() {
-                            Some('<' | '>' | '!' | ':' | '=') => 3,
+                            Some('<') => {
+                                let name_len = rest.chars()
+                                    .skip(1)
+                                    .take_while(char::is_ascii_alphanumeric)
+                                    .count();
+
+                                if name_len > 0 && matches!(rest.chars().nth(1 + name_len), Some('>')) {
+                                    4 + name_len
+                                } else if let Some('=' | '!') = rest.chars().nth(1) {
+                                    4
+                                } else {
+                                    3
+                                }
+                            }
+                            Some('P') if matches!(rest.chars().nth(1), Some('<')) => {
+                                let name_len = rest.chars()
+                                    .skip(2)
+                                    .take_while(char::is_ascii_alphanumeric)
+                                    .count();
+
+                                if name_len > 0 && matches!(rest.chars().nth(2 + name_len), Some('>')) {
+                                    5 + name_len
+                                } else {
+                                    4
+                                }
+                            },
+                            Some('>' | '!' | ':' | '=' | '(' | '|') => 3,
                             _ => 2,
                         },
                         Token::ErrorMsg(ParseErrorMsg::SpecialGroup),

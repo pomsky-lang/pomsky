@@ -1,5 +1,5 @@
 #! expect=error
 [greedy 'a']
 -----
-Parse error: Unexpected keyword `greedy`
-  at 1..7
+ERROR: Unexpected keyword `greedy`
+SPAN: 1..7

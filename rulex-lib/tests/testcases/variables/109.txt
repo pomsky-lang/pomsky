@@ -1,5 +1,5 @@
 #! expect=error
 let x = ::1;
 -----
-References within `let` statements are currently not supported
-  at 10..11
+ERROR: References within `let` statements are currently not supported
+SPAN: 10..11

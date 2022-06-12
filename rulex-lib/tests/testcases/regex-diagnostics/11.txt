@@ -1,0 +1,6 @@
+#! expect=error
+(?!=test)
+-----
+ERROR: This syntax is not supported
+HELP: Negative lookahead uses the `!>>` syntax. For example, `!>> 'bob'` matches if the position is not followed by bob.
+SPAN: 0..3

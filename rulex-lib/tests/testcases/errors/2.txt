@@ -1,5 +1,5 @@
 #! expect=error
 ~~~~~~~~
 -----
-Parse error: Unknown token
-  at 0..1
+ERROR: Unknown token
+SPAN: 0..1

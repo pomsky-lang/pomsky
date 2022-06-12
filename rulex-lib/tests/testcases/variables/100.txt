@@ -1,5 +1,5 @@
 #! expect=error
 let r255 = range '0'-'255'
 -----
-Parse error: Expected `;`
-  at 26..26
+ERROR: Expected `;`
+SPAN: 26..26

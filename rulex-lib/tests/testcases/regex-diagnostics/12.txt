@@ -1,0 +1,6 @@
+#! expect=error
+(?:test)
+-----
+ERROR: This syntax is not supported
+HELP: Non-capturing groups are just parentheses: `(...)`. Capturing groups use the `:(...)` syntax.
+SPAN: 0..3

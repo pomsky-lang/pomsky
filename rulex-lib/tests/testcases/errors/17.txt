@@ -1,5 +1,5 @@
 #! expect=error
 {2}('hello')
 -----
-Parse error: There are leftover tokens that couldn't be parsed
-  at 0..1
+ERROR: There are leftover tokens that couldn't be parsed
+SPAN: 0..1

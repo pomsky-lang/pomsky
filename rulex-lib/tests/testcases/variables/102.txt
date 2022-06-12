@@ -1,5 +1,5 @@
 #! expect=error
 let
 -----
-Parse error: Expected identifier
-  at 3..3
+ERROR: Expected identifier
+SPAN: 3..3

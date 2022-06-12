@@ -91,9 +91,9 @@ pub enum Token {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum ParseErrorMsg {
-    #[error("`^` is not a valid token. Use `<%` to match the start of the string")]
+    #[error("`^` is not a valid token")]
     Caret,
-    #[error("`$` is not a valid token. Use `%>` to match the end of the string")]
+    #[error("`$` is not a valid token")]
     Dollar,
     #[error("This syntax is not supported")]
     SpecialGroup,

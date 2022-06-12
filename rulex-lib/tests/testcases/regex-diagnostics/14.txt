@@ -1,0 +1,6 @@
+#! expect=error
+(?|(test)|(!))
+-----
+ERROR: This syntax is not supported
+HELP: Branch reset groups are not supported
+SPAN: 0..3

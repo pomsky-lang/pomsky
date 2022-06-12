@@ -3,7 +3,10 @@ use std::{
     path::Path,
 };
 
-use rulex::options::{CompileOptions, ParseOptions, RegexFlavor};
+use rulex::{
+    error::CompileError,
+    options::{CompileOptions, ParseOptions, RegexFlavor},
+};
 
 use crate::{color::Color::*, Args};
 
@@ -11,10 +14,12 @@ pub(crate) enum TestResult {
     Success,
     Ignored,
     Filtered,
+    Blessed,
     IncorrectResult { input: String, expected: Result<String, String>, got: Result<String, String> },
     Panic { message: Option<String> },
 }
 
+#[derive(Clone, Copy)]
 struct Options {
     flavor: RegexFlavor,
     ignore: bool,
@@ -40,7 +45,7 @@ impl Options {
                         "pcre" | "" => RegexFlavor::Pcre,
                         "js" | "javascript" => RegexFlavor::JavaScript,
                         "java" => RegexFlavor::Java,
-                        ".net" => RegexFlavor::DotNet,
+                        ".net" | "dotnet" => RegexFlavor::DotNet,
                         "python" => RegexFlavor::Python,
                         "rust" => RegexFlavor::Rust,
                         "ruby" => RegexFlavor::Ruby,
@@ -98,7 +103,7 @@ impl Outcome {
     }
 }
 
-pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
+pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) -> TestResult {
     let (input, expected, options) = process_content(content, path);
 
     if options.ignore && !args.include_ignored {
@@ -120,19 +125,37 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args) -> TestResult {
                     got: Ok(got),
                 },
             },
-            Err(err) => match options.expected_outcome {
-                Outcome::Error if expected.is_empty() || expected == err.to_string() => {
-                    TestResult::Success
+            Err(err) => {
+                let err = error_to_string(err, input);
+
+                match options.expected_outcome {
+                    Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
+                    _ if bless => {
+                        let contents = create_content(input, &err, options);
+                        std::fs::write(path, contents)
+                            .expect("Failed to bless test because of IO error");
+
+                        TestResult::Blessed
+                    }
+                    outcome => TestResult::IncorrectResult {
+                        input: strip_input(input),
+                        expected: outcome.of(expected.to_string()),
+                        got: Err(err),
+                    },
                 }
-                outcome => TestResult::IncorrectResult {
-                    input: strip_input(input),
-                    expected: outcome.of(expected.to_string()),
-                    got: Err(err.to_string()),
-                },
-            },
+            }
         }
     })
     .unwrap_or_else(|message| TestResult::Panic { message })
+}
+
+fn error_to_string(err: CompileError, input: &str) -> String {
+    let diagnostic = err.diagnostic(input);
+    if let Some(help) = diagnostic.help {
+        format!("ERROR: {}\nHELP: {}\nSPAN: {}", diagnostic.msg, help, diagnostic.span)
+    } else {
+        format!("ERROR: {}\nSPAN: {}", diagnostic.msg, diagnostic.span)
+    }
 }
 
 fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Options) {
@@ -147,6 +170,27 @@ fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Opti
         Options::default()
     };
     (input, expected, options)
+}
+
+fn create_content(input: &str, outcome: &str, options: Options) -> String {
+    let mut option_strings = vec![];
+    if let Outcome::Error = options.expected_outcome {
+        option_strings.push(String::from("expect=error"));
+    }
+    if options.ignore {
+        option_strings.push(String::from("ignore"));
+    }
+    if options.flavor != RegexFlavor::Pcre {
+        option_strings.push(format!("flavor={:?}", options.flavor));
+    }
+
+    let option_strings = if option_strings.is_empty() {
+        "".to_string()
+    } else {
+        format!("#! {}\n", option_strings.join(", "))
+    };
+
+    option_strings + input + "\n-----\n" + outcome
 }
 
 fn strip_input(input: &str) -> String {

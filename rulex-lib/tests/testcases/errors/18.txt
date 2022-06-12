@@ -1,5 +1,5 @@
 #! expect=error
 [Grapheme]
 -----
-Parse error: Unknown character class `Grapheme`
-  at 1..9
+ERROR: Unknown character class `Grapheme`
+SPAN: 1..9

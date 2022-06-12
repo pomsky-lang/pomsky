@@ -3,5 +3,5 @@ let x = y;
 let y = x;
 y
 -----
-Variables can't be used recursively
-  at 8..9
+ERROR: Variables can't be used recursively
+SPAN: 8..9

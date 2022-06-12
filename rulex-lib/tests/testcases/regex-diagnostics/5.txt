@@ -1,0 +1,6 @@
+#! expect=error
+[\s]
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\s` with `[s]`
+SPAN: 1..3

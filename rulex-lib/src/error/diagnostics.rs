@@ -61,14 +61,14 @@ impl Diagnostic {
 
         let help = match error.kind {
             ParseErrorKind::LexErrorWithMessage(msg) => match msg {
+                ParseErrorMsg::Caret => Some("Use `Start` to match the start of the string".into()),
+                ParseErrorMsg::Dollar => Some("Use `End` to match the end of the string".into()),
                 ParseErrorMsg::SpecialGroup => get_special_group_help(slice),
                 ParseErrorMsg::Backslash => get_backslash_help(slice),
                 ParseErrorMsg::BackslashU4 => get_backslash_help_u4(slice),
                 ParseErrorMsg::BackslashX2 => get_backslash_help_x2(slice),
                 ParseErrorMsg::BackslashUnicode => get_backslash_help_unicode(slice),
                 ParseErrorMsg::BackslashK => get_backslash_help_k(slice),
-                ParseErrorMsg::Caret => None,
-                ParseErrorMsg::Dollar => None,
                 ParseErrorMsg::UnclosedString => None,
             },
             ParseErrorKind::Repetition(RepetitionError::QuestionMarkAfterRepetition) => Some(
@@ -137,7 +137,7 @@ fn get_special_group_help(str: &str) -> Option<String> {
         }
         (Some('>'), _) => "Atomic capturing groups are not supported".into(),
         (Some('|'), _) => "Branch reset groups are not supported".into(),
-        (Some('('), _) => "Branch reset groups are not supported".into(),
+        (Some('('), _) => "Conditionals are not supported".into(),
         (Some('='), _) => "Lookahead uses the `>>` syntax. \
             For example, `>> 'bob'` matches if the position is followed by bob."
             .into(),
@@ -150,6 +150,14 @@ fn get_special_group_help(str: &str) -> Option<String> {
         (Some('<'), Some('!')) => "Negative lookbehind uses the `!<<` syntax. \
             For example, `!<< 'bob'` matches if the position is not preceded with bob."
             .into(),
+        (Some('<'), _) => {
+            let str = &str[1..];
+            let rest = str.trim_start_matches(char::is_alphanumeric);
+            let name = &str[..str.len() - rest.len()];
+            format!(
+                "Named capturing groups use the `:name(...)` syntax. Try `:{name}(...)` instead"
+            )
+        }
         _ => return None,
     })
 }
@@ -176,6 +184,7 @@ fn get_backslash_help(str: &str) -> Option<String> {
         Some(c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'w' | 's')) => {
             format!("Replace `\\{c}` with `[{c}]`")
         }
+        Some(c @ '0'..='9') => format!("Replace `\\{c}` with `::{c}`"),
         _ => return None,
     })
 }
