@@ -1,3 +1,5 @@
+//! Contains rulex features that can be individually enabled and disabled.
+
 use std::fmt;
 
 use crate::{
@@ -5,6 +7,16 @@ use crate::{
     span::Span,
 };
 
+/// A set of enabled rulex features. By default, all features are enabled.
+/// You can disabled specific features with
+///
+/// ```
+/// use rulex::features::RulexFeatures;
+///
+/// let allowed_features = RulexFeatures::default()
+///     .grapheme(false)
+///     .variables(false);
+/// ```
 #[derive(Copy, Clone)]
 pub struct RulexFeatures {
     bits: u16,

@@ -1,3 +1,5 @@
+//! Contains different kinds of errors emitted by rulex.
+
 pub(crate) use compile_error::CompileErrorKind;
 pub(crate) use parse_error::ParseErrorKind;
 

@@ -65,7 +65,6 @@ impl CharGroup {
                 CharGroup::Items(super::ascii::parse_ascii_group(name, negative)?)
             }
 
-            "Grapheme" | "X" => return Err(CharClassError::Grapheme),
             "codepoint" | "cp" | "." if negative => {
                 return Err(CharClassError::Negative);
             }

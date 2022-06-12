@@ -38,6 +38,8 @@
 //! }
 //! ```
 
+#![warn(missing_docs)]
+
 use std::collections::HashMap;
 
 use boundary::{Boundary, BoundaryKind};

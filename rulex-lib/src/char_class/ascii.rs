@@ -52,6 +52,6 @@ pub(super) fn parse_ascii_group(
             GroupItem::range_unchecked('a', 'f'),
             GroupItem::range_unchecked('A', 'F'),
         ],
-        _ => return Err(CharClassError::Unknown),
+        _ => return Err(CharClassError::UnknownNamedClass(name.to_owned())),
     })
 }

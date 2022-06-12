@@ -117,8 +117,13 @@ impl From<RepetitionError> for ParseErrorKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CharStringError {
+    /// Empty string in a code point range within a character class, e.g.
+    /// `[''-'z']`
     #[error("Strings used in ranges can't be empty")]
     Empty,
+
+    /// String in a code point range within a character class that contains
+    /// multiple code points, e.g. `['abc'-'z']`
     #[error("Strings used in ranges can only contain 1 code point")]
     TooManyCodePoints,
 }
@@ -127,25 +132,46 @@ pub enum CharStringError {
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CharClassError {
+    /// Empty character class, i.e. `[]`
     #[error("This character class is empty")]
     Empty,
+
+    /// Descending code point range, e.g. `['z'-'a']`
     #[error(
         "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
         *.0 as u32, *.1 as u32
     )]
     DescendingRange(char, char),
+
+    /// Invalid token within a character class
     #[error("Expected string, range, code point or named character class")]
     Invalid,
+
+    /// Unknown shorthand character class, currently unused
+    #[deprecated = "No longer used. Use the `UnknownNamedClass` variant instead"]
+    // TODO: remove in next major version
     #[error("This character class is unknown")]
     Unknown,
+
+    /// Character class contains incompatible shorthands, e.g. `[. codepoint]`
     #[error("This combination of character classes is not allowed")]
     Unallowed,
+
+    /// Unknown shorthand character class or Unicode property
     #[error("Unknown character class `{}`", .0)]
     UnknownNamedClass(String),
+
+    /// A character class that can't be negated, e.g. `[!ascii]`
     #[error("This character class can't be negated")]
     Negative,
+
+    /// The `Grapheme` identifier within a character class
+    #[deprecated = "Grapheme is no longer a keyword, so this is unused."]
+    // TODO: remove in next major version
     #[error("A character class can't contain `Grapheme`")]
     Grapheme,
+
+    /// Unexpected keyword within a character class, e.g. `[let]`
     #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
 }
@@ -154,24 +180,38 @@ pub enum CharClassError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum CodePointError {
+    /// Code point that is outside the allowed range, e.g. `U+200000`
     #[error("This code point is outside the allowed range")]
     Invalid,
+
+    /// Invalid code point. Currently unused
+    #[deprecated = "This variant is unused and will be removed."]
+    // TODO: remove in next major version
     #[error("This code point range is invalid")]
     InvalidRange,
 }
 
-/// An error that relates to a number
+/// An error that relates to parsing a number
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum NumberError {
+    /// The parsed string is empty
     #[error("cannot parse integer from empty string")]
     Empty,
+
+    /// The parsed string contains a character that isn't a digit
     #[error("invalid digit found in string")]
     InvalidDigit,
+
+    /// The number is too large to fit in the target integer type
     #[error("number too large")]
     TooLarge,
+
+    /// The number is too small to fit in the target integer type
     #[error("number too small")]
     TooSmall,
+
+    /// The number is zero, but the target number type can't be zero
     #[error("number would be zero for non-zero type")]
     Zero,
 }
@@ -189,28 +229,40 @@ impl From<ParseIntError> for NumberError {
     }
 }
 
-/// An error that indicates that an unsupported feature was used
+/// An error that indicates that an unsupported feature was used.
+///
+/// See [`crate::features::RulexFeatures`] for details.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub enum UnsupportedError {
     #[error("Grapheme is not supported")]
     Grapheme,
+
     #[error("Numbered capturing groups is not supported")]
     NumberedGroups,
+
     #[error("Named capturing groups is not supported")]
     NamedGroups,
+
     #[error("References aren't supported")]
     References,
+
     #[error("Lazy mode isn't supported")]
     LazyMode,
+
     #[error("Ranges aren't supported")]
     Ranges,
+
     #[error("Variables aren't supported")]
     Variables,
+
     #[error("Lookahead isn't supported")]
     Lookahead,
+
     #[error("Lookbehind isn't supported")]
     Lookbehind,
+
     #[error("Word boundaries aren't supported")]
     Boundaries,
 }

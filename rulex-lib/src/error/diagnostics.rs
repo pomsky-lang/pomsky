@@ -8,10 +8,16 @@ use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErro
 /// A struct containing detailed information about an error, which can be
 /// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).
 pub struct Diagnostic {
+    /// The error message
     pub msg: String,
+    /// The error code (optional, currently unused)
     pub code: Option<String>,
+    /// The source code where the error occurred
     pub source_code: String,
+    /// An (optional) help message explaining how the error could be fixed
     pub help: Option<String>,
+    /// The start and end byte positions of the source code where the error
+    /// occurred.
     pub span: Span,
 }
 
