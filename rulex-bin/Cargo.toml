@@ -24,7 +24,7 @@ thiserror = "1.0.30"
 miette = { version = "4.2.1", features = ["fancy"] }
 
 [dependencies.rulex]
-version = "0.4.0"
+version = "0.4.2"
 path = "../rulex-lib"
 features = ["dbg", "miette"]
 
