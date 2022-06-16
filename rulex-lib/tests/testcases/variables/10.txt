@@ -1,0 +1,5 @@
+# built-in variables
+
+Start End Codepoint C Grapheme G
+-----
+^$[\s\S][\s\S]\X\X

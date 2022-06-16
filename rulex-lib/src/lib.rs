@@ -43,6 +43,7 @@
 use std::collections::HashMap;
 
 use boundary::{Boundary, BoundaryKind};
+use char_class::{CharClass, CharGroup};
 use compile::CompileState;
 use error::{CompileError, ParseError};
 use grapheme::Grapheme;
@@ -95,12 +96,20 @@ impl<'i> Rulex<'i> {
         self.0.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
 
         let empty_span = Span::new(0, 0);
+
         let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, empty_span));
         let end = Rule::Boundary(Boundary::new(BoundaryKind::End, empty_span));
         let grapheme = Rule::Grapheme(Grapheme { span: empty_span });
+        let codepoint = Rule::CharClass(CharClass::new(CharGroup::CodePoint, empty_span));
 
-        let builtins =
-            vec![("Start", &start), ("End", &end), ("Grapheme", &grapheme), ("X", &grapheme)];
+        let builtins = vec![
+            ("Start", &start),
+            ("End", &end),
+            ("Grapheme", &grapheme),
+            ("G", &grapheme),
+            ("Codepoint", &codepoint),
+            ("C", &codepoint),
+        ];
 
         let mut state = CompileState {
             next_idx: 1,
