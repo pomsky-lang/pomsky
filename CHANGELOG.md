@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2022-06-16
+
+### Added
+
+- Built-in variables were added:
+
+  - `Start` as an alias for `<%`, which matches the start of the string
+  - `End` as an alias for `%>`, which matches the end of the string
+  - `Codepoint` and `C` as aliases for `[codepoint]`, matching a single code point
+  - `G` as an alias for `Grapheme`, matching an extended grapheme cluster
+
+- `Grapheme` was turned from a keyword into a built-in variable.
+
+- The repository now has issue templates and a pull request template.
+
+### Important note
+
+`<%`, `%>`, `[codepoint]`, `[cp]` and `[.]` will be deprecated in the future. It is recommended
+to use `Start`, `End` and `Codepoint`/`C` instead.
+
+There won't be a replacement for `[.]`, but you can use `![n]` to match any code point except
+the ASCII line break.
+
+### Fixed/improved
+
+- [#29](https://github.com/rulex-rs/rulex/pull/29): Fix a miscompilation of a repeated empty group,
+  e.g. `()?`. Thanks, [sebastiantoh](https://github.com/sebastiantoh)!
+
+- Make the parser more permissive to parse arbitrary negated expressions. This results in better
+  error messages.
+
+- Add missing help messages to diagnostics and fix a few that were broken:
+
+  - When parsing `^`: _Use `Start` to match the start of the string_
+  - When parsing `$`: _Use `End` to match the end of the string_
+  - When parsing e.g. `(?<grp>)`: _Named capturing groups use the `:name(...)` syntax. Try `:grp(...)` instead_
+  - When parsing e.g. `\4`: _Replace `\\4` with `::4`_
+  - When parsing e.g. `(?<=test)`: _Lookbehind uses the `<<` syntax. For example, `<< 'bob'` matches if the position is preceded with bob._
+  - When parsing e.g. `(?<!test)`: _Negative lookbehind uses the `!<<` syntax. For example, `!<< 'bob'` matches if the position is not preceded with bob._
+
+- Improve test suite: Help messages are now tested as well, and failing tests can be "blessed" when
+  the output has changed. Test coverage was also improved.
+
+- The entire public API is now documented.
+
 ## [0.4.1] - 2022-06-03
 
 ### Fixed
@@ -117,7 +162,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.1...HEAD
+[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/rulex-rs/rulex/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/rulex-rs/rulex/compare/v0.4...v0.4.1
 [0.4.0]: https://github.com/rulex-rs/rulex/compare/v0.3...v0.4
 [0.3.0]: https://github.com/rulex-rs/rulex/compare/v0.2...v0.3
