@@ -594,26 +594,33 @@ fn parse_quoted_text(input: &str) -> Result<Cow<'_, str>, ParseErrorKind> {
 
             loop {
                 let mut chars = s.chars();
+                let char_len;
                 match chars.next() {
-                    Some('\\') => match chars.next() {
-                        Some('\\') => {
-                            buf.push('\\');
-                            s = &s[1..];
+                    Some('\\') => {
+                        char_len = 1;
+                        match chars.next() {
+                            Some('\\') => {
+                                buf.push('\\');
+                                s = &s[char_len..];
+                            }
+                            Some('"') => {
+                                buf.push('"');
+                                s = &s[char_len..];
+                            }
+                            _ => {
+                                return Err(ParseErrorKind::InvalidEscapeInStringAt(
+                                    input.len() - s.len(),
+                                ));
+                            }
                         }
-                        Some('"') => {
-                            buf.push('"');
-                            s = &s[1..];
-                        }
-                        _ => {
-                            return Err(ParseErrorKind::InvalidEscapeInStringAt(
-                                input.len() - s.len(),
-                            ));
-                        }
-                    },
-                    Some(c) => buf.push(c),
+                    }
+                    Some(c) => {
+                        char_len = c.len_utf8();
+                        buf.push(c);
+                    }
                     None => break,
                 }
-                s = &s[1..];
+                s = &s[char_len..];
             }
             Cow::Owned(buf)
         }
@@ -660,4 +667,14 @@ fn err<'i, 'b, T>(
     mut error_fn: impl FnMut() -> ParseErrorKind,
 ) -> impl FnMut(Input<'i, 'b>) -> IResult<Input<'i, 'b>, T, ParseError> {
     move |input| Err(nom::Err::Error(error_fn().at(input.span())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_quoted_text_with_multibyte_codepoints_regression() {
+        assert_eq!("ǩ", parse_quoted_text("\"ǩ\"").unwrap());
+    }
 }
