@@ -181,20 +181,25 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 }
 
 fn find_unescaped_quote(input: &str) -> Option<usize> {
-    let mut s = input;
+    let mut s = input.char_indices();
 
-    loop {
-        match s.find(|c| c == '\\' || c == '"') {
-            Some(n) => {
-                if s.as_bytes()[n] == b'"' {
-                    return Some(n + (input.len() - s.len()));
-                } else if n + 2 <= s.len() {
-                    s = &s[n + 2..];
-                } else {
-                    return None;
-                }
-            }
-            None => return None,
-        }
+    while let Some(c) = s.next() {
+        match c {
+            (index, '"') => return Some(index), // found an unescaped quote
+            (_, '\\') => s.next()?, // skip the next character, or return early if no more
+            _ => continue,          // skip any other character
+        };
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unescaped_quote_multibyte_codepoint_regression() {
+        assert!(find_unescaped_quote("\\ǩ").is_none());
     }
 }
