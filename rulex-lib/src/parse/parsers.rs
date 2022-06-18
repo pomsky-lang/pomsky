@@ -594,26 +594,33 @@ fn parse_quoted_text(input: &str) -> Result<Cow<'_, str>, ParseErrorKind> {
 
             loop {
                 let mut chars = s.chars();
+                let char_len;
                 match chars.next() {
-                    Some('\\') => match chars.next() {
-                        Some('\\') => {
-                            buf.push('\\');
-                            s = &s[1..];
+                    Some('\\') => {
+                        char_len = 1;
+                        match chars.next() {
+                            Some('\\') => {
+                                buf.push('\\');
+                                s = &s[1..];
+                            }
+                            Some('"') => {
+                                buf.push('"');
+                                s = &s[1..];
+                            }
+                            _ => {
+                                return Err(ParseErrorKind::InvalidEscapeInStringAt(
+                                    input.len() - s.len(),
+                                ));
+                            }
                         }
-                        Some('"') => {
-                            buf.push('"');
-                            s = &s[1..];
-                        }
-                        _ => {
-                            return Err(ParseErrorKind::InvalidEscapeInStringAt(
-                                input.len() - s.len(),
-                            ));
-                        }
-                    },
-                    Some(c) => buf.push(c),
+                    }
+                    Some(c) => {
+                        char_len = c.len_utf8();
+                        buf.push(c)
+                    }
                     None => break,
                 }
-                s = &s[1..];
+                s = &s[char_len..];
             }
             Cow::Owned(buf)
         }
