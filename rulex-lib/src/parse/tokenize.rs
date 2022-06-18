@@ -188,8 +188,8 @@ fn find_unescaped_quote(input: &str) -> Option<usize> {
             Some(n) => {
                 if s.as_bytes()[n] == b'"' {
                     return Some(n + (input.len() - s.len()));
-                } else if n + 2 <= s.len() {
-                    s = &s[n + 2..];
+                } else if let Some(next) = s[n + 1..].chars().next() {
+                    s = &s[n + 1 + next.len_utf8()..];
                 } else {
                     return None;
                 }
