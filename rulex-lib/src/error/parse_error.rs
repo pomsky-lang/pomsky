@@ -95,6 +95,9 @@ pub(crate) enum ParseErrorKind {
     #[error(transparent)]
     Unsupported(UnsupportedError),
 
+    #[error("Recursion limit reached. Try a less nested expression")]
+    RecursionLimit,
+
     #[error("Unknown error: {:?}", .0)]
     Nom(nom::error::ErrorKind),
     #[error("Incomplete parse")]

@@ -22,6 +22,24 @@ pub struct RulexFeatures {
     bits: u16,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for RulexFeatures {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut feat = RulexFeatures::default();
+        feat.grapheme(bool::arbitrary(u)?);
+        feat.numbered_groups(bool::arbitrary(u)?);
+        feat.named_groups(bool::arbitrary(u)?);
+        feat.references(bool::arbitrary(u)?);
+        feat.lazy_mode(bool::arbitrary(u)?);
+        feat.ranges(bool::arbitrary(u)?);
+        feat.variables(bool::arbitrary(u)?);
+        feat.lookahead(bool::arbitrary(u)?);
+        feat.lookbehind(bool::arbitrary(u)?);
+        feat.boundaries(bool::arbitrary(u)?);
+        Ok(feat)
+    }
+}
+
 impl fmt::Debug for RulexFeatures {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RulexFeatures")

@@ -1,0 +1,7 @@
+#! expect=error
+# this mustn't panic when tokenizing
+
+C ؾ\ ؾ \u{ؾ} U+ؾ Uؾ' ؾ'
+-----
+ERROR: Backslash escapes are not supported
+SPAN: 42..44

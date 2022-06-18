@@ -13,10 +13,15 @@ use super::token::Token;
 pub(crate) struct Input<'i, 'b> {
     source: &'i str,
     tokens: &'b [(Token, Span)],
+    recursion: u16,
 }
 
 impl<'i, 'b> Input<'i, 'b> {
-    pub(super) fn from(source: &'i str, tokens: &'b [(Token, Span)]) -> Result<Self, ParseError> {
+    pub(super) fn from(
+        source: &'i str,
+        tokens: &'b [(Token, Span)],
+        recursion: u16,
+    ) -> Result<Self, ParseError> {
         let error = tokens.iter().find_map(|&(t, span)| match t {
             Token::Error => Some((span, None)),
             Token::ErrorMsg(m) => Some((span, Some(m))),
@@ -29,7 +34,19 @@ impl<'i, 'b> Input<'i, 'b> {
             };
         }
 
-        Ok(Input { source, tokens })
+        Ok(Input { source, tokens, recursion })
+    }
+
+    pub(super) fn recursion_start(&mut self) -> Result<(), ParseError> {
+        self.recursion = self
+            .recursion
+            .checked_sub(1)
+            .ok_or_else(|| ParseErrorKind::RecursionLimit.at(self.span()))?;
+        Ok(())
+    }
+
+    pub(super) fn recursion_end(&mut self) {
+        self.recursion += 1;
     }
 
     pub(super) fn is_empty(&self) -> bool {
@@ -101,7 +118,7 @@ impl<'i, 'b> InputIter for Input<'i, 'b> {
     }
 
     fn iter_elements(&self) -> Self::IterElem {
-        Input { source: self.source, tokens: self.tokens }
+        Input { ..*self }
     }
 
     fn position<P>(&self, predicate: P) -> Option<usize>
@@ -131,12 +148,12 @@ impl<'i, 'b> InputTake for Input<'i, 'b> {
     fn take(&self, count: usize) -> Self {
         let tokens = &self.tokens[..count];
 
-        Input { source: self.source, tokens }
+        Input { tokens, ..*self }
     }
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         let (left, right) = self.tokens.split_at(count);
 
-        (Input { source: self.source, tokens: left }, Input { source: self.source, tokens: right })
+        (Input { tokens: left, ..*self }, Input { tokens: right, ..*self })
     }
 }

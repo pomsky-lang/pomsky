@@ -161,8 +161,8 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                                 Some(len) => (len + 4, Token::ErrorMsg(ParseErrorMsg::BackslashK)),
                                 _ => (2, Token::ErrorMsg(ParseErrorMsg::Backslash)),
                             }
-                        } else if let Some(next_char)= input.chars().nth(1) {
-                            (1 + next_char.len_utf8(), Token::ErrorMsg(ParseErrorMsg::Backslash))
+                        } else if let Some(next) = input.chars().nth(1) {
+                            (1 + next.len_utf8(), Token::ErrorMsg(ParseErrorMsg::Backslash))
                         } else {
                             (1, Token::Error)
                         }
