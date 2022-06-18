@@ -35,15 +35,31 @@ use super::{Input, Token};
 
 pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
-pub(crate) fn parse(source: &str) -> Result<Rule<'_>, ParseError> {
+pub(crate) fn parse(source: &str, recursion: u16) -> Result<Rule<'_>, ParseError> {
     let tokens = super::tokenize::tokenize(source);
-    let input = Input::from(source, &tokens)?;
+    let input = Input::from(source, &tokens, recursion)?;
 
     let (rest, rules) = parse_modified(input)?;
     if rest.is_empty() {
         Ok(rules)
     } else {
         Err(ParseErrorKind::LeftoverTokens.at(rest.span()))
+    }
+}
+
+fn recurse<'i, 'b, O>(
+    mut parser: impl Parser<Input<'i, 'b>, O, ParseError>,
+) -> impl FnMut(Input<'i, 'b>) -> PResult<'i, 'b, O> {
+    move |mut input| {
+        input.recursion_start().map_err(nom::Err::Failure)?;
+
+        match parser.parse(input) {
+            Ok((mut input, output)) => {
+                input.recursion_end();
+                Ok((input, output))
+            }
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -78,7 +94,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                         "let",
                         cut(Token::Identifier),
                         cut(Token::Equals),
-                        cut(parse_or),
+                        cut(recurse(parse_or)),
                         cut(Token::Semicolon),
                     )),
                     |((_, span_start), (name, name_span), _, rule, (_, span_end))| {
@@ -86,7 +102,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                     },
                 ),
             ))),
-            parse_or,
+            recurse(parse_or),
         ),
         |(stmts, mut rule): (Vec<(Stmt, Span)>, _)| {
             if stmts.len() > 1 {
@@ -137,7 +153,7 @@ pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     alt((
         try_map(
-            pair(Token::Not, opt(parse_fixes)),
+            pair(Token::Not, opt(recurse(parse_fixes))),
             |(_, rule)| {
                 if let Some(mut rule) = rule {
                     rule.negate()?;
@@ -148,7 +164,7 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
             },
             nom::Err::Failure,
         ),
-        map(pair(parse_lookaround, parse_modified), |((kind, span), rule)| {
+        map(pair(parse_lookaround, recurse(parse_modified)), |((kind, span), rule)| {
             let span = span.join(rule.span());
             Rule::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
         }),
@@ -282,7 +298,10 @@ pub(super) fn parse_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
     }
 
     map(
-        pair(opt(parse_capture), tuple((Token::OpenParen, parse_modified, cut(Token::CloseParen)))),
+        pair(
+            opt(parse_capture),
+            tuple((Token::OpenParen, recurse(parse_modified), cut(Token::CloseParen))),
+        ),
         |(capture, (_, rule, (_, close_paren)))| match (capture, rule) {
             (None, rule) => rule,
             (Some((capture, c_span)), Rule::Group(mut g)) if !g.is_capturing() => {

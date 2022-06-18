@@ -84,7 +84,7 @@ impl<'i> Rulex<'i> {
     /// The parsed `Rulex` can be displayed with `Debug` if the `dbg` feature is
     /// enabled.
     pub fn parse(input: &'i str, options: ParseOptions) -> Result<Self, ParseError> {
-        let rule = parse::parse(input)?;
+        let rule = parse::parse(input, 256)?;
         rule.validate(&options)?;
         Ok(Rulex(rule))
     }
