@@ -4,6 +4,7 @@ use crate::features::RulexFeatures;
 
 /// Options passed to the rulex parser
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ParseOptions {
     /// The maximum number of digits in a `range` expression. Defaults to 6.
     ///
@@ -24,6 +25,7 @@ impl Default for ParseOptions {
 
 /// Options passed to the rulex compiler
 #[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CompileOptions {
     /// The targeted regex flavor. Rulex makes sure that the emitted regex is
     /// compatible with this flavor.
@@ -33,6 +35,7 @@ pub struct CompileOptions {
 /// A regex flavor is a regex engine or a set of regex engines that are similar
 /// enough that they can be treated the same for the purpose of writing regexes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[non_exhaustive]
 pub enum RegexFlavor {
     /// PCRE and PCRE2
