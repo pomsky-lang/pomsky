@@ -31,10 +31,16 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            This is a new release of `rulex`.
+            This is a new release of `rulex`. See what's new in the [changelog](https://github.com/rulex-rs/rulex/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
             ### Installation
             If you're running on Linux, macOS or Windows, you can use the binaries below.
-            Alternatively, you can build `rulex` with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
+
+            On Arch Linux, you can install the [AUR package](https://aur.archlinux.org/packages/rulex-rs-bin) with
+            ```sh
+            yay -S rulex-rs-bin
+            ```
+
+            You can also build `rulex` with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
             ```shell
             $ cargo install rulex-bin
             ```

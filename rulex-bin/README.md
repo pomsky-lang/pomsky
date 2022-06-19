@@ -7,6 +7,15 @@ This CLI allows you to compile [rulex expressions](../README.md) to regexes in t
 Binaries are available for Windows, Linux and macOS. Download them from the
 [releases page](https://github.com/rulex-rs/rulex/releases).
 
+## Use the AUR package
+
+On Arch Linux, the [AUR package](https://aur.archlinux.org/packages/rulex-rs-bin) can be installed
+with
+
+```sh
+yay -S rulex-rs-bin
+```
+
 ## Install from source
 
 This requires that a recent Rust toolchain is installed. Instructions for how to install Rust can be
