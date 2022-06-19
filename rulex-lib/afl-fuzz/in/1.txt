@@ -1,0 +1,32 @@
+# BACKSLASH_ESC
+let dig = [ascii_digit];
+let xdig = [ascii_xdigit];
+
+let esc_hex = 'x' xdig{2};
+let esc_octal = '0' ['0'-'7']{2};
+let esc_octal_braced = 'o{' ['0'-'7']{1,8} '}';
+let esc_unicode = 'u' xdig{4};
+let esc_unicode_braced = ['ux'] '{' xdig{1,6} '}';
+let esc_control = 'c' [ascii_alpha];
+
+let backref_delim = [ascii_alnum '_-+']+;
+let backref_gk = ['gk'] ( '-'? dig dig?
+                        | '{' backref_delim '}'
+                        | '<' backref_delim '>'
+                        | "'" backref_delim "'"
+                        );
+
+let category = ['pP'] ( [ascii_alpha]
+                      | '{' '^'? [ascii_alnum '_-+']+ '}'
+                      );
+
+Start '\' ( esc_hex
+          | esc_octal
+          | esc_octal_braced
+          | esc_unicode
+          | esc_unicode_braced
+          | esc_control
+          | backref_gk
+          | category
+          | C
+          )
