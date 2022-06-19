@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2022-06-19
+
+### Added
+
+- Add libFuzzer and AFL fuzzing boilerplate to find panics
+
+- Add artificial recursion limit during parsing to prevent stack exhaustion.
+  _This means that groups can be nested by at most 127 levels. I don't think you'll ever run into this limitation, but if you do, you can refactor your expression into variables._
+
+### Fixed
+
+- Fixed crash caused by slicing into a multi-byte UTF-8 code point after a backslash or in a string
+- Fixed crash caused by stack exhaustion when parsing a very deeply nested expression
+
 ## [0.4.2] - 2022-06-16
 
 ### Added
@@ -162,7 +176,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.2...HEAD
+[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/rulex-rs/rulex/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/rulex-rs/rulex/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/rulex-rs/rulex/compare/v0.4...v0.4.1
 [0.4.0]: https://github.com/rulex-rs/rulex/compare/v0.3...v0.4
