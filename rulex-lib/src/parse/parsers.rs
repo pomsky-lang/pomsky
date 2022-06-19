@@ -171,6 +171,12 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
         try_map2(
             pair(parse_atom, many0(parse_repetition)),
             |(mut rule, repetitions)| {
+                if repetitions.len() > 64 {
+                    let (.., span1, _) = repetitions[64];
+                    let &(.., span2, _) = repetitions.last().unwrap();
+                    return Err(ParseErrorKind::RecursionLimit.at(span1.join(span2)));
+                }
+
                 let mut prev_syntax = RepSyntax::ExplicitQuantifier;
                 for (kind, quantifier, span, syntax) in repetitions {
                     if matches!(
