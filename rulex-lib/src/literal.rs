@@ -71,7 +71,7 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         '\x1B' => buf.push_str("\\e"),
         '\x0C' => buf.push_str("\\f"),
         ' ' => buf.push(' '),
-        _ if c <= '\u{FF}' => {
+        _ if c.is_ascii() => {
             if c.is_ascii_graphic() {
                 buf.push(c);
             } else {
@@ -81,7 +81,10 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         _ if c.is_alphanumeric() && c.len_utf16() == 1 => {
             buf.push(c);
         }
-        _ if c.len_utf16() == 1 && !matches!(flavor, RegexFlavor::Pcre) => {
+        _ if c as u32 <= 0xFF => {
+            write!(buf, "\\x{:02X}", c as u32).unwrap();
+        }
+        _ if c as u32 <= 0xFFFF && !matches!(flavor, RegexFlavor::Pcre) => {
             write!(buf, "\\u{:04X}", c as u32).unwrap();
         }
         _ => {

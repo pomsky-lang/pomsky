@@ -21,7 +21,10 @@ path = "src/main.rs"
 [dependencies]
 atty = "0.2.14"
 thiserror = "1.0.30"
-miette = { version = "4.2.1", features = ["fancy"] }
+
+[dependencies.miette]
+version = "4.2.1"
+features = ["fancy-no-backtrace"]
 
 [dependencies.rulex]
 version = "0.4.3"
