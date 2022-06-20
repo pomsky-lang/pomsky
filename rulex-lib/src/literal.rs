@@ -44,6 +44,7 @@ pub(crate) fn codegen_char_esc(c: char, buf: &mut String, flavor: RegexFlavor) {
         '\\' => buf.push_str(r#"\\"#),
         '[' => buf.push_str(r#"\["#),
         '{' => buf.push_str(r#"\{"#),
+        '}' => buf.push_str(r#"\}"#),
         '(' => buf.push_str(r#"\("#),
         ')' => buf.push_str(r#"\)"#),
         '.' => buf.push_str(r#"\."#),
