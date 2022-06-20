@@ -12,7 +12,7 @@ use super::Diagnostic;
 #[derive(Debug, Clone)]
 pub struct ParseError {
     pub(super) kind: ParseErrorKind,
-    pub(super) span: Option<Span>,
+    pub(super) span: Span,
 }
 
 impl ParseError {
@@ -24,8 +24,8 @@ impl ParseError {
 
 impl core::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(span) = self.span {
-            write!(f, "{}\n  at {}", self.kind, span)
+        if let Some(std::ops::Range { start, end }) = self.span.range() {
+            write!(f, "{}\n  at {}..{}", self.kind, start, end)
         } else {
             self.kind.fmt(f)
         }
@@ -35,7 +35,7 @@ impl core::fmt::Display for ParseError {
 impl From<nom::Err<ParseError>> for ParseError {
     fn from(e: nom::Err<ParseError>) -> Self {
         match e {
-            nom::Err::Incomplete(_) => ParseErrorKind::Incomplete.unknown_index(),
+            nom::Err::Incomplete(_) => ParseErrorKind::Incomplete.at(Span::empty()),
             nom::Err::Error(e) | nom::Err::Failure(e) => e,
         }
     }
@@ -106,11 +106,7 @@ pub(crate) enum ParseErrorKind {
 
 impl ParseErrorKind {
     pub(crate) fn at(self, span: Span) -> ParseError {
-        ParseError { kind: self, span: Some(span) }
-    }
-
-    pub(crate) fn unknown_index(self) -> ParseError {
-        ParseError { kind: self, span: None }
+        ParseError { kind: self, span }
     }
 }
 

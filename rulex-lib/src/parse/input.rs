@@ -57,7 +57,7 @@ impl<'i, 'b> Input<'i, 'b> {
         self.tokens
             .first()
             .map(|&(_, span)| span)
-            .unwrap_or_else(|| (self.source.len()..self.source.len()).into())
+            .unwrap_or_else(|| Span::new(self.source.len(), self.source.len()))
     }
 
     pub(super) fn peek(&self) -> Option<(Token, &'i str)> {
@@ -85,7 +85,7 @@ impl<'i, 'b> core::fmt::Debug for Input<'i, 'b> {
         let v = self
             .tokens
             .iter()
-            .map(|&(t, span)| FmtHelper(t, &self.source[span.range()]))
+            .map(|&(t, span)| FmtHelper(t, &self.source[span.range_unchecked()]))
             .collect::<Vec<_>>();
 
         v.fmt(f)
@@ -99,7 +99,7 @@ impl<'i, 'b> Iterator for Input<'i, 'b> {
         match self.tokens.split_first() {
             Some((&(token, span), rest)) => {
                 self.tokens = rest;
-                Some((token, &self.source[span.range()]))
+                Some((token, &self.source[span.range_unchecked()]))
             }
             None => None,
         }

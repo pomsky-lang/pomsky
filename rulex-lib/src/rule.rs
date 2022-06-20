@@ -57,7 +57,7 @@ impl<'i> Rule<'i> {
         match self {
             Rule::Literal(l) => l.span,
             Rule::CharClass(c) => c.span,
-            Rule::Grapheme(g) => g.span,
+            Rule::Grapheme(_) => Span::empty(),
             Rule::Group(g) => g.span,
             Rule::Alternation(a) => a.span,
             Rule::Repetition(r) => r.span,
@@ -129,7 +129,10 @@ impl<'i> Rule<'i> {
             Rule::Repetition(r) => r.compile(options, state),
             Rule::Boundary(b) => b.compile(),
             Rule::Lookaround(l) => l.compile(options, state),
-            Rule::Variable(v) => v.compile(options, state),
+            Rule::Variable(v) => v.compile(options, state).map_err(|mut e| {
+                e.set_missing_span(v.span);
+                e
+            }),
             Rule::Reference(r) => r.compile(options, state),
             Rule::Range(r) => r.compile(),
             Rule::StmtExpr(m) => m.compile(options, state),

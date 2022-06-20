@@ -6,10 +6,16 @@ use super::{Diagnostic, ParseError, ParseErrorKind};
 #[derive(Debug, Clone, thiserror::Error)]
 pub struct CompileError {
     pub(super) kind: CompileErrorKind,
-    pub(super) span: Option<Span>,
+    pub(super) span: Span,
 }
 
 impl CompileError {
+    pub(crate) fn set_missing_span(&mut self, span: Span) {
+        if self.span.is_empty() {
+            self.span = span;
+        }
+    }
+
     /// Create a [Diagnostic] from this error.
     pub fn diagnostic(self, source_code: &str) -> Diagnostic {
         Diagnostic::from_compile_error(self, source_code)
@@ -18,8 +24,8 @@ impl CompileError {
 
 impl core::fmt::Display for CompileError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(span) = self.span {
-            write!(f, "{}\n  at {}", self.kind, span)
+        if let Some(std::ops::Range { start, end }) = self.span.range() {
+            write!(f, "{}\n  at {}..{}", self.kind, start, end)
         } else {
             self.kind.fmt(f)
         }
@@ -78,7 +84,7 @@ pub(crate) enum CompileErrorKind {
 
 impl CompileErrorKind {
     pub(crate) fn at(self, span: Span) -> CompileError {
-        CompileError { kind: self, span: Some(span) }
+        CompileError { kind: self, span }
     }
 }
 

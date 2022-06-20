@@ -95,12 +95,12 @@ impl<'i> Rulex<'i> {
         let mut groups_count = 0;
         self.0.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
 
-        let empty_span = Span::new(0, 0);
+        let no_span = Span::empty();
 
-        let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, empty_span));
-        let end = Rule::Boundary(Boundary::new(BoundaryKind::End, empty_span));
-        let grapheme = Rule::Grapheme(Grapheme { span: empty_span });
-        let codepoint = Rule::CharClass(CharClass::new(CharGroup::CodePoint, empty_span));
+        let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, no_span));
+        let end = Rule::Boundary(Boundary::new(BoundaryKind::End, no_span));
+        let grapheme = Rule::Grapheme(Grapheme);
+        let codepoint = Rule::CharClass(CharClass::new(CharGroup::CodePoint, no_span));
 
         let builtins = vec![
             ("Start", &start),

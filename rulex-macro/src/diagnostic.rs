@@ -9,28 +9,29 @@ pub(crate) fn fmt(diagnostic: Diagnostic, _: Group) -> String {
     buf.push_str(&diagnostic.msg);
     buf.push('\n');
 
-    let range = diagnostic.span.range();
-    let slice = &diagnostic.source_code[range.clone()];
-    let Range { start, end } = range;
+    if let Some(range) = diagnostic.span.range() {
+        let slice = &diagnostic.source_code[range.clone()];
+        let Range { start, end } = range;
 
-    let before = diagnostic.source_code[..start].lines().next_back().unwrap_or_default();
-    let after = diagnostic.source_code[end..].lines().next().unwrap_or_default();
+        let before = diagnostic.source_code[..start].lines().next_back().unwrap_or_default();
+        let after = diagnostic.source_code[end..].lines().next().unwrap_or_default();
 
-    let line_number = diagnostic.source_code[..start].lines().count().max(1);
-    let line_number_len = (line_number as f32).log10().floor() as usize + 1;
-    let before_len = before.chars().count();
-    let arrow_len = slice.chars().count().max(1);
+        let line_number = diagnostic.source_code[..start].lines().count().max(1);
+        let line_number_len = (line_number as f32).log10().floor() as usize + 1;
+        let before_len = before.chars().count();
+        let arrow_len = slice.chars().count().max(1);
 
-    write!(
-        &mut buf,
-        "\
+        write!(
+            &mut buf,
+            "\
 {space:line_number_len$} |
 {line_number} | {before}{slice}{after}
 {space:line_number_len$} | {space:before_len$}{space:^<arrow_len$}",
-        space = ""
-    )
-    .unwrap();
-    buf.push('\n');
+            space = ""
+        )
+        .unwrap();
+        buf.push('\n');
+    }
 
     if let Some(help) = diagnostic.help {
         buf.push_str("help: ");

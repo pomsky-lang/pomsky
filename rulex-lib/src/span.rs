@@ -14,7 +14,23 @@ impl Span {
         Span { start, end }
     }
 
-    pub fn range(self) -> Range<usize> {
+    pub(crate) fn empty() -> Self {
+        Span { start: 0, end: 0 }
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.end == 0
+    }
+
+    pub fn range(self) -> Option<Range<usize>> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.start..self.end)
+        }
+    }
+
+    pub(crate) fn range_unchecked(self) -> Range<usize> {
         self.start..self.end
     }
 
@@ -23,7 +39,15 @@ impl Span {
     }
 
     pub(crate) fn join(self, other: Span) -> Span {
-        Span { start: usize::min(self.start, other.start), end: usize::max(self.end, other.end) }
+        match (self.is_empty(), other.is_empty()) {
+            (false, false) => Span {
+                start: usize::min(self.start, other.start),
+                end: usize::max(self.end, other.end),
+            },
+            (false, true) => self,
+            (true, false) => other,
+            (true, true) => Span::empty(),
+        }
     }
 }
 
@@ -35,7 +59,7 @@ impl From<Range<usize>> for Span {
 
 impl Default for Span {
     fn default() -> Self {
-        Span { start: usize::MAX, end: 0 }
+        Span::empty()
     }
 }
 

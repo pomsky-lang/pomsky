@@ -508,7 +508,7 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
     map(
         pair(
             "range",
-            try_map(
+            try_map2(
                 pair(
                     cut(separated_pair(Token::String, Token::Dash, Token::String)),
                     opt(parse_base),
@@ -518,11 +518,14 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
                         Some((base, span3)) => (base, span1.join(span3)),
                         None => (10, span1.join(span2)),
                     };
-                    let start = parse_number(strip_first_last(start), radix)?;
-                    let end = parse_number(strip_first_last(end), radix)?;
+
+                    let start = parse_number(strip_first_last(start), radix)
+                        .map_err(|k| ParseErrorKind::from(k).at(span1))?;
+                    let end = parse_number(strip_first_last(end), radix)
+                        .map_err(|k| ParseErrorKind::from(k).at(span2))?;
 
                     if start.len() > end.len() || (start.len() == end.len() && start > end) {
-                        return Err(ParseErrorKind::RangeIsNotIncreasing);
+                        return Err(ParseErrorKind::RangeIsNotIncreasing.at(span1.join(span2)));
                     }
 
                     Ok(Range::new(start, end, radix, span))

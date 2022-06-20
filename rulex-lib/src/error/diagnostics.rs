@@ -22,14 +22,6 @@ pub struct Diagnostic {
 }
 
 #[cfg(feature = "miette")]
-impl From<Span> for miette::SourceSpan {
-    fn from(s: Span) -> Self {
-        let std::ops::Range { start, end } = s.range();
-        miette::SourceSpan::new(start.into(), (end - start).into())
-    }
-}
-
-#[cfg(feature = "miette")]
 impl miette::Diagnostic for Diagnostic {
     fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
         self.code.as_deref().map(|c| Box::new(c) as Box<dyn std::fmt::Display + 'a>)
@@ -44,18 +36,21 @@ impl miette::Diagnostic for Diagnostic {
     }
 
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
-        let std::ops::Range { start, end } = self.span.range();
-        Some(Box::new(
-            [miette::LabeledSpan::new(Some("error occurred here".into()), start, end - start)]
-                .into_iter(),
-        ))
+        if let Some(std::ops::Range { start, end }) = self.span.range() {
+            Some(Box::new(
+                [miette::LabeledSpan::new(Some("error occurred here".into()), start, end - start)]
+                    .into_iter(),
+            ))
+        } else {
+            None
+        }
     }
 }
 
 impl Diagnostic {
     /// Create a `Diagnostic` from a [`ParseError`]
     pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
-        let range = error.span.map(Span::range).unwrap_or(0..source_code.len());
+        let range = error.span.range().unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
         let mut span = Span::from(range);
 
@@ -77,7 +72,7 @@ impl Diagnostic {
                     .into(),
             ),
             ParseErrorKind::InvalidEscapeInStringAt(offset) => {
-                let span_start = span.range().start;
+                let span_start = span.range_unchecked().start;
                 span = Span::new(span_start + offset - 1, span_start + offset + 1);
                 None
             }
@@ -103,7 +98,7 @@ impl Diagnostic {
                 Diagnostic::from_parse_error(ParseError { kind, span }, source_code)
             }
             _ => {
-                let range = span.map(Span::range).unwrap_or(0..source_code.len());
+                let range = span.range().unwrap_or(0..source_code.len());
                 let span = Span::from(range);
 
                 Diagnostic {

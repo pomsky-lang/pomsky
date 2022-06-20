@@ -14,21 +14,19 @@ use crate::{
 /// [Unicode grapheme](https://www.regular-expressions.info/unicode.html#grapheme).
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct Grapheme {
-    pub(crate) span: Span,
-}
+pub(crate) struct Grapheme;
 
 impl Grapheme {
     pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
         if matches!(options.flavor, RegexFlavor::Pcre | RegexFlavor::Java | RegexFlavor::Ruby) {
             Ok(Regex::Grapheme)
         } else {
-            Err(CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(self.span))
+            Err(CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(Span::empty()))
         }
     }
 
     pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
-        options.allowed_features.require(RulexFeatures::GRAPHEME, self.span)?;
+        options.allowed_features.require(RulexFeatures::GRAPHEME, Span::empty())?;
         Ok(())
     }
 }
