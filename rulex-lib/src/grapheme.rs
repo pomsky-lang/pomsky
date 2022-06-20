@@ -20,12 +20,11 @@ pub(crate) struct Grapheme {
 
 impl Grapheme {
     pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
-        if options.flavor == RegexFlavor::JavaScript {
-            return Err(
-                CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(self.span)
-            );
+        if matches!(options.flavor, RegexFlavor::Pcre | RegexFlavor::Java | RegexFlavor::Ruby) {
+            Ok(Regex::Grapheme)
+        } else {
+            Err(CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(self.span))
         }
-        Ok(Regex::Grapheme)
     }
 
     pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
