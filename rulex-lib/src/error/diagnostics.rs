@@ -1,4 +1,4 @@
-use crate::{parse::ParseErrorMsg, repetition::RepetitionError, span::Span};
+use crate::{parse::ParseErrorMsg, repetition::RepetitionError, span::Span, warning::Warning};
 
 use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErrorKind};
 
@@ -8,6 +8,8 @@ use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErro
 /// A struct containing detailed information about an error, which can be
 /// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).
 pub struct Diagnostic {
+    /// Whether this is an error, a warning or advice
+    pub severity: Severity,
     /// The error message
     pub msg: String,
     /// The error code (optional, currently unused)
@@ -19,6 +21,12 @@ pub struct Diagnostic {
     /// The start and end byte positions of the source code where the error
     /// occurred.
     pub span: Span,
+}
+
+#[derive(Debug)]
+pub enum Severity {
+    Error,
+    Warning,
 }
 
 #[cfg(feature = "miette")]
@@ -38,12 +46,29 @@ impl miette::Diagnostic for Diagnostic {
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
         if let Some(std::ops::Range { start, end }) = self.span.range() {
             Some(Box::new(
-                [miette::LabeledSpan::new(Some("error occurred here".into()), start, end - start)]
-                    .into_iter(),
+                [miette::LabeledSpan::new(
+                    Some(
+                        (match self.severity {
+                            Severity::Error => "error occurred here",
+                            Severity::Warning => "warning originated here",
+                        })
+                        .into(),
+                    ),
+                    start,
+                    end - start,
+                )]
+                .into_iter(),
             ))
         } else {
             None
         }
+    }
+
+    fn severity(&self) -> Option<miette::Severity> {
+        Some(match self.severity {
+            Severity::Error => miette::Severity::Error,
+            Severity::Warning => miette::Severity::Warning,
+        })
     }
 }
 
@@ -80,6 +105,7 @@ impl Diagnostic {
         };
 
         Diagnostic {
+            severity: Severity::Error,
             code: None,
             msg: error.kind.to_string(),
             source_code: source_code.into(),
@@ -102,6 +128,7 @@ impl Diagnostic {
                 let span = Span::from(range);
 
                 Diagnostic {
+                    severity: Severity::Error,
                     code: None,
                     msg: kind.to_string(),
                     source_code: source_code.into(),
@@ -109,6 +136,21 @@ impl Diagnostic {
                     span,
                 }
             }
+        }
+    }
+
+    /// Create a `Diagnostic` from a [`CompileError`]
+    pub fn from_warning(warning: Warning, source_code: &str) -> Self {
+        let range = warning.span.range().unwrap_or(0..source_code.len());
+        let span = Span::from(range);
+
+        Diagnostic {
+            severity: Severity::Warning,
+            code: None,
+            msg: warning.to_string(),
+            source_code: source_code.into(),
+            help: None,
+            span,
         }
     }
 }

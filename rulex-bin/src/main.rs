@@ -1,13 +1,16 @@
 use std::{
+    fmt,
     io::{self, Read, Write},
     path::PathBuf,
 };
 
 use atty::Stream;
 use clap::{ArgEnum, Parser};
+use miette::ReportHandler;
 use rulex::{
     error::Diagnostic,
     options::{CompileOptions, ParseOptions, RegexFlavor},
+    warning::Warning,
     Rulex,
 };
 
@@ -108,12 +111,26 @@ fn compile(
     no_new_line: bool,
 ) -> miette::Result<()> {
     let parse_options = ParseOptions { max_range_size: 12, ..ParseOptions::default() };
-    let parsed = Rulex::parse(input, parse_options)
+    let (parsed, warnings) = Rulex::parse(input, parse_options)
         .map_err(|err| Diagnostic::from_parse_error(err, input))?;
 
     if debug {
         eprintln!("======================== debug ========================");
         eprintln!("{parsed:#?}\n");
+    }
+
+    #[derive(Debug)]
+    struct WarningPrinter<'a>(Warning, &'a str);
+
+    impl fmt::Display for WarningPrinter<'_> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let diag = Diagnostic::from_warning(self.0, self.1);
+            miette::MietteHandler::default().debug(&diag, f)
+        }
+    }
+
+    for warning in warnings {
+        eprintln!("{}", WarningPrinter(warning, input));
     }
 
     let compile_options = CompileOptions { flavor: flavor.unwrap_or(Flavor::Pcre).into() };

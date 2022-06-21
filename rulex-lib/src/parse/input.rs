@@ -1,10 +1,11 @@
-use std::iter::Enumerate;
+use std::{cell::RefCell, iter::Enumerate};
 
 use nom::{InputIter, InputLength, InputTake};
 
 use crate::{
     error::{ParseError, ParseErrorKind},
     span::Span,
+    warning::Warning,
 };
 
 use super::token::Token;
@@ -14,12 +15,14 @@ pub(crate) struct Input<'i, 'b> {
     source: &'i str,
     tokens: &'b [(Token, Span)],
     recursion: u16,
+    warnings: &'b RefCell<Vec<Warning>>,
 }
 
 impl<'i, 'b> Input<'i, 'b> {
     pub(super) fn from(
         source: &'i str,
         tokens: &'b [(Token, Span)],
+        warnings: &'b RefCell<Vec<Warning>>,
         recursion: u16,
     ) -> Result<Self, ParseError> {
         let error = tokens.iter().find_map(|&(t, span)| match t {
@@ -34,7 +37,7 @@ impl<'i, 'b> Input<'i, 'b> {
             };
         }
 
-        Ok(Input { source, tokens, recursion })
+        Ok(Input { source, tokens, recursion, warnings })
     }
 
     pub(super) fn recursion_start(&mut self) -> Result<(), ParseError> {
@@ -51,6 +54,10 @@ impl<'i, 'b> Input<'i, 'b> {
 
     pub(super) fn is_empty(&self) -> bool {
         self.tokens.is_empty()
+    }
+
+    pub(super) fn add_warning(&mut self, warning: Warning) {
+        self.warnings.borrow_mut().push(warning);
     }
 
     pub(crate) fn span(&self) -> Span {

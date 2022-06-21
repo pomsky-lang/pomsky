@@ -1,5 +1,6 @@
 use std::{
     borrow::{Borrow, Cow},
+    cell::RefCell,
     collections::HashSet,
     str::FromStr,
 };
@@ -29,19 +30,21 @@ use crate::{
     span::Span,
     stmt::{BooleanSetting, Let, Stmt, StmtExpr},
     var::Variable,
+    warning::{DeprecationWarning, Warning, WarningKind},
 };
 
 use super::{Input, Token};
 
 pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
-pub(crate) fn parse(source: &str, recursion: u16) -> Result<Rule<'_>, ParseError> {
+pub(crate) fn parse(source: &str, recursion: u16) -> Result<(Rule<'_>, Vec<Warning>), ParseError> {
     let tokens = super::tokenize::tokenize(source);
-    let input = Input::from(source, &tokens, recursion)?;
+    let warnings = RefCell::new(vec![]);
+    let input = Input::from(source, &tokens, &warnings, recursion)?;
 
     let (rest, rules) = parse_modified(input)?;
     if rest.is_empty() {
-        Ok(rules)
+        Ok((rules, warnings.into_inner()))
     } else {
         Err(ParseErrorKind::LeftoverTokens.at(rest.span()))
     }
@@ -565,8 +568,7 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
 pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     map(
         alt((
-            map(Token::BStart, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
-            map(Token::BEnd, |(_, span)| Boundary::new(BoundaryKind::End, span)),
+            parse_start_end, // deprecated
             map(Token::BWord, |(_, span)| Boundary::new(BoundaryKind::Word, span)),
             map(pair(Token::Not, Token::BWord), |((_, span1), (_, span2))| {
                 Boundary::new(BoundaryKind::NotWord, span1.join(span2))
@@ -574,6 +576,27 @@ pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
         )),
         Rule::Boundary,
     )(input)
+}
+
+pub(super) fn parse_start_end<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Boundary> {
+    let (mut input, boundary) = alt((
+        map(Token::BStart, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
+        map(Token::BEnd, |(_, span)| Boundary::new(BoundaryKind::End, span)),
+    ))(input)?;
+
+    input.add_warning(
+        WarningKind::Deprecation(match boundary.kind() {
+            BoundaryKind::Start => DeprecationWarning::StartLiteral,
+            BoundaryKind::End => DeprecationWarning::EndLiteral,
+            BoundaryKind::Word => unreachable!("parse_start_end parsed a word boundary"),
+            BoundaryKind::NotWord => {
+                unreachable!("parse_start_end parsed a negative word boundary")
+            }
+        })
+        .at(boundary.span),
+    );
+
+    Ok((input, boundary))
 }
 
 pub(super) fn parse_reference<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {

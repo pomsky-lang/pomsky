@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use rulex::{
-    options::{CompileOptions, RegexFlavor},
+    features::RulexFeatures,
+    options::{CompileOptions, ParseOptions, RegexFlavor},
     Rulex,
 };
 
@@ -66,7 +67,7 @@ pub fn compile(c: &mut Criterion) {
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
         group.bench_function(sample_name, |b| {
-            let rulex = Rulex::parse(black_box(sample), Default::default()).unwrap();
+            let (rulex, _warnings) = Rulex::parse(black_box(sample), Default::default()).unwrap();
             b.iter(|| black_box(&rulex).compile(ruby()).unwrap())
         });
     }
@@ -82,7 +83,11 @@ pub fn range(c: &mut Criterion) {
             let max = "3458709621".repeat(((size + 9) / 10) as usize);
             let max = &max[..size as usize];
             let input = format!("range '0'-'{max}'");
-            let rulex = Rulex::parse(black_box(&input), Default::default()).unwrap();
+            let (rulex, _warnings) = Rulex::parse(
+                black_box(&input),
+                ParseOptions { max_range_size: 100, allowed_features: RulexFeatures::default() },
+            )
+            .unwrap();
 
             b.iter(|| black_box(&rulex).compile(Default::default()).unwrap())
         });

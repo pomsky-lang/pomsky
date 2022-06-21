@@ -1,4 +1,5 @@
 use std::{
+    fmt::Write as _,
     panic::{catch_unwind, UnwindSafe},
     path::Path,
 };
@@ -118,25 +119,32 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
         );
 
         match parsed {
-            Ok(got) => match options.expected_outcome {
-                Outcome::Success if got == expected => TestResult::Success,
-                _ if bless => {
-                    let contents = create_content(
-                        input,
-                        &got,
-                        Options { expected_outcome: Outcome::Success, ..options },
-                    );
-                    std::fs::write(path, contents)
-                        .expect("Failed to bless test because of IO error");
-
-                    TestResult::Blessed
+            Ok((mut got, warnings)) => {
+                for warning in warnings {
+                    got.push_str("\nWARNING: ");
+                    got.write_fmt(format_args!("{}", warning)).unwrap();
                 }
-                outcome => TestResult::IncorrectResult {
-                    input: strip_input(input),
-                    expected: outcome.of(expected.to_string()),
-                    got: Ok(got),
-                },
-            },
+
+                match options.expected_outcome {
+                    Outcome::Success if got == expected => TestResult::Success,
+                    _ if bless => {
+                        let contents = create_content(
+                            input,
+                            &got,
+                            Options { expected_outcome: Outcome::Success, ..options },
+                        );
+                        std::fs::write(path, contents)
+                            .expect("Failed to bless test because of IO error");
+
+                        TestResult::Blessed
+                    }
+                    outcome => TestResult::IncorrectResult {
+                        input: strip_input(input),
+                        expected: outcome.of(expected.to_string()),
+                        got: Ok(got),
+                    },
+                }
+            }
             Err(err) => {
                 let err = error_to_string(err, input);
 
@@ -175,7 +183,7 @@ fn error_to_string(err: CompileError, input: &str) -> String {
 }
 
 fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Options) {
-    let (mut input, expected) = content.split_once("\n-----").unwrap();
+    let (mut input, expected) = content.split_once("\n-----").unwrap_or((content, ""));
     let expected = expected.trim_start_matches('-').trim_start_matches('\n');
 
     let options = if input.starts_with("#!") {

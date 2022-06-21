@@ -28,6 +28,10 @@ impl Boundary {
         Boundary { kind, span }
     }
 
+    pub(crate) fn kind(&self) -> BoundaryKind {
+        self.kind
+    }
+
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
         match self.kind {
             BoundaryKind::Start | BoundaryKind::End => Err(ParseErrorKind::UnallowedNot),

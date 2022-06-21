@@ -13,7 +13,7 @@
 //! use rulex::options::{CompileOptions, RegexFlavor};
 //!
 //! let options = CompileOptions { flavor: RegexFlavor::Java };
-//! let regex: String = match Rulex::parse_and_compile("'test'", Default::default(), options) {
+//! let (regex, _warnings) = match Rulex::parse_and_compile("'test'", Default::default(), options) {
 //!     Ok(regex) => regex,
 //!     Err(_) => {
 //!         eprintln!("The input is not a valid rulex");
@@ -32,7 +32,7 @@
 //!
 //! pub fn compile(input: &str) -> miette::Result<String> {
 //!     let options = CompileOptions { flavor: RegexFlavor::Java };
-//!     let compiled: String = Rulex::parse_and_compile(input, Default::default(), options)
+//!     let (compiled, _warnings) = Rulex::parse_and_compile(input, Default::default(), options)
 //!         .map_err(|e| e.diagnostic(input))?;
 //!     Ok(compiled)
 //! }
@@ -51,10 +51,12 @@ use options::{CompileOptions, ParseOptions};
 use repetition::RegexQuantifier;
 use rule::Rule;
 use span::Span;
+use warning::Warning;
 
 pub mod error;
 pub mod features;
 pub mod options;
+pub mod warning;
 
 mod alternation;
 mod boundary;
@@ -83,10 +85,13 @@ impl<'i> Rulex<'i> {
     ///
     /// The parsed `Rulex` can be displayed with `Debug` if the `dbg` feature is
     /// enabled.
-    pub fn parse(input: &'i str, options: ParseOptions) -> Result<Self, ParseError> {
-        let rule = parse::parse(input, 256)?;
+    pub fn parse(
+        input: &'i str,
+        options: ParseOptions,
+    ) -> Result<(Self, Vec<Warning>), ParseError> {
+        let (rule, warning) = parse::parse(input, 256)?;
         rule.validate(&options)?;
-        Ok(Rulex(rule))
+        Ok((Rulex(rule), warning))
     }
 
     /// Compile a `Rulex` that has been parsed, to a regex
@@ -131,9 +136,10 @@ impl<'i> Rulex<'i> {
         input: &'i str,
         parse_options: ParseOptions,
         compile_options: CompileOptions,
-    ) -> Result<String, CompileError> {
-        let parsed = Self::parse(input, parse_options)?;
-        parsed.compile(compile_options)
+    ) -> Result<(String, Vec<Warning>), CompileError> {
+        let (parsed, warnings) = Self::parse(input, parse_options)?;
+        let compiled = parsed.compile(compile_options)?;
+        Ok((compiled, warnings))
     }
 }
 
