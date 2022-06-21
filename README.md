@@ -36,7 +36,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 ['p'-'s']                     # [p-s]
 
 # Named character classes
-[.] [w] [s] [n]               # .\w\s\n
+[word] [space] [n]            # \w\s\n
 
 # Combined
 [w 'a' 't'-'z' U+15]          # [\wat-z\x15]
@@ -48,7 +48,7 @@ On the left are rulex expressions (_rulexes_ for short), on the right is the com
 [Greek] U+30F Grapheme        # \p{Greek}\u030F\X
 
 # Boundaries
-<% %>                         # ^$
+Start End                     # ^$
 % 'hello' !%                  # \bhello\B
 
 # Non-capturing groups
@@ -110,8 +110,16 @@ Rulex is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby an
 flavor must be specified during compilation, so rulex can ensure that the produced regex works as
 desired on the targeted regex engine.
 
-**Important note for JavaScript users**: Don't forget to enable the `u` flag. This is required for
-Unicode support. All other major regex engines support Unicode by default.
+**Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
+This is [explained here](https://rulex-rs.github.io/docs/get-started/enable-unicode/).
+
+## Security
+
+**Never compile or execute an untrusted rulex expression on your critical infrastructure**.
+This may make you vulnerable for denial of service attacks, like the
+[Billion Laughs attack](https://en.wikipedia.org/wiki/Billion_laughs_attack).
+
+[Read more](https://rulex-rs.github.io/docs/reference/security/)
 
 ## Diagnostics
 
