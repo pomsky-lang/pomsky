@@ -89,7 +89,7 @@ impl<'i> Rulex<'i> {
         input: &'i str,
         options: ParseOptions,
     ) -> Result<(Self, Vec<Warning>), ParseError> {
-        let (rule, warning) = parse::parse(input, 128)?;
+        let (rule, warning) = parse::parse(input, 64)?;
         rule.validate(&options)?;
         Ok((Rulex(rule), warning))
     }
