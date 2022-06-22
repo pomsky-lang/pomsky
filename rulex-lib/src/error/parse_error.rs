@@ -61,6 +61,8 @@ pub(crate) enum ParseErrorKind {
     LexErrorWithMessage(ParseErrorMsg),
     #[error("Unexpected dot. Use `[.]` instead")]
     Dot,
+    #[error("Unexpected keyword `{}`", .0)]
+    Keyword(String),
 
     #[error("Expected {}", .0)]
     Expected(&'static str),

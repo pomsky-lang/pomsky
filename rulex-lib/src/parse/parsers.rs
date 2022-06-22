@@ -92,7 +92,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                         (stmt, span_start.join(span_end))
                     },
                 ),
-                map(
+                try_map2(
                     tuple((
                         "let",
                         cut(Token::Identifier),
@@ -100,9 +100,17 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                         cut(recurse(parse_or)),
                         cut(Token::Semicolon),
                     )),
-                    |((_, span_start), (name, name_span), _, rule, (_, span_end))| {
-                        (Stmt::Let(Let::new(name, rule, name_span)), span_start.join(span_end))
+                    |((_, span_start), (name, name_span), _, rule, (_, span_end))| match name {
+                        "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable"
+                        | "disable" | "if" | "else" | "recursion" => {
+                            Err(ParseErrorKind::Keyword(name.to_owned()).at(name_span))
+                        }
+                        _ => Ok((
+                            Stmt::Let(Let::new(name, rule, name_span)),
+                            span_start.join(span_end),
+                        )),
                     },
+                    nom::Err::Failure,
                 ),
             ))),
             recurse(parse_or),
