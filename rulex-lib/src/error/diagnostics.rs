@@ -111,6 +111,9 @@ impl Diagnostic {
                 let part2 = part2.trim_start_matches('-');
                 Some(format!("Switch the characters: {}-{}", part2.trim(), part1.trim()))
             }
+            ParseErrorKind::CharClass(CharClassError::Empty) => {
+                Some("You can use `[s !s]` to match nothing".into())
+            }
             ParseErrorKind::CharString(CharStringError::TooManyCodePoints)
                 if slice.trim_matches(&['"', '\''][..]).chars().all(|c| c.is_ascii_digit()) =>
             {

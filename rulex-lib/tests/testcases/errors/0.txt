@@ -1,5 +1,5 @@
 #! expect=error
 [
 -----
-ERROR: Expected string, range, code point or named character class
+ERROR: Expected `]`
 SPAN: 1..1

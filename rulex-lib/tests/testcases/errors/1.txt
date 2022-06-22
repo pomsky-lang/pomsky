@@ -1,5 +1,6 @@
 #! expect=error
 []
 -----
-ERROR: Expected string, range, code point or named character class
-SPAN: 1..2
+ERROR: This character class is empty
+HELP: You can use `[s !s]` to match nothing
+SPAN: 0..1

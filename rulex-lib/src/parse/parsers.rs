@@ -408,7 +408,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
         let span1 = input.span();
 
-        let (input, ranges) = many1(alt((
+        let (input, ranges) = many0(alt((
             parse_chars_or_range,
             value(CharGroup::Dot, Token::Dot),
             try_map(
@@ -425,7 +425,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         )))(input)?;
 
         let mut iter = ranges.into_iter();
-        let mut class = iter.next().unwrap();
+        let mut class = iter.next().unwrap_or_else(|| CharGroup::Items(vec![]));
 
         for range in iter {
             class.add(range).map_err(|e| {
@@ -435,9 +435,17 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         Ok((input, class))
     }
 
-    map(
+    try_map(
         tuple((Token::OpenBracket, cut(parse_char_group), cut(Token::CloseBracket))),
-        |((_, start), inner, (_, end))| Rule::CharClass(CharClass::new(inner, start.join(end))),
+        |((_, start), inner, (_, end))| {
+            if let CharGroup::Items(v) = &inner {
+                if v.is_empty() {
+                    return Err(ParseErrorKind::CharClass(CharClassError::Empty));
+                }
+            }
+            Ok(Rule::CharClass(CharClass::new(inner, start.join(end))))
+        },
+        nom::Err::Failure,
     )(input)
 }
 
