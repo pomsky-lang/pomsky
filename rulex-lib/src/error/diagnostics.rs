@@ -85,6 +85,9 @@ impl Diagnostic {
         let help = match error.kind {
             ParseErrorKind::LexErrorWithMessage(msg) => match msg {
                 ParseErrorMsg::Caret => Some("Use `Start` to match the start of the string".into()),
+                ParseErrorMsg::CaretInGroup => {
+                    Some("Use `![...]` to negate a character class".into())
+                }
                 ParseErrorMsg::Dollar => Some("Use `End` to match the end of the string".into()),
                 ParseErrorMsg::SpecialGroup => get_special_group_help(slice),
                 ParseErrorMsg::Backslash => get_backslash_help(slice),

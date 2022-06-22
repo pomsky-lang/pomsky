@@ -93,6 +93,8 @@ pub enum Token {
 pub enum ParseErrorMsg {
     #[error("`^` is not a valid token")]
     Caret,
+    #[error("`^` is not a valid token")]
+    CaretInGroup,
     #[error("`$` is not a valid token")]
     Dollar,
     #[error("This syntax is not supported")]
