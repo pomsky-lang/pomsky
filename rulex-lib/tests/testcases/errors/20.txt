@@ -1,0 +1,6 @@
+#! expect=error
+let let = let;
+-----
+ERROR: Unexpected keyword `let`
+HELP: Use a different variable name
+SPAN: 4..7

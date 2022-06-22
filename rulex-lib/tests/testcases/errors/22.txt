@@ -1,0 +1,6 @@
+#! expect=error
+range '234'-'35'
+-----
+ERROR: The first number in a range must be smaller than the second
+HELP: Switch the numbers: '35'-'234'
+SPAN: 6..16

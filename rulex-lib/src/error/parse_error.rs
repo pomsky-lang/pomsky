@@ -59,10 +59,10 @@ pub(crate) enum ParseErrorKind {
     UnknownToken,
     #[error(transparent)]
     LexErrorWithMessage(ParseErrorMsg),
-    #[error("Unexpected dot. Use `[.]` instead")]
+    #[error("Unexpected dot")]
     Dot,
     #[error("Unexpected keyword `{}`", .0)]
-    Keyword(String),
+    KeywordAfterLet(String),
 
     #[error("Expected {}", .0)]
     Expected(&'static str),
@@ -97,7 +97,7 @@ pub(crate) enum ParseErrorKind {
     #[error(transparent)]
     Unsupported(UnsupportedError),
 
-    #[error("Recursion limit reached. Try a less nested expression")]
+    #[error("Recursion limit reached")]
     RecursionLimit,
 
     #[error("Unknown error: {:?}", .0)]

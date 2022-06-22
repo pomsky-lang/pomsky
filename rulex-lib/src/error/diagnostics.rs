@@ -1,6 +1,9 @@
 use crate::{parse::ParseErrorMsg, repetition::RepetitionError, span::Span, warning::Warning};
 
-use super::{compile_error::CompileErrorKind, CompileError, ParseError, ParseErrorKind};
+use super::{
+    compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError, ParseError,
+    ParseErrorKind,
+};
 
 #[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]
 #[cfg_attr(feature = "miette", error("{}", .msg))]
@@ -91,6 +94,35 @@ impl Diagnostic {
                 ParseErrorMsg::BackslashK => get_backslash_help_k(slice),
                 ParseErrorMsg::UnclosedString => None,
             },
+            ParseErrorKind::RangeIsNotIncreasing => {
+                let dash_pos = slice.find('-').unwrap();
+                let (part1, part2) = slice.split_at(dash_pos);
+                let part2 = part2.trim_start_matches('-');
+                Some(format!("Switch the numbers: {}-{}", part2.trim(), part1.trim()))
+            }
+            ParseErrorKind::Dot => Some(
+                "The dot is deprecated. Use `Codepoint` to match any code point, \
+                or `![n]` to exclude line breaks"
+                    .into(),
+            ),
+            ParseErrorKind::CharClass(CharClassError::DescendingRange(..)) => {
+                let dash_pos = slice.find('-').unwrap();
+                let (part1, part2) = slice.split_at(dash_pos);
+                let part2 = part2.trim_start_matches('-');
+                Some(format!("Switch the characters: {}-{}", part2.trim(), part1.trim()))
+            }
+            ParseErrorKind::CharString(CharStringError::TooManyCodePoints)
+                if slice.trim_matches(&['"', '\''][..]).chars().all(|c| c.is_ascii_digit()) =>
+            {
+                Some(
+                    "Try a `range` expression instead:\n\
+                    https://rulex-rs.github.io/docs/language-tour/ranges/"
+                        .into(),
+                )
+            }
+            ParseErrorKind::KeywordAfterLet(_) => Some("Use a different variable name".into()),
+            ParseErrorKind::UnallowedDoubleNot => Some("Remove 2 exclamation marks".into()),
+            ParseErrorKind::LetBindingExists => Some("Use a different name".into()),
             ParseErrorKind::Repetition(RepetitionError::QuestionMarkAfterRepetition) => Some(
                 "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
                 If this is intentional, consider adding parentheses around the inner repetition."
@@ -101,6 +133,11 @@ impl Diagnostic {
                 span = Span::new(span_start + offset - 1, span_start + offset + 1);
                 None
             }
+            ParseErrorKind::RecursionLimit => Some(
+                "Try a less nested expression. It helps to refactor it using variables:\n\
+                https://rulex-rs.github.io/docs/language-tour/variables/"
+                    .into(),
+            ),
             _ => None,
         };
 

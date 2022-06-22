@@ -103,7 +103,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                     |((_, span_start), (name, name_span), _, rule, (_, span_end))| match name {
                         "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable"
                         | "disable" | "if" | "else" | "recursion" => {
-                            Err(ParseErrorKind::Keyword(name.to_owned()).at(name_span))
+                            Err(ParseErrorKind::KeywordAfterLet(name.to_owned()).at(name_span))
                         }
                         _ => Ok((
                             Stmt::Let(Let::new(name, rule, name_span)),

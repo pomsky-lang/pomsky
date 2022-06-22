@@ -6,4 +6,5 @@ let _ = (
 a
 -----
 ERROR: A variable with the same name already exists in this scope
+HELP: Use a different name
 SPAN: 31..32
