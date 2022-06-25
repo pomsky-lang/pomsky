@@ -40,6 +40,13 @@ impl fmt::Display for Warning {
     }
 }
 
+impl fmt::Display for WarningKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let WarningKind::Deprecation(c) = self;
+        c.fmt(f)
+    }
+}
+
 /// A deprecation warning: Indicates that something shouldn't be used anymore
 #[derive(Debug, Clone, Copy)]
 pub enum DeprecationWarning {

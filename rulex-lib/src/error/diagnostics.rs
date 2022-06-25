@@ -190,7 +190,7 @@ impl Diagnostic {
         Diagnostic {
             severity: Severity::Warning,
             code: None,
-            msg: warning.to_string(),
+            msg: warning.kind.to_string(),
             source_code: source_code.into(),
             help: None,
             span,
