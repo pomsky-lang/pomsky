@@ -4,6 +4,8 @@
 
 # rulex
 
+⚠️ Rulex will be renamed to pomsky. [Read the announcement](https://rulex-rs.github.io/blog/renaming-rulex/) ⚠️
+
 A new, portable, regular expression language
 
 Read **[the book](https://rulex-rs.github.io/docs/)** to get started!
