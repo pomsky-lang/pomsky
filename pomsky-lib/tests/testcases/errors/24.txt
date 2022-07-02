@@ -1,0 +1,7 @@
+#! expect=error
+['234'-'35']
+-----
+ERROR: Strings used in ranges can only contain 1 code point
+HELP: Try a `range` expression instead:
+https://pomsky-lang.org/docs/language-tour/ranges/
+SPAN: 1..6

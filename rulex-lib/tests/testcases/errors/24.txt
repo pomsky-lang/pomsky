@@ -1,7 +1,0 @@
-#! expect=error
-['234'-'35']
------
-ERROR: Strings used in ranges can only contain 1 code point
-HELP: Try a `range` expression instead:
-https://rulex-rs.github.io/docs/language-tour/ranges/
-SPAN: 1..6

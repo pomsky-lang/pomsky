@@ -48,7 +48,7 @@ name = "benchmark"
 version = "0.1.2"
 dependencies = [
  "criterion",
- "rulex",
+ "pomsky",
 ]
 
 [[package]]
@@ -446,6 +446,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "pomsky"
+version = "0.5.0"
+dependencies = [
+ "arbitrary",
+ "atty",
+ "miette",
+ "nom",
+ "once_cell",
+ "regex",
+ "thiserror",
+]
+
+[[package]]
+name = "pomsky-bin"
+version = "0.5.0"
+dependencies = [
+ "atty",
+ "clap 3.1.18",
+ "miette",
+ "pomsky",
+ "thiserror",
+]
+
+[[package]]
+name = "pomsky-macro"
+version = "0.5.0"
+dependencies = [
+ "pomsky",
+]
+
+[[package]]
 name = "proc-macro-error"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -527,37 +558,6 @@ name = "regex-syntax"
 version = "0.6.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
-
-[[package]]
-name = "rulex"
-version = "0.4.3"
-dependencies = [
- "arbitrary",
- "atty",
- "miette",
- "nom",
- "once_cell",
- "regex",
- "thiserror",
-]
-
-[[package]]
-name = "rulex-bin"
-version = "0.4.3"
-dependencies = [
- "atty",
- "clap 3.1.18",
- "miette",
- "rulex",
- "thiserror",
-]
-
-[[package]]
-name = "rulex-macro"
-version = "0.4.3"
-dependencies = [
- "rulex",
-]
 
 [[package]]
 name = "rustc_version"

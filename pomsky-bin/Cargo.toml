@@ -1,0 +1,37 @@
+[package]
+name = "pomsky-bin"
+description = "Compile pomsky expressions, a new regular expression language"
+version = "0.5.0"
+edition = "2021"
+authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+license = "MIT OR Apache-2.0"
+homepage = "https://pomsky-lang.org/"
+repository = "https://github.com/rulex-rs/pomsky"
+readme = "README.md"
+keywords = ["regexp", "regex", "pomsky"]
+categories = ["text-processing", "command-line-utilities"]
+
+
+[[bin]]
+name = "pomsky"
+path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+atty = "0.2.14"
+thiserror = "1.0.30"
+
+[dependencies.miette]
+version = "4.2.1"
+features = ["fancy-no-backtrace"]
+
+[dependencies.pomsky]
+version = "0.5.0"
+path = "../pomsky-lib"
+features = ["dbg", "miette"]
+
+[dependencies.clap]
+version = "3.1.0"
+default-features = false
+features = ["std", "derive", "wrap_help"]

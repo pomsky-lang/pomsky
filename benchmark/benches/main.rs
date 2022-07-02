@@ -1,10 +1,10 @@
 use std::time::Duration;
 
 use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
-use rulex::{
-    features::RulexFeatures,
+use pomsky::{
+    features::PomskyFeatures,
     options::{CompileOptions, ParseOptions, RegexFlavor},
-    Rulex,
+    Expr,
 };
 
 const STRINGS: &str = r#"'hello' "world" 'this is great!' "I absolutely love it!" '"'"#;
@@ -56,7 +56,7 @@ pub fn parse(c: &mut Criterion) {
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
         group.bench_function(sample_name, |b| {
-            b.iter(|| Rulex::parse(black_box(sample), Default::default()).unwrap())
+            b.iter(|| Expr::parse(black_box(sample), Default::default()).unwrap())
         });
     }
 }
@@ -67,8 +67,8 @@ pub fn compile(c: &mut Criterion) {
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
         group.bench_function(sample_name, |b| {
-            let (rulex, _warnings) = Rulex::parse(black_box(sample), Default::default()).unwrap();
-            b.iter(|| black_box(&rulex).compile(ruby()).unwrap())
+            let (expr, _warnings) = Expr::parse(black_box(sample), Default::default()).unwrap();
+            b.iter(|| black_box(&expr).compile(ruby()).unwrap())
         });
     }
 }
@@ -83,13 +83,13 @@ pub fn range(c: &mut Criterion) {
             let max = "3458709621".repeat(((size + 9) / 10) as usize);
             let max = &max[..size as usize];
             let input = format!("range '0'-'{max}'");
-            let (rulex, _warnings) = Rulex::parse(
+            let (expr, _warnings) = Expr::parse(
                 black_box(&input),
-                ParseOptions { max_range_size: 100, allowed_features: RulexFeatures::default() },
+                ParseOptions { max_range_size: 100, allowed_features: PomskyFeatures::default() },
             )
             .unwrap();
 
-            b.iter(|| black_box(&rulex).compile(Default::default()).unwrap())
+            b.iter(|| black_box(&expr).compile(Default::default()).unwrap())
         });
     }
 }

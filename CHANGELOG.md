@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the _rulex regular expression language_ will be documented in this file.
+All notable changes to the _Pomsky regular expression language_ will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -46,7 +46,7 @@ the ASCII line break.
 
 ### Fixed/improved
 
-- [#29](https://github.com/rulex-rs/rulex/pull/29): Fix a miscompilation of a repeated empty group,
+- [#29](https://github.com/rulex-rs/pomsky/pull/29): Fix a miscompilation of a repeated empty group,
   e.g. `()?`. Thanks, [sebastiantoh](https://github.com/sebastiantoh)!
 
 - Make the parser more permissive to parse arbitrary negated expressions. This results in better
@@ -75,14 +75,14 @@ the ASCII line break.
 ## [0.4.0] - 2022-06-03
 
 The repository was moved to its own organization! 🎉 It also has a new website with an
-[online playground](https://rulex-rs.github.io/playground/)!
+[online playground](https://playground.pomsky-lang.org/)!
 
 ### Added
 
 - API to selectively disable some language features
 
-- [Online playground](https://rulex-rs.github.io/playground/) to try out rulex. You can write
-  rulex expressions on the left and immediately see the output on the right.
+- [Online playground](https://playground.pomsky-lang.org/) to try out Pomsky. You can write
+  pomsky expressions on the left and immediately see the output on the right.
 
 ### Changed
 
@@ -92,18 +92,18 @@ The repository was moved to its own organization! 🎉 It also has a new website
   runtime with regard to the number of digits.
 
 - `ParseOptions` was moved out of `CompileOptions`. This means that the
-  [`parse_and_compile`](https://docs.rs/rulex/latest/rulex/struct.Rulex.html#method.parse_and_compile)
+  [`parse_and_compile`](https://docs.rs/rulex/0.4.0/rulex/struct.Rulex.html#method.parse_and_compile)
   method now expects three parameters instead of two.
 
 ## [0.3.0] - 2022-03-29
 
 ### Added
 
-- A [**book**](https://rulex-rs.github.io/), with instructions, a language tour and a formal
+- A [**book**](https://pomsky-lang.org/docs/), with instructions, a language tour and a formal
   grammar!
 
 - **Variables**! For example, `let x = 'test';` declares a variable `x` that can be used below. Read
-  [this chapter](https://rulex-rs.github.io/docs/language-tour/variables) from the book to find
+  [this chapter](https://pomsky-lang.org/docs/language-tour/variables) from the book to find
   out more.
 
 - **Number range expressions**! For example, `range '0'-'255'` generates this regex:
@@ -133,9 +133,9 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 - Improved Unicode support
 
-  - In addition to Unicode general categories and scripts, rulex now supports blocks and other
+  - In addition to Unicode general categories and scripts, pomsky now supports blocks and other
     boolean properties
-  - Rulex now validates properties and tells you when a property isn't supported by the target
+  - Pomsky now validates properties and tells you when a property isn't supported by the target
     regex flavor
   - Shorthands (`[h]` and `[v]`) are substituted with character classes when required to support
     Unicode everywhere
@@ -161,7 +161,7 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 ### Changed
 
-- Improved the Rust macro; rulex expressions are written directly in the Rust source code, not in a
+- Improved the Rust macro; pomsky expressions are written directly in the Rust source code, not in a
   string literal:
   ```rs
   let regex: &str = rulex!("hello" | "world" '!'+);
@@ -170,17 +170,17 @@ The repository was moved to its own organization! 🎉 It also has a new website
   - Strings with more than 1 code point must be enclosed in double quotes, single quotes don't work
   - Strings can't contain backslashes; this will be fixed in a future release
   - Code points must be written without the `+`, e.g. `U10FFFF` instead of `U+10FFFF`
-  - Rulexes can contain Rust comments; they can't contain comments starting with `#`
+  - Pomsky expressions can contain Rust comments; they can't contain comments starting with `#`
 
 ## [0.1.0] - 2022-03-11
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.3...HEAD
-[0.4.3]: https://github.com/rulex-rs/rulex/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/rulex-rs/rulex/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/rulex-rs/rulex/compare/v0.4...v0.4.1
-[0.4.0]: https://github.com/rulex-rs/rulex/compare/v0.3...v0.4
-[0.3.0]: https://github.com/rulex-rs/rulex/compare/v0.2...v0.3
-[0.2.0]: https://github.com/rulex-rs/rulex/compare/v0.1...v0.2
-[0.1.0]: https://github.com/rulex-rs/rulex/releases/tag/v0.1
+[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/rulex-rs/pomsky/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/rulex-rs/pomsky/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/rulex-rs/pomsky/compare/v0.4...v0.4.1
+[0.4.0]: https://github.com/rulex-rs/pomsky/compare/v0.3...v0.4
+[0.3.0]: https://github.com/rulex-rs/pomsky/compare/v0.2...v0.3
+[0.2.0]: https://github.com/rulex-rs/pomsky/compare/v0.1...v0.2
+[0.1.0]: https://github.com/rulex-rs/pomsky/releases/tag/v0.1

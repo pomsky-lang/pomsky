@@ -1,0 +1,9 @@
+#! expect=error
+((((((((((((((((((((((((((((((((((((((((((((((((((((((
+((((((((((((((((((((((((((((((((((((((((((((((((((((((
+((((((((((((((((((((((((((((((((((((((((((((((((((((((
+-----
+ERROR: Recursion limit reached
+HELP: Try a less nested expression. It helps to refactor it using variables:
+https://pomsky-lang.org/docs/language-tour/variables/
+SPAN: 130..131

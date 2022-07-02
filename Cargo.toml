@@ -1,6 +1,6 @@
 [workspace]
-members = ["./rulex-lib", "./rulex-bin", "./rulex-macro", "./benchmark"]
-default-members = ["./rulex-bin", "./rulex-lib"]
+members = ["./pomsky-lib", "./pomsky-bin", "./pomsky-macro", "./benchmark"]
+default-members = ["./pomsky-bin", "./pomsky-lib"]
 
 [profile.release]
 lto = "thin"

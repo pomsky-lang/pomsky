@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rulex = { version = "0.4.3", path = "../rulex-lib" }
+pomsky = { version = "0.5.0", path = "../pomsky-lib" }
 criterion = { git = "https://github.com/bheisler/criterion.rs", branch = "version-0.4" }
 
 [[bench]]
-# run benchmarks with `cargo criterion -p rulex`
+# run benchmarks with `cargo criterion -p pomsky`
 name = "main"
 harness = false

@@ -1,0 +1,22 @@
+[package]
+name = "pomsky-macro"
+description = "Macro for converting pomsky expressions to regexes"
+version = "0.5.0"
+edition = "2021"
+authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/rulex-rs/pomsky/blob/main/pomsky-macro"
+repository = "https://github.com/rulex-rs/pomsky"
+documentation = "https://docs.rs/pomsky-macro"
+keywords = ["macro", "regexp", "regex", "pomsky"]
+categories = ["text-processing"]
+
+[lib]
+proc-macro = true
+
+[features]
+default = []
+diagnostics = []
+
+[dependencies]
+pomsky = { version = "0.5.0", path = "../pomsky-lib" }

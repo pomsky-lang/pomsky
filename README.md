@@ -2,19 +2,19 @@
 
 ![Crown in double quotes logo](./assets/logo.svg)
 
-# rulex
+# Pomsky
 
-⚠️ Rulex will be renamed to pomsky. [Read the announcement](https://rulex-rs.github.io/blog/renaming-rulex/) ⚠️
+⚠️ Rulex is being be renamed to Pomsky. [Read the announcement](https://pomsky-lang.org/blog/renaming-rulex/) ⚠️
 
 A new, portable, regular expression language
 
-Read **[the book](https://rulex-rs.github.io/docs/)** to get started!
+Read **[the book](https://pomsky-lang.org/docs/)** to get started!
 
 </div>
 
 ## Examples
 
-On the left are rulex expressions (_rulexes_ for short), on the right is the compiled regex:
+On the left are pomsky expressions, on the right is the compiled regex:
 
 ```py
 # String
@@ -86,9 +86,9 @@ number (operator number)*
 
 ## Usage
 
-Read **[the book](https://rulex-rs.github.io/docs)** to get started, or check out the
-[CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
-[procedural macro](./rulex-macro/).
+Read **[the book](https://pomsky-lang.org/docs)** to get started, or check out the
+[CLI program](./pomsky-bin/), the [Rust library](./pomsky-lib/) and the
+[procedural macro](./pomsky-macro/).
 
 ## Why use this instead of normal regexes?
 
@@ -98,7 +98,7 @@ plethora of sigils and backslash escapes that follow no discernible system:
 `(?<=) (?P<>) .?? \N \p{} \k<> \g''` and so on. And with various inconsistencies between regex
 implementations, it's the perfect recipe for confusion.
 
-Rulex solves these problems with a new, simpler but also more powerful syntax:
+Pomsky solves these problems with a new, simpler but also more powerful syntax:
 
 - It's not whitespace sensitive and allows comments
 - Text must appear in quotes. This makes expressions longer, but also much easier to read
@@ -108,28 +108,29 @@ Rulex solves these problems with a new, simpler but also more powerful syntax:
 
 ## Compatibility
 
-Rulex is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust. The regex
-flavor must be specified during compilation, so rulex can ensure that the produced regex works as
+Pomsky is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust. The regex
+flavor must be specified during compilation, so pomsky can ensure that the produced regex works as
 desired on the targeted regex engine.
 
 **Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
-This is [explained here](https://rulex-rs.github.io/docs/get-started/enable-unicode/).
+This is [explained here](https://pomsky-lang.org/docs/get-started/enable-unicode/).
 
 ## Security
 
-**Never compile or execute an untrusted rulex expression on your critical infrastructure**.
+**Never compile or execute an untrusted Pomsky expression on your critical infrastructure**.
 This may make you vulnerable for denial of service attacks, like the
 [Billion Laughs attack](https://en.wikipedia.org/wiki/Billion_laughs_attack).
 
-[Read more](https://rulex-rs.github.io/docs/reference/security/)
+[Read more](https://pomsky-lang.org/docs/reference/security/)
 
 ## Diagnostics
 
-Rulex looks for mistakes and displays helpful diagnostics:
+Pomsky looks for mistakes and displays helpful diagnostics:
 
 - It shows an error if you use a feature not supported by the targeted regex flavor
 - It detects syntax errors and shows suggestions how to resolve them
-- It parses backslash escapes (which are not allowed in a rulex) and explains what to write instead
+- It parses backslash escapes (which are not allowed in a pomsky expression) and explains what to
+  write instead
 - It looks for likely mistakes and displays warnings
 - It looks for patterns that can be very slow for certain inputs and are susceptible to
   Denial-of-Service attacks _(coming soon)_
@@ -140,7 +141,7 @@ Rulex looks for mistakes and displays helpful diagnostics:
 
 ## Contributing
 
-You can contribute by using rulex and providing feedback. If you find a bug or have a question,
+You can contribute by using Pomsky and providing feedback. If you find a bug or have a question,
 please create an issue.
 
 I also gladly accept code contributions. To make sure that CI succeeds, please run `cargo fmt`,

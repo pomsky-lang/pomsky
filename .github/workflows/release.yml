@@ -31,18 +31,13 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            This is a new release of `rulex`. See what's new in the [changelog](https://github.com/rulex-rs/rulex/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
+            This is a new release of Pomsky. See what's new in the [changelog](https://github.com/rulex-rs/pomsky/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
             ### Installation
             If you're running on Linux, macOS or Windows, you can use the binaries below.
 
-            On Arch Linux, you can install the [AUR package](https://aur.archlinux.org/packages/rulex-rs-bin) with
-            ```sh
-            yay -S rulex-rs-bin
-            ```
-
-            You can also build `rulex` with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
+            You can also build Pomsky with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
             ```shell
-            $ cargo install rulex-bin
+            $ cargo install pomsky-bin
             ```
             You might have to add the `.cargo/bin` folder to your `PATH` afterwards.
             Please file issues if you run into any problems or have suggestions.
@@ -85,6 +80,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: rulex_${{ matrix.platform }}_${{ steps.vars.outputs.tag }}${{ matrix.file_ending }}
-          asset_path: target/release/rulex${{ matrix.file_ending }}
+          asset_name: pomsky_${{ matrix.platform }}_${{ steps.vars.outputs.tag }}${{ matrix.file_ending }}
+          asset_path: target/release/pomsky${{ matrix.file_ending }}
           asset_content_type: application/octet-stream
