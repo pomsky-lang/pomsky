@@ -4,7 +4,7 @@
 
 # Pomsky
 
-⚠️ Rulex is being be renamed to Pomsky. [Read the announcement](https://pomsky-lang.org/blog/renaming-rulex/) ⚠️
+⚠️ Pomsky was previously named **Rulex**. [More information](https://pomsky-lang.org/blog/renaming-rulex/) ⚠️
 
 A new, portable, regular expression language
 
