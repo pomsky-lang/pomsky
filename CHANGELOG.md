@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-07-04
+
+This is the first release since [Rulex was renamed to Pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
+
+If you are using the `rulex` crate, replace it with `pomsky`. The `rulex-macro` crate should be replaced with `pomsky-macro`. To install the new binary, [see instructions](https://github.com/rulex-rs/pomsky/releases/tag/v0.5). If you installed rulex with cargo, you can remove it with
+
+```sh
+rm $(type -P rulex)
+```
+
+### Added
+
+- Deprecation warnings for `<%`, `%>`, `[codepoint]`, `[cp]` and `[.]`. These were deprecated
+  before, but Pomsky wasn't able to show warnings until now.
+
+### Changed
+
+- Improved codegen for Unicode chars between 128 and 255
+
+- Some diagnostics involving built-in variables were improved
+
+- The words `atomic`, `if`, `else` and `recursion` are now reserved
+
+### Fixed
+
+- `Grapheme` is now only allowed in the PCRE, Java and Ruby flavors. Previously, it was accepted by
+  Pomsky for some flavors that don't support `\X`.
+- Keywords and reserved words are no longer accepted as variable names
+
+### Library changes
+
+- The `Rulex` struct was renamed to `Expr`, and `RulexFeatures` was renamed to `PomskyFeatures`
+- `Span::range()` now returns an `Option<Range<usize>>` instead of a `Range<usize>`
+- `Expr::parse` and `Expr::parse_and_compile` now return a `(String, Vec<Warning>)` tuple
+
 ## [0.4.3] - 2022-06-19
 
 ### Added
@@ -90,6 +125,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
   This prevents DoS attacks when compiling untrusted input, since compiling ranges has exponential
   runtime with regard to the number of digits.
+
+### Library changes
 
 - `ParseOptions` was moved out of `CompileOptions`. This means that the
   [`parse_and_compile`](https://docs.rs/rulex/0.4.0/rulex/struct.Rulex.html#method.parse_and_compile)
@@ -176,7 +213,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...HEAD
+[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.5...HEAD
+[0.5.0]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...v0.5
 [0.4.3]: https://github.com/rulex-rs/pomsky/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/rulex-rs/pomsky/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/rulex-rs/pomsky/compare/v0.4...v0.4.1
