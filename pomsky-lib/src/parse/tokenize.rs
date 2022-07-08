@@ -1,6 +1,9 @@
 use crate::{parse::ParseErrorMsg, span::Span};
 
-use super::Token;
+use super::{
+    micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
+    Token,
+};
 
 macro_rules! consume_chain {
     (
@@ -84,89 +87,27 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                         None => (input.len(), Token::ErrorMsg(ParseErrorMsg::UnclosedString)),
                     };
 
-                    if let Some(rest) = input.strip_prefix("U+") => {
-                        match rest.find(|c: char| !c.is_ascii_hexdigit()) {
-                            Some(0) => (1, Token::Error),
-                            Some(len_inner) => (len_inner + 2, Token::CodePoint),
-                            None => (input.len(), Token::CodePoint),
-                        }
-                    };
+                    if let Some((len, _)) = (
+                        "U+", Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                    ).is_start(input) => (len, Token::CodePoint);
 
-                    if matches!(c, '0'..='9') => (
-                        input.find(|c: char| !matches!(c, '0'..='9')).unwrap_or(input.len()),
-                        Token::Number,
-                    );
+                    if let Some((len, _)) = (
+                        Many1(CharIs(|c| c.is_ascii_digit()))
+                    ).is_start(input) => (len, Token::Number);
 
-                    if c.is_alphabetic() || c == '_' => (
-                        input.find(|c: char| !c.is_alphanumeric() && c != '_').unwrap_or(input.len()),
-                        Token::Identifier,
-                    );
+                    if let Some((len, _)) = (
+                        CharIs(|c| c.is_alphabetic() || c == '_'),
+                        Many0(CharIs(|c| c.is_alphanumeric() || c == '_'))
+                    ).is_start(input) => (len, Token::Identifier);
 
                     if c == '^' => (1, Token::ErrorMsg(ParseErrorMsg::Caret));
                     if c == '$' => (1, Token::ErrorMsg(ParseErrorMsg::Dollar));
 
-                    if let Some(rest) = input.strip_prefix("(?") => (
-                        match rest.chars().next() {
-                            Some('<') => {
-                                let name_len = rest.chars()
-                                    .skip(1)
-                                    .take_while(char::is_ascii_alphanumeric)
-                                    .count();
+                    if let Some((len, err)) = parse_special_group(input) => (len, Token::ErrorMsg(err));
 
-                                if name_len > 0 && matches!(rest.chars().nth(1 + name_len), Some('>')) {
-                                    4 + name_len
-                                } else if let Some('=' | '!') = rest.chars().nth(1) {
-                                    4
-                                } else {
-                                    3
-                                }
-                            }
-                            Some('P') if matches!(rest.chars().nth(1), Some('<')) => {
-                                let name_len = rest.chars()
-                                    .skip(2)
-                                    .take_while(char::is_ascii_alphanumeric)
-                                    .count();
-
-                                if name_len > 0 && matches!(rest.chars().nth(2 + name_len), Some('>')) {
-                                    5 + name_len
-                                } else {
-                                    4
-                                }
-                            },
-                            Some('>' | '!' | ':' | '=' | '(' | '|') => 3,
-                            _ => 2,
-                        },
-                        Token::ErrorMsg(ParseErrorMsg::SpecialGroup),
-                    );
                     if c == '(' => (1, Token::OpenParen);
 
-                    if c == '\\' => {
-                        if input.starts_with("\\u{") || input.starts_with("\\x{") {
-                            match input[3..].find('}') {
-                                Some(len) => (len + 4, Token::ErrorMsg(ParseErrorMsg::BackslashUnicode)),
-                                None => (2, Token::ErrorMsg(ParseErrorMsg::Backslash)),
-                            }
-                        } else if let Some(rest) = input.strip_prefix("\\u") {
-                            match rest.find(|c: char| !c.is_ascii_hexdigit()).unwrap_or(rest.len()) {
-                                4.. => (6, Token::ErrorMsg(ParseErrorMsg::BackslashU4)),
-                                _ => (2, Token::ErrorMsg(ParseErrorMsg::Backslash)),
-                            }
-                        } else if let Some(rest) = input.strip_prefix("\\x") {
-                            match rest.find(|c: char| !c.is_ascii_hexdigit()).unwrap_or(rest.len()) {
-                                2.. => (4, Token::ErrorMsg(ParseErrorMsg::BackslashX2)),
-                                _ => (2, Token::ErrorMsg(ParseErrorMsg::Backslash)),
-                            }
-                        } else if let Some(rest) = input.strip_prefix("\\k<") {
-                            match rest.find('>') {
-                                Some(len) => (len + 4, Token::ErrorMsg(ParseErrorMsg::BackslashK)),
-                                _ => (2, Token::ErrorMsg(ParseErrorMsg::Backslash)),
-                            }
-                        } else if let Some(next) = input.chars().nth(1) {
-                            (1 + next.len_utf8(), Token::ErrorMsg(ParseErrorMsg::Backslash))
-                        } else {
-                            (1, Token::Error)
-                        }
-                    };
+                    if let Some((len, err)) = parse_backslash(input) => (len, Token::ErrorMsg(err));
                 };
 
                 let start = offset;
@@ -197,4 +138,53 @@ fn find_unescaped_quote(input: &str) -> Option<usize> {
             None => return None,
         }
     }
+}
+
+fn parse_backslash(input: &str) -> Option<(usize, ParseErrorMsg)> {
+    let hex = CharIs(|c| c.is_ascii_hexdigit());
+
+    let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '+' | '_')));
+
+    let after_gk: [&dyn MicroRegex<Context = _>; 4] = [
+        &('<', ident, '>'),
+        &('{', ident, '}'),
+        &('\'', ident, '\''),
+        &(&["-", "+", ""][..], CharIs(|c| c.is_ascii_digit())),
+    ];
+
+    let after_p: [&dyn MicroRegex<Context = _>; 3] =
+        [&CharIs(|c| c.is_ascii_alphanumeric()), &('{', ident, '}'), &("{^", ident, '}')];
+
+    let after_backslash: [&dyn MicroRegex<Context = _>; 6] = [
+        &(&["u{", "x{"][..], Many1(hex), '}').ctx(ParseErrorMsg::BackslashUnicode),
+        &('u', hex, hex, hex, hex).ctx(ParseErrorMsg::BackslashU4),
+        &('x', hex, hex).ctx(ParseErrorMsg::BackslashX2),
+        &(&['k', 'g'][..], &after_gk[..]).ctx(ParseErrorMsg::BackslashGK),
+        &(&['p', 'P'][..], &after_p[..]).ctx(ParseErrorMsg::BackslashProperty),
+        &CharIs(|_| true).ctx(ParseErrorMsg::Backslash),
+    ];
+
+    Capture(('\\', &after_backslash[..])).is_start(input).map(|(len, (_, err))| (len, err))
+}
+
+fn parse_special_group(input: &str) -> Option<(usize, ParseErrorMsg)> {
+    let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || c == '-' || c == '+'));
+
+    let after_open: [&dyn MicroRegex<Context = _>; 13] = [
+        &':'.ctx(ParseErrorMsg::GroupNonCapturing),
+        &'='.ctx(ParseErrorMsg::GroupLookahead),
+        &'!'.ctx(ParseErrorMsg::GroupLookaheadNeg),
+        &'>'.ctx(ParseErrorMsg::GroupAtomic),
+        &'('.ctx(ParseErrorMsg::GroupConditional),
+        &'|'.ctx(ParseErrorMsg::GroupBranchReset),
+        &"<=".ctx(ParseErrorMsg::GroupLookbehind),
+        &"<!".ctx(ParseErrorMsg::GroupLookbehindNeg),
+        &(&["P<", "<"][..], ident, '>').ctx(ParseErrorMsg::GroupNamedCapture),
+        &('\'', ident, '\'').ctx(ParseErrorMsg::GroupNamedCapture),
+        &("P=", ident, ')').ctx(ParseErrorMsg::GroupPcreBackreference),
+        &(&["P>", "&"][..]).ctx(ParseErrorMsg::GroupSubroutineCall),
+        &"".ctx(ParseErrorMsg::GroupOther),
+    ];
+
+    Capture(("(?", &after_open[..])).is_start(input).map(|(len, (_, err))| (len, err))
 }

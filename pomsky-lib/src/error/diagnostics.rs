@@ -89,13 +89,46 @@ impl Diagnostic {
                     Some("Use `![...]` to negate a character class".into())
                 }
                 ParseErrorMsg::Dollar => Some("Use `End` to match the end of the string".into()),
-                ParseErrorMsg::SpecialGroup => get_special_group_help(slice),
+                ParseErrorMsg::GroupNonCapturing => Some(
+                    "Non-capturing groups are just parentheses: `(...)`. \
+                    Capturing groups use the `:(...)` syntax."
+                        .into(),
+                ),
+                ParseErrorMsg::GroupLookahead => Some(
+                    "Lookahead uses the `>>` syntax. \
+                    For example, `>> 'bob'` matches if the position is followed by bob."
+                        .into(),
+                ),
+                ParseErrorMsg::GroupLookaheadNeg => Some(
+                    "Negative lookahead uses the `!>>` syntax. \
+                    For example, `!>> 'bob'` matches if the position is not followed by bob."
+                        .into(),
+                ),
+                ParseErrorMsg::GroupLookbehind => Some(
+                    "Lookbehind uses the `<<` syntax. \
+                    For example, `<< 'bob'` matches if the position is preceded with bob."
+                        .into(),
+                ),
+                ParseErrorMsg::GroupLookbehindNeg => Some(
+                    "Negative lookbehind uses the `!<<` syntax. \
+                    For example, `!<< 'bob'` matches if the position is not preceded with bob."
+                        .into(),
+                ),
+                ParseErrorMsg::GroupNamedCapture => get_named_capture_help(slice),
+                ParseErrorMsg::GroupPcreBackreference => get_pcre_backreference_help(slice),
                 ParseErrorMsg::Backslash => get_backslash_help(slice),
                 ParseErrorMsg::BackslashU4 => get_backslash_help_u4(slice),
                 ParseErrorMsg::BackslashX2 => get_backslash_help_x2(slice),
                 ParseErrorMsg::BackslashUnicode => get_backslash_help_unicode(slice),
-                ParseErrorMsg::BackslashK => get_backslash_help_k(slice),
-                ParseErrorMsg::UnclosedString => None,
+                ParseErrorMsg::BackslashGK => get_backslash_gk_help(slice),
+                ParseErrorMsg::BackslashProperty => get_backslash_property_help(slice),
+
+                ParseErrorMsg::GroupAtomic
+                | ParseErrorMsg::GroupConditional
+                | ParseErrorMsg::GroupBranchReset
+                | ParseErrorMsg::GroupSubroutineCall
+                | ParseErrorMsg::GroupOther
+                | ParseErrorMsg::UnclosedString => None,
             },
             ParseErrorKind::RangeIsNotIncreasing => {
                 let dash_pos = slice.find('-').unwrap();
@@ -198,48 +231,24 @@ impl Diagnostic {
     }
 }
 
-fn get_special_group_help(str: &str) -> Option<String> {
-    assert!(str.starts_with("(?"));
-    let str = &str[2..];
-    let mut iter = str.chars();
+fn get_named_capture_help(str: &str) -> Option<String> {
+    // (?<name>), (?P<name>)
+    let name =
+        str.trim_start_matches("(?").trim_start_matches('P').trim_matches(&['<', '>', '\''][..]);
 
-    Some(match (iter.next(), iter.next()) {
-        (Some(':'), _) => "Non-capturing groups are just parentheses: `(...)`. \
-            Capturing groups use the `:(...)` syntax."
-            .into(),
-        (Some('P'), Some('<')) => {
-            let str = &str[2..];
-            let rest = str.trim_start_matches(char::is_alphanumeric);
-            let name = &str[..str.len() - rest.len()];
-            format!(
-                "Named capturing groups use the `:name(...)` syntax. Try `:{name}(...)` instead"
-            )
-        }
-        (Some('>'), _) => "Atomic capturing groups are not supported".into(),
-        (Some('|'), _) => "Branch reset groups are not supported".into(),
-        (Some('('), _) => "Conditionals are not supported".into(),
-        (Some('='), _) => "Lookahead uses the `>>` syntax. \
-            For example, `>> 'bob'` matches if the position is followed by bob."
-            .into(),
-        (Some('!'), _) => "Negative lookahead uses the `!>>` syntax. \
-            For example, `!>> 'bob'` matches if the position is not followed by bob."
-            .into(),
-        (Some('<'), Some('=')) => "Lookbehind uses the `<<` syntax. \
-            For example, `<< 'bob'` matches if the position is preceded with bob."
-            .into(),
-        (Some('<'), Some('!')) => "Negative lookbehind uses the `!<<` syntax. \
-            For example, `!<< 'bob'` matches if the position is not preceded with bob."
-            .into(),
-        (Some('<'), _) => {
-            let str = &str[1..];
-            let rest = str.trim_start_matches(char::is_alphanumeric);
-            let name = &str[..str.len() - rest.len()];
-            format!(
-                "Named capturing groups use the `:name(...)` syntax. Try `:{name}(...)` instead"
-            )
-        }
-        _ => return None,
-    })
+    if name.contains('-') {
+        Some("Balancing groups are not supported".into())
+    } else {
+        Some(format!(
+            "Named capturing groups use the `:name(...)` syntax. Try `:{name}(...)` instead"
+        ))
+    }
+}
+
+fn get_pcre_backreference_help(str: &str) -> Option<String> {
+    // (?P=name)
+    let name = str.trim_start_matches("(?P=").trim_end_matches(')');
+    Some(format!("Backreferences use the `::name` syntax. Try `::{name}` instead"))
 }
 
 fn get_backslash_help(str: &str) -> Option<String> {
@@ -261,6 +270,9 @@ fn get_backslash_help(str: &str) -> Option<String> {
         Some('D') => "Replace `\\D` with `[!d]`".into(),
         Some('W') => "Replace `\\W` with `[!w]`".into(),
         Some('S') => "Replace `\\S` with `[!s]`".into(),
+        Some('V') => "Replace `\\V` with `![v]`".into(),
+        Some('H') => "Replace `\\H` with `![h]`".into(),
+        Some('G') => "Match attempt anchors are not supported".into(),
         Some(c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'w' | 's')) => {
             format!("Replace `\\{c}` with `[{c}]`")
         }
@@ -270,26 +282,44 @@ fn get_backslash_help(str: &str) -> Option<String> {
 }
 
 fn get_backslash_help_u4(str: &str) -> Option<String> {
-    assert!(str.starts_with("\\u"));
-    let hex = &str[2..6];
+    // \uFFFF
+    let hex = &str[2..];
     Some(format!("Try `U+{hex}` instead"))
 }
 
 fn get_backslash_help_x2(str: &str) -> Option<String> {
-    assert!(str.starts_with("\\x"));
-    let hex = &str[2..4];
+    // \xFF
+    let hex = &str[2..];
     Some(format!("Try `U+{hex}` instead"))
 }
 
 fn get_backslash_help_unicode(str: &str) -> Option<String> {
-    let hex_len = str[3..].chars().take_while(|c| c.is_ascii_hexdigit()).count();
-    let hex = &str[3..3 + hex_len];
+    // \u{...}, \x{...}
+    let hex = str[2..].trim_matches(&['{', '}'][..]);
     Some(format!("Try `U+{hex}` instead"))
 }
 
-fn get_backslash_help_k(str: &str) -> Option<String> {
-    assert!(str.starts_with("\\k<"));
-    let name_len = str[3..].chars().take_while(|&c| c != '>').count();
-    let name = &str[3..3 + name_len];
-    Some(format!("Replace `\\k<{name}>` with `::{name}`"))
+fn get_backslash_gk_help(str: &str) -> Option<String> {
+    // \k<name>, \k'name', \k{name}, \k0, \k-1, \k+1,
+    // \g<name>, \g'name', \g{name}, \g0, \g-1, \g+1
+    let name = str[2..].trim_matches(&['{', '}', '<', '>', '\''][..]);
+
+    if name == "0" {
+        Some("Recursion is currently not supported".to_string())
+    } else {
+        Some(format!("Replace `{str}` with `::{name}`"))
+    }
+}
+
+fn get_backslash_property_help(str: &str) -> Option<String> {
+    // \pL, \PL, \p{Letter}, \P{Letter}, \p{^Letter}, \P{^Letter}
+    let is_negative =
+        (str.starts_with("\\P") && !str.starts_with("\\P{^")) || str.starts_with("\\p{^");
+    let name = str[2..].trim_matches(&['{', '}', '^'][..]).replace(&['+', '-'][..], "_");
+
+    if is_negative {
+        Some(format!("Replace `{str}` with `[!{name}]`"))
+    } else {
+        Some(format!("Replace `{str}` with `[{name}]`"))
+    }
 }

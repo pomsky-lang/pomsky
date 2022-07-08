@@ -1,6 +1,5 @@
 #! expect=error
 (?(test))
 -----
-ERROR: This syntax is not supported
-HELP: Conditionals are not supported
+ERROR: Conditionals are not supported
 SPAN: 0..3
