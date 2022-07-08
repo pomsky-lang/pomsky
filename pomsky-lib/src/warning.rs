@@ -52,7 +52,7 @@ impl fmt::Display for WarningKind {
 pub enum DeprecationWarning {
     /// The `<%` start literal
     StartLiteral,
-    /// The `<%` start literal
+    /// The `%>` end literal
     EndLiteral,
 }
 

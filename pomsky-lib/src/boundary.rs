@@ -58,10 +58,10 @@ impl Boundary {
 impl core::fmt::Debug for Boundary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self.kind {
-            BoundaryKind::Start => write!(f, "<%"),
+            BoundaryKind::Start => write!(f, "Start"),
             BoundaryKind::Word => write!(f, "%"),
             BoundaryKind::NotWord => write!(f, "!%"),
-            BoundaryKind::End => write!(f, "%>"),
+            BoundaryKind::End => write!(f, "End"),
         }
     }
 }
@@ -69,13 +69,13 @@ impl core::fmt::Debug for Boundary {
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum BoundaryKind {
-    /// `<%`, the start of the string (or start of line in single-line mode)
+    /// `Start`, the start of the string (or start of line in single-line mode)
     Start,
     /// `%`, a word boundary
     Word,
     /// `!%`, not a word boundary
     NotWord,
-    /// `%>`, the end of the string (or end of line in single-line mode)
+    /// `End`, the end of the string (or end of line in single-line mode)
     End,
 }
 

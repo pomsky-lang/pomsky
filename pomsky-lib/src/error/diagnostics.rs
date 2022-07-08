@@ -250,14 +250,14 @@ fn get_backslash_help(str: &str) -> Option<String> {
     Some(match iter.next() {
         Some('b') => "Replace `\\b` with `%` to match a word boundary".into(),
         Some('B') => "Replace `\\B` with `!%` to match a place without a word boundary".into(),
-        Some('A') => "Replace `\\A` with `<%` to match the start of the string".into(),
-        Some('z') => "Replace `\\z` with `%>` to match the end of the string".into(),
-        Some('Z') => "\\Z is not supported. Use `%>` to match the end of the string. \
-            Note, however, that `%>` doesn't match the position before the final newline."
+        Some('A') => "Replace `\\A` with `Start` to match the start of the string".into(),
+        Some('z') => "Replace `\\z` with `End` to match the end of the string".into(),
+        Some('Z') => "\\Z is not supported. Use `End` to match the end of the string. \
+            Note, however, that `End` doesn't match the position before the final newline."
             .into(),
-        Some('N') => "Replace `\\N` with `[.]`".into(),
+        Some('N') => "Replace `\\N` with `![n]`".into(),
         Some('X') => "Replace `\\X` with `Grapheme`".into(),
-        Some('R') => "Replace `\\R` with `(r n | v)`".into(),
+        Some('R') => "Replace `\\R` with `([r] [n] | [v])`".into(),
         Some('D') => "Replace `\\D` with `[!d]`".into(),
         Some('W') => "Replace `\\W` with `[!w]`".into(),
         Some('S') => "Replace `\\S` with `[!s]`".into(),
