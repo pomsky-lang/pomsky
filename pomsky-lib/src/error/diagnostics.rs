@@ -274,6 +274,7 @@ impl Diagnostic {
     #[cfg(feature = "miette")]
     pub fn default_display(&self) -> impl std::fmt::Display + '_ {
         use miette::ReportHandler;
+        use std::fmt;
 
         #[derive(Debug)]
         struct DiagnosticPrinter<'a>(&'a Diagnostic);
