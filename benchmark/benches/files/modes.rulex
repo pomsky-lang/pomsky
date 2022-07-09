@@ -1,0 +1,2 @@
+enable lazy; disable lazy; enable lazy; disable lazy; enable lazy;
+(disable lazy; enable lazy; 'w'+)

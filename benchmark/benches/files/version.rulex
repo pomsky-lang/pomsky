@@ -1,0 +1,10 @@
+Start
+'v'?
+:major([ascii_digit]+)
+'.'
+:minor([ascii_digit]+)
+'.'
+:patch([ascii_digit]+)
+End
+
+# v1.0.0
