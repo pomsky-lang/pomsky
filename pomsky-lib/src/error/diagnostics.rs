@@ -114,6 +114,9 @@ impl Diagnostic {
                     For example, `!<< 'bob'` matches if the position is not preceded with bob."
                         .into(),
                 ),
+                ParseErrorMsg::GroupComment => {
+                    Some("Comments start with `#` and go until the end of the line.".into())
+                }
                 ParseErrorMsg::GroupNamedCapture => get_named_capture_help(slice),
                 ParseErrorMsg::GroupPcreBackreference => get_pcre_backreference_help(slice),
                 ParseErrorMsg::Backslash => get_backslash_help(slice),
@@ -261,7 +264,7 @@ fn get_backslash_help(str: &str) -> Option<String> {
         Some('B') => "Replace `\\B` with `!%` to match a place without a word boundary".into(),
         Some('A') => "Replace `\\A` with `Start` to match the start of the string".into(),
         Some('z') => "Replace `\\z` with `End` to match the end of the string".into(),
-        Some('Z') => "\\Z is not supported. Use `End` to match the end of the string. \
+        Some('Z') => "\\Z is not supported. Use `End` to match the end of the string.\n\
             Note, however, that `End` doesn't match the position before the final newline."
             .into(),
         Some('N') => "Replace `\\N` with `![n]`".into(),
@@ -276,7 +279,12 @@ fn get_backslash_help(str: &str) -> Option<String> {
         Some(c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'w' | 's')) => {
             format!("Replace `\\{c}` with `[{c}]`")
         }
-        Some(c @ '0'..='9') => format!("Replace `\\{c}` with `::{c}`"),
+        Some('0') => "Replace `\\0` with `U+00`".into(),
+        Some(c @ '1'..='7') => format!(
+            "If this is a backreference, replace it with `::{c}`.\n\
+            If this is an octal escape, replace it with `U+0{c}`."
+        ),
+        Some(c @ '1'..='9') => format!("Replace `\\{c}` with `::{c}`"),
         _ => return None,
     })
 }

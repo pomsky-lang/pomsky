@@ -1,0 +1,6 @@
+#! expect=error
+\k{test}
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\k{test}` with `::test`
+SPAN: 0..8

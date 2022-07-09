@@ -1,0 +1,6 @@
+#! expect=error
+\pL
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\pL` with `[L]`
+SPAN: 0..3

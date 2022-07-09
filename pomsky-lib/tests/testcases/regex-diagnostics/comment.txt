@@ -1,0 +1,6 @@
+#! expect=error
+(?# test!!)
+-----
+ERROR: Comments have a different syntax
+HELP: Comments start with `#` and go until the end of the line.
+SPAN: 0..11

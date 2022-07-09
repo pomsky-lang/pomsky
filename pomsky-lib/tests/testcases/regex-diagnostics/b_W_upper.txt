@@ -1,0 +1,6 @@
+#! expect=error
+\W
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\W` with `[!w]`
+SPAN: 0..2

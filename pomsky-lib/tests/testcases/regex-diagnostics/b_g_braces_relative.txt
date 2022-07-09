@@ -1,0 +1,6 @@
+#! expect=error
+\g{-1}
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\g{-1}` with `::-1`
+SPAN: 0..6

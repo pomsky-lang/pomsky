@@ -1,0 +1,6 @@
+#! expect=error
+\A
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\A` with `Start` to match the start of the string
+SPAN: 0..2

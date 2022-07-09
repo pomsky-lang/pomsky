@@ -1,0 +1,6 @@
+#! expect=error
+\p{Category}
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\p{Category}` with `[Category]`
+SPAN: 0..12

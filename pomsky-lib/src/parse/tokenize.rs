@@ -170,7 +170,7 @@ fn parse_backslash(input: &str) -> Option<(usize, ParseErrorMsg)> {
 fn parse_special_group(input: &str) -> Option<(usize, ParseErrorMsg)> {
     let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || c == '-' || c == '+'));
 
-    let after_open: [&dyn MicroRegex<Context = _>; 13] = [
+    let after_open: [&dyn MicroRegex<Context = _>; 14] = [
         &':'.ctx(ParseErrorMsg::GroupNonCapturing),
         &'='.ctx(ParseErrorMsg::GroupLookahead),
         &'!'.ctx(ParseErrorMsg::GroupLookaheadNeg),
@@ -183,6 +183,7 @@ fn parse_special_group(input: &str) -> Option<(usize, ParseErrorMsg)> {
         &('\'', ident, '\'').ctx(ParseErrorMsg::GroupNamedCapture),
         &("P=", ident, ')').ctx(ParseErrorMsg::GroupPcreBackreference),
         &(&["P>", "&"][..]).ctx(ParseErrorMsg::GroupSubroutineCall),
+        &('#', Many0(CharIs(|c| c != ')')), ')').ctx(ParseErrorMsg::GroupComment),
         &"".ctx(ParseErrorMsg::GroupOther),
     ];
 

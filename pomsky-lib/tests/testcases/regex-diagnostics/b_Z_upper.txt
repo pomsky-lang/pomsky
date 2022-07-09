@@ -1,0 +1,7 @@
+#! expect=error
+\Z
+-----
+ERROR: Backslash escapes are not supported
+HELP: \Z is not supported. Use `End` to match the end of the string.
+Note, however, that `End` doesn't match the position before the final newline.
+SPAN: 0..2

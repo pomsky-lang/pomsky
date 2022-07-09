@@ -1,0 +1,6 @@
+#! expect=error
+\N
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\N` with `![n]`
+SPAN: 0..2

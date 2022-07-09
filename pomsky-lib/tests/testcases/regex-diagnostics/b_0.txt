@@ -1,0 +1,6 @@
+#! expect=error
+\0
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\0` with `U+00`
+SPAN: 0..2

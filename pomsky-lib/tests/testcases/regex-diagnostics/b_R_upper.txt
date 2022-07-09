@@ -1,0 +1,6 @@
+#! expect=error
+\R
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\R` with `([r] [n] | [v])`
+SPAN: 0..2

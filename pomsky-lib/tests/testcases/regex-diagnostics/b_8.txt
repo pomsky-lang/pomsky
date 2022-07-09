@@ -1,0 +1,6 @@
+#! expect=error
+\8
+-----
+ERROR: Backslash escapes are not supported
+HELP: Replace `\8` with `::8`
+SPAN: 0..2

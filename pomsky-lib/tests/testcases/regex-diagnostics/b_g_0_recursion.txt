@@ -1,0 +1,6 @@
+#! expect=error
+\g<0>
+-----
+ERROR: Backslash escapes are not supported
+HELP: Recursion is currently not supported
+SPAN: 0..5

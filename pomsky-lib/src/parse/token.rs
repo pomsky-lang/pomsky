@@ -112,6 +112,8 @@ pub enum ParseErrorMsg {
     GroupNamedCapture,
     #[error("This syntax is not supported")]
     GroupPcreBackreference,
+    #[error("Comments have a different syntax")]
+    GroupComment,
     #[error("Atomic groups are not supported")]
     GroupAtomic,
     #[error("Conditionals are not supported")]

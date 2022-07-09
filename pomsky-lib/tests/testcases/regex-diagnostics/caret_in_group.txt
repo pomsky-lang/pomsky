@@ -1,0 +1,6 @@
+#! expect=error
+[^test]
+-----
+ERROR: `^` is not a valid token
+HELP: Use `![...]` to negate a character class
+SPAN: 1..2
