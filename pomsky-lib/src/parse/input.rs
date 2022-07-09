@@ -25,22 +25,43 @@ impl<'i, 'b> Input<'i, 'b> {
         warnings: &'b RefCell<Vec<Warning>>,
         recursion: u16,
     ) -> Result<Self, ParseError> {
-        let error = tokens.iter().enumerate().find_map(|(i, &(t, span))| match t {
-            Token::Error => Some((i, span, None)),
-            Token::ErrorMsg(m) => Some((i, span, Some(m))),
-            _ => None,
-        });
-        if let Some((i, span, msg)) = error {
-            return match msg {
-                Some(ParseErrorMsg::Caret) if i > 0 && tokens[i - 1].0 == Token::OpenBracket => {
-                    Err(ParseErrorKind::LexErrorWithMessage(ParseErrorMsg::CaretInGroup).at(span))
+        let mut errors = vec![];
+        for (i, &(t, span)) in tokens.iter().enumerate() {
+            match t {
+                Token::Error => errors.push((span, None)),
+                Token::ErrorMsg(ParseErrorMsg::Caret)
+                    if i > 0 && tokens[i - 1].0 == Token::OpenBracket =>
+                {
+                    errors.push((span, Some(ParseErrorMsg::CaretInGroup)));
                 }
-                Some(msg) => Err(ParseErrorKind::LexErrorWithMessage(msg).at(span)),
-                None => Err(ParseErrorKind::UnknownToken.at(span)),
-            };
+                Token::ErrorMsg(m) => errors.push((span, Some(m))),
+                _ => {}
+            }
         }
 
-        Ok(Input { source, tokens, recursion, warnings })
+        match errors.len() {
+            0 => Ok(Input { source, tokens, recursion, warnings }),
+            1 => {
+                let (span, msg) = errors.pop().unwrap();
+                Err(msg
+                    .map_or(ParseErrorKind::UnknownToken, ParseErrorKind::LexErrorWithMessage)
+                    .at(span))
+            }
+            _ => {
+                let errors = errors
+                    .into_iter()
+                    .map(|(span, msg)| {
+                        msg.map_or(
+                            ParseErrorKind::UnknownToken,
+                            ParseErrorKind::LexErrorWithMessage,
+                        )
+                        .at(span)
+                    })
+                    .collect::<Vec<_>>();
+
+                Err(ParseErrorKind::Multiple(errors.into_boxed_slice()).at(Span::empty()))
+            }
+        }
     }
 
     pub(super) fn recursion_start(&mut self) -> Result<(), ParseError> {

@@ -76,7 +76,7 @@ impl miette::Diagnostic for Diagnostic {
 }
 
 impl Diagnostic {
-    /// Create a `Diagnostic` from a [`ParseError`]
+    /// Create a [Diagnostic] from a [ParseError]
     pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
         let range = error.span.range().unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
@@ -193,7 +193,19 @@ impl Diagnostic {
         }
     }
 
-    /// Create a `Diagnostic` from a [`CompileError`]
+    /// Same as [`Diagnostic::from_parse_error`], but returns a `Vec` and recursively flattens
+    /// [`ParseErrorKind::Multiple`].
+    pub fn from_parse_errors(error: ParseError, source_code: &str) -> Vec<Diagnostic> {
+        match error.kind {
+            ParseErrorKind::Multiple(multiple) => Vec::from(multiple)
+                .into_iter()
+                .flat_map(|err| Diagnostic::from_parse_errors(err, source_code))
+                .collect(),
+            _ => vec![Diagnostic::from_parse_error(error, source_code)],
+        }
+    }
+
+    /// Create a [Diagnostic] from a [CompileError]
     pub fn from_compile_error(
         CompileError { kind, span }: CompileError,
         source_code: &str,
@@ -218,7 +230,32 @@ impl Diagnostic {
         }
     }
 
-    /// Create a `Diagnostic` from a [`CompileError`]
+    /// Create one or multiple [Diagnostic]s from a [CompileError]
+    pub fn from_compile_errors(
+        CompileError { kind, span }: CompileError,
+        source_code: &str,
+    ) -> Vec<Self> {
+        match kind {
+            CompileErrorKind::ParseError(kind) => {
+                Diagnostic::from_parse_errors(ParseError { kind, span }, source_code)
+            }
+            _ => {
+                let range = span.range().unwrap_or(0..source_code.len());
+                let span = Span::from(range);
+
+                vec![Diagnostic {
+                    severity: Severity::Error,
+                    code: None,
+                    msg: kind.to_string(),
+                    source_code: source_code.into(),
+                    help: None,
+                    span,
+                }]
+            }
+        }
+    }
+
+    /// Create a [Diagnostic] from a [CompileError]
     pub fn from_warning(warning: Warning, source_code: &str) -> Self {
         let range = warning.span.range().unwrap_or(0..source_code.len());
         let span = Span::from(range);
@@ -231,6 +268,23 @@ impl Diagnostic {
             help: None,
             span,
         }
+    }
+
+    /// Returns a value that can display the diagnostic with the [`Display`] trait.
+    #[cfg(feature = "miette")]
+    pub fn default_display(&self) -> impl std::fmt::Display + '_ {
+        use miette::ReportHandler;
+
+        #[derive(Debug)]
+        struct DiagnosticPrinter<'a>(&'a Diagnostic);
+
+        impl fmt::Display for DiagnosticPrinter<'_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                miette::MietteHandler::default().debug(self.0, f)
+            }
+        }
+
+        DiagnosticPrinter(self)
     }
 }
 

@@ -9,7 +9,7 @@ use crate::{
 use super::Diagnostic;
 
 /// An error than can occur only during parsing
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
     pub(super) kind: ParseErrorKind,
     pub(super) span: Span,
@@ -55,6 +55,9 @@ impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub(crate) enum ParseErrorKind {
+    #[error("Multiple parsing errors encountered")]
+    Multiple(Box<[ParseError]>),
+
     #[error("Unknown token")]
     UnknownToken,
     #[error(transparent)]

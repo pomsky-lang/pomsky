@@ -3,3 +3,24 @@
 -----
 ERROR: Unknown token
 SPAN: 0..1
+
+ERROR: Unknown token
+SPAN: 1..2
+
+ERROR: Unknown token
+SPAN: 2..3
+
+ERROR: Unknown token
+SPAN: 3..4
+
+ERROR: Unknown token
+SPAN: 4..5
+
+ERROR: Unknown token
+SPAN: 5..6
+
+ERROR: Unknown token
+SPAN: 6..7
+
+ERROR: Unknown token
+SPAN: 7..8

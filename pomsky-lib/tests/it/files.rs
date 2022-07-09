@@ -139,7 +139,7 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                         TestResult::Blessed
                     }
                     outcome => TestResult::IncorrectResult {
-                        input: strip_input(input),
+                        input: input.to_string(),
                         expected: outcome.of(expected.to_string()),
                         got: Ok(got),
                     },
@@ -162,7 +162,7 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                         TestResult::Blessed
                     }
                     outcome => TestResult::IncorrectResult {
-                        input: strip_input(input),
+                        input: input.to_string(),
                         expected: outcome.of(expected.to_string()),
                         got: Err(err),
                     },
@@ -174,12 +174,18 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
 }
 
 fn error_to_string(err: CompileError, input: &str) -> String {
-    let diagnostic = err.diagnostic(input);
-    if let Some(help) = diagnostic.help {
-        format!("ERROR: {}\nHELP: {}\nSPAN: {}", diagnostic.msg, help, diagnostic.span)
-    } else {
-        format!("ERROR: {}\nSPAN: {}", diagnostic.msg, diagnostic.span)
-    }
+    let diagnostics = err.diagnostics(input);
+    diagnostics
+        .into_iter()
+        .map(|diagnostic| {
+            if let Some(help) = diagnostic.help {
+                format!("ERROR: {}\nHELP: {}\nSPAN: {}", diagnostic.msg, help, diagnostic.span)
+            } else {
+                format!("ERROR: {}\nSPAN: {}", diagnostic.msg, diagnostic.span)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
 }
 
 fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Options) {
@@ -215,16 +221,6 @@ fn create_content(input: &str, outcome: &str, options: Options) -> String {
     };
 
     option_strings + input + "\n-----\n" + outcome
-}
-
-fn strip_input(input: &str) -> String {
-    input
-        .lines()
-        .filter(|l| {
-            let l = l.trim_start();
-            !l.is_empty() && !l.starts_with('#')
-        })
-        .collect()
 }
 
 fn catch_panics<R>(f: impl Fn() -> R + UnwindSafe) -> Result<R, Option<String>> {

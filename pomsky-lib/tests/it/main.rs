@@ -68,9 +68,9 @@ fn defer_main() -> Result<(), io::Error> {
             TestResult::IncorrectResult { input, expected, got } => {
                 failed += 1;
                 println!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
-                println!("       {}: {}", Blue("input"), input);
-                println!("    {}: {}", Blue("expected"), Print(expected));
-                println!("         {}: {}", Blue("got"), Print(got));
+                println!("       {}: {}", Blue("input"), pad_left(&input, 14));
+                println!("    {}: {}", Blue("expected"), Print(expected, 14));
+                println!("         {}: {}", Blue("got"), Print(got, 14));
                 println!();
             }
             TestResult::Panic { message } => {
@@ -205,13 +205,20 @@ fn filter_matches(filter: &str, path: &Path) -> bool {
     path.contains(filter)
 }
 
-struct Print(Result<String, String>);
+struct Print(Result<String, String>, usize);
 
 impl fmt::Display for Print {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            Ok(s) => write!(f, "{} /{s}/", Green("OK")),
-            Err(s) => write!(f, "{}: {s}", Red("ERR")),
+            Ok(s) => write!(f, "{} /{s}/", Green("OK"), s = pad_left(s, self.1 + 4)),
+            Err(s) => write!(f, "{}: {s}", Red("ERR"), s = pad_left(s, self.1 + 5)),
         }
     }
+}
+
+fn pad_left(s: &str, padding: usize) -> String {
+    s.lines()
+        .enumerate()
+        .map(|(i, line)| if i == 0 { line.to_string() } else { format!("\n{:padding$}{line}", "") })
+        .collect()
 }

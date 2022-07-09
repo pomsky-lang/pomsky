@@ -20,6 +20,11 @@ impl CompileError {
     pub fn diagnostic(self, source_code: &str) -> Diagnostic {
         Diagnostic::from_compile_error(self, source_code)
     }
+
+    /// Create one or more [Diagnostic]s from this error.
+    pub fn diagnostics(self, source_code: &str) -> Vec<Diagnostic> {
+        Diagnostic::from_compile_errors(self, source_code)
+    }
 }
 
 impl core::fmt::Display for CompileError {

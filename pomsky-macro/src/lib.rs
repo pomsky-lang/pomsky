@@ -23,7 +23,6 @@ pub fn pomsky(items: TokenStream) -> TokenStream {
         Ok(lit) => TokenTree::Literal(lit).into(),
         Err(Error { msg, span }) => {
             let span = span.unwrap_or(global_span);
-            let msg = format!("error: {msg}");
             diagnostic::error(&msg, span, span)
         }
     }
@@ -119,7 +118,13 @@ fn pomsky_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error>
     match Expr::parse_and_compile(input, Default::default(), CompileOptions { flavor }) {
         Ok((compiled, _warnings)) => Ok(Literal::string(&compiled)),
 
-        Err(e) => bail!(diagnostic::fmt(Diagnostic::from_compile_error(e, input), group), span),
+        Err(e) => {
+            let errors = Diagnostic::from_compile_errors(e, input)
+                .into_iter()
+                .map(|d| diagnostic::fmt(d, &group))
+                .collect::<Vec<_>>();
+            bail!(errors.join("\n\n"), span)
+        }
     }
 }
 

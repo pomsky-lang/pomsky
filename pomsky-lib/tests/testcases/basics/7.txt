@@ -5,3 +5,6 @@ C ؾ\ ؾ \u{ؾ} U+ؾ Uؾ' ؾ'
 -----
 ERROR: Backslash escapes are not supported
 SPAN: 42..44
+
+ERROR: Backslash escapes are not supported
+SPAN: 47..49
