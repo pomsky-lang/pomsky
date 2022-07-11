@@ -18,10 +18,12 @@ exclude = ["tests/**", "fuzz/**", "afl-fuzz/**"]
 [features]
 default = []
 dbg = []
+suggestions = ["strsim"]
 
 [dependencies]
 thiserror = "1.0.31"
 nom = "7.1.0"
+strsim = { version = "0.10.0", optional = true }
 
 [dependencies.arbitrary]
 version = "1.1.2"

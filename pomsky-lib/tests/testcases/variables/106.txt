@@ -2,5 +2,5 @@
 let x = y;
 x
 -----
-ERROR: Variable doesn't exist
+ERROR: Variable `y` doesn't exist
 SPAN: 8..9

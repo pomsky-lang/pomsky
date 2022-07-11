@@ -4,5 +4,5 @@ let _ = (
 );
 a
 -----
-ERROR: Variable doesn't exist
+ERROR: Variable `a` doesn't exist
 SPAN: 28..29

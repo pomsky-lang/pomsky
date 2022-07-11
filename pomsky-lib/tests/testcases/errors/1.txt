@@ -2,5 +2,5 @@
 []
 -----
 ERROR: This character class is empty
-HELP: You can use `[s !s]` to match nothing
+HELP: You can use `![s !s]` to match nothing, and `C` to match anything
 SPAN: 0..1

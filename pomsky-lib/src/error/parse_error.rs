@@ -124,7 +124,7 @@ impl From<RepetitionError> for ParseErrorKind {
 /// An error that relates to a character string
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum CharStringError {
+pub(crate) enum CharStringError {
     /// Empty string in a code point range within a character class, e.g.
     /// `[''-'z']`
     #[error("Strings used in ranges can't be empty")]
@@ -139,7 +139,7 @@ pub enum CharStringError {
 /// An error that relates to a character class
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum CharClassError {
+pub(crate) enum CharClassError {
     /// Empty character class, i.e. `[]`
     #[error("This character class is empty")]
     Empty,
@@ -155,12 +155,6 @@ pub enum CharClassError {
     #[error("Expected string, range, code point or named character class")]
     Invalid,
 
-    /// Unknown shorthand character class, currently unused
-    #[deprecated = "No longer used. Use the `UnknownNamedClass` variant instead"]
-    // TODO: remove in next major version
-    #[error("This character class is unknown")]
-    Unknown,
-
     /// Character class contains incompatible shorthands, e.g. `[. codepoint]`
     #[error("This combination of character classes is not allowed")]
     Unallowed,
@@ -173,12 +167,6 @@ pub enum CharClassError {
     #[error("This character class can't be negated")]
     Negative,
 
-    /// The `Grapheme` identifier within a character class
-    #[deprecated = "Grapheme is no longer a keyword, so this is unused."]
-    // TODO: remove in next major version
-    #[error("A character class can't contain `Grapheme`")]
-    Grapheme,
-
     /// Unexpected keyword within a character class, e.g. `[let]`
     #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
@@ -187,22 +175,16 @@ pub enum CharClassError {
 /// An error that relates to a Unicode code point
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum CodePointError {
+pub(crate) enum CodePointError {
     /// Code point that is outside the allowed range, e.g. `U+200000`
     #[error("This code point is outside the allowed range")]
     Invalid,
-
-    /// Invalid code point. Currently unused
-    #[deprecated = "This variant is unused and will be removed."]
-    // TODO: remove in next major version
-    #[error("This code point range is invalid")]
-    InvalidRange,
 }
 
 /// An error that relates to parsing a number
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum NumberError {
+pub(crate) enum NumberError {
     /// The parsed string is empty
     #[error("cannot parse integer from empty string")]
     Empty,
@@ -242,8 +224,7 @@ impl From<ParseIntError> for NumberError {
 /// See [`crate::features::PomskyFeatures`] for details.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-#[allow(missing_docs)]
-pub enum UnsupportedError {
+pub(crate) enum UnsupportedError {
     #[error("Grapheme is not supported")]
     Grapheme,
 

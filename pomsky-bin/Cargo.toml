@@ -30,7 +30,7 @@ features = ["fancy-no-backtrace"]
 [dependencies.pomsky]
 version = "0.5.0"
 path = "../pomsky-lib"
-features = ["dbg", "miette"]
+features = ["dbg", "miette", "suggestions"]
 
 [dependencies.clap]
 version = "3.1.0"

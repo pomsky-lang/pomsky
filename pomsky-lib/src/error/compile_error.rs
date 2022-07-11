@@ -59,6 +59,7 @@ pub(crate) enum CompileErrorKind {
     #[error("Reference to unknown group. There is no group number {}", .0)]
     UnknownReferenceNumber(i32),
 
+    // TODO: "Do you mean..." suggestion
     #[error("Reference to unknown group. There is no group named `{}`", .0)]
     UnknownReferenceName(String),
 
@@ -77,8 +78,12 @@ pub(crate) enum CompileErrorKind {
     #[error("References within `let` statements are currently not supported")]
     ReferenceInLet,
 
-    #[error("Variable doesn't exist")]
-    UnknownVariable,
+    #[error("Variable `{}` doesn't exist", .found)]
+    UnknownVariable {
+        found: Box<str>,
+        #[cfg(feature = "suggestions")]
+        similar: Option<Box<str>>,
+    },
 
     #[error("Variables can't be used recursively")]
     RecursiveVariable,

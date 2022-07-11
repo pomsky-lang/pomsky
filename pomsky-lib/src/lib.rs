@@ -74,6 +74,7 @@ mod repetition;
 mod rule;
 mod span;
 mod stmt;
+mod util;
 mod var;
 
 /// A parsed pomsky expression, which might contain more sub-expressions.

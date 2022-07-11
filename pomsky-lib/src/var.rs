@@ -38,7 +38,15 @@ impl<'i> Variable<'i> {
             if recursive_rule.is_some() {
                 Err(CompileErrorKind::RecursiveVariable.at(self.span))
             } else {
-                Err(CompileErrorKind::UnknownVariable.at(self.span))
+                Err(CompileErrorKind::UnknownVariable {
+                    found: self.name.into(),
+                    #[cfg(feature = "suggestions")]
+                    similar: crate::util::find_suggestion(
+                        self.name,
+                        state.variables.iter().map(|&(var, _)| var),
+                    ),
+                }
+                .at(self.span))
             }
         }
     }
