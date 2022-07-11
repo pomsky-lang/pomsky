@@ -83,56 +83,7 @@ impl Diagnostic {
         let mut span = Span::from(range);
 
         let help = match error.kind {
-            ParseErrorKind::LexErrorWithMessage(msg) => match msg {
-                ParseErrorMsg::Caret => Some("Use `Start` to match the start of the string".into()),
-                ParseErrorMsg::CaretInGroup => {
-                    Some("Use `![...]` to negate a character class".into())
-                }
-                ParseErrorMsg::Dollar => Some("Use `End` to match the end of the string".into()),
-                ParseErrorMsg::GroupNonCapturing => Some(
-                    "Non-capturing groups are just parentheses: `(...)`. \
-                    Capturing groups use the `:(...)` syntax."
-                        .into(),
-                ),
-                ParseErrorMsg::GroupLookahead => Some(
-                    "Lookahead uses the `>>` syntax. \
-                    For example, `>> 'bob'` matches if the position is followed by bob."
-                        .into(),
-                ),
-                ParseErrorMsg::GroupLookaheadNeg => Some(
-                    "Negative lookahead uses the `!>>` syntax. \
-                    For example, `!>> 'bob'` matches if the position is not followed by bob."
-                        .into(),
-                ),
-                ParseErrorMsg::GroupLookbehind => Some(
-                    "Lookbehind uses the `<<` syntax. \
-                    For example, `<< 'bob'` matches if the position is preceded with bob."
-                        .into(),
-                ),
-                ParseErrorMsg::GroupLookbehindNeg => Some(
-                    "Negative lookbehind uses the `!<<` syntax. \
-                    For example, `!<< 'bob'` matches if the position is not preceded with bob."
-                        .into(),
-                ),
-                ParseErrorMsg::GroupComment => {
-                    Some("Comments start with `#` and go until the end of the line.".into())
-                }
-                ParseErrorMsg::GroupNamedCapture => get_named_capture_help(slice),
-                ParseErrorMsg::GroupPcreBackreference => get_pcre_backreference_help(slice),
-                ParseErrorMsg::Backslash => get_backslash_help(slice),
-                ParseErrorMsg::BackslashU4 => get_backslash_help_u4(slice),
-                ParseErrorMsg::BackslashX2 => get_backslash_help_x2(slice),
-                ParseErrorMsg::BackslashUnicode => get_backslash_help_unicode(slice),
-                ParseErrorMsg::BackslashGK => get_backslash_gk_help(slice),
-                ParseErrorMsg::BackslashProperty => get_backslash_property_help(slice),
-
-                ParseErrorMsg::GroupAtomic
-                | ParseErrorMsg::GroupConditional
-                | ParseErrorMsg::GroupBranchReset
-                | ParseErrorMsg::GroupSubroutineCall
-                | ParseErrorMsg::GroupOther
-                | ParseErrorMsg::UnclosedString => None,
-            },
+            ParseErrorKind::LexErrorWithMessage(msg) => get_parse_error_msg_help(slice, msg),
             ParseErrorKind::RangeIsNotIncreasing => {
                 let dash_pos = slice.find('-').unwrap();
                 let (part1, part2) = slice.split_at(dash_pos);
@@ -287,6 +238,47 @@ impl Diagnostic {
 
         DiagnosticPrinter(self)
     }
+}
+
+fn get_parse_error_msg_help(slice: &str, msg: ParseErrorMsg) -> Option<String> {
+    Some(match msg {
+        ParseErrorMsg::Caret => "Use `Start` to match the start of the string".into(),
+        ParseErrorMsg::CaretInGroup => "Use `![...]` to negate a character class".into(),
+        ParseErrorMsg::Dollar => "Use `End` to match the end of the string".into(),
+        ParseErrorMsg::GroupNonCapturing => "Non-capturing groups are just parentheses: `(...)`. \
+            Capturing groups use the `:(...)` syntax."
+            .into(),
+        ParseErrorMsg::GroupLookahead => "Lookahead uses the `>>` syntax. \
+            For example, `>> 'bob'` matches if the position is followed by bob."
+            .into(),
+        ParseErrorMsg::GroupLookaheadNeg => "Negative lookahead uses the `!>>` syntax. \
+            For example, `!>> 'bob'` matches if the position is not followed by bob."
+            .into(),
+        ParseErrorMsg::GroupLookbehind => "Lookbehind uses the `<<` syntax. \
+            For example, `<< 'bob'` matches if the position is preceded with bob."
+            .into(),
+        ParseErrorMsg::GroupLookbehindNeg => "Negative lookbehind uses the `!<<` syntax. \
+            For example, `!<< 'bob'` matches if the position is not preceded with bob."
+            .into(),
+        ParseErrorMsg::GroupComment => "Comments start with `#` and go until the \
+            end of the line."
+            .into(),
+        ParseErrorMsg::GroupNamedCapture => return get_named_capture_help(slice),
+        ParseErrorMsg::GroupPcreBackreference => return get_pcre_backreference_help(slice),
+        ParseErrorMsg::Backslash => return get_backslash_help(slice),
+        ParseErrorMsg::BackslashU4 => return get_backslash_help_u4(slice),
+        ParseErrorMsg::BackslashX2 => return get_backslash_help_x2(slice),
+        ParseErrorMsg::BackslashUnicode => return get_backslash_help_unicode(slice),
+        ParseErrorMsg::BackslashGK => return get_backslash_gk_help(slice),
+        ParseErrorMsg::BackslashProperty => return get_backslash_property_help(slice),
+
+        ParseErrorMsg::GroupAtomic
+        | ParseErrorMsg::GroupConditional
+        | ParseErrorMsg::GroupBranchReset
+        | ParseErrorMsg::GroupSubroutineCall
+        | ParseErrorMsg::GroupOther
+        | ParseErrorMsg::UnclosedString => return None,
+    })
 }
 
 fn get_named_capture_help(str: &str) -> Option<String> {
