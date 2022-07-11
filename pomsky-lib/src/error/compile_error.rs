@@ -59,9 +59,12 @@ pub(crate) enum CompileErrorKind {
     #[error("Reference to unknown group. There is no group number {}", .0)]
     UnknownReferenceNumber(i32),
 
-    // TODO: "Do you mean..." suggestion
-    #[error("Reference to unknown group. There is no group named `{}`", .0)]
-    UnknownReferenceName(String),
+    #[error("Reference to unknown group. There is no group named `{}`", .found)]
+    UnknownReferenceName {
+        found: Box<str>,
+        #[cfg(feature = "suggestions")]
+        similar: Option<Box<str>>,
+    },
 
     #[error("Compile error: Group name `{}` used multiple times", .0)]
     NameUsedMultipleTimes(String),

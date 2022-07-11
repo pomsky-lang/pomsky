@@ -174,7 +174,8 @@ impl Diagnostic {
                 Diagnostic::from_parse_error(ParseError { kind, span }, source_code)
             }
             #[cfg(feature = "suggestions")]
-            CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. } => {
+            CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
+            | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {
                 let range = span.range().unwrap_or(0..source_code.len());
                 let span = Span::from(range);
 

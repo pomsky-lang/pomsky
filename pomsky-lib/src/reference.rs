@@ -48,9 +48,15 @@ impl<'i> Reference<'i> {
                     (direction, n)
                 }
                 None => {
-                    return Err(
-                        CompileErrorKind::UnknownReferenceName(name.to_string()).at(self.span)
-                    );
+                    return Err(CompileErrorKind::UnknownReferenceName {
+                        found: name.into(),
+                        #[cfg(feature = "suggestions")]
+                        similar: crate::util::find_suggestion(
+                            name,
+                            state.used_names.keys().map(|key| key.as_str()),
+                        ),
+                    }
+                    .at(self.span));
                 }
             },
             ReferenceTarget::Number(idx) => {
