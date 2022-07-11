@@ -86,9 +86,8 @@ number (operator number)*
 
 ## Usage
 
-Read **[the book](https://pomsky-lang.org/docs)** to get started, or check out the
-[CLI program](./pomsky-bin/), the [Rust library](./pomsky-lib/) and the
-[procedural macro](./pomsky-macro/).
+Read **[the book][book]** to get started, or check out the [CLI program](./pomsky-bin/), the
+[Rust library](./pomsky-lib/) and the [procedural macro](./pomsky-macro/).
 
 ## Why use this instead of normal regexes?
 
@@ -113,15 +112,15 @@ flavor must be specified during compilation, so pomsky can ensure that the produ
 desired on the targeted regex engine.
 
 **Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
-This is [explained here](https://pomsky-lang.org/docs/get-started/enable-unicode/).
+This is [explained here][enable-unicode].
 
 ## Security
 
 **Never compile or execute an untrusted Pomsky expression on your critical infrastructure**.
 This may make you vulnerable for denial of service attacks, like the
-[Billion Laughs attack](https://en.wikipedia.org/wiki/Billion_laughs_attack).
+[Billion Laughs attack][billion-lols].
 
-[Read more](https://pomsky-lang.org/docs/reference/security/)
+[Read more][security]
 
 ## Diagnostics
 
@@ -135,9 +134,13 @@ Pomsky looks for mistakes and displays helpful diagnostics:
 - It looks for patterns that can be very slow for certain inputs and are susceptible to
   Denial-of-Service attacks _(coming soon)_
 
+## Comparison with other projects
+
+I wrote an in-depth comparison with similar projects, which [you can find here][comparison].
+
 ## Roadmap
 
-[You can find the Roadmap here.](https://github.com/orgs/rulex-rs/projects/1)
+[You can find the Roadmap here.][roadmap]
 
 ## Contributing
 
@@ -149,5 +152,13 @@ I also gladly accept code contributions. To make sure that CI succeeds, please r
 
 ## License
 
-Dual-licensed under the [MIT license](https://opensource.org/licenses/MIT) or the
-[Apache 2.0 license](https://opensource.org/licenses/Apache-2.0).
+Dual-licensed under the [MIT license][mit-license] or the [Apache 2.0 license][apache-2-license].
+
+[book]: https://pomsky-lang.org/docs/get-started/introduction/
+[enable-unicode]: https://pomsky-lang.org/docs/get-started/enable-unicode/
+[billion-lols]: https://en.wikipedia.org/wiki/Billion_laughs_attack
+[security]: https://pomsky-lang.org/docs/reference/security/
+[comparison]: https://pomsky-lang.org/docs/reference/comparison/
+[roadmap]: https://github.com/orgs/rulex-rs/projects/1
+[mit-license]: https://opensource.org/licenses/MIT
+[apache-2-license]: https://opensource.org/licenses/Apache-2.0
