@@ -98,6 +98,11 @@ impl Diagnostic {
                 or `![n]` to exclude line breaks"
                     .into(),
             ),
+            #[cfg(feature = "suggestions")]
+            ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
+                similar: Some(ref similar),
+                ..
+            }) => Some(format!("Perhaps you meant `{similar}`")),
             ParseErrorKind::CharClass(CharClassError::DescendingRange(..)) => {
                 let dash_pos = slice.find('-').unwrap();
                 let (part1, part2) = slice.split_at(dash_pos);

@@ -160,8 +160,12 @@ pub(crate) enum CharClassError {
     Unallowed,
 
     /// Unknown shorthand character class or Unicode property
-    #[error("Unknown character class `{}`", .0)]
-    UnknownNamedClass(String),
+    #[error("Unknown character class `{}`", .found)]
+    UnknownNamedClass {
+        found: Box<str>,
+        #[cfg(feature = "suggestions")]
+        similar: Option<Box<str>>,
+    },
 
     /// A character class that can't be negated, e.g. `[!ascii]`
     #[error("This character class can't be negated")]

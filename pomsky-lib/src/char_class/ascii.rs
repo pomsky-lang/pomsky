@@ -52,6 +52,29 @@ pub(super) fn parse_ascii_group(
             GroupItem::range_unchecked('a', 'f'),
             GroupItem::range_unchecked('A', 'F'),
         ],
-        _ => return Err(CharClassError::UnknownNamedClass(name.to_owned())),
+        _ => {
+            return Err(CharClassError::UnknownNamedClass {
+                found: name.into(),
+                #[cfg(feature = "suggestions")]
+                similar: crate::util::find_suggestion(name, OPTION_LIST.iter().copied()),
+            })
+        }
     })
 }
+
+const OPTION_LIST: &[&str] = &[
+    "ascii_alpha",
+    "ascii_alnum",
+    "ascii",
+    "ascii_blank",
+    "ascii_cntrl",
+    "ascii_digit",
+    "ascii_graph",
+    "ascii_lower",
+    "ascii_print",
+    "ascii_punct",
+    "ascii_space",
+    "ascii_upper",
+    "ascii_word",
+    "ascii_xdigit",
+];

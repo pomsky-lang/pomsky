@@ -5,7 +5,11 @@ use super::char_group::GroupName;
 pub(super) fn parse_group_name(name: &str) -> Result<GroupName, CharClassError> {
     match PARSE_LUT.binary_search_by_key(&name, |(k, _)| k) {
         Ok(n) => Ok(PARSE_LUT[n].1),
-        Err(_) => Err(CharClassError::UnknownNamedClass(name.to_string())),
+        Err(_) => Err(CharClassError::UnknownNamedClass {
+            found: name.into(),
+            #[cfg(feature = "suggestions")]
+            similar: crate::util::find_suggestion(name, PARSE_LUT.iter().map(|&(name, _)| name)),
+        }),
     }
 }
 
