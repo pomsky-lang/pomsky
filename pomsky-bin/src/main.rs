@@ -1,13 +1,10 @@
-use std::{
-    io::{self, Read, Write},
-    path::PathBuf,
-};
+use std::io::{self, Read, Write};
 
 use atty::Stream;
 use clap::Parser as _;
 use owo_colors::OwoColorize;
 use pomsky::{
-    error::{Diagnostic, ParseError},
+    error::{Diagnostic, ParseError, Severity},
     options::{CompileOptions, ParseOptions},
     warning::Warning,
     Expr,
@@ -17,44 +14,58 @@ mod parse_args;
 
 use parse_args::{Args, Flavor};
 
-#[derive(Debug, miette::Diagnostic, thiserror::Error)]
-enum MyError {
-    #[diagnostic(code(error::io))]
-    #[error("{}\nFile: {}", .error, .path.display())]
-    Io { error: io::Error, path: PathBuf },
-
-    #[error("{}", .0)]
-    #[diagnostic(code(error::other))]
-    Other(String),
-}
-
-pub fn main() -> miette::Result<()> {
+pub fn main() {
     let args = Args::parse();
 
     match (&args.input, &args.path) {
-        (Some(input), None) => compile(input, &args)?,
+        (Some(input), None) => compile(input, &args),
         (None, Some(path)) => match std::fs::read_to_string(&path) {
-            Ok(input) => compile(&input, &args)?,
-            Err(error) => return Err(MyError::Io { error, path: path.clone() }.into()),
+            Ok(input) => compile(&input, &args),
+            Err(error) => {
+                print_diagnostic(&Diagnostic::ad_hoc(
+                    Severity::Error,
+                    None,
+                    error.to_string(),
+                    None,
+                ));
+            }
         },
         (None, None) if atty::isnt(Stream::Stdin) => {
             let mut buf = Vec::new();
             std::io::stdin().read_to_end(&mut buf).unwrap();
 
             match String::from_utf8(buf) {
-                Ok(input) => compile(&input, &args)?,
-                Err(e) => return Err(MyError::Other(format!("error parsing stdin: {e}")).into()),
+                Ok(input) => compile(&input, &args),
+                Err(e) => {
+                    print_diagnostic(&Diagnostic::ad_hoc(
+                        Severity::Error,
+                        None,
+                        format!("Could not parse stdin: {e}"),
+                        None,
+                    ));
+                }
             }
         }
         (Some(_), Some(_)) => {
-            return Err(MyError::Other("error: Can't provide an input and a path".into()).into())
+            print_diagnostic(&Diagnostic::ad_hoc(
+                Severity::Error,
+                None,
+                "You can only provide an input or a path, but not both".into(),
+                None,
+            ));
         }
-        (None, None) => return Err(MyError::Other("error: No input provided".into()).into()),
+        (None, None) => {
+            print_diagnostic(&Diagnostic::ad_hoc(
+                Severity::Error,
+                None,
+                "No input provided".into(),
+                None,
+            ));
+        }
     }
-    Ok(())
 }
 
-fn compile(input: &str, args: &Args) -> miette::Result<()> {
+fn compile(input: &str, args: &Args) {
     let parse_options = ParseOptions { max_range_size: 12, ..ParseOptions::default() };
     let (parsed, warnings) = match Expr::parse(input, parse_options) {
         Ok(res) => res,
@@ -73,9 +84,16 @@ fn compile(input: &str, args: &Args) -> miette::Result<()> {
 
     let compile_options =
         CompileOptions { flavor: (*args.flavor.as_ref().unwrap_or(&Flavor::Pcre)).into() };
-    let compiled = parsed
+    let compiled = match parsed
         .compile(compile_options)
-        .map_err(|err| Diagnostic::from_compile_error(err, input))?;
+        .map_err(|err| Diagnostic::from_compile_error(err, input))
+    {
+        Ok(res) => res,
+        Err(err) => {
+            print_diagnostic(&err);
+            std::process::exit(1);
+        }
+    };
 
     if args.no_new_line {
         print!("{compiled}");
@@ -83,14 +101,13 @@ fn compile(input: &str, args: &Args) -> miette::Result<()> {
     } else {
         println!("{compiled}");
     }
-    Ok(())
 }
 
 fn print_parse_error(error: ParseError, input: &str) {
     let diagnostics = Diagnostic::from_parse_errors(error, input);
 
     for diagnostic in diagnostics.iter().take(8) {
-        eprintln!("{}: {}", "error".bright_red().bold(), diagnostic.default_display());
+        print_diagnostic(diagnostic);
     }
 
     let len = diagnostics.len();
@@ -110,11 +127,7 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
     let len = warnings.len();
 
     for warning in warnings.into_iter().take(8) {
-        eprintln!(
-            "{}: {}",
-            "warning".yellow().bold(),
-            Diagnostic::from_warning(warning, input).default_display()
-        );
+        print_diagnostic(&Diagnostic::from_warning(warning, input));
     }
 
     if len > 8 {
@@ -127,5 +140,16 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
             "warning".yellow().bold(),
             if len > 1 { "warnings" } else { "warning" },
         );
+    }
+}
+
+fn print_diagnostic(diagnostic: &Diagnostic) {
+    match diagnostic.severity {
+        Severity::Error => {
+            eprintln!("{}: {}", "error".bright_red().bold(), diagnostic.default_display())
+        }
+        Severity::Warning => {
+            eprintln!("{}: {}", "warning".yellow().bold(), diagnostic.default_display())
+        }
     }
 }

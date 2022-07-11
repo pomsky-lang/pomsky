@@ -10,13 +10,14 @@ pub(crate) fn fmt(diagnostic: Diagnostic, _: &Group) -> String {
     buf.push('\n');
 
     if let Some(range) = diagnostic.span.range() {
-        let slice = &diagnostic.source_code[range.clone()];
+        let source_code = diagnostic.source_code.as_deref().unwrap_or_default();
+        let slice = &source_code[range.clone()];
         let Range { start, end } = range;
 
-        let before = diagnostic.source_code[..start].lines().next_back().unwrap_or_default();
-        let after = diagnostic.source_code[end..].lines().next().unwrap_or_default();
+        let before = source_code[..start].lines().next_back().unwrap_or_default();
+        let after = source_code[end..].lines().next().unwrap_or_default();
 
-        let line_number = diagnostic.source_code[..start].lines().count().max(1);
+        let line_number = source_code[..start].lines().count().max(1);
         let line_number_len = (line_number as f32).log10().floor() as usize + 1;
         let before_len = before.chars().count();
         let arrow_len = slice.chars().count().max(1);

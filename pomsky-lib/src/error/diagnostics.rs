@@ -18,7 +18,7 @@ pub struct Diagnostic {
     /// The error code (optional, currently unused)
     pub code: Option<String>,
     /// The source code where the error occurred
-    pub source_code: String,
+    pub source_code: Option<String>,
     /// An (optional) help message explaining how the error could be fixed
     pub help: Option<String>,
     /// The start and end byte positions of the source code where the error
@@ -26,9 +26,12 @@ pub struct Diagnostic {
     pub span: Span,
 }
 
+/// Indicates whether a diagnostic is an error or a warning
 #[derive(Debug)]
 pub enum Severity {
+    /// Error
     Error,
+    /// Warning
     Warning,
 }
 
@@ -43,7 +46,7 @@ impl miette::Diagnostic for Diagnostic {
     }
 
     fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-        Some(&self.source_code)
+        self.source_code.as_ref().map(|s| s as &dyn miette::SourceCode)
     }
 
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
@@ -138,7 +141,7 @@ impl Diagnostic {
             severity: Severity::Error,
             code: None,
             msg: error.kind.to_string(),
-            source_code: source_code.into(),
+            source_code: Some(source_code.into()),
             help,
             span,
         }
@@ -173,7 +176,7 @@ impl Diagnostic {
                     severity: Severity::Error,
                     code: None,
                     msg: kind.to_string(),
-                    source_code: source_code.into(),
+                    source_code: Some(source_code.into()),
                     help: None,
                     span,
                 }
@@ -198,7 +201,7 @@ impl Diagnostic {
                     severity: Severity::Error,
                     code: None,
                     msg: kind.to_string(),
-                    source_code: source_code.into(),
+                    source_code: Some(source_code.into()),
                     help: None,
                     span,
                 }]
@@ -215,10 +218,20 @@ impl Diagnostic {
             severity: Severity::Warning,
             code: None,
             msg: warning.kind.to_string(),
-            source_code: source_code.into(),
+            source_code: Some(source_code.into()),
             help: None,
             span,
         }
+    }
+
+    /// Create an ad-hoc diagnostic without a source code snippet
+    pub fn ad_hoc(
+        severity: Severity,
+        code: Option<String>,
+        msg: String,
+        help: Option<String>,
+    ) -> Self {
+        Diagnostic { severity, code, msg, source_code: None, help, span: Span::empty() }
     }
 
     /// Returns a value that can display the diagnostic with the [`Display`] trait.
