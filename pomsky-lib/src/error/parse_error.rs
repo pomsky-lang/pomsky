@@ -11,8 +11,8 @@ use super::Diagnostic;
 /// An error than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
-    pub(super) kind: ParseErrorKind,
-    pub(super) span: Span,
+    pub(crate) kind: ParseErrorKind,
+    pub(crate) span: Span,
 }
 
 impl ParseError {
@@ -66,6 +66,8 @@ pub(crate) enum ParseErrorKind {
     Dot,
     #[error("Unexpected keyword `{}`", .0)]
     KeywordAfterLet(String),
+    #[error("Unexpected keyword `{}`", .0)]
+    UnexpectedKeyword(String),
 
     #[error("Expected {}", .0)]
     Expected(&'static str),

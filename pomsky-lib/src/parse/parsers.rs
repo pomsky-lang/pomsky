@@ -92,25 +92,22 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
                         (stmt, span_start.join(span_end))
                     },
                 ),
-                try_map2(
+                map(
                     tuple((
                         "let",
-                        cut(Token::Identifier),
+                        cut(map_err(parse_ident, |e| match e.kind {
+                            ParseErrorKind::UnexpectedKeyword(kw) => {
+                                ParseErrorKind::KeywordAfterLet(kw).at(e.span)
+                            }
+                            _ => e,
+                        })),
                         cut(Token::Equals),
                         cut(recurse(parse_or)),
                         cut(Token::Semicolon),
                     )),
-                    |((_, span_start), (name, name_span), _, rule, (_, span_end))| match name {
-                        "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable"
-                        | "disable" | "if" | "else" | "recursion" => {
-                            Err(ParseErrorKind::KeywordAfterLet(name.to_owned()).at(name_span))
-                        }
-                        _ => Ok((
-                            Stmt::Let(Let::new(name, rule, name_span)),
-                            span_start.join(span_end),
-                        )),
+                    |((_, span_start), (name, name_span), _, rule, (_, span_end))| {
+                        (Stmt::Let(Let::new(name, rule, name_span)), span_start.join(span_end))
                     },
-                    nom::Err::Failure,
                 ),
             ))),
             recurse(parse_or),
@@ -410,7 +407,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
 
         let (input, ranges) = many0(alt((
             parse_chars_or_range,
-            value(CharGroup::Dot, Token::Dot),
+            parse_dot,
             try_map(
                 pair(opt(Token::Not), Token::Identifier),
                 |(not, (s, _))| {
@@ -433,6 +430,12 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             })?;
         }
         Ok((input, class))
+    }
+
+    fn parse_dot<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
+        let (mut input, (_, span)) = Token::Dot.parse(input)?;
+        input.add_warning(WarningKind::Deprecation(DeprecationWarning::Dot).at(span));
+        Ok((input, CharGroup::Dot))
     }
 
     try_map(
@@ -559,8 +562,22 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
     )(input)
 }
 
+pub(super) fn parse_ident<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (&'i str, Span)> {
+    try_map(
+        Token::Identifier,
+        |(name, span)| match name {
+            "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable"
+            | "if" | "else" | "recursion" => {
+                Err(ParseErrorKind::UnexpectedKeyword(name.to_string()))
+            }
+            _ => Ok((name, span)),
+        },
+        nom::Err::Failure,
+    )(input)
+}
+
 pub(super) fn parse_variable<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
-    map(Token::Identifier, |(name, span)| Rule::Variable(Variable::new(name, span)))(input)
+    map(parse_ident, |(name, span)| Rule::Variable(Variable::new(name, span)))(input)
 }
 
 pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, char> {
@@ -734,4 +751,16 @@ fn err<'i, 'b, T>(
     mut error_fn: impl FnMut() -> ParseErrorKind,
 ) -> impl FnMut(Input<'i, 'b>) -> IResult<Input<'i, 'b>, T, ParseError> {
     move |input| Err(nom::Err::Error(error_fn().at(input.span())))
+}
+
+fn map_err<'i, 'b, O, E1, E2>(
+    mut p: impl Parser<Input<'i, 'b>, O, E1>,
+    mut map: impl FnMut(E1) -> E2,
+) -> impl Parser<Input<'i, 'b>, O, E2> {
+    move |input| match p.parse(input) {
+        Ok(v) => Ok(v),
+        Err(nom::Err::Error(e)) => Err(nom::Err::Error(map(e))),
+        Err(nom::Err::Failure(e)) => Err(nom::Err::Failure(map(e))),
+        Err(nom::Err::Incomplete(n)) => Err(nom::Err::Incomplete(n)),
+    }
 }

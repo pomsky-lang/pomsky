@@ -190,7 +190,8 @@ fn error_to_string(err: CompileError, input: &str) -> String {
 
 fn process_content<'a>(content: &'a str, path: &Path) -> (&'a str, &'a str, Options) {
     let (mut input, expected) = content.split_once("\n-----").unwrap_or((content, ""));
-    let expected = expected.trim_start_matches('-').trim_start_matches('\n');
+    let expected = expected.trim_start_matches('-');
+    let expected = expected.strip_prefix('\n').unwrap_or(expected);
 
     let options = if input.starts_with("#!") {
         let (first_line, new_input) = input.split_once('\n').unwrap_or_default();
