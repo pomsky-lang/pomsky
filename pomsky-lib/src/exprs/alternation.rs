@@ -6,12 +6,12 @@ use std::{borrow::Cow, collections::HashMap};
 use crate::{
     compile::{CompileResult, CompileState},
     error::{CompileError, ParseError},
-    literal::Literal,
     options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
-    rule::Rule,
     span::Span,
 };
+
+use super::{Literal, Rule};
 
 /// An [alternation](https://www.regular-expressions.info/alternation.html).
 /// This is a list of alternatives. Each alternative is a [`Expr`].

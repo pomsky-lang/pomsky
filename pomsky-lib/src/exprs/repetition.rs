@@ -2,12 +2,15 @@ use std::{borrow::Cow, collections::HashMap};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, ParseError},
-    group::{RegexCapture, RegexGroup},
+    error::{CompileError, ParseError, RepetitionError},
     options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
-    rule::Rule,
     span::Span,
+};
+
+use super::{
+    group::{RegexCapture, RegexGroup},
+    Rule,
 };
 
 #[derive(Clone)]
@@ -128,14 +131,6 @@ impl RepetitionKind {
     pub(crate) fn fixed(n: u32) -> Self {
         RepetitionKind { lower_bound: n, upper_bound: Some(n) }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-pub enum RepetitionError {
-    #[error("Lower bound can't be greater than the upper bound")]
-    NotAscending,
-    #[error("Unexpected `?` following a repetition")]
-    QuestionMarkAfterRepetition,
 }
 
 impl TryFrom<(u32, Option<u32>)> for RepetitionKind {

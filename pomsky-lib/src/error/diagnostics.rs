@@ -1,8 +1,8 @@
-use crate::{parse::ParseErrorMsg, repetition::RepetitionError, span::Span, warning::Warning};
+use crate::{parse::ParseErrorMsg, span::Span, warning::Warning};
 
 use super::{
     compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError, ParseError,
-    ParseErrorKind,
+    ParseErrorKind, RepetitionError,
 };
 
 #[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]

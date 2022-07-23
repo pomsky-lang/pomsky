@@ -6,9 +6,10 @@ use crate::{
     features::PomskyFeatures,
     options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
-    rule::Rule,
     span::Span,
 };
+
+use super::Rule;
 
 #[derive(Clone)]
 pub(crate) struct Lookaround<'i> {

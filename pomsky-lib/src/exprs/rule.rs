@@ -1,22 +1,15 @@
 use std::collections::HashMap;
 
 use crate::{
-    alternation::Alternation,
-    boundary::Boundary,
-    char_class::CharClass,
     compile::{CompileResult, CompileState},
     error::{CompileError, CompileErrorKind, ParseError, ParseErrorKind},
-    grapheme::Grapheme,
-    group::Group,
-    literal::Literal,
-    lookaround::Lookaround,
     options::{CompileOptions, ParseOptions},
-    range::Range,
-    reference::Reference,
-    repetition::Repetition,
     span::Span,
-    stmt::StmtExpr,
-    var::Variable,
+};
+
+use super::{
+    Alternation, Boundary, CharClass, Grapheme, Group, Literal, Lookaround, Range, Reference,
+    Repetition, StmtExpr, Variable,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.

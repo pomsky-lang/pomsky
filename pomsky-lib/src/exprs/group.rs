@@ -5,9 +5,10 @@ use crate::{
     error::{CompileError, CompileErrorKind, ParseError},
     options::{CompileOptions, ParseOptions, RegexFlavor},
     regex::Regex,
-    rule::Rule,
     span::Span,
 };
+
+use super::Rule;
 
 /// A group, i.e. sequence of rules. A group is either capturing or
 /// non-capturing.

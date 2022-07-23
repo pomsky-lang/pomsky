@@ -98,6 +98,6 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
     }
 }
 
-pub(super) fn needs_parens_before_repetition(s: &str) -> bool {
+pub(crate) fn needs_parens_before_repetition(s: &str) -> bool {
     s.chars().nth(1).is_some()
 }

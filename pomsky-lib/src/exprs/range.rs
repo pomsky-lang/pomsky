@@ -1,16 +1,19 @@
 use std::{borrow::Cow, cmp::Ordering};
 
 use crate::{
-    alternation::RegexAlternation,
-    char_class::{RegexCharClass, RegexClassItem},
     compile::CompileResult,
     error::{CompileErrorKind, ParseError, ParseErrorKind},
     features::PomskyFeatures,
-    group::{RegexCapture, RegexGroup},
     options::ParseOptions,
     regex::Regex,
-    repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
     span::Span,
+};
+
+use super::{
+    alternation::RegexAlternation,
+    char_class::{RegexCharClass, RegexClassItem},
+    group::{RegexCapture, RegexGroup},
+    repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
 };
 
 #[derive(Clone, PartialEq, Eq)]

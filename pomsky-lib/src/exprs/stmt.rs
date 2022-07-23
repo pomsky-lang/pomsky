@@ -5,10 +5,10 @@ use crate::{
     error::{CompileError, ParseError},
     features::PomskyFeatures,
     options::{CompileOptions, ParseOptions},
-    repetition::RegexQuantifier,
-    rule::Rule,
     span::Span,
 };
+
+use super::{repetition::RegexQuantifier, Rule};
 
 #[derive(Clone)]
 pub(crate) struct StmtExpr<'i> {

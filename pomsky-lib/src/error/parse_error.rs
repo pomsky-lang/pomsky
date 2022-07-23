@@ -2,7 +2,6 @@ use std::num::{IntErrorKind, ParseIntError};
 
 use crate::{
     parse::{Input, ParseErrorMsg, Token},
-    repetition::RepetitionError,
     span::Span,
 };
 
@@ -223,6 +222,14 @@ impl From<ParseIntError> for NumberError {
             _ => unimplemented!(),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub(crate) enum RepetitionError {
+    #[error("Lower bound can't be greater than the upper bound")]
+    NotAscending,
+    #[error("Unexpected `?` following a repetition")]
+    QuestionMarkAfterRepetition,
 }
 
 /// An error that indicates that an unsupported feature was used.

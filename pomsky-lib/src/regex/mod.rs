@@ -1,18 +1,20 @@
 use std::borrow::{Borrow, Cow};
 
 use crate::{
-    alternation::RegexAlternation,
-    boundary::BoundaryKind,
-    char_class::{
-        unicode::{Category, CodeBlock, OtherProperties, Script},
-        RegexCharClass, RegexClassItem,
+    exprs::{
+        alternation::RegexAlternation,
+        boundary::BoundaryKind,
+        char_class::{
+            unicode::{Category, CodeBlock, OtherProperties, Script},
+            RegexCharClass, RegexClassItem,
+        },
+        group::RegexGroup,
+        literal,
+        lookaround::RegexLookaround,
+        reference::RegexReference,
+        repetition::RegexRepetition,
     },
-    group::RegexGroup,
-    literal,
-    lookaround::RegexLookaround,
     options::RegexFlavor,
-    reference::RegexReference,
-    repetition::RegexRepetition,
 };
 
 #[cfg_attr(feature = "dbg", derive(Debug))]

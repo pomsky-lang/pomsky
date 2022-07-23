@@ -1,6 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{error::CompileError, regex::Regex, repetition::RegexQuantifier, rule::Rule};
+use crate::{
+    error::CompileError,
+    exprs::{repetition::RegexQuantifier, Rule},
+    regex::Regex,
+};
 
 pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
 

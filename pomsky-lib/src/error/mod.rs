@@ -2,7 +2,8 @@
 
 pub(crate) use compile_error::CompileErrorKind;
 pub(crate) use parse_error::{
-    CharClassError, CharStringError, CodePointError, NumberError, ParseErrorKind, UnsupportedError,
+    CharClassError, CharStringError, CodePointError, NumberError, ParseErrorKind, RepetitionError,
+    UnsupportedError,
 };
 
 pub use compile_error::{CompileError, Feature};

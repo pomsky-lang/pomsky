@@ -107,7 +107,7 @@ use std::borrow::Cow;
 use crate::{
     compile::CompileResult,
     error::{CompileError, CompileErrorKind, Feature, ParseErrorKind},
-    literal,
+    exprs::literal,
     options::{CompileOptions, RegexFlavor},
     regex::{Regex, RegexProperty, RegexShorthand},
     span::Span,

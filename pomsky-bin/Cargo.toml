@@ -35,4 +35,4 @@ features = ["dbg", "miette", "suggestions"]
 [dependencies.clap]
 version = "3.1.0"
 default-features = false
-features = ["std", "derive", "wrap_help"]
+features = ["std", "derive", "wrap_help", "color"]

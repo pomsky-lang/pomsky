@@ -4,6 +4,8 @@ mod parsers;
 mod token;
 mod tokenize;
 
-pub(crate) use input::Input;
-pub(crate) use parsers::parse;
-pub(crate) use token::{ParseErrorMsg, Token};
+pub(crate) use self::{
+    input::Input,
+    parsers::parse,
+    token::{ParseErrorMsg, Token},
+};
