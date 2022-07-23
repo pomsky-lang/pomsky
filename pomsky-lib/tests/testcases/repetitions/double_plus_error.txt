@@ -1,0 +1,6 @@
+#! expect=error
+'hello'++
+-----
+ERROR: Unexpected `+` following a repetition
+HELP: Add parentheses around the inner repetition.
+SPAN: 8..9

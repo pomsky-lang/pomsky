@@ -230,6 +230,8 @@ pub(crate) enum RepetitionError {
     NotAscending,
     #[error("Unexpected `?` following a repetition")]
     QuestionMarkAfterRepetition,
+    #[error("Unexpected `+` following a repetition")]
+    PlusAfterRepetition,
 }
 
 /// An error that indicates that an unsupported feature was used.

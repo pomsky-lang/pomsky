@@ -174,13 +174,16 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
 
                 let mut prev_syntax = RepSyntax::ExplicitQuantifier;
                 for (kind, quantifier, span, syntax) in repetitions {
-                    if matches!(
-                        (&prev_syntax, &syntax),
-                        (RepSyntax::Other | RepSyntax::QuestionMark, RepSyntax::QuestionMark)
-                    ) {
-                        return Err(ParseErrorKind::Repetition(
-                            RepetitionError::QuestionMarkAfterRepetition,
-                        )
+                    if let (
+                        RepSyntax::Other | RepSyntax::QuestionMark | RepSyntax::Plus,
+                        second_rep @ (RepSyntax::QuestionMark | RepSyntax::Plus),
+                    ) = (&prev_syntax, &syntax)
+                    {
+                        return Err(ParseErrorKind::Repetition(match second_rep {
+                            RepSyntax::QuestionMark => RepetitionError::QuestionMarkAfterRepetition,
+                            RepSyntax::Plus => RepetitionError::PlusAfterRepetition,
+                            _ => unreachable!(),
+                        })
                         .at(span));
                     }
                     prev_syntax = syntax;
@@ -206,8 +209,9 @@ pub(super) fn parse_lookaround<'i, 'b>(
 }
 
 pub(super) enum RepSyntax {
-    ExplicitQuantifier,
     QuestionMark,
+    Plus,
+    ExplicitQuantifier,
     Other,
 }
 
@@ -220,8 +224,8 @@ pub(super) fn parse_repetition<'i, 'b>(
                 map(Token::QuestionMark, |(_, span)| {
                     (RepetitionKind::zero_one(), span, RepSyntax::QuestionMark)
                 }),
+                map(Token::Plus, |(_, span)| (RepetitionKind::one_inf(), span, RepSyntax::Plus)),
                 map(Token::Star, |(_, span)| (RepetitionKind::zero_inf(), span, RepSyntax::Other)),
-                map(Token::Plus, |(_, span)| (RepetitionKind::one_inf(), span, RepSyntax::Other)),
                 parse_braced_repetition,
             )),
             map(
@@ -236,16 +240,13 @@ pub(super) fn parse_repetition<'i, 'b>(
             ),
         ),
         |((kind, span1, rs1), (quantifier, span2, rs2))| {
-            (
-                kind,
-                quantifier,
-                span1.join(span2),
-                match (rs1, rs2) {
-                    (_, RepSyntax::ExplicitQuantifier) => RepSyntax::ExplicitQuantifier,
-                    (RepSyntax::QuestionMark, _) => RepSyntax::QuestionMark,
-                    _ => RepSyntax::Other,
-                },
-            )
+            let rep_syntax = match (rs1, rs2) {
+                (_, RepSyntax::ExplicitQuantifier) => RepSyntax::ExplicitQuantifier,
+                (RepSyntax::QuestionMark, _) => RepSyntax::QuestionMark,
+                (RepSyntax::Plus, _) => RepSyntax::Plus,
+                _ => RepSyntax::Other,
+            };
+            (kind, quantifier, span1.join(span2), rep_syntax)
         },
     )(input)
 }
