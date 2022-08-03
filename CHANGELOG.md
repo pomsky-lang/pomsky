@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2022-08-03
+
+### Added
+
+- `^` and `$` as aliases for `Start` and `End`
+
+- Leading pipes. This allows you to format expressions more beautifully:
+
+  ```pomsky
+  | 'Lorem'
+  | :group(
+      | 'ipsum'
+      | 'dolor'
+      | 'sit'
+      | 'amet'
+    )
+  | 'consetetur'
+  ```
+
+- Improved diagnostics for typos. When you spell a variable, capturing group or character class
+  wrong, pomsky will suggest the correct spelling:
+
+  ```
+  $ pomsky '[Alpabetic]'
+  error:
+    × Unknown character class `Alpabetic`
+    ╭────
+  1 │ [Alpabetic]
+    ·  ────┬────
+    ·      ╰── error occurred here
+    ╰────
+    help: Perhaps you meant `Alphabetic`
+  ```
+
+- Many regex syntax diagnostics were added. Pomsky now recognizes most regex syntax and suggests
+  the equivalent pomsky syntax. For example:
+
+  ```
+  $ pomsky '(?<grp> "test")'
+  error:
+    × This syntax is not supported
+    ╭────
+  1 │ (?<grp> "test")
+    · ───┬───
+    ·    ╰── error occurred here
+    ╰────
+    help: Named capturing groups use the `:name(...)` syntax. Try `:grp(...)` instead
+  ```
+
+### Changed
+
+- A plus directly after a repetition (e.g. `'a'{2}+`) is now **forbidden**. Fix it by adding
+  parentheses: `('a'{2})+`
+
+  The reason is that this syntax is used by regular expressions for possessive quantifiers.
+  Forbidding this syntax in pomsky allows for better diagnostics.
+
+- Deprecated `[.]`, `[codepoint]` and `[cp]`. They should have been deprecated before, but the
+  warnings were missed in the previous release.
+
+- Pomsky now sometimes reports multiple errors at once. The number of errors is limited to 8 in the
+  CLI.
+
 ## [0.5.0] - 2022-07-04
 
 This is the first release since [Rulex was renamed to Pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
@@ -19,8 +82,8 @@ rm $(type -P rulex)
 
 ### Added
 
-- Deprecation warnings for `<%`, `%>`, `[codepoint]`, `[cp]` and `[.]`. These were deprecated
-  before, but Pomsky wasn't able to show warnings until now.
+- Deprecation warnings for `<%` and `%>`. These were deprecated before, but Pomsky wasn't able
+  to show warnings until now.
 
 ### Changed
 
@@ -213,7 +276,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.5...HEAD
+[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.6...HEAD
+[0.6.0]: https://github.com/rulex-rs/pomsky/compare/v0.5...v0.6
 [0.5.0]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...v0.5
 [0.4.3]: https://github.com/rulex-rs/pomsky/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/rulex-rs/pomsky/compare/v0.4.1...v0.4.2
