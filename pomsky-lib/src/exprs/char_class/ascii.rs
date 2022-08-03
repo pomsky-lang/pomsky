@@ -62,6 +62,7 @@ pub(super) fn parse_ascii_group(
     })
 }
 
+#[cfg(feature = "suggestions")]
 const OPTION_LIST: &[&str] = &[
     "ascii_alpha",
     "ascii_alnum",
