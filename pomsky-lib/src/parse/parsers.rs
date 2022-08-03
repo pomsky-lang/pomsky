@@ -124,13 +124,20 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 }
 
 pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
-    map(separated_list0(Token::Pipe, parse_sequence), |mut rules| {
-        if rules.len() == 1 {
-            rules.pop().unwrap()
-        } else {
-            Alternation::new_expr(rules)
-        }
-    })(input)
+    try_map2(
+        pair(opt(Token::Pipe), separated_list0(Token::Pipe, parse_sequence)),
+        |(leading_pipe, mut rules)| {
+            if rules.len() == 1 {
+                Ok(rules.pop().unwrap())
+            } else {
+                match leading_pipe {
+                    Some((_, span)) if rules.is_empty() => Err(ParseErrorKind::LonePipe.at(span)),
+                    _ => Ok(Alternation::new_expr(rules)),
+                }
+            }
+        },
+        nom::Err::Failure,
+    )(input)
 }
 
 pub(super) fn parse_sequence<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {

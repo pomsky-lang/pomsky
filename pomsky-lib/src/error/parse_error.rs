@@ -82,6 +82,8 @@ pub(crate) enum ParseErrorKind {
     UnallowedNot,
     #[error("An expression can't be negated twice")]
     UnallowedDoubleNot,
+    #[error("A leading pipe must be followed by an expression")]
+    LonePipe,
     #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
     RangeIsTooBig(u8),
     #[error("A variable with the same name already exists in this scope")]
