@@ -94,9 +94,7 @@ impl Diagnostic {
                 Some(format!("Switch the numbers: {}-{}", part2.trim(), part1.trim()))
             }
             ParseErrorKind::Dot => Some(
-                "The dot is deprecated. Use `Codepoint` to match any code point, \
-                or `![n]` to exclude line breaks"
-                    .into(),
+                "Use `Codepoint` to match any code point, or `![n]` to exclude line breaks".into(),
             ),
             #[cfg(feature = "suggestions")]
             ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {

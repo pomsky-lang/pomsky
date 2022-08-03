@@ -61,7 +61,7 @@ pub(crate) enum ParseErrorKind {
     UnknownToken,
     #[error(transparent)]
     LexErrorWithMessage(LexErrorMsg),
-    #[error("Unexpected dot")]
+    #[error("The dot is not supported")] // this is for a dot *not* enclosed in brackets
     Dot,
     #[error("Unexpected keyword `{}`", .0)]
     KeywordAfterLet(String),

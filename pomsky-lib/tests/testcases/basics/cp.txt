@@ -1,0 +1,5 @@
+[cp]
+-----
+[\s\S]
+WARNING: `[cp]` is deprecated. Use `C` instead.
+  at 1..3

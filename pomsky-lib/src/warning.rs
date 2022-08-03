@@ -56,6 +56,10 @@ pub enum DeprecationWarning {
     OldEndLiteral,
     /// The `[.]` dot
     Dot,
+    /// `[codepoint]`
+    Codepoint,
+    /// `[cp]`
+    Cp,
 }
 
 impl fmt::Display for DeprecationWarning {
@@ -71,6 +75,10 @@ impl fmt::Display for DeprecationWarning {
                 "The dot is deprecated. Use `Codepoint` (or `C`) to match any character;\n\
                 Use `![n]` to match anything except for line breaks.",
             ),
+            DeprecationWarning::Codepoint => {
+                f.write_str("`[codepoint]` is deprecated. Use `Codepoint` instead.")
+            }
+            DeprecationWarning::Cp => f.write_str("`[cp]` is deprecated. Use `C` instead."),
         }
     }
 }

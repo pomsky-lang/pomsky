@@ -1,6 +1,0 @@
-#! expect=error
-.
------
-ERROR: Unexpected dot
-HELP: The dot is deprecated. Use `Codepoint` to match any code point, or `![n]` to exclude line breaks
-SPAN: 0..1

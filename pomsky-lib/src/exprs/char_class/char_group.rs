@@ -8,7 +8,7 @@
 
 use std::fmt::Write;
 
-use crate::error::CharClassError;
+use crate::{error::CharClassError, warning::DeprecationWarning};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -59,10 +59,13 @@ impl CharGroup {
     /// If the name is uppercase (and not `R`), we just assume that it is a
     /// Unicode category, script or block. This needs to be fixed at one
     /// point!
-    pub(crate) fn try_from_group_name(name: &str, negative: bool) -> Result<Self, CharClassError> {
+    pub(crate) fn try_from_group_name(
+        name: &str,
+        negative: bool,
+    ) -> Result<(Self, Option<DeprecationWarning>), CharClassError> {
         Ok(match name {
             _ if name == "ascii" || name.starts_with("ascii_") => {
-                CharGroup::Items(super::ascii::parse_ascii_group(name, negative)?)
+                (CharGroup::Items(super::ascii::parse_ascii_group(name, negative)?), None)
             }
 
             "codepoint" | "cp" | "." if negative => {
@@ -74,13 +77,17 @@ impl CharGroup {
                 return Err(CharClassError::Keyword(name.to_string()));
             }
 
-            "codepoint" | "cp" => CharGroup::CodePoint,
-            "." => CharGroup::Dot,
+            "codepoint" => (CharGroup::CodePoint, Some(DeprecationWarning::Codepoint)),
+            "cp" => (CharGroup::CodePoint, Some(DeprecationWarning::Cp)),
+            "." => (CharGroup::Dot, Some(DeprecationWarning::Dot)),
 
-            _ => CharGroup::Items(vec![GroupItem::Named {
-                name: super::unicode::parse_group_name(name)?,
-                negative,
-            }]),
+            _ => (
+                CharGroup::Items(vec![GroupItem::Named {
+                    name: super::unicode::parse_group_name(name)?,
+                    negative,
+                }]),
+                None,
+            ),
         })
     }
 

@@ -60,7 +60,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
         Disable,
     }
 
-    try_map2(
+    try_map_spanned(
         pair(
             many0(alt((
                 map(
@@ -124,7 +124,7 @@ pub(super) fn parse_modified<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
 }
 
 pub(super) fn parse_or<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
-    try_map2(
+    try_map_spanned(
         pair(opt(Token::Pipe), separated_list0(Token::Pipe, parse_sequence)),
         |(leading_pipe, mut rules)| {
             if rules.len() == 1 {
@@ -171,7 +171,7 @@ pub(super) fn parse_fixes<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
             let span = span.join(rule.span());
             Rule::Lookaround(Box::new(Lookaround::new(rule, kind, span)))
         }),
-        try_map2(
+        try_map_spanned(
             pair(parse_atom, many0(parse_repetition)),
             |(mut rule, repetitions)| {
                 if repetitions.len() > 64 {
@@ -408,22 +408,29 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
 
     fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
         let span1 = input.span();
+        let mut warnings = vec![];
 
-        let (input, ranges) = many0(alt((
+        let (mut input, ranges) = many0(alt((
             parse_chars_or_range,
-            parse_dot,
-            try_map(
-                pair(opt(Token::Not), Token::Identifier),
-                |(not, (s, _))| {
-                    // FIXME: When this fails on a negative item, the span of the exclamation mark
-                    // is used instead of the identifier's span
-                    CharGroup::try_from_group_name(s, not.is_some())
-                        .map_err(ParseErrorKind::CharClass)
+            try_map_spanned(
+                pair(opt(Token::Not), alt((Token::Identifier, Token::Dot))),
+                |(not, (s, span))| {
+                    let (char_group, dw) = CharGroup::try_from_group_name(s, not.is_some())
+                        .map_err(|e| ParseErrorKind::CharClass(e).at(span))?;
+
+                    if let Some(dw) = dw {
+                        warnings.push(Warning { kind: WarningKind::Deprecation(dw), span })
+                    }
+                    Ok(char_group)
                 },
                 nom::Err::Failure,
             ),
             err(|| ParseErrorKind::CharClass(CharClassError::Invalid)),
         )))(input)?;
+
+        for warning in warnings {
+            input.add_warning(warning);
+        }
 
         let mut iter = ranges.into_iter();
         let mut class = iter.next().unwrap_or_else(|| CharGroup::Items(vec![]));
@@ -434,12 +441,6 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
             })?;
         }
         Ok((input, class))
-    }
-
-    fn parse_dot<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
-        let (mut input, (_, span)) = Token::Dot.parse(input)?;
-        input.add_warning(WarningKind::Deprecation(DeprecationWarning::Dot).at(span));
-        Ok((input, CharGroup::Dot))
     }
 
     try_map(
@@ -539,7 +540,7 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
     map(
         pair(
             "range",
-            try_map2(
+            try_map_spanned(
                 pair(
                     cut(separated_pair(Token::String, Token::Dash, Token::String)),
                     opt(parse_base),
@@ -747,7 +748,7 @@ where
     }
 }
 
-fn try_map2<'i, 'b, O1, O2, P, M, EM>(
+fn try_map_spanned<'i, 'b, O1, O2, P, M, EM>(
     mut parser: P,
     mut map: M,
     err_kind: EM,

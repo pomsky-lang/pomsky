@@ -1,0 +1,6 @@
+[.]
+-----
+.
+WARNING: The dot is deprecated. Use `Codepoint` (or `C`) to match any character;
+Use `![n]` to match anything except for line breaks.
+  at 1..2
