@@ -9,10 +9,14 @@ use super::input::Input;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
-pub enum Token {
-    /// `<%` (`^` boundary)
+pub(crate) enum Token {
+    /// `^` (start boundary)
+    Caret,
+    /// `$` (end boundary)
+    Dollar,
+    /// `<%` (`^` start boundary)
     BStart,
-    /// `%>` (`$` boundary)
+    /// `%>` (`$` end boundary)
     BEnd,
     /// `%` (`\b` boundary)
     BWord,
@@ -83,21 +87,14 @@ pub enum Token {
     Identifier,
 
     // match illegal tokens for which we want to show a better error message
-    ErrorMsg(ParseErrorMsg),
+    ErrorMsg(LexErrorMsg),
 
     Error,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub enum ParseErrorMsg {
-    #[error("`^` is not a valid token")]
-    Caret,
-    #[error("`^` is not a valid token")]
-    CaretInGroup,
-    #[error("`$` is not a valid token")]
-    Dollar,
-
+pub(crate) enum LexErrorMsg {
     #[error("This syntax is not supported")]
     GroupNonCapturing,
     #[error("This syntax is not supported")]
@@ -145,6 +142,8 @@ pub enum ParseErrorMsg {
 impl core::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
+            Token::Caret => "`^`",
+            Token::Dollar => "`$`",
             Token::BStart => "`<%`",
             Token::BEnd => "`%>`",
             Token::BWord => "`%`",

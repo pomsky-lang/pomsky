@@ -2,6 +2,7 @@ use std::{
     borrow::{Borrow, Cow},
     cell::RefCell,
     collections::HashSet,
+    convert::Infallible,
     str::FromStr,
 };
 
@@ -390,6 +391,14 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         }
     }
 
+    fn parse_caret_in_char_set<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Infallible> {
+        try_map(
+            Token::Caret,
+            |_| Err(ParseErrorKind::CharClass(CharClassError::CaretInGroup)),
+            nom::Err::Failure,
+        )(input)
+    }
+
     fn parse_char_group<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, CharGroup> {
         let span1 = input.span();
 
@@ -427,8 +436,13 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
     }
 
     try_map(
-        tuple((Token::OpenBracket, cut(parse_char_group), cut(Token::CloseBracket))),
-        |((_, start), inner, (_, end))| {
+        tuple((
+            Token::OpenBracket,
+            opt(parse_caret_in_char_set), // diagnostic for [^test]
+            cut(parse_char_group),
+            cut(Token::CloseBracket),
+        )),
+        |((_, start), _, inner, (_, end))| {
             if let CharGroup::Items(v) = &inner {
                 if v.is_empty() {
                     return Err(ParseErrorKind::CharClass(CharClassError::Empty));
@@ -589,7 +603,8 @@ pub(super) fn parse_special_char<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b
 pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {
     map(
         alt((
-            parse_start_end, // deprecated
+            parse_start_end_new,
+            parse_start_end_old,
             map(Token::BWord, |(_, span)| Boundary::new(BoundaryKind::Word, span)),
             map(pair(Token::Not, Token::BWord), |((_, span1), (_, span2))| {
                 Boundary::new(BoundaryKind::NotWord, span1.join(span2))
@@ -599,7 +614,14 @@ pub(super) fn parse_boundary<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Ru
     )(input)
 }
 
-pub(super) fn parse_start_end<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Boundary> {
+pub(super) fn parse_start_end_new<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Boundary> {
+    alt((
+        map(Token::Caret, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
+        map(Token::Dollar, |(_, span)| Boundary::new(BoundaryKind::End, span)),
+    ))(input)
+}
+
+pub(super) fn parse_start_end_old<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Boundary> {
     let (mut input, boundary) = alt((
         map(Token::BStart, |(_, span)| Boundary::new(BoundaryKind::Start, span)),
         map(Token::BEnd, |(_, span)| Boundary::new(BoundaryKind::End, span)),
@@ -607,8 +629,8 @@ pub(super) fn parse_start_end<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, B
 
     input.add_warning(
         WarningKind::Deprecation(match boundary.kind() {
-            BoundaryKind::Start => DeprecationWarning::StartLiteral,
-            BoundaryKind::End => DeprecationWarning::EndLiteral,
+            BoundaryKind::Start => DeprecationWarning::OldStartLiteral,
+            BoundaryKind::End => DeprecationWarning::OldEndLiteral,
             BoundaryKind::Word => unreachable!("parse_start_end parsed a word boundary"),
             BoundaryKind::NotWord => {
                 unreachable!("parse_start_end parsed a negative word boundary")

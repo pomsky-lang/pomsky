@@ -1,7 +1,7 @@
 use std::num::{IntErrorKind, ParseIntError};
 
 use crate::{
-    parse::{Input, ParseErrorMsg, Token},
+    parse::{Input, LexErrorMsg, Token},
     span::Span,
 };
 
@@ -60,7 +60,7 @@ pub(crate) enum ParseErrorKind {
     #[error("Unknown token")]
     UnknownToken,
     #[error(transparent)]
-    LexErrorWithMessage(ParseErrorMsg),
+    LexErrorWithMessage(LexErrorMsg),
     #[error("Unexpected dot")]
     Dot,
     #[error("Unexpected keyword `{}`", .0)]
@@ -144,6 +144,9 @@ pub(crate) enum CharClassError {
     /// Empty character class, i.e. `[]`
     #[error("This character class is empty")]
     Empty,
+
+    #[error("`^` is not a valid token")]
+    CaretInGroup,
 
     /// Descending code point range, e.g. `['z'-'a']`
     #[error(

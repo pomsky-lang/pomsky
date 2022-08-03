@@ -51,9 +51,9 @@ impl fmt::Display for WarningKind {
 #[derive(Debug, Clone, Copy)]
 pub enum DeprecationWarning {
     /// The `<%` start literal
-    StartLiteral,
+    OldStartLiteral,
     /// The `%>` end literal
-    EndLiteral,
+    OldEndLiteral,
     /// The `[.]` dot
     Dot,
 }
@@ -61,11 +61,11 @@ pub enum DeprecationWarning {
 impl fmt::Display for DeprecationWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeprecationWarning::StartLiteral => {
-                f.write_str("The `<%` literal is deprecated. Use `Start` instead.")
+            DeprecationWarning::OldStartLiteral => {
+                f.write_str("The `<%` literal is deprecated. Use `^` instead.")
             }
-            DeprecationWarning::EndLiteral => {
-                f.write_str("The `%>` literal is deprecated. Use `End` instead.")
+            DeprecationWarning::OldEndLiteral => {
+                f.write_str("The `%>` literal is deprecated. Use `$` instead.")
             }
             DeprecationWarning::Dot => f.write_str(
                 "The dot is deprecated. Use `Codepoint` (or `C`) to match any character;\n\

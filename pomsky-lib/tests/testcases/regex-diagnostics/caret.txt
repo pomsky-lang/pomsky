@@ -1,6 +1,0 @@
-#! expect=error
-^
------
-ERROR: `^` is not a valid token
-HELP: Use `Start` to match the start of the string
-SPAN: 0..1

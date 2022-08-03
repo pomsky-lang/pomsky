@@ -1,4 +1,4 @@
-use crate::{parse::ParseErrorMsg, span::Span, warning::Warning};
+use crate::{parse::LexErrorMsg, span::Span, warning::Warning};
 
 use super::{
     compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError, ParseError,
@@ -111,6 +111,9 @@ impl Diagnostic {
             }
             ParseErrorKind::CharClass(CharClassError::Empty) => {
                 Some("You can use `![s !s]` to match nothing, and `C` to match anything".into())
+            }
+            ParseErrorKind::CharClass(CharClassError::CaretInGroup) => {
+                Some("Use `![...]` to negate a character class".into())
             }
             ParseErrorKind::CharString(CharStringError::TooManyCodePoints)
                 if slice.trim_matches(&['"', '\''][..]).chars().all(|c| c.is_ascii_digit()) =>
@@ -276,44 +279,41 @@ impl Diagnostic {
     }
 }
 
-fn get_parse_error_msg_help(slice: &str, msg: ParseErrorMsg) -> Option<String> {
+fn get_parse_error_msg_help(slice: &str, msg: LexErrorMsg) -> Option<String> {
     Some(match msg {
-        ParseErrorMsg::Caret => "Use `Start` to match the start of the string".into(),
-        ParseErrorMsg::CaretInGroup => "Use `![...]` to negate a character class".into(),
-        ParseErrorMsg::Dollar => "Use `End` to match the end of the string".into(),
-        ParseErrorMsg::GroupNonCapturing => "Non-capturing groups are just parentheses: `(...)`. \
+        LexErrorMsg::GroupNonCapturing => "Non-capturing groups are just parentheses: `(...)`. \
             Capturing groups use the `:(...)` syntax."
             .into(),
-        ParseErrorMsg::GroupLookahead => "Lookahead uses the `>>` syntax. \
+        LexErrorMsg::GroupLookahead => "Lookahead uses the `>>` syntax. \
             For example, `>> 'bob'` matches if the position is followed by bob."
             .into(),
-        ParseErrorMsg::GroupLookaheadNeg => "Negative lookahead uses the `!>>` syntax. \
+        LexErrorMsg::GroupLookaheadNeg => "Negative lookahead uses the `!>>` syntax. \
             For example, `!>> 'bob'` matches if the position is not followed by bob."
             .into(),
-        ParseErrorMsg::GroupLookbehind => "Lookbehind uses the `<<` syntax. \
+        LexErrorMsg::GroupLookbehind => "Lookbehind uses the `<<` syntax. \
             For example, `<< 'bob'` matches if the position is preceded with bob."
             .into(),
-        ParseErrorMsg::GroupLookbehindNeg => "Negative lookbehind uses the `!<<` syntax. \
+        LexErrorMsg::GroupLookbehindNeg => "Negative lookbehind uses the `!<<` syntax. \
             For example, `!<< 'bob'` matches if the position is not preceded with bob."
             .into(),
-        ParseErrorMsg::GroupComment => "Comments start with `#` and go until the \
+        LexErrorMsg::GroupComment => "Comments start with `#` and go until the \
             end of the line."
             .into(),
-        ParseErrorMsg::GroupNamedCapture => return get_named_capture_help(slice),
-        ParseErrorMsg::GroupPcreBackreference => return get_pcre_backreference_help(slice),
-        ParseErrorMsg::Backslash => return get_backslash_help(slice),
-        ParseErrorMsg::BackslashU4 => return get_backslash_help_u4(slice),
-        ParseErrorMsg::BackslashX2 => return get_backslash_help_x2(slice),
-        ParseErrorMsg::BackslashUnicode => return get_backslash_help_unicode(slice),
-        ParseErrorMsg::BackslashGK => return get_backslash_gk_help(slice),
-        ParseErrorMsg::BackslashProperty => return get_backslash_property_help(slice),
+        LexErrorMsg::GroupNamedCapture => return get_named_capture_help(slice),
+        LexErrorMsg::GroupPcreBackreference => return get_pcre_backreference_help(slice),
+        LexErrorMsg::Backslash => return get_backslash_help(slice),
+        LexErrorMsg::BackslashU4 => return get_backslash_help_u4(slice),
+        LexErrorMsg::BackslashX2 => return get_backslash_help_x2(slice),
+        LexErrorMsg::BackslashUnicode => return get_backslash_help_unicode(slice),
+        LexErrorMsg::BackslashGK => return get_backslash_gk_help(slice),
+        LexErrorMsg::BackslashProperty => return get_backslash_property_help(slice),
 
-        ParseErrorMsg::GroupAtomic
-        | ParseErrorMsg::GroupConditional
-        | ParseErrorMsg::GroupBranchReset
-        | ParseErrorMsg::GroupSubroutineCall
-        | ParseErrorMsg::GroupOther
-        | ParseErrorMsg::UnclosedString => return None,
+        LexErrorMsg::GroupAtomic
+        | LexErrorMsg::GroupConditional
+        | LexErrorMsg::GroupBranchReset
+        | LexErrorMsg::GroupSubroutineCall
+        | LexErrorMsg::GroupOther
+        | LexErrorMsg::UnclosedString => return None,
     })
 }
 

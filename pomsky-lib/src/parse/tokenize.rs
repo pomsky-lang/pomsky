@@ -1,4 +1,4 @@
-use crate::{parse::ParseErrorMsg, span::Span};
+use crate::{parse::LexErrorMsg, span::Span};
 
 use super::{
     micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
@@ -59,6 +59,8 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if input.starts_with("<<") => (2, Token::LookBehind);
                     if input.starts_with("::") => (2, Token::Backref);
 
+                    if c == '^' => (1, Token::Caret);
+                    if c == '$' => (1, Token::Dollar);
                     if c == '%' => (1, Token::BWord);
                     if c == '*' => (1, Token::Star);
                     if c == '+' => (1, Token::Plus);
@@ -79,12 +81,12 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 
                     if c == '\'' => match input[1..].find('\'') {
                         Some(len_inner) => (len_inner + 2, Token::String),
-                        None => (input.len(), Token::ErrorMsg(ParseErrorMsg::UnclosedString)),
+                        None => (input.len(), Token::ErrorMsg(LexErrorMsg::UnclosedString)),
                     };
 
                     if c == '"' => match find_unescaped_quote(&input[1..]) {
                         Some(len_inner) => (len_inner + 2, Token::String),
-                        None => (input.len(), Token::ErrorMsg(ParseErrorMsg::UnclosedString)),
+                        None => (input.len(), Token::ErrorMsg(LexErrorMsg::UnclosedString)),
                     };
 
                     if let Some((len, _)) = (
@@ -99,9 +101,6 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                         CharIs(|c| c.is_alphabetic() || c == '_'),
                         Many0(CharIs(|c| c.is_alphanumeric() || c == '_'))
                     ).is_start(input) => (len, Token::Identifier);
-
-                    if c == '^' => (1, Token::ErrorMsg(ParseErrorMsg::Caret));
-                    if c == '$' => (1, Token::ErrorMsg(ParseErrorMsg::Dollar));
 
                     if let Some((len, err)) = parse_special_group(input) => (len, Token::ErrorMsg(err));
 
@@ -140,7 +139,7 @@ fn find_unescaped_quote(input: &str) -> Option<usize> {
     }
 }
 
-fn parse_backslash(input: &str) -> Option<(usize, ParseErrorMsg)> {
+fn parse_backslash(input: &str) -> Option<(usize, LexErrorMsg)> {
     let hex = CharIs(|c| c.is_ascii_hexdigit());
 
     let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '+' | '_')));
@@ -156,35 +155,35 @@ fn parse_backslash(input: &str) -> Option<(usize, ParseErrorMsg)> {
         [&CharIs(|c| c.is_ascii_alphanumeric()), &('{', ident, '}'), &("{^", ident, '}')];
 
     let after_backslash: [&dyn MicroRegex<Context = _>; 6] = [
-        &(&["u{", "x{"][..], Many1(hex), '}').ctx(ParseErrorMsg::BackslashUnicode),
-        &('u', hex, hex, hex, hex).ctx(ParseErrorMsg::BackslashU4),
-        &('x', hex, hex).ctx(ParseErrorMsg::BackslashX2),
-        &(&['k', 'g'][..], &after_gk[..]).ctx(ParseErrorMsg::BackslashGK),
-        &(&['p', 'P'][..], &after_p[..]).ctx(ParseErrorMsg::BackslashProperty),
-        &CharIs(|_| true).ctx(ParseErrorMsg::Backslash),
+        &(&["u{", "x{"][..], Many1(hex), '}').ctx(LexErrorMsg::BackslashUnicode),
+        &('u', hex, hex, hex, hex).ctx(LexErrorMsg::BackslashU4),
+        &('x', hex, hex).ctx(LexErrorMsg::BackslashX2),
+        &(&['k', 'g'][..], &after_gk[..]).ctx(LexErrorMsg::BackslashGK),
+        &(&['p', 'P'][..], &after_p[..]).ctx(LexErrorMsg::BackslashProperty),
+        &CharIs(|_| true).ctx(LexErrorMsg::Backslash),
     ];
 
     Capture(('\\', &after_backslash[..])).is_start(input).map(|(len, (_, err))| (len, err))
 }
 
-fn parse_special_group(input: &str) -> Option<(usize, ParseErrorMsg)> {
+fn parse_special_group(input: &str) -> Option<(usize, LexErrorMsg)> {
     let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || c == '-' || c == '+'));
 
     let after_open: [&dyn MicroRegex<Context = _>; 14] = [
-        &':'.ctx(ParseErrorMsg::GroupNonCapturing),
-        &'='.ctx(ParseErrorMsg::GroupLookahead),
-        &'!'.ctx(ParseErrorMsg::GroupLookaheadNeg),
-        &'>'.ctx(ParseErrorMsg::GroupAtomic),
-        &'('.ctx(ParseErrorMsg::GroupConditional),
-        &'|'.ctx(ParseErrorMsg::GroupBranchReset),
-        &"<=".ctx(ParseErrorMsg::GroupLookbehind),
-        &"<!".ctx(ParseErrorMsg::GroupLookbehindNeg),
-        &(&["P<", "<"][..], ident, '>').ctx(ParseErrorMsg::GroupNamedCapture),
-        &('\'', ident, '\'').ctx(ParseErrorMsg::GroupNamedCapture),
-        &("P=", ident, ')').ctx(ParseErrorMsg::GroupPcreBackreference),
-        &(&["P>", "&"][..]).ctx(ParseErrorMsg::GroupSubroutineCall),
-        &('#', Many0(CharIs(|c| c != ')')), ')').ctx(ParseErrorMsg::GroupComment),
-        &"".ctx(ParseErrorMsg::GroupOther),
+        &':'.ctx(LexErrorMsg::GroupNonCapturing),
+        &'='.ctx(LexErrorMsg::GroupLookahead),
+        &'!'.ctx(LexErrorMsg::GroupLookaheadNeg),
+        &'>'.ctx(LexErrorMsg::GroupAtomic),
+        &'('.ctx(LexErrorMsg::GroupConditional),
+        &'|'.ctx(LexErrorMsg::GroupBranchReset),
+        &"<=".ctx(LexErrorMsg::GroupLookbehind),
+        &"<!".ctx(LexErrorMsg::GroupLookbehindNeg),
+        &(&["P<", "<"][..], ident, '>').ctx(LexErrorMsg::GroupNamedCapture),
+        &('\'', ident, '\'').ctx(LexErrorMsg::GroupNamedCapture),
+        &("P=", ident, ')').ctx(LexErrorMsg::GroupPcreBackreference),
+        &(&["P>", "&"][..]).ctx(LexErrorMsg::GroupSubroutineCall),
+        &('#', Many0(CharIs(|c| c != ')')), ')').ctx(LexErrorMsg::GroupComment),
+        &"".ctx(LexErrorMsg::GroupOther),
     ];
 
     Capture(("(?", &after_open[..])).is_start(input).map(|(len, (_, err))| (len, err))

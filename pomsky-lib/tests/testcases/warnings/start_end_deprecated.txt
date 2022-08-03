@@ -1,7 +1,7 @@
 <% % %>
 -----
 ^\b$
-WARNING: The `<%` literal is deprecated. Use `Start` instead.
+WARNING: The `<%` literal is deprecated. Use `^` instead.
   at 0..2
-WARNING: The `%>` literal is deprecated. Use `End` instead.
+WARNING: The `%>` literal is deprecated. Use `$` instead.
   at 5..7

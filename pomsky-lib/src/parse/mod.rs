@@ -7,5 +7,5 @@ mod tokenize;
 pub(crate) use self::{
     input::Input,
     parsers::parse,
-    token::{ParseErrorMsg, Token},
+    token::{LexErrorMsg, Token},
 };

@@ -8,7 +8,7 @@ use crate::{
     warning::Warning,
 };
 
-use super::{token::Token, ParseErrorMsg};
+use super::token::Token;
 
 #[derive(Clone)]
 pub(crate) struct Input<'i, 'b> {
@@ -26,14 +26,9 @@ impl<'i, 'b> Input<'i, 'b> {
         recursion: u16,
     ) -> Result<Self, ParseError> {
         let mut errors = vec![];
-        for (i, &(t, span)) in tokens.iter().enumerate() {
+        for &(t, span) in tokens.iter() {
             match t {
                 Token::Error => errors.push((span, None)),
-                Token::ErrorMsg(ParseErrorMsg::Caret)
-                    if i > 0 && tokens[i - 1].0 == Token::OpenBracket =>
-                {
-                    errors.push((span, Some(ParseErrorMsg::CaretInGroup)));
-                }
                 Token::ErrorMsg(m) => errors.push((span, Some(m))),
                 _ => {}
             }
