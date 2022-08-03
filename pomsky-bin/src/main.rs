@@ -1,4 +1,7 @@
-use std::io::{self, Read, Write};
+use std::{
+    io::{self, Read, Write},
+    process::exit,
+};
 
 use atty::Stream;
 use clap::Parser as _;
@@ -28,6 +31,7 @@ pub fn main() {
                     error.to_string(),
                     None,
                 ));
+                exit(2);
             }
         },
         (None, None) if atty::isnt(Stream::Stdin) => {
@@ -43,6 +47,7 @@ pub fn main() {
                         format!("Could not parse stdin: {e}"),
                         None,
                     ));
+                    exit(3);
                 }
             }
         }
@@ -53,6 +58,7 @@ pub fn main() {
                 "You can only provide an input or a path, but not both".into(),
                 None,
             ));
+            exit(4);
         }
         (None, None) => {
             print_diagnostic(&Diagnostic::ad_hoc(
@@ -61,6 +67,7 @@ pub fn main() {
                 "No input provided".into(),
                 None,
             ));
+            exit(5);
         }
     }
 }
@@ -71,7 +78,7 @@ fn compile(input: &str, args: &Args) {
         Ok(res) => res,
         Err(err) => {
             print_parse_error(err, input);
-            std::process::exit(1);
+            exit(1);
         }
     };
 

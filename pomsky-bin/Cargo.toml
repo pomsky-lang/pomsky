@@ -20,11 +20,11 @@ path = "src/main.rs"
 
 [dependencies]
 atty = "0.2.14"
-thiserror = "1.0.30"
+thiserror = "1.0.32"
 owo-colors = { version = "3.4.0", features = ["supports-color"] }
 
 [dependencies.miette]
-version = "4.2.1"
+version = "4.7.1"
 features = ["fancy-no-backtrace"]
 
 [dependencies.pomsky]
@@ -33,6 +33,6 @@ path = "../pomsky-lib"
 features = ["dbg", "miette", "suggestions"]
 
 [dependencies.clap]
-version = "3.1.0"
+version = "3.2.16"
 default-features = false
 features = ["std", "derive", "wrap_help", "color"]

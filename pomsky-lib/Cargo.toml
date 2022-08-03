@@ -21,12 +21,12 @@ dbg = []
 suggestions = ["strsim"]
 
 [dependencies]
-thiserror = "1.0.31"
-nom = "7.1.0"
+thiserror = "1.0.32"
+nom = "7.1.1"
 strsim = { version = "0.10.0", optional = true }
 
 [dependencies.arbitrary]
-version = "1.1.2"
+version = "1.1.3"
 features = ["derive"]
 optional = true
 
@@ -36,8 +36,8 @@ optional = true
 
 [dev-dependencies]
 atty = "0.2.14"
-once_cell = "1.12.0"
-regex = "1.5.6"
+once_cell = "1.13.0"
+regex = "1.6.0"
 
 [[test]]
 name = "it"
