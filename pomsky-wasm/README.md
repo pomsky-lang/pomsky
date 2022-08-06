@@ -1,31 +1,33 @@
 # pomsky-wasm
 
-Node.js/WASM module of [pomsky](..), using [wasm-pack].
+Node.js/WASM module of [pomsky](..).
 
-## 🚴 Usage
+## Usage
 
-### 🛠️ Build with `wasm-pack build`
+```js
+import { compile } from "pomsky-wasm";
 
-```
-wasm-pack build
-```
-
-### 🔬 Test in Headless Browsers with `wasm-pack test`
-
-```
-wasm-pack test --headless --firefox
+const { output } = compile(`^ C* '.' C* $`, "js");
 ```
 
-### 🎁 Publish to NPM with `wasm-pack publish`
+### With vite
 
-```
-wasm-pack publish
+If you're using vite, you also need to install `vite-plugin-wasm` and update your vite config like this:
+
+```diff
+  import { defineConfig } from 'vite'
++ import wasm from 'vite-plugin-wasm'
+
+  export default defineConfig({
+    plugins: [
++     wasm()
+    ],
+  })
 ```
 
 ## License
 
 Dual-licensed under the [MIT license][mit-license] or the [Apache 2.0 license][apache-2-license].
 
-[wasm-pack]: https://rustwasm.github.io/docs/wasm-pack/tutorials/
 [mit-license]: https://opensource.org/licenses/MIT
 [apache-2-license]: https://opensource.org/licenses/Apache-2.0
