@@ -13,6 +13,12 @@ mod utils;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 #[wasm_bindgen(module = "/js/mod.js")]
 extern "C" {
     #[wasm_bindgen(typescript_type = "PomskyDiagnostic")]
