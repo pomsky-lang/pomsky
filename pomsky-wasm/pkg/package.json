@@ -4,7 +4,7 @@
     "Ludwig Stecher <ludwig.stecher@gmx.de>"
   ],
   "description": "A new regular expression language",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
@@ -14,7 +14,6 @@
     "snippets",
     "pomsky_wasm_bg.wasm",
     "pomsky_wasm.js",
-    "pomsky_wasm_bg.js",
     "pomsky_wasm.d.ts",
     "LICENSE_MIT",
     "LICENSE_APACHE"
