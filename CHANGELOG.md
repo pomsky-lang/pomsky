@@ -5,7 +5,9 @@ All notable changes to the _rulex regular expression language_ will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## 0.4.4 - 2022-08-24
+
+The `rulex` crates are now officially deprecated. Use `pomsky` instead.
 
 ## [0.4.3] - 2022-06-19
 
@@ -176,7 +178,6 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/rulex/compare/v0.4.3...HEAD
 [0.4.3]: https://github.com/rulex-rs/rulex/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/rulex-rs/rulex/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/rulex-rs/rulex/compare/v0.4...v0.4.1

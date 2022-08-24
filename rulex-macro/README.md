@@ -1,5 +1,8 @@
 # rulex-macro
 
+⚠️ **DEPRECATED** ⚠️ Use the `pomsky-macro` crate instead. Rulex was
+[renamed to pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
+
 This Rust procedural macro allows converting a [rulex expression](../README.md) to a regex
 string literal at compile time:
 

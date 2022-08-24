@@ -1,11 +1,14 @@
 # rulex CLI
 
+⚠️ **DEPRECATED** ⚠️ Use the `pomsky-bin` crate instead. Rulex was
+[renamed to pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
+
 This CLI allows you to compile [rulex expressions](../README.md) to regexes in the command line.
 
 ## Use pre-built binaries
 
 Binaries are available for Windows, Linux and macOS. Download them from the
-[releases page](https://github.com/rulex-rs/rulex/releases).
+[releases page](https://github.com/rulex-rs/pomsky/releases).
 
 ## Install from source
 

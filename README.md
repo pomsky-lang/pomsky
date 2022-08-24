@@ -4,9 +4,10 @@
 
 # rulex
 
-A new, portable, regular expression language
+⚠️ **DEPRECATED** ⚠️ Use the `pomsky` crate instead. Rulex was
+[renamed to pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
 
-Read **[the book](https://rulex-rs.github.io/docs/)** to get started!
+A new, portable, regular expression language. Read [the book](https://pomsky-lang.org/docs/get-started/introduction/) to get started!
 
 </div>
 
@@ -84,8 +85,8 @@ number (operator number)*
 
 ## Usage
 
-Read **[the book](https://rulex-rs.github.io/docs)** to get started, or check out the
-[CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
+Read **[the book](https://pomsky-lang.org/docs/get-started/introduction/)** to get started, or check
+out the [CLI program](./rulex-bin/), the [Rust library](./rulex-lib/) and the
 [procedural macro](./rulex-macro/).
 
 ## Why use this instead of normal regexes?

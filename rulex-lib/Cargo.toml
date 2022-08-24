@@ -1,12 +1,12 @@
 [package]
 name = "rulex"
-description = "A new regular expression language"
-version = "0.4.3"
+description = "DEPRECATED: Use pomsky instead. A new regular expression language"
+version = "0.4.4"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
-homepage = "https://rulex-rs.github.io"
-repository = "https://github.com/rulex-rs/rulex"
+homepage = "https://pomsky-lang.org"
+repository = "https://github.com/rulex-rs/pomsky"
 documentation = "https://docs.rs/rulex"
 readme = "../README.md"
 keywords = ["regexp", "regex", "syntax", "parser", "rulex"]

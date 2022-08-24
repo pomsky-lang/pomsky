@@ -1,6 +1,10 @@
 //! # rulex
 //!
-//! To learn about the _rulex language_, please read [the book](https://rulex-rs.github.io/rulex).
+//! ⚠️ **DEPRECATED** ⚠️ Use the `pomsky` crate instead. Rulex was
+//! [renamed to pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
+//!
+//! To learn about the _language_, please read
+//! [the book](https://pomsky-lang.org/docs/get-started/introduction/).
 //!
 //! The _rulex macro_ can be [found here](https://docs.rs/rulex-macro/latest/rulex_macro/).
 //!
@@ -76,6 +80,10 @@ mod var;
 
 /// A parsed rulex expression, which might contain more sub-expressions.
 #[derive(Clone)]
+#[deprecated(
+    since = "0.4.4",
+    note = "This entire crate is deprecated. Use the `pomsky` crate instead."
+)]
 pub struct Rulex<'i>(Rule<'i>);
 
 impl<'i> Rulex<'i> {

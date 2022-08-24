@@ -591,7 +591,7 @@ checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
 
 [[package]]
 name = "rulex"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "arbitrary",
  "atty",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "rulex-bin"
-version = "0.4.3"
+version = "0.4.5"
 dependencies = [
  "atty",
  "clap 3.1.18",
@@ -615,7 +615,7 @@ dependencies = [
 
 [[package]]
 name = "rulex-macro"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "rulex",
 ]

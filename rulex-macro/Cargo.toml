@@ -1,12 +1,12 @@
 [package]
 name = "rulex-macro"
-description = "Macro for converting rulex expressions to regexes"
-version = "0.4.3"
+description = "DEPRECATED: Use pomsky-macro instead. Macro for converting pomsky expressions to regexes"
+version = "0.4.4"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/rulex-rs/rulex/blob/main/rulex-macro"
-repository = "https://github.com/rulex-rs/rulex"
+homepage = "https://pomsky-lang.org"
+repository = "https://github.com/rulex-rs/pomsky"
 documentation = "https://docs.rs/rulex-macro"
 keywords = ["macro", "regexp", "regex", "rulex"]
 categories = ["text-processing"]
@@ -19,4 +19,4 @@ default = []
 diagnostics = []
 
 [dependencies]
-rulex = { version = "0.4.3", path = "../rulex-lib" }
+rulex = { version = "0.4.4", path = "../rulex-lib" }
