@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use pomsky::{
-    features::PomskyFeatures,
-    options::{CompileOptions, ParseOptions, RegexFlavor},
+    options::{CompileOptions, RegexFlavor},
     Expr,
 };
 
@@ -35,9 +34,7 @@ pub fn parse(c: &mut Criterion) {
 
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
-        group.bench_function(sample_name, |b| {
-            b.iter(|| Expr::parse(black_box(sample), Default::default()).unwrap())
-        });
+        group.bench_function(sample_name, |b| b.iter(|| Expr::parse(black_box(sample)).unwrap()));
     }
 }
 
@@ -47,7 +44,7 @@ pub fn compile(c: &mut Criterion) {
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
         group.bench_function(sample_name, |b| {
-            let (expr, _warnings) = Expr::parse(black_box(sample), Default::default()).unwrap();
+            let (expr, _warnings) = Expr::parse(black_box(sample)).unwrap();
             b.iter(|| black_box(&expr).compile(ruby()).unwrap())
         });
     }
@@ -63,13 +60,13 @@ pub fn range(c: &mut Criterion) {
             let max = "3458709621".repeat(((size + 9) / 10) as usize);
             let max = &max[..size as usize];
             let input = format!("range '0'-'{max}'");
-            let (expr, _warnings) = Expr::parse(
-                black_box(&input),
-                ParseOptions { max_range_size: 100, allowed_features: PomskyFeatures::default() },
-            )
-            .unwrap();
+            let (expr, _warnings) = Expr::parse(black_box(&input)).unwrap();
 
-            b.iter(|| black_box(&expr).compile(Default::default()).unwrap())
+            b.iter(|| {
+                black_box(&expr)
+                    .compile(CompileOptions { max_range_size: 100, ..Default::default() })
+                    .unwrap()
+            })
         });
     }
 }
@@ -79,14 +76,7 @@ pub fn competition(c: &mut Criterion) {
 
     group.throughput(Throughput::Bytes(VERSION_RULEX.len() as u64));
     group.bench_function("rulex", |b| {
-        b.iter(|| {
-            Expr::parse_and_compile(
-                black_box(VERSION_RULEX),
-                Default::default(),
-                Default::default(),
-            )
-            .unwrap()
-        })
+        b.iter(|| Expr::parse_and_compile(black_box(VERSION_RULEX), Default::default()).unwrap())
     });
 
     group.throughput(Throughput::Bytes(VERSION_MELODY.len() as u64));
@@ -96,7 +86,7 @@ pub fn competition(c: &mut Criterion) {
 }
 
 fn ruby() -> CompileOptions {
-    CompileOptions { flavor: RegexFlavor::Ruby }
+    CompileOptions { flavor: RegexFlavor::Ruby, ..Default::default() }
 }
 
 pub fn benches(c: &mut Criterion) {

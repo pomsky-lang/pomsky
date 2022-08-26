@@ -6,7 +6,7 @@ use std::{
 
 use pomsky::{
     error::CompileError,
-    options::{CompileOptions, ParseOptions, RegexFlavor},
+    options::{CompileOptions, RegexFlavor},
 };
 
 use crate::{color::Color::*, Args};
@@ -114,8 +114,7 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
     catch_panics(|| {
         let parsed = pomsky::Expr::parse_and_compile(
             input,
-            ParseOptions::default(),
-            CompileOptions { flavor: options.flavor },
+            CompileOptions { flavor: options.flavor, ..Default::default() },
         );
 
         match parsed {

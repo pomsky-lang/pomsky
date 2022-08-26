@@ -9,7 +9,7 @@ use super::input::Input;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
-pub(crate) enum Token {
+pub enum Token {
     /// `^` (start boundary)
     Caret,
     /// `$` (end boundary)
@@ -94,7 +94,7 @@ pub(crate) enum Token {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum LexErrorMsg {
+pub enum LexErrorMsg {
     #[error("This syntax is not supported")]
     GroupNonCapturing,
     #[error("This syntax is not supported")]
@@ -137,6 +137,12 @@ pub(crate) enum LexErrorMsg {
 
     #[error("This string literal doesn't have a closing quote")]
     UnclosedString,
+}
+
+impl LexErrorMsg {
+    pub fn get_help(&self, slice: &str) -> Option<String> {
+        super::diagnostics::get_parse_error_msg_help(*self, slice)
+    }
 }
 
 impl core::fmt::Display for Token {

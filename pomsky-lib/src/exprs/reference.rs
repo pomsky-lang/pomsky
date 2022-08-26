@@ -1,25 +1,14 @@
+use pomsky_syntax::exprs::{Reference, ReferenceTarget};
+
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileErrorKind, Feature, ParseError},
+    error::{CompileError, CompileErrorKind, Feature},
     features::PomskyFeatures,
-    options::{CompileOptions, ParseOptions, RegexFlavor},
+    options::{CompileOptions, RegexFlavor},
     regex::Regex,
-    span::Span,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) struct Reference<'i> {
-    pub(crate) target: ReferenceTarget<'i>,
-    pub(crate) span: Span,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub(crate) enum ReferenceTarget<'i> {
-    Named(&'i str),
-    Number(u32),
-    Relative(i32),
-}
+use super::RuleExt;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ReferenceDirection {
@@ -27,16 +16,8 @@ enum ReferenceDirection {
     Forwards,
 }
 
-impl<'i> Reference<'i> {
-    pub(crate) fn new(target: ReferenceTarget<'i>, span: Span) -> Self {
-        Reference { target, span }
-    }
-
-    pub(crate) fn compile(
-        &self,
-        options: CompileOptions,
-        state: &mut CompileState,
-    ) -> CompileResult<'i> {
+impl<'i> RuleExt<'i> for Reference<'i> {
+    fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult<'i> {
         let (direction, number) = match self.target {
             ReferenceTarget::Named(name) => match state.used_names.get(name) {
                 Some(&n) => {
@@ -51,7 +32,7 @@ impl<'i> Reference<'i> {
                     return Err(CompileErrorKind::UnknownReferenceName {
                         found: name.into(),
                         #[cfg(feature = "suggestions")]
-                        similar: crate::util::find_suggestion(
+                        similar: pomsky_syntax::find_suggestion(
                             name,
                             state.used_names.keys().map(|key| key.as_str()),
                         ),
@@ -113,19 +94,8 @@ impl<'i> Reference<'i> {
         }
     }
 
-    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         options.allowed_features.require(PomskyFeatures::REFERENCES, self.span)
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl std::fmt::Debug for Reference<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.target {
-            ReferenceTarget::Named(n) => write!(f, "::{}", n),
-            ReferenceTarget::Number(i) => write!(f, "::{}", i),
-            ReferenceTarget::Relative(o) => write!(f, "::{}{}", if o < 0 { '-' } else { '+' }, o),
-        }
     }
 }
 

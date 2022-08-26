@@ -1,6 +1,8 @@
-use crate::{options::RegexFlavor, span::Span};
+use pomsky_syntax::{error::ParseErrorKind, Span};
 
-use super::{Diagnostic, ParseError, ParseErrorKind};
+use crate::options::RegexFlavor;
+
+use super::{Diagnostic, ParseError};
 
 /// An error that can occur during parsing or compiling
 #[derive(Debug, Clone, thiserror::Error)]
@@ -53,6 +55,9 @@ pub(crate) enum CompileErrorKind {
     #[error("Compile error: Unsupported feature `{}` in the `{:?}` regex flavor", .0.name(), .1)]
     Unsupported(Feature, RegexFlavor),
 
+    #[error(transparent)]
+    UnsupportedPomskySyntax(UnsupportedError),
+
     #[error("Group references this large aren't supported")]
     HugeReference,
 
@@ -90,6 +95,9 @@ pub(crate) enum CompileErrorKind {
 
     #[error("Variables can't be used recursively")]
     RecursiveVariable,
+
+    #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
+    RangeIsTooBig(u8),
 
     #[error("Compile error: {}", .0)]
     Other(&'static str),
@@ -154,4 +162,41 @@ impl Feature {
             Feature::NegativeShorthandW => "Negative `\\w` shorthand in character class",
         }
     }
+}
+
+/// An error that indicates that an unsupported feature was used.
+///
+/// See [`crate::features::PomskyFeatures`] for details.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub(crate) enum UnsupportedError {
+    #[error("Grapheme is not supported")]
+    Grapheme,
+
+    #[error("Numbered capturing groups is not supported")]
+    NumberedGroups,
+
+    #[error("Named capturing groups is not supported")]
+    NamedGroups,
+
+    #[error("References aren't supported")]
+    References,
+
+    #[error("Lazy mode isn't supported")]
+    LazyMode,
+
+    #[error("Ranges aren't supported")]
+    Ranges,
+
+    #[error("Variables aren't supported")]
+    Variables,
+
+    #[error("Lookahead isn't supported")]
+    Lookahead,
+
+    #[error("Lookbehind isn't supported")]
+    Lookbehind,
+
+    #[error("Word boundaries aren't supported")]
+    Boundaries,
 }

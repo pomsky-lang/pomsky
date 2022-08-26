@@ -1,5 +1,5 @@
 #[cfg(feature = "suggestions")]
-pub(crate) fn find_suggestion<'a>(
+pub fn find_suggestion<'a>(
     found: &str,
     options: impl Iterator<Item = &'a str>,
 ) -> Option<Box<str>> {

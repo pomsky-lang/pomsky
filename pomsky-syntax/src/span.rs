@@ -3,6 +3,8 @@ use std::{
     ops::Range,
 };
 
+/// A source code location, marked by the start and end byte offset. If both are zero,
+/// this is considered as "empty" or "missing", and [`Span::range`] returns `None`.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span {
     start: usize,
@@ -10,18 +12,23 @@ pub struct Span {
 }
 
 impl Span {
-    pub(crate) fn new(start: usize, end: usize) -> Self {
+    /// Constructs a new [`Span`]. If both `start` and `end` is 0, this is
+    /// considered as "empty" or "missing"
+    pub fn new(start: usize, end: usize) -> Self {
         Span { start, end }
     }
 
-    pub(crate) fn empty() -> Self {
+    /// Constructs an empty [`Span`].
+    pub fn empty() -> Self {
         Span { start: 0, end: 0 }
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    /// Returns whether this span is "empty" or "missing".
+    pub fn is_empty(&self) -> bool {
         self.end == 0
     }
 
+    /// Converts this span to a [`std::ops::Range`]. If it is empty, `None` is returned.
     pub fn range(self) -> Option<Range<usize>> {
         if self.is_empty() {
             None
@@ -30,11 +37,12 @@ impl Span {
         }
     }
 
-    pub(crate) fn range_unchecked(self) -> Range<usize> {
+    pub fn range_unchecked(self) -> Range<usize> {
         self.start..self.end
     }
 
-    pub(crate) fn start(&self) -> Span {
+    /// Returns a new span that points to this span's start, but has a length of 0.
+    pub fn start(&self) -> Span {
         Span { start: self.start, end: self.start }
     }
 

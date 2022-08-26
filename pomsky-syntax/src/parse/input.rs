@@ -5,7 +5,7 @@ use nom::{InputIter, InputLength, InputTake};
 use crate::{
     error::{ParseError, ParseErrorKind},
     span::Span,
-    warning::Warning,
+    warning::ParseWarning,
 };
 
 use super::token::Token;
@@ -15,14 +15,14 @@ pub(crate) struct Input<'i, 'b> {
     source: &'i str,
     tokens: &'b [(Token, Span)],
     recursion: u16,
-    warnings: &'b RefCell<Vec<Warning>>,
+    warnings: &'b RefCell<Vec<ParseWarning>>,
 }
 
 impl<'i, 'b> Input<'i, 'b> {
     pub(super) fn from(
         source: &'i str,
         tokens: &'b [(Token, Span)],
-        warnings: &'b RefCell<Vec<Warning>>,
+        warnings: &'b RefCell<Vec<ParseWarning>>,
         recursion: u16,
     ) -> Result<Self, ParseError> {
         let mut errors = vec![];
@@ -75,7 +75,7 @@ impl<'i, 'b> Input<'i, 'b> {
         self.tokens.is_empty()
     }
 
-    pub(super) fn add_warning(&mut self, warning: Warning) {
+    pub(super) fn add_warning(&mut self, warning: ParseWarning) {
         self.warnings.borrow_mut().push(warning);
     }
 

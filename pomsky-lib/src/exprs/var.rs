@@ -1,22 +1,15 @@
+use pomsky_syntax::exprs::Variable;
+
 use crate::{
     compile::{CompileResult, CompileState},
     error::CompileErrorKind,
     options::CompileOptions,
-    span::Span,
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) struct Variable<'i> {
-    name: &'i str,
-    pub(crate) span: Span,
-}
+use super::RuleExt;
 
-impl<'i> Variable<'i> {
-    pub(crate) fn new(name: &'i str, span: Span) -> Self {
-        Variable { name, span }
-    }
-
-    pub(crate) fn compile<'c>(
+impl<'i> RuleExt<'i> for Variable<'i> {
+    fn compile<'c>(
         &'c self,
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
@@ -30,7 +23,7 @@ impl<'i> Variable<'i> {
 
         if let Some((i, &(_, rule))) = rule {
             state.current_vars.insert(i);
-            let res = rule.comp(options, state)?;
+            let res = rule.compile(options, state)?;
             state.current_vars.remove(&i);
             Ok(res)
         } else {
@@ -41,7 +34,7 @@ impl<'i> Variable<'i> {
                 Err(CompileErrorKind::UnknownVariable {
                     found: self.name.into(),
                     #[cfg(feature = "suggestions")]
-                    similar: crate::util::find_suggestion(
+                    similar: pomsky_syntax::find_suggestion(
                         self.name,
                         state.variables.iter().map(|&(var, _)| var),
                     ),
@@ -49,12 +42,5 @@ impl<'i> Variable<'i> {
                 .at(self.span))
             }
         }
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl std::fmt::Debug for Variable<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Variable({})", self.name)
     }
 }

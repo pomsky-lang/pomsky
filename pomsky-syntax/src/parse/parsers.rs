@@ -18,14 +18,19 @@ use crate::{
     error::*,
     exprs::*,
     span::Span,
-    warning::{DeprecationWarning, Warning, WarningKind},
+    warning::{DeprecationWarning, ParseWarning, ParseWarningKind},
 };
 
 use super::{Input, Token};
 
 pub(super) type PResult<'i, 'b, T> = IResult<Input<'i, 'b>, T, ParseError>;
 
-pub(crate) fn parse(source: &str, recursion: u16) -> Result<(Rule<'_>, Vec<Warning>), ParseError> {
+/// Parses a pomsky expression.
+///
+/// It allows passing a recursion limit, which determines how much expressions can be nested
+/// at most. For technical reasons, the actual nesting depth is half of the `recursion` parameter.
+/// For example, if `recursion` is 256, this results in a maximum nesting depth of 128.
+pub fn parse(source: &str, recursion: u16) -> Result<(Rule<'_>, Vec<ParseWarning>), ParseError> {
     let tokens = super::tokenize::tokenize(source);
     let warnings = RefCell::new(vec![]);
     let input = Input::from(source, &tokens, &warnings, recursion)?;
@@ -419,7 +424,8 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
                         .map_err(|e| ParseErrorKind::CharClass(e).at(span))?;
 
                     if let Some(dw) = dw {
-                        warnings.push(Warning { kind: WarningKind::Deprecation(dw), span })
+                        warnings
+                            .push(ParseWarning { kind: ParseWarningKind::Deprecation(dw), span })
                     }
                     Ok(char_group)
                 },
@@ -636,7 +642,7 @@ pub(super) fn parse_start_end_old<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, '
     ))(input)?;
 
     input.add_warning(
-        WarningKind::Deprecation(match boundary.kind() {
+        ParseWarningKind::Deprecation(match boundary.kind() {
             BoundaryKind::Start => DeprecationWarning::OldStartLiteral,
             BoundaryKind::End => DeprecationWarning::OldEndLiteral,
             BoundaryKind::Word => unreachable!("parse_start_end parsed a word boundary"),

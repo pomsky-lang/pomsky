@@ -6,30 +6,30 @@ use crate::span::Span;
 
 /// A warning.
 #[derive(Debug, Clone, Copy)]
-pub struct Warning {
+pub struct ParseWarning {
     /// The kind of warning
-    pub kind: WarningKind,
+    pub kind: ParseWarningKind,
     /// The span pointing to the source of the warning
     pub span: Span,
 }
 
 /// A warning without a span pointing to the source of the warning
 #[derive(Debug, Clone, Copy)]
-pub enum WarningKind {
+pub enum ParseWarningKind {
     /// A deprecation warning
     Deprecation(DeprecationWarning),
 }
 
-impl WarningKind {
-    pub(crate) fn at(self, span: Span) -> Warning {
-        Warning { kind: self, span }
+impl ParseWarningKind {
+    pub(crate) fn at(self, span: Span) -> ParseWarning {
+        ParseWarning { kind: self, span }
     }
 }
 
-impl fmt::Display for Warning {
+impl fmt::Display for ParseWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            WarningKind::Deprecation(d) => {
+            ParseWarningKind::Deprecation(d) => {
                 if let Some(std::ops::Range { start, end }) = self.span.range() {
                     write!(f, "{d}\n  at {}..{}", start, end)
                 } else {
@@ -40,9 +40,9 @@ impl fmt::Display for Warning {
     }
 }
 
-impl fmt::Display for WarningKind {
+impl fmt::Display for ParseWarningKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let WarningKind::Deprecation(c) = self;
+        let ParseWarningKind::Deprecation(c) = self;
         c.fmt(f)
     }
 }

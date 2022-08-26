@@ -1,35 +1,25 @@
 use std::{borrow::Cow, cmp::Ordering};
 
+use pomsky_syntax::exprs::{Range, RepetitionKind};
+
 use crate::{
-    compile::CompileResult,
-    error::{CompileErrorKind, ParseError, ParseErrorKind},
+    compile::{CompileResult, CompileState},
+    error::{CompileError, CompileErrorKind},
     features::PomskyFeatures,
-    options::ParseOptions,
+    options::CompileOptions,
     regex::Regex,
-    span::Span,
 };
 
 use super::{
     alternation::RegexAlternation,
     char_class::{RegexCharClass, RegexClassItem},
     group::{RegexCapture, RegexGroup},
-    repetition::{RegexQuantifier, RegexRepetition, RepetitionKind},
+    repetition::{RegexQuantifier, RegexRepetition},
+    RuleExt,
 };
 
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) struct Range {
-    start: Vec<u8>,
-    end: Vec<u8>,
-    radix: u8,
-    pub(crate) span: Span,
-}
-
-impl Range {
-    pub(crate) fn new(start: Vec<u8>, end: Vec<u8>, radix: u8, span: Span) -> Self {
-        Range { start, end, radix, span }
-    }
-
-    pub(crate) fn compile(&self) -> CompileResult<'static> {
+impl<'i> RuleExt<'i> for Range {
+    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
         match range(&self.start, &self.end, true, self.radix) {
             Ok(rule) => Ok(rule.to_regex()),
             Err(Error) => {
@@ -39,31 +29,11 @@ impl Range {
         }
     }
 
-    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         if self.end.len() > options.max_range_size as usize {
-            return Err(ParseErrorKind::RangeIsTooBig(options.max_range_size).at(self.span));
+            return Err(CompileErrorKind::RangeIsTooBig(options.max_range_size).at(self.span));
         }
         options.allowed_features.require(PomskyFeatures::RANGES, self.span)
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl std::fmt::Debug for Range {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn hex(n: u8) -> char {
-            match n {
-                0..=9 => (n + b'0') as char,
-                _ => (n + (b'A' - 10)) as char,
-            }
-        }
-
-        write!(
-            f,
-            "Range (base {}): {}-{}",
-            self.radix,
-            self.start.iter().map(|&n| hex(n)).collect::<String>(),
-            self.end.iter().map(|&n| hex(n)).collect::<String>(),
-        )
     }
 }
 

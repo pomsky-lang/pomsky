@@ -1,6 +1,12 @@
 [workspace]
-members = ["./pomsky-lib", "./pomsky-bin", "./pomsky-macro", "./benchmark"]
-default-members = ["./pomsky-bin", "./pomsky-lib"]
+members = [
+    "./pomsky-lib",
+    "./pomsky-syntax",
+    "./pomsky-bin",
+    "./pomsky-macro",
+    "./benchmark",
+]
+default-members = ["./pomsky-bin", "./pomsky-lib", "./pomsky-syntax"]
 
 [profile.release]
 lto = "thin"

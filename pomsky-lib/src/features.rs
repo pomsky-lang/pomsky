@@ -2,10 +2,9 @@
 
 use std::fmt;
 
-use crate::{
-    error::{ParseError, ParseErrorKind, UnsupportedError},
-    span::Span,
-};
+use pomsky_syntax::Span;
+
+use crate::error::{CompileError, CompileErrorKind, UnsupportedError};
 
 /// A set of enabled pomsky features. By default, all features are enabled.
 /// You can disabled specific features with
@@ -98,11 +97,11 @@ impl PomskyFeatures {
         (self.bits & bit) != 0
     }
 
-    pub(super) fn require(&self, feature: u16, span: Span) -> Result<(), ParseError> {
+    pub(super) fn require(&self, feature: u16, span: Span) -> Result<(), CompileError> {
         if self.supports(feature) {
             Ok(())
         } else {
-            Err(ParseErrorKind::Unsupported(match feature {
+            Err(CompileErrorKind::UnsupportedPomskySyntax(match feature {
                 Self::GRAPHEME => UnsupportedError::Grapheme,
                 Self::NUMBERED_GROUPS => UnsupportedError::NumberedGroups,
                 Self::NAMED_GROUPS => UnsupportedError::NamedGroups,

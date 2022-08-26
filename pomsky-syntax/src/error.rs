@@ -1,28 +1,24 @@
-use std::num::{IntErrorKind, ParseIntError};
+//! Module containing all the errors that can occur during parsing
+
+use std::{
+    fmt,
+    num::{IntErrorKind, ParseIntError},
+};
 
 use crate::{
     parse::{Input, LexErrorMsg, Token},
     span::Span,
 };
 
-use super::Diagnostic;
-
 /// An error than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseError {
-    pub(crate) kind: ParseErrorKind,
-    pub(crate) span: Span,
-}
-
-impl ParseError {
-    /// Create a [Diagnostic] from this error.
-    pub fn diagnostic(self, source_code: &str) -> Diagnostic {
-        Diagnostic::from_parse_error(self, source_code)
-    }
+    pub kind: ParseErrorKind,
+    pub span: Span,
 }
 
 impl core::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(std::ops::Range { start, end }) = self.span.range() {
             write!(f, "{}\n  at {}..{}", self.kind, start, end)
         } else {
@@ -53,7 +49,7 @@ impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
 /// An error kind (without a span) than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum ParseErrorKind {
+pub enum ParseErrorKind {
     #[error("Multiple parsing errors encountered")]
     Multiple(Box<[ParseError]>),
 
@@ -84,8 +80,6 @@ pub(crate) enum ParseErrorKind {
     UnallowedDoubleNot,
     #[error("A leading pipe must be followed by an expression")]
     LonePipe,
-    #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
-    RangeIsTooBig(u8),
     #[error("A variable with the same name already exists in this scope")]
     LetBindingExists,
     #[error("Unsupported escape sequence in string")]
@@ -100,8 +94,6 @@ pub(crate) enum ParseErrorKind {
     Number(#[from] NumberError),
     #[error(transparent)]
     Repetition(RepetitionError),
-    #[error(transparent)]
-    Unsupported(UnsupportedError),
 
     #[error("Recursion limit reached")]
     RecursionLimit,
@@ -113,7 +105,7 @@ pub(crate) enum ParseErrorKind {
 }
 
 impl ParseErrorKind {
-    pub(crate) fn at(self, span: Span) -> ParseError {
+    pub fn at(self, span: Span) -> ParseError {
         ParseError { kind: self, span }
     }
 }
@@ -127,7 +119,7 @@ impl From<RepetitionError> for ParseErrorKind {
 /// An error that relates to a character string
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum CharStringError {
+pub enum CharStringError {
     /// Empty string in a code point range within a character class, e.g.
     /// `[''-'z']`
     #[error("Strings used in ranges can't be empty")]
@@ -142,7 +134,7 @@ pub(crate) enum CharStringError {
 /// An error that relates to a character class
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum CharClassError {
+pub enum CharClassError {
     /// Empty character class, i.e. `[]`
     #[error("This character class is empty")]
     Empty,
@@ -185,7 +177,7 @@ pub(crate) enum CharClassError {
 /// An error that relates to a Unicode code point
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum CodePointError {
+pub enum CodePointError {
     /// Code point that is outside the allowed range, e.g. `U+200000`
     #[error("This code point is outside the allowed range")]
     Invalid,
@@ -194,7 +186,7 @@ pub(crate) enum CodePointError {
 /// An error that relates to parsing a number
 #[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
-pub(crate) enum NumberError {
+pub enum NumberError {
     /// The parsed string is empty
     #[error("cannot parse integer from empty string")]
     Empty,
@@ -229,63 +221,18 @@ impl From<ParseIntError> for NumberError {
     }
 }
 
+/// An error indicating an invalid repetition, e.g. `x{4,2}`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-pub(crate) enum RepetitionError {
+pub enum RepetitionError {
+    /// The second number in the repetition is greater than the first
     #[error("Lower bound can't be greater than the upper bound")]
     NotAscending,
+
+    /// Question mark after a repetition, e.g. `x{3}?`
     #[error("Unexpected `?` following a repetition")]
     QuestionMarkAfterRepetition,
+
+    /// Plus after a repetition, e.g. `x{3}+`
     #[error("Unexpected `+` following a repetition")]
     PlusAfterRepetition,
-}
-
-/// An error that indicates that an unsupported feature was used.
-///
-/// See [`crate::features::PomskyFeatures`] for details.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
-#[non_exhaustive]
-pub(crate) enum UnsupportedError {
-    #[error("Grapheme is not supported")]
-    Grapheme,
-
-    #[error("Numbered capturing groups is not supported")]
-    NumberedGroups,
-
-    #[error("Named capturing groups is not supported")]
-    NamedGroups,
-
-    #[error("References aren't supported")]
-    References,
-
-    #[error("Lazy mode isn't supported")]
-    LazyMode,
-
-    #[error("Ranges aren't supported")]
-    Ranges,
-
-    #[error("Variables aren't supported")]
-    Variables,
-
-    #[error("Lookahead isn't supported")]
-    Lookahead,
-
-    #[error("Lookbehind isn't supported")]
-    Lookbehind,
-
-    #[error("Word boundaries aren't supported")]
-    Boundaries,
-}
-
-struct ListWithoutBrackets<'a, T>(&'a [T]);
-
-impl<T: core::fmt::Display> core::fmt::Display for ListWithoutBrackets<'_, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, item) in self.0.iter().enumerate() {
-            if i > 0 {
-                f.write_str(", ")?;
-            }
-            write!(f, "{}", item)?;
-        }
-        Ok(())
-    }
 }

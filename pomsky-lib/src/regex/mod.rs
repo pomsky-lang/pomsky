@@ -1,13 +1,12 @@
 use std::borrow::{Borrow, Cow};
 
+use pomsky_syntax::exprs::{BoundaryKind, Category, CodeBlock, OtherProperties, Script};
+
 use crate::{
     exprs::{
         alternation::RegexAlternation,
-        boundary::BoundaryKind,
-        char_class::{
-            unicode::{Category, CodeBlock, OtherProperties, Script},
-            RegexCharClass, RegexClassItem,
-        },
+        boundary::boundary_kind_codegen,
+        char_class::{RegexCharClass, RegexClassItem},
         group::RegexGroup,
         literal,
         lookaround::RegexLookaround,
@@ -101,7 +100,7 @@ impl<'i> Regex<'i> {
             Regex::Group(g) => g.codegen(buf, flavor),
             Regex::Alternation(a) => a.codegen(buf, flavor),
             Regex::Repetition(r) => r.codegen(buf, flavor),
-            Regex::Boundary(b) => b.codegen(buf),
+            Regex::Boundary(b) => boundary_kind_codegen(b, buf),
             Regex::Lookaround(l) => l.codegen(buf, flavor),
             Regex::Reference(r) => r.codegen(buf, flavor),
         }

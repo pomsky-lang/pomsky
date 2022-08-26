@@ -2,10 +2,14 @@
 
 use crate::features::PomskyFeatures;
 
-/// Options passed to the pomsky parser
+/// Options passed to the pomsky compiler
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-pub struct ParseOptions {
+pub struct CompileOptions {
+    /// The targeted regex flavor. Pomsky makes sure that the emitted regex is
+    /// compatible with this flavor.
+    pub flavor: RegexFlavor,
+
     /// The maximum number of digits in a `range` expression. Defaults to 6.
     ///
     /// Note that if you increase this number, the time needed to compile a
@@ -17,19 +21,14 @@ pub struct ParseOptions {
     pub allowed_features: PomskyFeatures,
 }
 
-impl Default for ParseOptions {
+impl Default for CompileOptions {
     fn default() -> Self {
-        Self { max_range_size: 6, allowed_features: Default::default() }
+        Self {
+            flavor: RegexFlavor::default(),
+            max_range_size: 6,
+            allowed_features: PomskyFeatures::default(),
+        }
     }
-}
-
-/// Options passed to the pomsky compiler
-#[derive(Debug, Clone, Copy, Default)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-pub struct CompileOptions {
-    /// The targeted regex flavor. Pomsky makes sure that the emitted regex is
-    /// compatible with this flavor.
-    pub flavor: RegexFlavor,
 }
 
 /// A regex flavor is a regex engine or a set of regex engines that are similar

@@ -12,8 +12,8 @@
 //! use pomsky::Expr;
 //! use pomsky::options::{CompileOptions, RegexFlavor};
 //!
-//! let options = CompileOptions { flavor: RegexFlavor::Java };
-//! let (regex, _warnings) = match Expr::parse_and_compile("'test'", Default::default(), options) {
+//! let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
+//! let (regex, _warnings) = match Expr::parse_and_compile("'test'", options) {
 //!     Ok(regex) => regex,
 //!     Err(_) => {
 //!         eprintln!("The input is not a valid pomsky expression");
@@ -31,8 +31,8 @@
 //! use pomsky::error::Diagnostic;
 //!
 //! pub fn compile(input: &str) -> miette::Result<String> {
-//!     let options = CompileOptions { flavor: RegexFlavor::Java };
-//!     let (compiled, _warnings) = Expr::parse_and_compile(input, Default::default(), options)
+//!     let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
+//!     let (compiled, _warnings) = Expr::parse_and_compile(input, options)
 //!         .map_err(|e| e.diagnostic(input))?;
 //!     Ok(compiled)
 //! }
@@ -43,13 +43,11 @@
 pub mod error;
 pub mod features;
 pub mod options;
-pub mod warning;
 
 mod compile;
 mod exprs;
-mod parse;
 mod regex;
-mod span;
-mod util;
 
 pub use exprs::Expr;
+pub use pomsky_syntax::error::ParseError;
+pub use pomsky_syntax::warning::ParseWarning as Warning;

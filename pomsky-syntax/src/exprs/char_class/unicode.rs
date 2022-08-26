@@ -32,17 +32,17 @@ macro_rules! data {
     ) => {
         $(
             #[derive(Clone, Copy, PartialEq, Eq)]
-            #[cfg_attr(feature = "dbg", derive(Debug))]
+            #[cfg_attr(feature = "pretty-print", derive(Debug))]
             #[allow(non_camel_case_types)]
             #[allow(clippy::enum_variant_names)]
             #[repr(u8)]
             #[rustfmt::skip]
-            pub(crate) enum $kind {
+            pub enum $kind {
                 $( $name, )*
             }
 
             impl $kind {
-                pub(crate) fn as_str(self) -> &'static str {
+                pub fn as_str(self) -> &'static str {
                     static LUT: &[&str] = &[
                         $( $default_repr, )*
                     ];
@@ -458,12 +458,12 @@ data! {
 // ===================================
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[cfg_attr(feature = "pretty-print", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
-pub(crate) enum Category {
+pub enum Category {
     Cased_Letter, Close_Punctuation, Connector_Punctuation, Control, Currency_Symbol,
     Dash_Punctuation, Decimal_Number, Enclosing_Mark, Final_Punctuation, Format,
     Initial_Punctuation, Letter, Letter_Number, Line_Separator, Lowercase_Letter, Mark, Math_Symbol,
@@ -474,7 +474,7 @@ pub(crate) enum Category {
 }
 
 impl Category {
-    pub(crate) fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "LC", "Pe", "Pc", "Cc", "Sc", "Pd", "Nd", "Me", "Pf", "Cf", "Pi", "L", "Nl", "Zl",
@@ -486,12 +486,12 @@ impl Category {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[cfg_attr(feature = "pretty-print", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
-pub(crate) enum Script {
+pub enum Script {
     Adlam, Ahom, Anatolian_Hieroglyphs, Arabic, Armenian, Avestan, Balinese, Bamum, Bassa_Vah,
     Batak, Bengali, Bhaiksuki, Bopomofo, Brahmi, Braille, Buginese, Buhid, Canadian_Aboriginal,
     Carian, Caucasian_Albanian, Chakma, Cham, Chorasmian, Cherokee, Common, Coptic, Cuneiform,
@@ -514,7 +514,7 @@ pub(crate) enum Script {
 }
 
 impl Script {
-    pub(crate) fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "Adlam", "Ahom", "Anatolian_Hieroglyphs", "Arabic", "Armenian", "Avestan", "Balinese",
@@ -547,12 +547,12 @@ impl Script {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[cfg_attr(feature = "pretty-print", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
-pub(crate) enum CodeBlock {
+pub enum CodeBlock {
     Basic_Latin, Latin_1_Supplement, Latin_Extended_A, Latin_Extended_B, IPA_Extensions,
     Spacing_Modifier_Letters, Combining_Diacritical_Marks, Greek_and_Coptic, Cyrillic,
     Cyrillic_Supplementary, Armenian, Hebrew, Arabic, Syriac, Thaana, Devanagari, Bengali, Gurmukhi,
@@ -578,7 +578,7 @@ pub(crate) enum CodeBlock {
 }
 
 impl CodeBlock {
-    pub(crate) fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "Basic_Latin", "Latin-1_Supplement", "Latin_Extended-A", "Latin_Extended-B",
@@ -615,12 +615,12 @@ impl CodeBlock {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[cfg_attr(feature = "pretty-print", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[rustfmt::skip]
-pub(crate) enum OtherProperties {
+pub enum OtherProperties {
     White_Space, Alphabetic, Noncharacter_Code_Point, Default_Ignorable_Code_Point,
     Logical_Order_Exception, Deprecated, Variation_Selector, Uppercase, Lowercase, Soft_Dotted,
     Case_Ignorable, Changes_When_Lowercased, Changes_When_Uppercased, Changes_When_Titlecased,
@@ -634,7 +634,7 @@ pub(crate) enum OtherProperties {
 }
 
 impl OtherProperties {
-    pub(crate) fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         #[rustfmt::skip]
         static LUT: &[&str] = &[
             "White_Space", "Alphabetic", "Noncharacter_Code_Point", "Default_Ignorable_Code_Point",

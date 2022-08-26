@@ -115,7 +115,7 @@ fn pomsky_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error>
 
     let input = input.trim_start_matches("/*«*/").trim_end_matches("/*»*/");
 
-    match Expr::parse_and_compile(input, Default::default(), CompileOptions { flavor }) {
+    match Expr::parse_and_compile(input, CompileOptions { flavor, ..Default::default() }) {
         Ok((compiled, _warnings)) => Ok(Literal::string(&compiled)),
 
         Err(e) => {

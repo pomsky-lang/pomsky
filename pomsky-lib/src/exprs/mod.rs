@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    compile::CompileState,
+    compile::{CompileResult, CompileState},
     error::{CompileError, ParseError},
-    options::{CompileOptions, ParseOptions},
-    span::Span,
-    warning::Warning,
+    options::CompileOptions,
 };
 
 pub(crate) mod alternation;
@@ -22,23 +20,29 @@ pub(crate) mod rule;
 pub(crate) mod stmt;
 pub(crate) mod var;
 
-pub(crate) use self::{
-    alternation::Alternation,
-    boundary::{Boundary, BoundaryKind},
-    char_class::{CharClass, CharGroup},
-    grapheme::Grapheme,
-    group::{Capture, Group},
-    literal::Literal,
-    lookaround::{Lookaround, LookaroundKind},
-    range::Range,
-    reference::{Reference, ReferenceTarget},
-    repetition::{Quantifier, Repetition, RepetitionKind},
-    rule::Rule,
-    stmt::{BooleanSetting, Let, Stmt, StmtExpr},
-    var::Variable,
-};
-
+use pomsky_syntax::{exprs::*, warning::ParseWarning, Span};
 use repetition::RegexQuantifier;
+
+pub(crate) trait RuleExt<'i> {
+    fn validate(&self, _options: &CompileOptions) -> Result<(), CompileError> {
+        Ok(())
+    }
+
+    fn get_capturing_groups(
+        &self,
+        _count: &mut u32,
+        _map: &'i mut HashMap<String, u32>,
+        _within_variable: bool,
+    ) -> Result<(), CompileError> {
+        Ok(())
+    }
+
+    fn compile<'c>(
+        &'c self,
+        options: CompileOptions,
+        state: &mut CompileState<'c, 'i>,
+    ) -> CompileResult<'i>;
+}
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
 #[derive(Clone)]
@@ -49,17 +53,15 @@ impl<'i> Expr<'i> {
     ///
     /// The parsed `Expr` can be displayed with `Debug` if the `dbg` feature is
     /// enabled.
-    pub fn parse(
-        input: &'i str,
-        options: ParseOptions,
-    ) -> Result<(Self, Vec<Warning>), ParseError> {
-        let (rule, warning) = crate::parse::parse(input, 256)?;
-        rule.validate(&options)?;
+    pub fn parse(input: &'i str) -> Result<(Self, Vec<ParseWarning>), ParseError> {
+        let (rule, warning) = pomsky_syntax::parse(input, 256)?;
         Ok((Expr(rule), warning))
     }
 
     /// Compile a `Expr` that has been parsed, to a regex
     pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
+        self.0.validate(&options)?;
+
         let mut used_names = HashMap::new();
         let mut groups_count = 0;
         self.0.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
@@ -68,7 +70,7 @@ impl<'i> Expr<'i> {
 
         let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, no_span));
         let end = Rule::Boundary(Boundary::new(BoundaryKind::End, no_span));
-        let grapheme = Rule::Grapheme(Grapheme);
+        let grapheme = Rule::Grapheme;
         let codepoint = Rule::CharClass(CharClass::new(CharGroup::CodePoint, no_span));
 
         let builtins = vec![
@@ -88,7 +90,7 @@ impl<'i> Expr<'i> {
             variables: builtins,
             current_vars: Default::default(),
         };
-        let compiled = self.0.comp(options, &mut state)?;
+        let compiled = self.0.compile(options, &mut state)?;
 
         let mut buf = String::new();
         compiled.codegen(&mut buf, options.flavor);
@@ -98,11 +100,10 @@ impl<'i> Expr<'i> {
     /// Parse a string to a `Expr` and compile it to a regex.
     pub fn parse_and_compile(
         input: &'i str,
-        parse_options: ParseOptions,
-        compile_options: CompileOptions,
-    ) -> Result<(String, Vec<Warning>), CompileError> {
-        let (parsed, warnings) = Self::parse(input, parse_options)?;
-        let compiled = parsed.compile(compile_options)?;
+        options: CompileOptions,
+    ) -> Result<(String, Vec<ParseWarning>), CompileError> {
+        let (parsed, warnings) = Self::parse(input)?;
+        let compiled = parsed.compile(options)?;
         Ok((compiled, warnings))
     }
 }

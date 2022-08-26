@@ -643,10 +643,9 @@ dependencies = [
  "arbitrary",
  "atty",
  "miette",
- "nom",
  "once_cell",
+ "pomsky-syntax",
  "regex",
- "strsim",
  "thiserror",
 ]
 
@@ -667,6 +666,16 @@ name = "pomsky-macro"
 version = "0.6.0"
 dependencies = [
  "pomsky",
+]
+
+[[package]]
+name = "pomsky-syntax"
+version = "0.1.0"
+dependencies = [
+ "arbitrary",
+ "nom",
+ "strsim",
+ "thiserror",
 ]
 
 [[package]]

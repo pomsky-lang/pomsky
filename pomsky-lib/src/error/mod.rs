@@ -1,15 +1,10 @@
 //! Contains different kinds of errors emitted by Pomsky.
 
-pub(crate) use compile_error::CompileErrorKind;
-pub(crate) use parse_error::{
-    CharClassError, CharStringError, CodePointError, NumberError, ParseErrorKind, RepetitionError,
-    UnsupportedError,
-};
+pub(crate) use compile_error::{CompileErrorKind, UnsupportedError};
 
 pub use compile_error::{CompileError, Feature};
 pub use diagnostics::{Diagnostic, Severity};
-pub use parse_error::ParseError;
+pub use pomsky_syntax::error::*;
 
 mod compile_error;
 mod diagnostics;
-mod parse_error;

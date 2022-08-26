@@ -8,9 +8,8 @@ use clap::Parser as _;
 use owo_colors::OwoColorize;
 use pomsky::{
     error::{Diagnostic, ParseError, Severity},
-    options::{CompileOptions, ParseOptions},
-    warning::Warning,
-    Expr,
+    options::CompileOptions,
+    Expr, Warning,
 };
 
 mod parse_args;
@@ -73,8 +72,13 @@ pub fn main() {
 }
 
 fn compile(input: &str, args: &Args) {
-    let parse_options = ParseOptions { max_range_size: 12, ..ParseOptions::default() };
-    let (parsed, warnings) = match Expr::parse(input, parse_options) {
+    let options = CompileOptions {
+        flavor: (*args.flavor.as_ref().unwrap_or(&Flavor::Pcre)).into(),
+        max_range_size: 12,
+        ..Default::default()
+    };
+
+    let (parsed, warnings) = match Expr::parse(input) {
         Ok(res) => res,
         Err(err) => {
             print_parse_error(err, input);
@@ -89,18 +93,14 @@ fn compile(input: &str, args: &Args) {
 
     print_warnings(warnings, input);
 
-    let compile_options =
-        CompileOptions { flavor: (*args.flavor.as_ref().unwrap_or(&Flavor::Pcre)).into() };
-    let compiled = match parsed
-        .compile(compile_options)
-        .map_err(|err| Diagnostic::from_compile_error(err, input))
-    {
-        Ok(res) => res,
-        Err(err) => {
-            print_diagnostic(&err);
-            std::process::exit(1);
-        }
-    };
+    let compiled =
+        match parsed.compile(options).map_err(|err| Diagnostic::from_compile_error(err, input)) {
+            Ok(res) => res,
+            Err(err) => {
+                print_diagnostic(&err);
+                std::process::exit(1);
+            }
+        };
 
     if args.no_new_line {
         print!("{compiled}");

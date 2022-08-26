@@ -105,50 +105,22 @@
 use std::borrow::Cow;
 
 use crate::{
-    compile::CompileResult,
-    error::{CompileError, CompileErrorKind, Feature, ParseErrorKind},
+    compile::{CompileResult, CompileState},
+    error::{CompileError, CompileErrorKind, Feature},
     exprs::literal,
     options::{CompileOptions, RegexFlavor},
     regex::{Regex, RegexProperty, RegexShorthand},
-    span::Span,
 };
 
-pub(crate) use char_group::{CharGroup, GroupItem};
-
-use self::{
-    char_group::GroupName,
-    unicode::{Category, OtherProperties},
+use pomsky_syntax::{
+    exprs::{Category, CharClass, CharGroup, GroupItem, GroupName, OtherProperties},
+    Span,
 };
 
-mod ascii;
-pub(crate) mod char_group;
-pub(crate) mod unicode;
+use super::RuleExt;
 
-/// A _character class_. Refer to the [module-level documentation](self) for
-/// details.
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) struct CharClass {
-    negative: bool,
-    inner: CharGroup,
-    pub(crate) span: Span,
-}
-
-impl CharClass {
-    pub(crate) fn new(inner: CharGroup, span: Span) -> Self {
-        CharClass { inner, span, negative: false }
-    }
-
-    /// Makes a positive character class negative and vice versa.
-    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
-        if self.negative {
-            Err(ParseErrorKind::UnallowedDoubleNot)
-        } else {
-            self.negative = !self.negative;
-            Ok(())
-        }
-    }
-
-    pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
+impl<'i> RuleExt<'i> for CharClass {
+    fn compile(&self, options: CompileOptions, _: &mut CompileState<'_, 'i>) -> CompileResult<'i> {
         let span = self.span;
         match &self.inner {
             CharGroup::Dot => {
@@ -404,33 +376,6 @@ fn named_class_to_regex_class_items(
         }
     }
     Ok(())
-}
-
-#[cfg(feature = "dbg")]
-impl core::fmt::Debug for CharClass {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        use std::fmt::Write;
-
-        f.write_str("CharClass(")?;
-
-        if self.negative {
-            f.write_str("not ")?;
-        }
-
-        match &self.inner {
-            CharGroup::Dot => f.write_str(".")?,
-            CharGroup::CodePoint => f.write_str("codepoint")?,
-            CharGroup::Items(items) => {
-                for (i, item) in items.iter().enumerate() {
-                    if i > 0 {
-                        f.write_char(' ')?;
-                    }
-                    item.fmt(f)?;
-                }
-            }
-        }
-        f.write_char(')')
-    }
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]

@@ -16,8 +16,7 @@ use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 ///
 /// Refer to the [`char_class` module](crate::char_class) for more information.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub(crate) enum CharGroup {
+pub enum CharGroup {
     /// `[.]`, the [dot](https://www.regular-expressions.info/dot.html). Matches any code point
     /// except `\n`.
     Dot,
@@ -122,7 +121,7 @@ impl core::fmt::Display for CharGroup {
 
 /// One item in a character class.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum GroupItem {
+pub enum GroupItem {
     /// A Unicode code point. It can be denoted in quotes (e.g. `'a'`) or in
     /// hexadecimal notation (`U+201`).
     ///
@@ -188,7 +187,7 @@ impl core::fmt::Debug for GroupItem {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
-pub(crate) enum GroupName {
+pub enum GroupName {
     Word,
     Digit,
     Space,

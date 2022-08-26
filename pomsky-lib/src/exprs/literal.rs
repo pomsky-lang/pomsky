@@ -1,27 +1,16 @@
-use std::borrow::Cow;
+use pomsky_syntax::exprs::Literal;
 
-use crate::{compile::CompileResult, options::RegexFlavor, regex::Regex, span::Span};
+use crate::{
+    compile::{CompileResult, CompileState},
+    options::{CompileOptions, RegexFlavor},
+    regex::Regex,
+};
 
-#[derive(Clone, PartialEq, Eq)]
-pub(crate) struct Literal<'i> {
-    content: Cow<'i, str>,
-    pub(crate) span: Span,
-}
+use super::RuleExt;
 
-impl<'i> Literal<'i> {
-    pub(crate) fn new(content: Cow<'i, str>, span: Span) -> Self {
-        Literal { content, span }
-    }
-
-    pub(crate) fn compile(&self) -> CompileResult<'i> {
+impl<'i> RuleExt<'i> for Literal<'i> {
+    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
         Ok(Regex::Literal(self.content.clone()))
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl core::fmt::Debug for Literal<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.content.fmt(f)
     }
 }
 

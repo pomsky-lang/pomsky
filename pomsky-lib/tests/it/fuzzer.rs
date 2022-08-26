@@ -41,12 +41,8 @@ pub(crate) fn fuzz_ranges(
 
     let mut start = Instant::now();
     loop {
-        let (regex, _warnings) = Expr::parse_and_compile(
-            &format!("range '{lo}'-'{hi}'"),
-            Default::default(),
-            Default::default(),
-        )
-        .unwrap();
+        let (regex, _warnings) =
+            Expr::parse_and_compile(&format!("range '{lo}'-'{hi}'"), Default::default()).unwrap();
         let regex = match Regex::new(&format!("^({regex})$")) {
             Ok(r) => r,
             Err(error) => {

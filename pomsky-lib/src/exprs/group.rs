@@ -1,40 +1,18 @@
 use std::collections::HashMap;
 
+use pomsky_syntax::exprs::{Capture, Group};
+
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, ParseError},
-    options::{CompileOptions, ParseOptions, RegexFlavor},
+    error::{CompileError, CompileErrorKind},
+    options::{CompileOptions, RegexFlavor},
     regex::Regex,
-    span::Span,
 };
 
-use super::Rule;
+use super::RuleExt;
 
-/// A group, i.e. sequence of rules. A group is either capturing or
-/// non-capturing.
-///
-/// If it is capturing, it must be wrapped in parentheses, and can have a name.
-/// If it is non-capturing, the parentheses can be omitted in same cases.
-#[derive(Clone)]
-pub(crate) struct Group<'i> {
-    parts: Vec<Rule<'i>>,
-    capture: Option<Capture<'i>>,
-    pub(crate) span: Span,
-}
-
-impl<'i> Group<'i> {
-    pub(crate) fn new(parts: Vec<Rule<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
-        Group { parts, capture, span }
-    }
-
-    pub(crate) fn set_capture(&mut self, capture: Capture<'i>) {
-        self.capture = Some(capture);
-    }
-    pub(crate) fn is_capturing(&self) -> bool {
-        self.capture.is_some()
-    }
-
-    pub(crate) fn get_capturing_groups(
+impl<'i> RuleExt<'i> for Group<'i> {
+    fn get_capturing_groups(
         &self,
         count: &mut u32,
         map: &mut HashMap<String, u32>,
@@ -70,7 +48,7 @@ impl<'i> Group<'i> {
         Ok(())
     }
 
-    pub(crate) fn compile<'c>(
+    fn compile<'c>(
         &'c self,
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
@@ -83,7 +61,7 @@ impl<'i> Group<'i> {
             parts: self
                 .parts
                 .iter()
-                .map(|part| part.comp(options, state))
+                .map(|part| part.compile(options, state))
                 .collect::<Result<_, _>>()?,
             capture: match self.capture {
                 Some(Capture { name: Some(name) }) => RegexCapture::NamedCapture(name),
@@ -93,44 +71,11 @@ impl<'i> Group<'i> {
         }))
     }
 
-    pub(crate) fn validate(&self, options: &ParseOptions) -> Result<(), ParseError> {
+    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         for rule in &self.parts {
             rule.validate(options)?;
         }
         Ok(())
-    }
-}
-
-#[cfg(feature = "dbg")]
-impl core::fmt::Debug for Group<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self.capture {
-            Some(Capture { name: Some(name) }) => write!(f, "Group :{name}")?,
-            Some(_) => write!(f, "Group :")?,
-            None => write!(f, "Group")?,
-        }
-        if self.parts.is_empty() {
-            write!(f, "()")
-        } else {
-            let mut tup = f.debug_tuple("");
-            let mut tup = &mut tup;
-            for part in &self.parts {
-                tup = tup.field(part);
-            }
-            tup.finish()
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct Capture<'i> {
-    pub(crate) name: Option<&'i str>,
-}
-
-impl<'i> Capture<'i> {
-    pub(crate) fn new(name: Option<&'i str>) -> Self {
-        Capture { name }
     }
 }
 
