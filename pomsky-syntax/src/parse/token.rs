@@ -86,6 +86,9 @@ pub enum Token {
     /// `hello` (capturing group name)
     Identifier,
 
+    /// `lazy` (reserved name)
+    ReservedName,
+
     // match illegal tokens for which we want to show a better error message
     ErrorMsg(LexErrorMsg),
 
@@ -177,6 +180,7 @@ impl core::fmt::Display for Token {
             Token::CodePoint => "code point",
             Token::Number => "number",
             Token::Identifier => "identifier",
+            Token::ReservedName => "reserved name",
             Token::ErrorMsg(_) | Token::Error => "error",
         })
     }

@@ -70,11 +70,6 @@ impl CharGroup {
             "codepoint" | "cp" | "." if negative => {
                 return Err(CharClassError::Negative);
             }
-            "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable"
-            | "if" | "else" | "recursion" => {
-                // Reserved words. Some are currently unused.
-                return Err(CharClassError::Keyword(name.to_string()));
-            }
 
             "codepoint" => (CharGroup::CodePoint, Some(DeprecationWarning::Codepoint)),
             "cp" => (CharGroup::CodePoint, Some(DeprecationWarning::Cp)),

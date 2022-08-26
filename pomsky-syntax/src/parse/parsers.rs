@@ -418,7 +418,7 @@ pub(super) fn parse_char_class<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, 
         let (mut input, ranges) = many0(alt((
             parse_chars_or_range,
             try_map_spanned(
-                pair(opt(Token::Not), alt((Token::Identifier, Token::Dot))),
+                pair(opt(Token::Not), alt((parse_ident, Token::Dot))),
                 |(not, (s, span))| {
                     let (char_group, dw) = CharGroup::try_from_group_name(s, not.is_some())
                         .map_err(|e| ParseErrorKind::CharClass(e).at(span))?;
@@ -579,17 +579,14 @@ pub(super) fn parse_range<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<
 }
 
 pub(super) fn parse_ident<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, (&'i str, Span)> {
-    try_map(
+    alt((
+        try_map(
+            Token::ReservedName,
+            |(name, _)| Err(ParseErrorKind::UnexpectedKeyword(name.to_string())),
+            nom::Err::Failure,
+        ),
         Token::Identifier,
-        |(name, span)| match name {
-            "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable"
-            | "if" | "else" | "recursion" => {
-                Err(ParseErrorKind::UnexpectedKeyword(name.to_string()))
-            }
-            _ => Ok((name, span)),
-        },
-        nom::Err::Failure,
-    )(input)
+    ))(input)
 }
 
 pub(super) fn parse_variable<'i, 'b>(input: Input<'i, 'b>) -> PResult<'i, 'b, Rule<'i>> {

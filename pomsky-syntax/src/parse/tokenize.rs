@@ -35,6 +35,13 @@ macro_rules! consume_chain {
     }
 }
 
+macro_rules! reserved_word_pattern {
+    {} => (
+        "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable" |
+        "if" | "else" | "recursion"
+    );
+}
+
 pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
     let mut result = vec![];
     let mut offset = 0;
@@ -100,7 +107,10 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if let Some((len, _)) = (
                         CharIs(|c| c.is_alphabetic() || c == '_'),
                         Many0(CharIs(|c| c.is_alphanumeric() || c == '_'))
-                    ).is_start(input) => (len, Token::Identifier);
+                    ).is_start(input) => match &input[..len] {
+                        reserved_word_pattern!() => (len, Token::ReservedName),
+                        _ => (len, Token::Identifier),
+                    };
 
                     if let Some((len, err)) = parse_special_group(input) => (len, Token::ErrorMsg(err));
 
