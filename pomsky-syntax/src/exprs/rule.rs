@@ -74,24 +74,31 @@ impl<'i> Rule<'i> {
             Rule::Lookaround(l) => l.negate(),
         }
     }
+
+    #[cfg(feature = "dbg")]
+    pub(crate) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
+        match self {
+            Rule::Literal(l) => l.pretty_print(buf),
+            Rule::CharClass(c) => c.pretty_print(buf),
+            Rule::Group(g) => g.pretty_print(buf, needs_parens),
+            Rule::Alternation(a) => a.pretty_print(buf, needs_parens),
+            Rule::Repetition(r) => r.pretty_print(buf),
+            Rule::Boundary(b) => b.pretty_print(buf),
+            Rule::Lookaround(l) => l.pretty_print(buf, needs_parens),
+            Rule::Variable(v) => v.pretty_print(buf),
+            Rule::Reference(r) => r.pretty_print(buf),
+            Rule::Range(r) => r.pretty_print(buf),
+            Rule::StmtExpr(s) => s.pretty_print(buf),
+            Rule::Grapheme => buf.push_str("Grapheme"),
+        }
+    }
 }
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Rule<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Rule::Literal(arg0) => arg0.fmt(f),
-            Rule::CharClass(arg0) => arg0.fmt(f),
-            Rule::Group(arg0) => arg0.fmt(f),
-            Rule::Alternation(arg0) => arg0.fmt(f),
-            Rule::Repetition(arg0) => arg0.fmt(f),
-            Rule::Boundary(arg0) => arg0.fmt(f),
-            Rule::Lookaround(arg0) => arg0.fmt(f),
-            Rule::Variable(arg0) => arg0.fmt(f),
-            Rule::Reference(arg0) => arg0.fmt(f),
-            Rule::Range(arg0) => arg0.fmt(f),
-            Rule::StmtExpr(arg0) => arg0.fmt(f),
-            Rule::Grapheme => f.write_str("Grapheme"),
-        }
+#[cfg(feature = "dbg")]
+impl core::fmt::Display for Rule<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut buf = crate::PrettyPrinter::new();
+        self.pretty_print(&mut buf, false);
+        f.write_str(&buf.finish())
     }
 }

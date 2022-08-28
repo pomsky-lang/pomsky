@@ -42,32 +42,20 @@ impl<'i> StmtExpr<'i> {
     pub fn new(stmt: Stmt<'i>, rule: Rule<'i>, span: Span) -> Self {
         Self { stmt, rule, span }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl std::fmt::Debug for StmtExpr<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        struct DisplayDebug<T>(T);
-        impl<T: std::fmt::Display> std::fmt::Debug for DisplayDebug<T> {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", self.0)
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        match &self.stmt {
+            Stmt::Enable(BooleanSetting::Lazy) => buf.write("enable lazy;\n"),
+            Stmt::Disable(BooleanSetting::Lazy) => buf.write("disable lazy;\n"),
+            Stmt::Let(r#let) => {
+                buf.push_str("let ");
+                buf.write(r#let.name);
+                buf.push_str(" = ");
+                r#let.rule.pretty_print(buf, true);
+                buf.write(";\n");
+                self.rule.pretty_print(buf, false);
             }
         }
-
-        let mut x = f.debug_tuple("StmtExpr");
-        let mut x = &mut x;
-        match &self.stmt {
-            Stmt::Enable(BooleanSetting::Lazy) => x = x.field(&DisplayDebug("enable lazy")),
-            Stmt::Disable(BooleanSetting::Lazy) => x = x.field(&DisplayDebug("disable lazy")),
-            Stmt::Let(r#let) => x = x.field(r#let),
-        }
-        x.field(&self.rule).finish()
-    }
-}
-
-#[cfg(feature = "pretty-print")]
-impl std::fmt::Debug for Let<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "let {} = {:#?}", self.name, self.rule)
     }
 }

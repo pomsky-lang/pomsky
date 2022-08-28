@@ -12,11 +12,9 @@ impl<'i> Literal<'i> {
     pub fn new(content: Cow<'i, str>, span: Span) -> Self {
         Literal { content, span }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Literal<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.content.fmt(f)
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        buf.write_debug(&self.content);
     }
 }

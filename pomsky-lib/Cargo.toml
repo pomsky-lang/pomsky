@@ -17,7 +17,7 @@ exclude = ["tests/**", "fuzz/**", "afl-fuzz/**"]
 
 [features]
 default = []
-dbg = ["pomsky-syntax/pretty-print"]
+dbg = ["pomsky-syntax/dbg"]
 suggestions = ["pomsky-syntax/suggestions"]
 
 [dependencies]

@@ -6,14 +6,14 @@ use pomsky::{
     Expr,
 };
 
-const STRINGS: &str = include_str!("./files/strings.rulex");
-const PROPERTIES: &str = include_str!("./files/properties.rulex");
-const GROUPS: &str = include_str!("./files/groups.rulex");
-const CAPT_GROUPS: &str = include_str!("./files/capt_groups.rulex");
-const CLASSES: &str = include_str!("./files/classes.rulex");
-const REPETITIONS: &str = include_str!("./files/repetitions.rulex");
-const SPECIAL: &str = include_str!("./files/special.rulex");
-const MODES: &str = include_str!("./files/modes.rulex");
+const STRINGS: &str = include_str!("./files/strings.pom");
+const PROPERTIES: &str = include_str!("./files/properties.pom");
+const GROUPS: &str = include_str!("./files/groups.pom");
+const CAPT_GROUPS: &str = include_str!("./files/capt_groups.pom");
+const CLASSES: &str = include_str!("./files/classes.pom");
+const REPETITIONS: &str = include_str!("./files/repetitions.pom");
+const SPECIAL: &str = include_str!("./files/special.pom");
+const MODES: &str = include_str!("./files/modes.pom");
 
 static SAMPLES: &[(&str, &str)] = &[
     ("strings", STRINGS),
@@ -26,7 +26,7 @@ static SAMPLES: &[(&str, &str)] = &[
     ("modes", MODES),
 ];
 
-const VERSION_RULEX: &str = include_str!("./files/version.rulex");
+const VERSION_RULEX: &str = include_str!("./files/version.pom");
 const VERSION_MELODY: &str = include_str!("./files/version.melody");
 
 pub fn parse(c: &mut Criterion) {

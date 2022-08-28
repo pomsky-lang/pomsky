@@ -111,6 +111,6 @@ impl<'i> Expr<'i> {
 #[cfg(feature = "dbg")]
 impl core::fmt::Debug for Expr<'_> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.0.fmt(f)
+        core::fmt::Display::fmt(&self.0, f)
     }
 }

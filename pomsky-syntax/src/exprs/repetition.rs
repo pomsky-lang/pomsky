@@ -19,31 +19,42 @@ impl<'i> Repetition<'i> {
     ) -> Self {
         Repetition { rule, kind, quantifier, span }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Repetition<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("Repetition").field(&self.rule).finish()?;
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        self.rule.pretty_print(buf, true);
         match self.kind {
             RepetitionKind { lower_bound, upper_bound: None } => {
-                write!(f, "{{{lower_bound}, inf}}")
+                buf.push('{');
+                buf.write_fmt(lower_bound);
+                buf.push(',');
+                buf.push('}');
+            }
+            RepetitionKind { lower_bound, upper_bound: Some(upper_bound) }
+                if lower_bound == upper_bound =>
+            {
+                buf.push('{');
+                buf.write_fmt(lower_bound);
+                buf.push('}');
             }
             RepetitionKind { lower_bound, upper_bound: Some(upper_bound) } => {
-                write!(f, "{{{lower_bound}, {upper_bound}}}")
+                buf.push('{');
+                buf.write_fmt(lower_bound);
+                buf.push(',');
+                buf.write_fmt(upper_bound);
+                buf.push('}');
             }
-        }?;
+        }
         match self.quantifier {
-            Quantifier::Greedy => write!(f, " greedy")?,
-            Quantifier::Lazy => write!(f, " lazy")?,
+            Quantifier::Greedy => buf.push_str(" greedy"),
+            Quantifier::Lazy => buf.push_str(" lazy"),
             Quantifier::Default => {}
         }
-        Ok(())
     }
 }
 
 #[derive(Clone, PartialEq, Eq, Copy)]
-#[cfg_attr(feature = "pretty-print", derive(Debug))]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub enum Quantifier {
     Greedy,
     Lazy,
@@ -58,7 +69,7 @@ pub enum Quantifier {
 ///  * `'x'+` is equivalent to `'x'{1,}`
 ///  * `'x'*` is equivalent to `'x'{0,}`
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "pretty-print", derive(Debug))]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub struct RepetitionKind {
     /// The lower bound, e.g. `{4,}`
     pub lower_bound: u32,

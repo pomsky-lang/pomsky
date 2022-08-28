@@ -1,12 +1,3 @@
-use nom::Parser;
-
-use crate::{
-    error::{ParseError, ParseErrorKind},
-    span::Span,
-};
-
-use super::input::Input;
-
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
 pub enum Token {
@@ -66,7 +57,7 @@ pub enum Token {
     LookBehind,
 
     /// `::` (back reference)
-    Backref,
+    DoubleColon,
 
     /// `;` (delimits modifiers)
     Semicolon,
@@ -168,7 +159,7 @@ impl core::fmt::Display for Token {
             Token::Comma => "`,`",
             Token::LookAhead => "`>>`",
             Token::LookBehind => "`<<`",
-            Token::Backref => "`::`",
+            Token::DoubleColon => "`::`",
             Token::Not => "`!`",
             Token::OpenBracket => "`[`",
             Token::Dash => "`-`",
@@ -183,37 +174,5 @@ impl core::fmt::Display for Token {
             Token::ReservedName => "reserved name",
             Token::ErrorMsg(_) | Token::Error => "error",
         })
-    }
-}
-
-impl<'i, 'b> Parser<Input<'i, 'b>, (&'i str, Span), ParseError> for Token {
-    fn parse(
-        &mut self,
-        mut input: Input<'i, 'b>,
-    ) -> nom::IResult<Input<'i, 'b>, (&'i str, Span), ParseError> {
-        match input.peek() {
-            Some((t, s)) if t == *self => {
-                let span = input.span();
-                let _ = input.next();
-                Ok((input, (s, span)))
-            }
-            _ => Err(nom::Err::Error(ParseErrorKind::ExpectedToken(*self).at(input.span()))),
-        }
-    }
-}
-
-impl<'i, 'b> Parser<Input<'i, 'b>, (Token, Span), ParseError> for &'i str {
-    fn parse(
-        &mut self,
-        mut input: Input<'i, 'b>,
-    ) -> nom::IResult<Input<'i, 'b>, (Token, Span), ParseError> {
-        match input.peek() {
-            Some((t, s)) if s == *self => {
-                let span = input.span();
-                let _ = input.next();
-                Ok((input, (t, span)))
-            }
-            _ => Err(nom::Err::Error(ParseErrorKind::Expected("word").at(input.span()))),
-        }
     }
 }

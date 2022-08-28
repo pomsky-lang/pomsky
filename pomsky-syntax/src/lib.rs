@@ -13,10 +13,18 @@ mod parse;
 mod span;
 mod util;
 
+#[cfg(feature = "dbg")]
+mod pretty_print;
+
 pub mod error;
 pub mod exprs;
 pub mod warning;
 
 pub use parse::parse;
 pub use span::Span;
+
+#[cfg(feature = "suggestions")]
 pub use util::find_suggestion;
+
+#[cfg(feature = "dbg")]
+use pretty_print::PrettyPrinter;

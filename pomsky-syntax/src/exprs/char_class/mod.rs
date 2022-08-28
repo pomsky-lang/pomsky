@@ -128,37 +128,33 @@ impl CharClass {
     /// Makes a positive character class negative and vice versa.
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
         if self.negative {
-            Err(ParseErrorKind::UnallowedDoubleNot)
+            Err(ParseErrorKind::UnallowedMultiNot(2))
         } else {
             self.negative = !self.negative;
             Ok(())
         }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for CharClass {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        use std::fmt::Write;
-
-        f.write_str("CharClass(")?;
-
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         if self.negative {
-            f.write_str("not ")?;
+            buf.push_str("![");
+        } else {
+            buf.push('[');
         }
 
         match &self.inner {
-            CharGroup::Dot => f.write_str(".")?,
-            CharGroup::CodePoint => f.write_str("codepoint")?,
+            CharGroup::Dot => buf.push('.'),
+            CharGroup::CodePoint => buf.push_str("codepoint"),
             CharGroup::Items(items) => {
                 for (i, item) in items.iter().enumerate() {
                     if i > 0 {
-                        f.write_char(' ')?;
+                        buf.push(' ');
                     }
-                    item.fmt(f)?;
+                    item.pretty_print(buf);
                 }
             }
         }
-        f.write_char(')')
+        buf.push(']');
     }
 }

@@ -2,4 +2,4 @@
 let x = ::1;
 -----
 ERROR: References within `let` statements are currently not supported
-SPAN: 10..11
+SPAN: 8..11

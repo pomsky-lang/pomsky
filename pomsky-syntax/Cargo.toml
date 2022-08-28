@@ -16,11 +16,10 @@ categories = ["text-processing", "parser-implementations"]
 
 [features]
 default = []
-pretty-print = []
+dbg = []
 suggestions = ["strsim"]
 
 [dependencies]
-nom = "7.1.1"
 thiserror = "1.0.32"
 strsim = { version = "0.10.0", optional = true }
 

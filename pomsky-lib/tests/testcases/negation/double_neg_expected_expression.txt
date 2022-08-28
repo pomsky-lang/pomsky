@@ -2,4 +2,4 @@
 !!
 -----
 ERROR: Expected expression
-SPAN: 1..2
+SPAN: 2..2

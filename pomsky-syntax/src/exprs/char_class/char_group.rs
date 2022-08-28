@@ -6,8 +6,6 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use std::fmt::Write;
-
 use crate::{error::CharClassError, warning::DeprecationWarning};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
@@ -15,7 +13,7 @@ use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 /// The contents of a [`CharClass`](crate::char_class::CharClass).
 ///
 /// Refer to the [`char_class` module](crate::char_class) for more information.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum CharGroup {
     /// `[.]`, the [dot](https://www.regular-expressions.info/dot.html). Matches any code point
     /// except `\n`.
@@ -104,16 +102,6 @@ impl CharGroup {
     }
 }
 
-impl core::fmt::Display for CharGroup {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CharGroup::Dot => f.write_str("`.`"),
-            CharGroup::CodePoint => f.write_str("`codepoint`"),
-            CharGroup::Items(i) => core::fmt::Debug::fmt(i, f),
-        }
-    }
-}
-
 /// One item in a character class.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum GroupItem {
@@ -139,17 +127,31 @@ impl GroupItem {
     pub(crate) fn range_unchecked(first: char, last: char) -> Self {
         GroupItem::Range { first, last }
     }
-}
 
-// required by Display impl of CharGroup
-impl core::fmt::Debug for GroupItem {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[cfg(feature = "dbg")]
+    pub(crate) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        fn print_char(c: char, buf: &mut crate::PrettyPrinter) {
+            match c {
+                '\n' => buf.push('n'),
+                '\r' => buf.push('r'),
+                '\t' => buf.push('t'),
+                '\u{07}' => buf.push('a'),
+                '\u{1b}' => buf.push('e'),
+                '\u{0c}' => buf.push('f'),
+                _ => buf.pretty_print_char(c),
+            }
+        }
+
         match *self {
-            Self::Char(c) => c.fmt(f),
-            Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
+            Self::Char(c) => print_char(c, buf),
+            Self::Range { first, last } => {
+                print_char(first, buf);
+                buf.push('-');
+                print_char(last, buf);
+            }
             Self::Named { name, negative } => {
                 if negative {
-                    f.write_char('!')?;
+                    buf.push('!');
                 }
                 let name = match name {
                     GroupName::Word => "word",
@@ -157,24 +159,12 @@ impl core::fmt::Debug for GroupItem {
                     GroupName::Space => "space",
                     GroupName::HorizSpace => "horiz_space",
                     GroupName::VertSpace => "vert_space",
-                    GroupName::Category(c) => {
-                        f.write_str("category=")?;
-                        c.as_str()
-                    }
-                    GroupName::Script(s) => {
-                        f.write_str("script=")?;
-                        s.as_str()
-                    }
-                    GroupName::CodeBlock(b) => {
-                        f.write_str("block=")?;
-                        b.as_str()
-                    }
-                    GroupName::OtherProperties(b) => {
-                        f.write_str("prop=")?;
-                        b.as_str()
-                    }
+                    GroupName::Category(c) => c.as_str(),
+                    GroupName::Script(s) => s.as_str(),
+                    GroupName::CodeBlock(b) => b.as_str(),
+                    GroupName::OtherProperties(b) => b.as_str(),
                 };
-                f.write_str(name)
+                buf.push_str(name);
             }
         }
     }

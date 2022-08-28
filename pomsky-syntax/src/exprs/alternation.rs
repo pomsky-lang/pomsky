@@ -42,16 +42,29 @@ impl<'i> Alternation<'i> {
             })
             .unwrap_or_else(|| Rule::Literal(Literal::new(Cow::Borrowed(""), Span::default())))
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Alternation<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut d = f.debug_tuple("Alternation");
-        let mut d = &mut d;
-        for rule in &self.rules {
-            d = d.field(rule);
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
+        if needs_parens {
+            buf.start_indentation("(");
         }
-        d.finish()
+
+        let len = self.rules.len();
+        for (i, rule) in self.rules.iter().enumerate() {
+            let needs_parens =
+                matches!(rule, Rule::Alternation(_) | Rule::Lookaround(_) | Rule::StmtExpr(_));
+
+            buf.push_str("| ");
+            buf.increase_indentation(2);
+            rule.pretty_print(buf, needs_parens);
+            buf.decrease_indentation(2);
+            if i < len - 1 {
+                buf.write("\n");
+            }
+        }
+
+        if needs_parens {
+            buf.end_indentation(")");
+        }
     }
 }

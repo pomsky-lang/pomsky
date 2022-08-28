@@ -1,5 +1,5 @@
 #! expect=error
 let x = |;
 -----
-ERROR: A leading pipe must be followed by an expression
+ERROR: A pipe must be followed by an expression
 SPAN: 8..9

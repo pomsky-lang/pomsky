@@ -1,6 +1,6 @@
 #! expect=error
 !!['test']
 -----
-ERROR: An expression can't be negated twice
-HELP: Remove 2 exclamation marks
-SPAN: 0..1
+ERROR: An expression can't be negated more than once
+HELP: The number of exclamation marks is even, so you can remove all of them
+SPAN: 0..2

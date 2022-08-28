@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    parse::{Input, LexErrorMsg, Token},
+    parse::{LexErrorMsg, Token},
     span::Span,
 };
 
@@ -24,25 +24,6 @@ impl core::fmt::Display for ParseError {
         } else {
             self.kind.fmt(f)
         }
-    }
-}
-
-impl From<nom::Err<ParseError>> for ParseError {
-    fn from(e: nom::Err<ParseError>) -> Self {
-        match e {
-            nom::Err::Incomplete(_) => ParseErrorKind::Incomplete.at(Span::empty()),
-            nom::Err::Error(e) | nom::Err::Failure(e) => e,
-        }
-    }
-}
-
-impl<'i, 'b> nom::error::ParseError<Input<'i, 'b>> for ParseError {
-    fn from_error_kind(i: Input<'i, 'b>, kind: nom::error::ErrorKind) -> Self {
-        ParseErrorKind::Nom(kind).at(i.span())
-    }
-
-    fn append(_: Input<'i, 'b>, _: nom::error::ErrorKind, other: Self) -> Self {
-        other
     }
 }
 
@@ -70,15 +51,16 @@ pub enum ParseErrorKind {
     LeftoverTokens,
     #[error("Expected {}", .0)]
     ExpectedToken(Token),
+    // TODO: Check if this is needed
     #[error("Expected code point or character")]
     ExpectedCodePointOrChar,
     #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
     #[error("This expression can't be negated")]
     UnallowedNot,
-    #[error("An expression can't be negated twice")]
-    UnallowedDoubleNot,
-    #[error("A leading pipe must be followed by an expression")]
+    #[error("An expression can't be negated more than once")]
+    UnallowedMultiNot(usize),
+    #[error("A pipe must be followed by an expression")]
     LonePipe,
     #[error("A variable with the same name already exists in this scope")]
     LetBindingExists,
@@ -97,11 +79,6 @@ pub enum ParseErrorKind {
 
     #[error("Recursion limit reached")]
     RecursionLimit,
-
-    #[error("Unknown error: {:?}", .0)]
-    Nom(nom::error::ErrorKind),
-    #[error("Incomplete parse")]
-    Incomplete,
 }
 
 impl ParseErrorKind {
@@ -230,9 +207,9 @@ pub enum RepetitionError {
 
     /// Question mark after a repetition, e.g. `x{3}?`
     #[error("Unexpected `?` following a repetition")]
-    QuestionMarkAfterRepetition,
+    QmSuffix,
 
     /// Plus after a repetition, e.g. `x{3}+`
     #[error("Unexpected `+` following a repetition")]
-    PlusAfterRepetition,
+    PlusSuffix,
 }

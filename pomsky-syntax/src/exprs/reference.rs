@@ -22,15 +22,17 @@ impl<'i> Reference<'i> {
     pub(crate) fn new(target: ReferenceTarget<'i>, span: Span) -> Self {
         Reference { target, span }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl std::fmt::Debug for Reference<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        buf.push_str("::");
         match self.target {
-            ReferenceTarget::Named(n) => write!(f, "::{}", n),
-            ReferenceTarget::Number(i) => write!(f, "::{}", i),
-            ReferenceTarget::Relative(o) => write!(f, "::{}{}", if o < 0 { '-' } else { '+' }, o),
+            ReferenceTarget::Named(n) => buf.write(n),
+            ReferenceTarget::Number(i) => buf.write_fmt(i),
+            ReferenceTarget::Relative(o) => {
+                buf.push(if o < 0 { '-' } else { '+' });
+                buf.write_fmt(o);
+            }
         }
     }
 }

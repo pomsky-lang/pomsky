@@ -64,7 +64,7 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if input.starts_with("%>") => (2, Token::BEnd);
                     if input.starts_with(">>") => (2, Token::LookAhead);
                     if input.starts_with("<<") => (2, Token::LookBehind);
-                    if input.starts_with("::") => (2, Token::Backref);
+                    if input.starts_with("::") => (2, Token::DoubleColon);
 
                     if c == '^' => (1, Token::Caret);
                     if c == '$' => (1, Token::Dollar);
@@ -154,22 +154,22 @@ fn parse_backslash(input: &str) -> Option<(usize, LexErrorMsg)> {
 
     let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '+' | '_')));
 
-    let after_gk: [&dyn MicroRegex<Context = _>; 4] = [
+    let after_gk: &[&dyn MicroRegex<Context = _>] = &[
         &('<', ident, '>'),
         &('{', ident, '}'),
         &('\'', ident, '\''),
         &(&["-", "+", ""][..], CharIs(|c| c.is_ascii_digit())),
     ];
 
-    let after_p: [&dyn MicroRegex<Context = _>; 3] =
-        [&CharIs(|c| c.is_ascii_alphanumeric()), &('{', ident, '}'), &("{^", ident, '}')];
+    let after_p: &[&dyn MicroRegex<Context = _>] =
+        &[&CharIs(|c| c.is_ascii_alphanumeric()), &('{', ident, '}'), &("{^", ident, '}')];
 
     let after_backslash: [&dyn MicroRegex<Context = _>; 6] = [
         &(&["u{", "x{"][..], Many1(hex), '}').ctx(LexErrorMsg::BackslashUnicode),
         &('u', hex, hex, hex, hex).ctx(LexErrorMsg::BackslashU4),
         &('x', hex, hex).ctx(LexErrorMsg::BackslashX2),
-        &(&['k', 'g'][..], &after_gk[..]).ctx(LexErrorMsg::BackslashGK),
-        &(&['p', 'P'][..], &after_p[..]).ctx(LexErrorMsg::BackslashProperty),
+        &(&['k', 'g'][..], after_gk).ctx(LexErrorMsg::BackslashGK),
+        &(&['p', 'P'][..], after_p).ctx(LexErrorMsg::BackslashProperty),
         &CharIs(|_| true).ctx(LexErrorMsg::Backslash),
     ];
 
@@ -179,7 +179,7 @@ fn parse_backslash(input: &str) -> Option<(usize, LexErrorMsg)> {
 fn parse_special_group(input: &str) -> Option<(usize, LexErrorMsg)> {
     let ident = Many1(CharIs(|c| c.is_ascii_alphanumeric() || c == '-' || c == '+'));
 
-    let after_open: [&dyn MicroRegex<Context = _>; 14] = [
+    let after_open: &[&dyn MicroRegex<Context = _>] = &[
         &':'.ctx(LexErrorMsg::GroupNonCapturing),
         &'='.ctx(LexErrorMsg::GroupLookahead),
         &'!'.ctx(LexErrorMsg::GroupLookaheadNeg),
@@ -196,5 +196,5 @@ fn parse_special_group(input: &str) -> Option<(usize, LexErrorMsg)> {
         &"".ctx(LexErrorMsg::GroupOther),
     ];
 
-    Capture(("(?", &after_open[..])).is_start(input).map(|(len, (_, err))| (len, err))
+    Capture(("(?", after_open)).is_start(input).map(|(len, (_, err))| (len, err))
 }

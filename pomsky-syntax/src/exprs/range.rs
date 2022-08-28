@@ -12,11 +12,9 @@ impl Range {
     pub(crate) fn new(start: Vec<u8>, end: Vec<u8>, radix: u8, span: Span) -> Self {
         Range { start, end, radix, span }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl std::fmt::Debug for Range {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         fn hex(n: u8) -> char {
             match n {
                 0..=9 => (n + b'0') as char,
@@ -24,12 +22,10 @@ impl std::fmt::Debug for Range {
             }
         }
 
-        write!(
-            f,
-            "Range (base {}): {}-{}",
-            self.radix,
-            self.start.iter().map(|&n| hex(n)).collect::<String>(),
-            self.end.iter().map(|&n| hex(n)).collect::<String>(),
-        )
+        buf.push_str("range '");
+        buf.extend(self.start.iter().map(|&n| hex(n)));
+        buf.push_str("'-'");
+        buf.extend(self.end.iter().map(|&n| hex(n)));
+        buf.push('\'');
     }
 }

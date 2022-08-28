@@ -28,29 +28,27 @@ impl Boundary {
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
         match self.kind {
             BoundaryKind::Start | BoundaryKind::End => Err(ParseErrorKind::UnallowedNot),
-            BoundaryKind::NotWord => Err(ParseErrorKind::UnallowedDoubleNot),
+            BoundaryKind::NotWord => Err(ParseErrorKind::UnallowedMultiNot(2)),
             BoundaryKind::Word => {
                 self.kind = BoundaryKind::NotWord;
                 Ok(())
             }
         }
     }
-}
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Boundary {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match self.kind {
-            BoundaryKind::Start => write!(f, "Start"),
-            BoundaryKind::Word => write!(f, "%"),
-            BoundaryKind::NotWord => write!(f, "!%"),
-            BoundaryKind::End => write!(f, "End"),
+            BoundaryKind::Start => buf.push('^'),
+            BoundaryKind::Word => buf.push('%'),
+            BoundaryKind::NotWord => buf.push_str("!%"),
+            BoundaryKind::End => buf.push('$'),
         }
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "pretty-print", derive(Debug))]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub enum BoundaryKind {
     /// `Start`, the start of the string (or start of line in single-line mode)
     Start,

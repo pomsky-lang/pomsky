@@ -9,22 +9,8 @@ pub struct Lookaround<'i> {
     pub span: Span,
 }
 
-#[cfg(feature = "pretty-print")]
-impl core::fmt::Debug for Lookaround<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("Lookaround ")?;
-        f.write_str(match self.kind {
-            LookaroundKind::Ahead => ">> ",
-            LookaroundKind::Behind => "<< ",
-            LookaroundKind::AheadNegative => "!>> ",
-            LookaroundKind::BehindNegative => "!<< ",
-        })?;
-        self.rule.fmt(f)
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "pretty-print", derive(Debug))]
+#[cfg_attr(feature = "dbg", derive(Debug))]
 pub enum LookaroundKind {
     Ahead,
     Behind,
@@ -40,7 +26,7 @@ impl<'i> Lookaround<'i> {
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
         match self.kind {
             LookaroundKind::AheadNegative | LookaroundKind::BehindNegative => {
-                Err(ParseErrorKind::UnallowedDoubleNot)
+                Err(ParseErrorKind::UnallowedMultiNot(2))
             }
             LookaroundKind::Ahead => {
                 self.kind = LookaroundKind::AheadNegative;
@@ -50,6 +36,29 @@ impl<'i> Lookaround<'i> {
                 self.kind = LookaroundKind::BehindNegative;
                 Ok(())
             }
+        }
+    }
+
+    #[cfg(feature = "dbg")]
+    pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
+        let s = match self.kind {
+            LookaroundKind::Ahead => ">>",
+            LookaroundKind::Behind => "<<",
+            LookaroundKind::AheadNegative => "!>>",
+            LookaroundKind::BehindNegative => "!<<",
+        };
+        if needs_parens {
+            buf.push('(');
+            buf.start_indentation(s);
+        } else {
+            buf.push_str(s);
+            buf.push(' ');
+        }
+
+        self.rule.pretty_print(buf, false);
+
+        if needs_parens {
+            buf.end_indentation(")");
         }
     }
 }

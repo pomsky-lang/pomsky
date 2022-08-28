@@ -124,14 +124,19 @@ impl Diagnostic {
                 )
             }
             ParseErrorKind::KeywordAfterLet(_) => Some("Use a different variable name".into()),
-            ParseErrorKind::UnallowedDoubleNot => Some("Remove 2 exclamation marks".into()),
+            ParseErrorKind::UnallowedMultiNot(n) => Some(if n % 2 == 0 {
+                "The number of exclamation marks is even, so you can remove all of them".into()
+            } else {
+                "The number of exclamation marks is odd, so you can remove all of them but one"
+                    .into()
+            }),
             ParseErrorKind::LetBindingExists => Some("Use a different name".into()),
-            ParseErrorKind::Repetition(RepetitionError::QuestionMarkAfterRepetition) => Some(
+            ParseErrorKind::Repetition(RepetitionError::QmSuffix) => Some(
                 "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
                 If this is intentional, consider adding parentheses around the inner repetition."
                     .into(),
             ),
-            ParseErrorKind::Repetition(RepetitionError::PlusAfterRepetition) => {
+            ParseErrorKind::Repetition(RepetitionError::PlusSuffix) => {
                 Some("Add parentheses around the inner repetition.".into())
             }
             ParseErrorKind::InvalidEscapeInStringAt(offset) => {
