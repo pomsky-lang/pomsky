@@ -15,17 +15,13 @@ repository = "https://github.com/rulex-rs/pomsky"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook", "wee_alloc"]
+default = ["console_error_panic_hook"]
 suggestions = ["pomsky/suggestions"]
 
 [dependencies]
 wasm-bindgen = "0.2.82"
 
 console_error_panic_hook = { version = "0.1.7", optional = true }
-
-# `wee_alloc` is a tiny allocator for wasm.
-# Unfortunately, `wee_alloc` requires nightly Rust when targeting wasm for now.
-wee_alloc = { version = "0.4.5", optional = true }
 
 pomsky = { version = "0.6.0", features = ["miette"] }
 

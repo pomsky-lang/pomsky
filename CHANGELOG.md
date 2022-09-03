@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `atomic ()` groups, supported in all flavors except Python, Rust and JavaScript.
+  Atomic groups discard backtracking information to optimize match performance
+  ([more information](https://www.regular-expressions.info/atomic.html)).
+
+- The pomsky library is now published as a WASM module to npm! You can install it with
+
+  ```sh
+  $ npm install pomsky-wasm  # yarn add pomsky-wasm
+  ```
+
+  How to use it is described [here](https://pomsky-lang.org/docs/get-started/quick-start/#node-module).
+
+### Changed
+
+- The parser was rewritten and is now much faster with fewer dependencies. In my benchmarks,
+  it is 3 to 5 times faster than the previous parser.
+
+- The parser was moved to the `pomsky-syntax` crate. You can now directly use it in Rust programs,
+  without pulling in the whole compiler.
+
+- The limit for the number of repetitions after an expression has been removed, although the
+  limitation was almost impossible to run into in real code.
+
+### Removed
+
+- The `<%`, `%>`, `[cp]` and `[codepoint]` syntax has been removed. Previously it was deprecated
+  and issued a warning.
+
+### Fixed
+
+- When compiling the library crate with `miette` support, the `fancy` feature is now enabled
+  by default to fix a compilation error.
+
+- A repeated boundary or anchor is now correctly wrapped in parentheses.
+
 ## [0.6.0] - 2022-08-03
 
 ### Added

@@ -5,9 +5,9 @@ export class PomskyDiagnostic {
    * @param {[number, number]} range
    */
   constructor(message, help, range) {
-    this.message = message;
-    this.help = help;
-    this.range = [range[0], range[1]];
+    this.message = message
+    this.help = help
+    this.range = [range[0], range[1]]
   }
 }
 
@@ -17,8 +17,8 @@ export class PomskyError extends Error {
    * @param {PomskyDiagnostic[]} diagnostics
    */
   constructor(message, diagnostics) {
-    super(message);
-    this.diagnostics = diagnostics;
+    super(message)
+    this.diagnostics = diagnostics
   }
 }
 
@@ -28,7 +28,7 @@ export class PomskyResult {
    * @param {PomskyDiagnostic[]} warnings
    */
   constructor(output, warnings) {
-    this.output = output;
-    this.warnings = warnings;
+    this.output = output
+    this.warnings = warnings
   }
 }
