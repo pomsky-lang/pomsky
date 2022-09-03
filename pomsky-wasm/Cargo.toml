@@ -25,7 +25,7 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 
 pomsky = { version = "0.6.0", features = ["miette"] }
 
-miette = { version = "4.7.1", features = ["fancy"] }
+miette = { version = "5.3.0", features = ["fancy"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.32"
