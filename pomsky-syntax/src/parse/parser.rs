@@ -415,19 +415,7 @@ impl<'i> Parser<'i> {
         if let Some(mut rule) = self.parse_atom()? {
             let mut last_rep = LastRepToken::QuantifierOrNone;
 
-            // TODO: This allocation is not needed
-            let mut repetitions = Vec::new();
-            while let Some(rep) = self.parse_repetition(&mut last_rep)? {
-                repetitions.push(rep);
-            }
-
-            if repetitions.len() > 64 {
-                let (.., span1) = repetitions[64];
-                let &(.., span2) = repetitions.last().unwrap();
-                return Err(ParseErrorKind::RecursionLimit.at(span1.join(span2)));
-            }
-
-            for (kind, quantifier, span) in repetitions {
+            while let Some((kind, quantifier, span)) = self.parse_repetition(&mut last_rep)? {
                 let span = rule.span().join(span);
                 rule = Rule::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
             }
