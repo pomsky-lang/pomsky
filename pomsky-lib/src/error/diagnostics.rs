@@ -1,5 +1,5 @@
 use pomsky_syntax::{
-    error::{ParseError, ParseErrorKind, RepetitionError},
+    error::{DeprecationError, ParseError, ParseErrorKind, RepetitionError},
     warning::ParseWarning,
     Span,
 };
@@ -149,6 +149,12 @@ impl Diagnostic {
                 https://pomsky-lang.org/docs/language-tour/variables/"
                     .into(),
             ),
+            ParseErrorKind::Deprecated(DeprecationError::CodepointInSet) => {
+                Some("Use `Codepoint` without brackets instead".into())
+            }
+            ParseErrorKind::Deprecated(DeprecationError::CpInSet) => {
+                Some("Use `C` without brackets instead".into())
+            }
             _ => None,
         };
 

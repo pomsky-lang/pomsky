@@ -1,5 +1,6 @@
+#! expect=error
 [cp]
 -----
-[\s\S]
-WARNING: `[cp]` is deprecated. Use `C` instead.
-  at 1..3
+ERROR: `[cp]` is deprecated
+HELP: Use `C` without brackets instead
+SPAN: 1..3

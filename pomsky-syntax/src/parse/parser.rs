@@ -673,7 +673,7 @@ impl<'i> Parser<'i> {
             let span = self.last_span();
 
             let (item, warning) = CharGroup::try_from_group_name(self.source_at(span), negative)
-                .map_err(|e| ParseErrorKind::CharClass(e).at(span))?;
+                .map_err(|e| e.at(span))?;
 
             if let Some(warning) = warning {
                 self.add_warning(ParseWarningKind::Deprecation(warning).at(span));

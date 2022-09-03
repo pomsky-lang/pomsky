@@ -45,6 +45,9 @@ pub enum ParseErrorKind {
     #[error("Unexpected keyword `{}`", .0)]
     UnexpectedKeyword(String),
 
+    #[error(transparent)]
+    Deprecated(DeprecationError),
+
     #[error("Expected {}", .0)]
     Expected(&'static str),
     #[error("There are leftover tokens that couldn't be parsed")]
@@ -91,6 +94,29 @@ impl From<RepetitionError> for ParseErrorKind {
     fn from(e: RepetitionError) -> Self {
         ParseErrorKind::Repetition(e)
     }
+}
+
+impl From<CharClassError> for ParseErrorKind {
+    fn from(e: CharClassError) -> Self {
+        ParseErrorKind::CharClass(e)
+    }
+}
+
+impl From<DeprecationError> for ParseErrorKind {
+    fn from(e: DeprecationError) -> Self {
+        ParseErrorKind::Deprecated(e)
+    }
+}
+
+/// An error that is returned when a deprecated feature is used
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub enum DeprecationError {
+    /// Deprecated `[codepoint]`
+    #[error("`[codepoint]` is deprecated")]
+    CodepointInSet,
+    /// Deprecated `[cp]`
+    #[error("`[cp]` is deprecated")]
+    CpInSet,
 }
 
 /// An error that relates to a character string

@@ -137,24 +137,25 @@ impl CharClass {
 
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
-        if self.negative {
-            buf.push_str("![");
-        } else {
-            buf.push('[');
-        }
-
         match &self.inner {
-            CharGroup::Dot => buf.push('.'),
-            CharGroup::CodePoint => buf.push_str("codepoint"),
+            CharGroup::Dot if self.negative => buf.push_str("[n]"),
+            CharGroup::Dot => buf.push_str("[.]"),
+            CharGroup::CodePoint => buf.push_str("Codepoint"),
             CharGroup::Items(items) => {
+                if self.negative {
+                    buf.push_str("![");
+                } else {
+                    buf.push('[');
+                }
+
                 for (i, item) in items.iter().enumerate() {
                     if i > 0 {
                         buf.push(' ');
                     }
                     item.pretty_print(buf);
                 }
+                buf.push(']');
             }
         }
-        buf.push(']');
     }
 }

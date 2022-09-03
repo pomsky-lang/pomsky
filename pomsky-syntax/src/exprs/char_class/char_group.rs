@@ -6,7 +6,10 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use crate::{error::CharClassError, warning::DeprecationWarning};
+use crate::{
+    error::{CharClassError, DeprecationError, ParseErrorKind},
+    warning::DeprecationWarning,
+};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -59,18 +62,18 @@ impl CharGroup {
     pub(crate) fn try_from_group_name(
         name: &str,
         negative: bool,
-    ) -> Result<(Self, Option<DeprecationWarning>), CharClassError> {
+    ) -> Result<(Self, Option<DeprecationWarning>), ParseErrorKind> {
         Ok(match name {
             _ if name == "ascii" || name.starts_with("ascii_") => {
                 (CharGroup::Items(super::ascii::parse_ascii_group(name, negative)?), None)
             }
 
             "codepoint" | "cp" | "." if negative => {
-                return Err(CharClassError::Negative);
+                return Err(CharClassError::Negative.into());
             }
 
-            "codepoint" => (CharGroup::CodePoint, Some(DeprecationWarning::Codepoint)),
-            "cp" => (CharGroup::CodePoint, Some(DeprecationWarning::Cp)),
+            "codepoint" => return Err(DeprecationError::CodepointInSet.into()),
+            "cp" => return Err(DeprecationError::CpInSet.into()),
             "." => (CharGroup::Dot, Some(DeprecationWarning::Dot)),
 
             _ => (
