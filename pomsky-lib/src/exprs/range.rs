@@ -13,7 +13,7 @@ use crate::{
 use super::{
     alternation::RegexAlternation,
     char_class::{RegexCharClass, RegexClassItem},
-    group::{RegexCapture, RegexGroup},
+    group::{RegexGroup, RegexGroupKind},
     repetition::{RegexQuantifier, RegexRepetition},
     RuleExt,
 };
@@ -471,7 +471,7 @@ impl Alt {
                 .map(|v| {
                     Regex::Group(RegexGroup::new(
                         v.iter().map(|r| r.to_regex()).collect(),
-                        RegexCapture::None,
+                        RegexGroupKind::None,
                     ))
                 })
                 .collect(),

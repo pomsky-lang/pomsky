@@ -10,32 +10,35 @@ use super::Rule;
 #[derive(Clone)]
 pub struct Group<'i> {
     pub parts: Vec<Rule<'i>>,
-    pub capture: Option<Capture<'i>>,
+    pub kind: GroupKind<'i>,
     pub span: Span,
 }
 
 impl<'i> Group<'i> {
-    pub fn new(parts: Vec<Rule<'i>>, capture: Option<Capture<'i>>, span: Span) -> Self {
-        Group { parts, capture, span }
+    pub fn new(parts: Vec<Rule<'i>>, kind: GroupKind<'i>, span: Span) -> Self {
+        Group { parts, kind, span }
     }
 
     pub fn set_capture(&mut self, capture: Capture<'i>) {
-        self.capture = Some(capture);
-    }
-
-    pub fn is_capturing(&self) -> bool {
-        self.capture.is_some()
+        self.kind = GroupKind::Capturing(capture);
     }
 
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
-        let use_parens = self.capture.is_some() || needs_parens;
+        let use_parens =
+            matches!(self.kind, GroupKind::Capturing(_) | GroupKind::Atomic) || needs_parens;
 
-        if let Some(capture) = self.capture {
-            buf.push(':');
-            if let Some(name) = capture.name {
-                buf.push_str(name);
+        match self.kind {
+            GroupKind::Capturing(capture) => {
+                buf.push(':');
+                if let Some(name) = capture.name {
+                    buf.push_str(name);
+                }
             }
+            GroupKind::Atomic => {
+                buf.push_str("atomic ");
+            }
+            GroupKind::Normal => {}
         }
 
         if self.parts.is_empty() {
@@ -67,6 +70,19 @@ impl<'i> Group<'i> {
                 buf.end_indentation(")");
             }
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum GroupKind<'i> {
+    Capturing(Capture<'i>),
+    Atomic,
+    Normal,
+}
+
+impl GroupKind<'_> {
+    pub fn is_normal(&self) -> bool {
+        matches!(self, GroupKind::Normal)
     }
 }
 

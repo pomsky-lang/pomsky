@@ -19,7 +19,7 @@ pub use self::{
     char_class::{
         Category, CharClass, CharGroup, CodeBlock, GroupItem, GroupName, OtherProperties, Script,
     },
-    group::{Capture, Group},
+    group::{Capture, Group, GroupKind},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
     range::Range,

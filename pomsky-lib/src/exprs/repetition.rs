@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    group::{RegexCapture, RegexGroup},
+    group::{RegexGroup, RegexGroupKind},
     Rule, RuleExt,
 };
 
@@ -34,7 +34,7 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         if let RepetitionKind { lower_bound: 0, upper_bound: Some(1) } = self.kind {
             if let Rule::Repetition(_) = &self.rule {
                 content =
-                    Regex::Group(RegexGroup::new(vec![content], RegexCapture::NoneWithParens));
+                    Regex::Group(RegexGroup::new(vec![content], RegexGroupKind::NoneWithParens));
             }
         }
 

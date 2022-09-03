@@ -115,6 +115,8 @@ impl CompileErrorKind {
 pub enum Feature {
     /// Named capturing groups, e.g. `(?<name>group)`
     NamedCaptureGroups,
+    /// Atomic groups, e.g. `(?>group)`
+    AtomicGroups,
     /// Lookahead or lookbehind, e.g. `(?=lookahead)`
     Lookaround,
     /// A single grapheme cluster, `\X`
@@ -151,6 +153,7 @@ impl Feature {
     fn name(self) -> &'static str {
         match self {
             Feature::NamedCaptureGroups => "named capturing groups",
+            Feature::AtomicGroups => "atomic groups",
             Feature::Lookaround => "lookahead/behind",
             Feature::Grapheme => "grapheme cluster matcher (\\X)",
             Feature::UnicodeBlock => "Unicode blocks (\\p{InBlock})",

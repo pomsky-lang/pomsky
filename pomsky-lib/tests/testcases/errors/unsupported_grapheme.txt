@@ -1,0 +1,5 @@
+#! expect=error, flavor=JavaScript
+Grapheme
+-----
+ERROR: Compile error: Unsupported feature `grapheme cluster matcher (\X)` in the `JavaScript` regex flavor
+SPAN: 0..8

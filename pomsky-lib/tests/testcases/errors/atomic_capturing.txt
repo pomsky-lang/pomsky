@@ -1,0 +1,5 @@
+#! expect=error
+atomic :('test' '!'*)
+-----
+ERROR: Expected `(`
+SPAN: 7..8

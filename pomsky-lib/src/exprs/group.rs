@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use pomsky_syntax::exprs::{Capture, Group};
+use pomsky_syntax::exprs::{Capture, Group, GroupKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind},
+    error::{CompileError, CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -18,8 +18,8 @@ impl<'i> RuleExt<'i> for Group<'i> {
         map: &mut HashMap<String, u32>,
         within_variable: bool,
     ) -> Result<(), CompileError> {
-        match self.capture {
-            Some(Capture { name: Some(name) }) => {
+        match self.kind {
+            GroupKind::Capturing(Capture { name: Some(name) }) => {
                 if within_variable {
                     return Err(CompileErrorKind::CaptureInLet.at(self.span));
                 }
@@ -33,14 +33,14 @@ impl<'i> RuleExt<'i> for Group<'i> {
                 *count += 1;
                 map.insert(name.to_string(), *count);
             }
-            Some(Capture { name: None }) => {
+            GroupKind::Capturing(Capture { name: None }) => {
                 if within_variable {
                     return Err(CompileErrorKind::CaptureInLet.at(self.span));
                 }
 
                 *count += 1;
             }
-            None => {}
+            _ => {}
         };
         for rule in &self.parts {
             rule.get_capturing_groups(count, map, within_variable)?;
@@ -53,7 +53,7 @@ impl<'i> RuleExt<'i> for Group<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        if self.capture.is_some() {
+        if let GroupKind::Capturing(_) = self.kind {
             state.next_idx += 1;
         }
 
@@ -63,15 +63,27 @@ impl<'i> RuleExt<'i> for Group<'i> {
                 .iter()
                 .map(|part| part.compile(options, state))
                 .collect::<Result<_, _>>()?,
-            capture: match self.capture {
-                Some(Capture { name: Some(name) }) => RegexCapture::NamedCapture(name),
-                Some(Capture { name: None }) => RegexCapture::Capture,
-                None => RegexCapture::None,
+            kind: match self.kind {
+                GroupKind::Capturing(Capture { name: Some(name) }) => {
+                    RegexGroupKind::NamedCapture(name)
+                }
+                GroupKind::Capturing(Capture { name: None }) => RegexGroupKind::Capture,
+                GroupKind::Atomic => RegexGroupKind::Atomic,
+                GroupKind::Normal => RegexGroupKind::None,
             },
         }))
     }
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+        if let GroupKind::Atomic = self.kind {
+            if let RegexFlavor::JavaScript | RegexFlavor::Python | RegexFlavor::Rust =
+                options.flavor
+            {
+                return Err(CompileErrorKind::Unsupported(Feature::AtomicGroups, options.flavor)
+                    .at(self.span));
+            }
+        }
+
         for rule in &self.parts {
             rule.validate(options)?;
         }
@@ -82,25 +94,26 @@ impl<'i> RuleExt<'i> for Group<'i> {
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexGroup<'i> {
     parts: Vec<Regex<'i>>,
-    capture: RegexCapture<'i>,
+    kind: RegexGroupKind<'i>,
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) enum RegexCapture<'i> {
+pub(crate) enum RegexGroupKind<'i> {
     Capture,
     NamedCapture(&'i str),
+    Atomic,
     None,
     NoneWithParens,
 }
 
 impl<'i> RegexGroup<'i> {
-    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: RegexCapture<'i>) -> Self {
-        Self { parts, capture }
+    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: RegexGroupKind<'i>) -> Self {
+        Self { parts, kind: capture }
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
-        match self.capture {
-            RegexCapture::NamedCapture(name) => {
+        match self.kind {
+            RegexGroupKind::NamedCapture(name) => {
                 // https://www.regular-expressions.info/named.html
                 match flavor {
                     RegexFlavor::Python | RegexFlavor::Pcre | RegexFlavor::Rust => {
@@ -120,14 +133,21 @@ impl<'i> RegexGroup<'i> {
                 }
                 buf.push(')');
             }
-            RegexCapture::Capture => {
+            RegexGroupKind::Capture => {
                 buf.push('(');
                 for part in &self.parts {
                     part.codegen(buf, flavor);
                 }
                 buf.push(')');
             }
-            RegexCapture::None => {
+            RegexGroupKind::Atomic => {
+                buf.push_str("(?>");
+                for part in &self.parts {
+                    part.codegen(buf, flavor);
+                }
+                buf.push(')');
+            }
+            RegexGroupKind::None => {
                 for part in &self.parts {
                     let needs_parens = part.needs_parens_in_group();
                     if needs_parens {
@@ -139,7 +159,7 @@ impl<'i> RegexGroup<'i> {
                     }
                 }
             }
-            RegexCapture::NoneWithParens => {
+            RegexGroupKind::NoneWithParens => {
                 for part in &self.parts {
                     buf.push_str("(?:");
                     part.codegen(buf, flavor);
@@ -150,12 +170,12 @@ impl<'i> RegexGroup<'i> {
     }
 
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
-        match self.capture {
-            RegexCapture::None if self.parts.len() == 1 => {
+        match self.kind {
+            RegexGroupKind::None if self.parts.len() == 1 => {
                 self.parts[0].needs_parens_before_repetition()
             }
-            RegexCapture::NoneWithParens => false,
-            _ => true,
+            RegexGroupKind::None => true,
+            _ => false,
         }
     }
 }

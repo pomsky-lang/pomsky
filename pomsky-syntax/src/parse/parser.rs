@@ -361,7 +361,7 @@ impl<'i> Parser<'i> {
             let end = fixes.last().map(|f| f.span()).unwrap_or_default();
             let span = start.join(end);
 
-            Some(Rule::Group(Group::new(fixes, None, span)))
+            Some(Rule::Group(Group::new(fixes, GroupKind::Normal, span)))
         })
     }
 
@@ -535,14 +535,12 @@ impl<'i> Parser<'i> {
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
     fn parse_group(&mut self) -> PResult<Option<Rule<'i>>> {
-        let (capture, start_span) = match self.parse_capture()? {
-            Some((capture, span)) => {
-                self.expect(Token::OpenParen)?;
-                (Some(capture), span)
-            }
-            None if self.consume(Token::OpenParen) => (None, self.last_span()),
-            None => return Ok(None),
-        };
+        let (kind, start_span) = self.parse_group_kind()?;
+        if !kind.is_normal() {
+            self.expect(Token::OpenParen)?;
+        } else if !self.consume(Token::OpenParen) {
+            return Ok(None);
+        }
 
         self.recursion_start()?;
         let rule = self.parse_modified()?;
@@ -552,27 +550,30 @@ impl<'i> Parser<'i> {
             .map_err(|p| ParseErrorKind::Expected("`)` or an expression").at(p.span))?;
         let span = start_span.join(self.last_span());
 
-        let rule = match (capture, rule) {
-            (None, rule) => rule,
-            (Some(capture), Rule::Group(mut g)) if !g.is_capturing() => {
-                g.set_capture(capture);
+        let rule = match (kind, rule) {
+            (GroupKind::Normal, rule) => rule,
+            (kind, Rule::Group(mut g)) if g.kind.is_normal() => {
+                g.kind = kind;
                 g.span = span;
                 Rule::Group(g)
             }
-            (Some(capture), rule) => Rule::Group(Group::new(vec![rule], Some(capture), span)),
+            (kind, rule) => Rule::Group(Group::new(vec![rule], kind, span)),
         };
         Ok(Some(rule))
     }
 
     /// Parses `:name` or just `:`. Returns the span of the colon with the name.
-    fn parse_capture(&mut self) -> PResult<Option<(Capture<'i>, Span)>> {
-        if self.consume(Token::Colon) {
+    fn parse_group_kind(&mut self) -> PResult<(GroupKind<'i>, Span)> {
+        if self.consume_reserved("atomic") {
+            let span = self.last_span();
+            Ok((GroupKind::Atomic, span))
+        } else if self.consume(Token::Colon) {
             let span = self.last_span();
             // TODO: Better diagnostic for `:let(`
             let name = self.consume_as(Token::Identifier);
-            Ok(Some((Capture::new(name), span)))
+            Ok((GroupKind::Capturing(Capture::new(name)), span))
         } else {
-            Ok(None)
+            Ok((GroupKind::Normal, self.span().start()))
         }
     }
 
