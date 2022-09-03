@@ -5,10 +5,6 @@ pub enum Token {
     Caret,
     /// `$` (end boundary)
     Dollar,
-    /// `<%` (`^` start boundary)
-    BStart,
-    /// `%>` (`$` end boundary)
-    BEnd,
     /// `%` (`\b` boundary)
     BWord,
 
@@ -131,6 +127,11 @@ pub enum LexErrorMsg {
 
     #[error("This string literal doesn't have a closing quote")]
     UnclosedString,
+
+    #[error("The `<%` literal is deprecated.")]
+    DeprStart,
+    #[error("The `%>` literal is deprecated.")]
+    DeprEnd,
 }
 
 impl LexErrorMsg {
@@ -144,8 +145,6 @@ impl core::fmt::Display for Token {
         f.write_str(match self {
             Token::Caret => "`^`",
             Token::Dollar => "`$`",
-            Token::BStart => "`<%`",
-            Token::BEnd => "`%>`",
             Token::BWord => "`%`",
             Token::Star => "`*`",
             Token::Plus => "`+`",

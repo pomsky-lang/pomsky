@@ -10,7 +10,7 @@ use crate::{
         RepetitionError,
     },
     exprs::*,
-    warning::{DeprecationWarning, ParseWarning, ParseWarningKind},
+    warning::{ParseWarning, ParseWarningKind},
     Span,
 };
 
@@ -797,19 +797,7 @@ impl<'i> Parser<'i> {
     /// handled elsewhere. It also does _not_ parse the `Start` and `End` global variables.
     fn parse_boundary(&mut self) -> PResult<Option<Rule<'i>>> {
         let span = self.span();
-        let kind = if self.consume(Token::BStart) {
-            self.add_warning(
-                ParseWarningKind::Deprecation(DeprecationWarning::OldStartLiteral).at(span),
-            );
-
-            BoundaryKind::Start
-        } else if self.consume(Token::BEnd) {
-            self.add_warning(
-                ParseWarningKind::Deprecation(DeprecationWarning::OldEndLiteral).at(span),
-            );
-
-            BoundaryKind::End
-        } else if self.consume(Token::Caret) {
+        let kind = if self.consume(Token::Caret) {
             BoundaryKind::Start
         } else if self.consume(Token::Dollar) {
             BoundaryKind::End

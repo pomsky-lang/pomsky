@@ -1,7 +1,10 @@
+#! expect=error
 <% % %>
 -----
-^\b$
-WARNING: The `<%` literal is deprecated. Use `^` instead.
-  at 0..2
-WARNING: The `%>` literal is deprecated. Use `$` instead.
-  at 5..7
+ERROR: The `<%` literal is deprecated.
+HELP: Use `^` instead
+SPAN: 0..2
+
+ERROR: The `%>` literal is deprecated.
+HELP: Use `$` instead
+SPAN: 5..7

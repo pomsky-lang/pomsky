@@ -60,8 +60,8 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                 let (len, token) = consume_chain! {
                     input, c;
 
-                    if input.starts_with("<%") => (2, Token::BStart);
-                    if input.starts_with("%>") => (2, Token::BEnd);
+                    if input.starts_with("<%") => (2, Token::ErrorMsg(LexErrorMsg::DeprStart));
+                    if input.starts_with("%>") => (2, Token::ErrorMsg(LexErrorMsg::DeprEnd));
                     if input.starts_with(">>") => (2, Token::LookAhead);
                     if input.starts_with("<<") => (2, Token::LookBehind);
                     if input.starts_with("::") => (2, Token::DoubleColon);

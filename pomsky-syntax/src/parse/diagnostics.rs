@@ -29,6 +29,9 @@ pub(super) fn get_parse_error_msg_help(msg: LexErrorMsg, slice: &str) -> Option<
         LexErrorMsg::BackslashGK => return get_backslash_gk_help(slice),
         LexErrorMsg::BackslashProperty => return get_backslash_property_help(slice),
 
+        LexErrorMsg::DeprStart => return Some("Use `^` instead".into()),
+        LexErrorMsg::DeprEnd => return Some("Use `$` instead".into()),
+
         LexErrorMsg::GroupAtomic
         | LexErrorMsg::GroupConditional
         | LexErrorMsg::GroupBranchReset
