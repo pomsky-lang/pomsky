@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use pomsky::{
     error::Diagnostic,
-    options::{CompileOptions, ParseOptions, RegexFlavor},
+    options::{CompileOptions, RegexFlavor},
     Expr,
 };
 use wasm_bindgen::prelude::*;
@@ -68,8 +68,7 @@ pub fn compile(input: &str, flavor: &str) -> Result<PomskyResult, PomskyError> {
 
     let result = Expr::parse_and_compile(
         input,
-        ParseOptions { max_range_size: 12, ..Default::default() },
-        CompileOptions { flavor },
+        CompileOptions { flavor, max_range_size: 12, ..Default::default() },
     );
 
     match result {
