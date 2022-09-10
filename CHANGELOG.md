@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The limit for the number of repetitions after an expression has been removed, although the
   limitation was almost impossible to run into in real code.
 
+- Release binaries are now stripped by default, to reduce the binary size.
+
+- The clap argument parser was replaced with the much smaller lexopt. This further reduces the
+  binary size.
+
 ### Removed
 
 - The `<%`, `%>`, `[cp]` and `[codepoint]` syntax has been removed. Previously it was deprecated

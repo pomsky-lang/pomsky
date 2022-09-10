@@ -3,13 +3,16 @@ use std::{
     process::exit,
 };
 
-use owo_colors::OwoColorize;
+use atty::Stream;
+use owo_colors::{OwoColorize, Style};
 use pomsky::{
     error::{Diagnostic, ParseError, Severity},
     options::{CompileOptions, RegexFlavor},
     Expr, Warning,
 };
 
+#[macro_use]
+mod colors;
 mod args;
 
 use args::{Args, Input, ParseArgsError};
@@ -24,7 +27,7 @@ pub fn main() {
                 ParseArgsError::Other(msg) => msg,
             };
             print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
-            eprintln!("{}", args::get_short_usage_and_help());
+            eprintln!("{}", args::get_short_usage_and_help(Stream::Stderr));
             exit(2)
         }
     };
@@ -91,12 +94,12 @@ fn print_parse_error(error: ParseError, input: &str) {
     let len = diagnostics.len();
 
     if len > 8 {
-        eprintln!("{}: some errors were omitted", "note".cyan().bold());
+        eprintln!("{}: some errors were omitted", cyan_bold!(Stderr, "note"));
     }
 
     eprintln!(
         "{}: could not compile expression due to {}",
-        "error".bright_red().bold(),
+        red_bold!(Stderr, "error"),
         if len > 1 { format!("{len} previous errors") } else { "previous error".into() }
     );
 }
@@ -109,13 +112,13 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
     }
 
     if len > 8 {
-        eprintln!("{}: some warnings were omitted", "note".cyan().bold());
+        eprintln!("{}: some warnings were omitted", cyan_bold!(Stderr, "note"));
     }
 
     if len > 0 {
         eprintln!(
             "{}: pomsky generated {len} {}",
-            "warning".yellow().bold(),
+            yellow_bold!(Stderr, "warning"),
             if len > 1 { "warnings" } else { "warning" },
         );
     }
@@ -124,10 +127,10 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
 fn print_diagnostic(diagnostic: &Diagnostic) {
     match diagnostic.severity {
         Severity::Error => {
-            eprintln!("{}: {}", "error".bright_red().bold(), diagnostic.default_display())
+            eprintln!("{}: {}", red_bold!(Stderr, "error"), diagnostic.default_display())
         }
         Severity::Warning => {
-            eprintln!("{}: {}", "warning".yellow().bold(), diagnostic.default_display())
+            eprintln!("{}: {}", yellow_bold!(Stderr, "warning"), diagnostic.default_display())
         }
     }
 }

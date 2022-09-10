@@ -1,6 +1,7 @@
 use std::{io::Read, path::PathBuf, string::FromUtf8Error};
 
 use atty::Stream;
+use owo_colors::OwoColorize;
 use pomsky::options::RegexFlavor;
 
 pub(super) enum ParseArgsError {
@@ -44,38 +45,54 @@ pub(crate) enum Input {
     File(PathBuf),
 }
 
-pub(super) fn get_short_usage_and_help() -> &'static str {
-    "\
-USAGE:
+pub(super) fn get_short_usage_and_help(stream: Stream) -> String {
+    format!(
+        "\
+{usage}
     pomsky [OPTIONS] <INPUT>
     pomsky [OPTIONS] --path <PATH>
+    cat <PATH> | pomsky [OPTIONS]
 
-For more information try '--help'"
+For more information try '--help'",
+        usage = "USAGE:".if_supports_color(stream, |t| t.yellow())
+    )
 }
 
-fn get_help() -> &'static str {
-    concat!(
-        "pomksy ",
-        env!("CARGO_PKG_VERSION"),
-        "
+fn get_help(stream: Stream) -> String {
+    format!(
+        "\
+{name} {version}
 Compile pomsky expressions, a new regular expression language
 
-USAGE:
+{usage}
     pomsky [OPTIONS] <INPUT>
     pomsky [OPTIONS] --path <PATH>
+    cat <PATH> | pomsky [OPTIONS]
 
-ARGS:
-    <INPUT>    Pomsky expression to compile
+{args}
+    {a_input}    Pomsky expression to compile
 
-OPTIONS:
-    -d, --debug              Show debug information
-    -f, --flavor <FLAVOR>    Regex flavor [possible values: pcre, python, java,
+{options}
+    {a_debug  }              Show debug information
+    {a_flavor           }    Regex flavor [possible values: pcre, python, java,
                              javascript, dotnet, ruby, rust]
-    -h, --help               Print help information
-    -n, --no-new-line        Does not print a new-line at the end of the
+    {a_help  }               Print help information
+    {a_no_new_line  }        Does not print a new-line at the end of the
                              compiled regular expression
-    -p, --path <FILE>        File containing the pomsky expression to compile
-    -V, --version            Print version information",
+    {a_path         }        File containing the pomsky expression to compile
+    {a_version  }            Print version information",
+        name = green!(stream, "pomsky"),
+        version = env!("CARGO_PKG_VERSION"),
+        usage = yellow!(stream, "USAGE:"),
+        args = yellow!(stream, "ARGS:"),
+        options = yellow!(stream, "OPTIONS:"),
+        a_input = green!(stream, "<INPUT>"),
+        a_debug = green!(stream, "-d, --debug"),
+        a_flavor = green!(stream, "-f, --flavor <FLAVOR>"),
+        a_help = green!(stream, "-h, --help"),
+        a_no_new_line = green!(stream, "-n, --no-new-line"),
+        a_path = green!(stream, "-p, --path <FILE>"),
+        a_version = green!(stream, "-V, --version"),
     )
 }
 
@@ -139,7 +156,7 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
                 input_value = Some(val.into_string().map_err(lexopt::Error::from)?);
             }
             Short('h') | Long("help") => {
-                println!("{}", get_help());
+                println!("{}", get_help(Stream::Stdout));
                 std::process::exit(0);
             }
             Short('V') | Long("version") => {
