@@ -10,4 +10,5 @@ default-members = ["./pomsky-bin", "./pomsky-lib", "./pomsky-syntax"]
 
 [profile.release]
 lto = "thin"
-opt-level = "s"
+opt-level = "z"
+strip = true

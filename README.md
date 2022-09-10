@@ -4,7 +4,7 @@
 
 # Pomsky
 
-⚠️ Pomsky was previously named **Rulex**. [More information](https://pomsky-lang.org/blog/renaming-rulex/) ⚠️
+ℹ️ Pomsky was previously named **Rulex**. [More information](https://pomsky-lang.org/blog/renaming-rulex/) ℹ️
 
 A new, portable, regular expression language
 
