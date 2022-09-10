@@ -1,7 +1,7 @@
 [package]
 name = "pomsky-macro"
 description = "Macro for converting pomsky expressions to regexes"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
@@ -19,4 +19,4 @@ default = []
 diagnostics = []
 
 [dependencies]
-pomsky = { version = "0.6.0", path = "../pomsky-lib" }
+pomsky = { version = "0.7.0", path = "../pomsky-lib" }

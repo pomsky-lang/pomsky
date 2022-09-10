@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "arbitrary",
  "atty",
@@ -574,7 +574,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky-bin"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "atty",
  "lexopt",
@@ -586,14 +586,14 @@ dependencies = [
 
 [[package]]
 name = "pomsky-macro"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "pomsky",
 ]
 
 [[package]]
 name = "pomsky-syntax"
-version = "0.1.0"
+version = "0.7.0"
 dependencies = [
  "arbitrary",
  "strsim",
