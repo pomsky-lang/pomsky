@@ -6,7 +6,7 @@ name: Release
 on:
   push:
     tags:
-      - "v[0-9]+.*"
+      - 'v[0-9]+.*'
 
 jobs:
   create_release:
@@ -32,13 +32,20 @@ jobs:
           prerelease: false
           body: |
             This is a new release of Pomsky. See what's new in the [changelog](https://github.com/rulex-rs/pomsky/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
+
             ### Installation
             If you're running on Linux, macOS or Windows, you can use the binaries below.
+
+            On Arch Linux, you can install `pomsky-bin` from the AUR with
+            ```shell
+            $ yay -S pomsky-bin
+            ```
 
             You can also build Pomsky with Cargo, Rusts package manager. To install the Rust toolchain, see the [installation manual](https://www.rust-lang.org/tools/install). Then run
             ```shell
             $ cargo install pomsky-bin
             ```
+
             You might have to add the `.cargo/bin` folder to your `PATH` afterwards.
             Please file issues if you run into any problems or have suggestions.
   release_assets:
@@ -50,13 +57,13 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            file_ending: ""
+            file_ending: ''
           - os: macos-latest
             platform: macos
-            file_ending: ""
+            file_ending: ''
           - os: windows-latest
             platform: windows
-            file_ending: ".exe"
+            file_ending: '.exe'
 
     steps:
       - name: Checkout
