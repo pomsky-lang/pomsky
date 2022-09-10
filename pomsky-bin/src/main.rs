@@ -1,79 +1,50 @@
 use std::{
-    io::{self, Read, Write},
+    io::{self, Write as _},
     process::exit,
 };
 
-use atty::Stream;
-use clap::Parser as _;
 use owo_colors::OwoColorize;
 use pomsky::{
     error::{Diagnostic, ParseError, Severity},
-    options::CompileOptions,
+    options::{CompileOptions, RegexFlavor},
     Expr, Warning,
 };
 
-mod parse_args;
+mod args;
 
-use parse_args::{Args, Flavor};
+use args::{Args, Input, ParseArgsError};
 
 pub fn main() {
-    let args = Args::parse();
+    let args = match args::parse_args() {
+        Ok(args) => args,
+        Err(error) => {
+            let msg = match error {
+                ParseArgsError::Lexopt(error) => error.to_string(),
+                ParseArgsError::StdinUtf8(e) => format!("Could not parse stdin: {e}"),
+                ParseArgsError::Other(msg) => msg,
+            };
+            print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
+            eprintln!("{}", args::get_short_usage_and_help());
+            exit(2)
+        }
+    };
 
-    match (&args.input, &args.path) {
-        (Some(input), None) => compile(input, &args),
-        (None, Some(path)) => match std::fs::read_to_string(&path) {
+    match &args.input {
+        Input::Value(input) => compile(input, &args),
+        Input::File(path) => match std::fs::read_to_string(&path) {
             Ok(input) => compile(&input, &args),
             Err(error) => {
-                print_diagnostic(&Diagnostic::ad_hoc(
-                    Severity::Error,
-                    None,
-                    error.to_string(),
-                    None,
-                ));
-                exit(2);
+                let msg = error.to_string();
+                print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
+                exit(3);
             }
         },
-        (None, None) if atty::isnt(Stream::Stdin) => {
-            let mut buf = Vec::new();
-            std::io::stdin().read_to_end(&mut buf).unwrap();
-
-            match String::from_utf8(buf) {
-                Ok(input) => compile(&input, &args),
-                Err(e) => {
-                    print_diagnostic(&Diagnostic::ad_hoc(
-                        Severity::Error,
-                        None,
-                        format!("Could not parse stdin: {e}"),
-                        None,
-                    ));
-                    exit(3);
-                }
-            }
-        }
-        (Some(_), Some(_)) => {
-            print_diagnostic(&Diagnostic::ad_hoc(
-                Severity::Error,
-                None,
-                "You can only provide an input or a path, but not both".into(),
-                None,
-            ));
-            exit(4);
-        }
-        (None, None) => {
-            print_diagnostic(&Diagnostic::ad_hoc(
-                Severity::Error,
-                None,
-                "No input provided".into(),
-                None,
-            ));
-            exit(5);
-        }
     }
 }
 
 fn compile(input: &str, args: &Args) {
     let options = CompileOptions {
-        flavor: (*args.flavor.as_ref().unwrap_or(&Flavor::Pcre)).into(),
+        flavor: args.flavor.unwrap_or(RegexFlavor::Pcre),
         max_range_size: 12,
         ..Default::default()
     };

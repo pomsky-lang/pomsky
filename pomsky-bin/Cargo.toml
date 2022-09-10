@@ -22,6 +22,7 @@ path = "src/main.rs"
 atty = "0.2.14"
 thiserror = "1.0.32"
 owo-colors = { version = "3.4.0", features = ["supports-color"] }
+lexopt = "0.2.1"
 
 [dependencies.miette]
 version = "5.3.0"
@@ -31,8 +32,3 @@ features = ["fancy-no-backtrace"]
 version = "0.6.0"
 path = "../pomsky-lib"
 features = ["dbg", "miette", "suggestions"]
-
-[dependencies.clap]
-version = "3.2.16"
-default-features = false
-features = ["std", "derive", "wrap_help", "color"]
