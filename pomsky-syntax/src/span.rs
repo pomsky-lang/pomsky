@@ -37,6 +37,7 @@ impl Span {
         }
     }
 
+    /// Converts this span to a [`std::ops::Range`], without checking if it is empty.
     pub fn range_unchecked(self) -> Range<usize> {
         self.start..self.end
     }

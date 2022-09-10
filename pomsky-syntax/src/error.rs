@@ -5,10 +5,9 @@ use std::{
     num::{IntErrorKind, ParseIntError},
 };
 
-use crate::{
-    parse::{LexErrorMsg, Token},
-    span::Span,
-};
+use crate::Span;
+
+pub use crate::lexer::{LexErrorMsg, Token};
 
 /// An error than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,6 +84,8 @@ pub enum ParseErrorKind {
 }
 
 impl ParseErrorKind {
+    /// Creates a [ParseError] from this error kind, and a [Span] indicating where the error
+    /// occurred.
     pub fn at(self, span: Span) -> ParseError {
         ParseError { kind: self, span }
     }
@@ -142,6 +143,8 @@ pub enum CharClassError {
     #[error("This character class is empty")]
     Empty,
 
+    /// This error is created when `[^` is encountered. This is a negated character class
+    /// in a regex, but pomsky instead uses the `![` syntax.
     #[error("`^` is not a valid token")]
     CaretInGroup,
 

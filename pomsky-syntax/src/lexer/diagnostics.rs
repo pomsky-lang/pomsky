@@ -1,3 +1,9 @@
+//! Regex diagnostics. These are emitted when the syntax is valid in a regex, but
+//! not in a pomsky expression.
+//!
+//! Regex diagnostics should contain all the information needed to convert the syntax to a
+//! correct pomsky expression. This information is accumulated by the functions in this module.
+
 use super::LexErrorMsg;
 
 pub(super) fn get_parse_error_msg_help(msg: LexErrorMsg, slice: &str) -> Option<String> {
@@ -41,7 +47,7 @@ pub(super) fn get_parse_error_msg_help(msg: LexErrorMsg, slice: &str) -> Option<
     })
 }
 
-pub(super) fn get_named_capture_help(str: &str) -> Option<String> {
+fn get_named_capture_help(str: &str) -> Option<String> {
     // (?<name>), (?P<name>)
     let name =
         str.trim_start_matches("(?").trim_start_matches('P').trim_matches(&['<', '>', '\''][..]);
@@ -55,13 +61,13 @@ pub(super) fn get_named_capture_help(str: &str) -> Option<String> {
     }
 }
 
-pub(super) fn get_pcre_backreference_help(str: &str) -> Option<String> {
+fn get_pcre_backreference_help(str: &str) -> Option<String> {
     // (?P=name)
     let name = str.trim_start_matches("(?P=").trim_end_matches(')');
     Some(format!("Backreferences use the `::name` syntax. Try `::{name}` instead"))
 }
 
-pub(super) fn get_backslash_help(str: &str) -> Option<String> {
+fn get_backslash_help(str: &str) -> Option<String> {
     assert!(str.starts_with('\\'));
     let str = &str[1..];
     let mut iter = str.chars();
@@ -96,25 +102,25 @@ pub(super) fn get_backslash_help(str: &str) -> Option<String> {
     })
 }
 
-pub(super) fn get_backslash_help_u4(str: &str) -> Option<String> {
+fn get_backslash_help_u4(str: &str) -> Option<String> {
     // \uFFFF
     let hex = &str[2..];
     Some(format!("Try `U+{hex}` instead"))
 }
 
-pub(super) fn get_backslash_help_x2(str: &str) -> Option<String> {
+fn get_backslash_help_x2(str: &str) -> Option<String> {
     // \xFF
     let hex = &str[2..];
     Some(format!("Try `U+{hex}` instead"))
 }
 
-pub(super) fn get_backslash_help_unicode(str: &str) -> Option<String> {
+fn get_backslash_help_unicode(str: &str) -> Option<String> {
     // \u{...}, \x{...}
     let hex = str[2..].trim_matches(&['{', '}'][..]);
     Some(format!("Try `U+{hex}` instead"))
 }
 
-pub(super) fn get_backslash_gk_help(str: &str) -> Option<String> {
+fn get_backslash_gk_help(str: &str) -> Option<String> {
     // \k<name>, \k'name', \k{name}, \k0, \k-1, \k+1,
     // \g<name>, \g'name', \g{name}, \g0, \g-1, \g+1
     let name = str[2..].trim_matches(&['{', '}', '<', '>', '\''][..]);
@@ -126,7 +132,7 @@ pub(super) fn get_backslash_gk_help(str: &str) -> Option<String> {
     }
 }
 
-pub(super) fn get_backslash_property_help(str: &str) -> Option<String> {
+fn get_backslash_property_help(str: &str) -> Option<String> {
     // \pL, \PL, \p{Letter}, \P{Letter}, \p{^Letter}, \P{^Letter}
     let is_negative =
         (str.starts_with("\\P") && !str.starts_with("\\P{^")) || str.starts_with("\\p{^");

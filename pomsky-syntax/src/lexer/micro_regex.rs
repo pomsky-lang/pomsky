@@ -1,3 +1,6 @@
+//! This module provides simple regex-like automatons that can't backtrack, using the [MicroRegex]
+//! trait. This is currently only used for lexing.
+
 /// A trait to construct simple regex-like automatons that can't backtrack.
 pub(crate) trait MicroRegex {
     type Context;

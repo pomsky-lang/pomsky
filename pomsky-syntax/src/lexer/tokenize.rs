@@ -1,8 +1,8 @@
-use crate::{parse::LexErrorMsg, span::Span};
+use crate::Span;
 
 use super::{
     micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
-    Token,
+    LexErrorMsg, Token,
 };
 
 macro_rules! consume_chain {

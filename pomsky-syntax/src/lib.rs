@@ -9,6 +9,7 @@
 //! assert!(warnings.is_empty());
 //! ```
 
+mod lexer;
 mod parse;
 mod span;
 mod util;

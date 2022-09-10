@@ -6,7 +6,7 @@
 
 ℹ️ Pomsky was previously named **Rulex**. [More information](https://pomsky-lang.org/blog/renaming-rulex/) ℹ️
 
-A new, portable, regular expression language
+A portable, modern regular expression language
 
 Read **[the book](https://pomsky-lang.org/docs/)** to get started!
 
