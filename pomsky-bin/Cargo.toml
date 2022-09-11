@@ -20,7 +20,6 @@ path = "src/main.rs"
 
 [dependencies]
 atty = "0.2.14"
-thiserror = "1.0.32"
 owo-colors = { version = "3.4.0", features = ["supports-colors"] }
 lexopt = "0.2.1"
 

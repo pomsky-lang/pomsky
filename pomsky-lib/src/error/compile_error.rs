@@ -5,7 +5,7 @@ use crate::options::RegexFlavor;
 use super::{Diagnostic, ParseError};
 
 /// An error that can occur during parsing or compiling
-#[derive(Debug, Clone, thiserror::Error)]
+#[derive(Debug, Clone)]
 pub struct CompileError {
     pub(super) kind: CompileErrorKind,
     pub(super) span: Span,
@@ -29,8 +29,10 @@ impl CompileError {
     }
 }
 
+impl std::error::Error for CompileError {}
+
 impl core::fmt::Display for CompileError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if let Some(std::ops::Range { start, end }) = self.span.range() {
             write!(f, "{}\n  at {}..{}", self.kind, start, end)
         } else {
@@ -46,66 +48,90 @@ impl From<ParseError> for CompileError {
 }
 
 /// An error kind (without span) that can occur during parsing or compiling
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub(crate) enum CompileErrorKind {
-    #[error("Parse error: {}", .0)]
     ParseError(ParseErrorKind),
-
-    #[error("Compile error: Unsupported feature `{}` in the `{:?}` regex flavor", .0.name(), .1)]
     Unsupported(Feature, RegexFlavor),
-
-    #[error(transparent)]
     UnsupportedPomskySyntax(UnsupportedError),
-
-    #[error("Group references this large aren't supported")]
     HugeReference,
-
-    #[error("Reference to unknown group. There is no group number {}", .0)]
     UnknownReferenceNumber(i32),
-
-    #[error("Reference to unknown group. There is no group named `{}`", .found)]
     UnknownReferenceName {
         found: Box<str>,
         #[cfg(feature = "suggestions")]
         similar: Option<Box<str>>,
     },
-
-    #[error("Compile error: Group name `{}` used multiple times", .0)]
     NameUsedMultipleTimes(String),
-
-    #[error("Compile error: This character class is empty")]
     EmptyClass,
-
-    #[error("Compile error: This negated character class matches nothing")]
     EmptyClassNegated,
-
-    #[error("Capturing groups within `let` statements are currently not supported")]
     CaptureInLet,
-
-    #[error("References within `let` statements are currently not supported")]
     ReferenceInLet,
-
-    #[error("Variable `{}` doesn't exist", .found)]
     UnknownVariable {
         found: Box<str>,
         #[cfg(feature = "suggestions")]
         similar: Option<Box<str>>,
     },
-
-    #[error("Variables can't be used recursively")]
     RecursiveVariable,
-
-    #[error("Range is too big, it isn't allowed to contain more than {} digits", .0)]
     RangeIsTooBig(u8),
-
-    #[error("Compile error: {}", .0)]
     Other(&'static str),
 }
 
 impl CompileErrorKind {
     pub(crate) fn at(self, span: Span) -> CompileError {
         CompileError { kind: self, span }
+    }
+}
+
+impl std::error::Error for CompileErrorKind {}
+
+impl core::fmt::Display for CompileErrorKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {}", kind),
+            CompileErrorKind::Unsupported(feature, flavor) => {
+                write!(
+                    f,
+                    "Compile error: Unsupported feature `{}` in the `{:?}` regex flavor",
+                    feature.name(),
+                    flavor
+                )
+            }
+            CompileErrorKind::UnsupportedPomskySyntax(inner) => inner.fmt(f),
+            CompileErrorKind::HugeReference => {
+                write!(f, "Group references this large aren't supported")
+            }
+            CompileErrorKind::UnknownReferenceNumber(group) => {
+                write!(f, "Reference to unknown group. There is no group number {}", group)
+            }
+            CompileErrorKind::UnknownReferenceName { found, .. } => {
+                write!(f, "Reference to unknown group. There is no group named `{}`", found)
+            }
+            CompileErrorKind::NameUsedMultipleTimes(name) => {
+                write!(f, "Compile error: Group name `{}` used multiple times", name)
+            }
+            CompileErrorKind::EmptyClass => {
+                write!(f, "Compile error: This character class is empty")
+            }
+            CompileErrorKind::EmptyClassNegated => {
+                write!(f, "Compile error: This negated character class matches nothing")
+            }
+            CompileErrorKind::CaptureInLet => {
+                write!(f, "Capturing groups within `let` statements are currently not supported")
+            }
+            CompileErrorKind::ReferenceInLet => {
+                write!(f, "References within `let` statements are currently not supported")
+            }
+            CompileErrorKind::UnknownVariable { found, .. } => {
+                write!(f, "Variable `{}` doesn't exist", found)
+            }
+            CompileErrorKind::RecursiveVariable => write!(f, "Variables can't be used recursively"),
+            CompileErrorKind::RangeIsTooBig(digits) => write!(
+                f,
+                "Range is too big, it isn't allowed to contain more than {} digits",
+                digits
+            ),
+            CompileErrorKind::Other(error) => write!(f, "Compile error: {}", error),
+        }
     }
 }
 
@@ -170,36 +196,38 @@ impl Feature {
 /// An error that indicates that an unsupported feature was used.
 ///
 /// See [`crate::features::PomskyFeatures`] for details.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub(crate) enum UnsupportedError {
-    #[error("Grapheme is not supported")]
     Grapheme,
-
-    #[error("Numbered capturing groups is not supported")]
     NumberedGroups,
-
-    #[error("Named capturing groups is not supported")]
     NamedGroups,
-
-    #[error("References aren't supported")]
     References,
-
-    #[error("Lazy mode isn't supported")]
     LazyMode,
-
-    #[error("Ranges aren't supported")]
     Ranges,
-
-    #[error("Variables aren't supported")]
     Variables,
-
-    #[error("Lookahead isn't supported")]
     Lookahead,
-
-    #[error("Lookbehind isn't supported")]
     Lookbehind,
-
-    #[error("Word boundaries aren't supported")]
     Boundaries,
+}
+
+impl std::error::Error for UnsupportedError {}
+
+impl core::fmt::Display for UnsupportedError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let error = match self {
+            UnsupportedError::Grapheme => "Grapheme is not supported",
+            UnsupportedError::NumberedGroups => "Numbered capturing groups is not supported",
+            UnsupportedError::NamedGroups => "Named capturing groups is not supported",
+            UnsupportedError::References => "References aren't supported",
+            UnsupportedError::LazyMode => "Lazy mode isn't supported",
+            UnsupportedError::Ranges => "Ranges aren't supported",
+            UnsupportedError::Variables => "Variables aren't supported",
+            UnsupportedError::Lookahead => "Lookahead isn't supported",
+            UnsupportedError::Lookbehind => "Lookbehind isn't supported",
+            UnsupportedError::Boundaries => "Word boundaries aren't supported",
+        };
+
+        f.write_str(error)
+    }
 }

@@ -27,59 +27,36 @@ impl core::fmt::Display for ParseError {
 }
 
 /// An error kind (without a span) than can occur only during parsing
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ParseErrorKind {
-    #[error("Multiple parsing errors encountered")]
     Multiple(Box<[ParseError]>),
 
-    #[error("Unknown token")]
     UnknownToken,
-    #[error(transparent)]
     LexErrorWithMessage(LexErrorMsg),
-    #[error("The dot is not supported")] // this is for a dot *not* enclosed in brackets
-    Dot,
-    #[error("Unexpected keyword `{}`", .0)]
+    Dot, // this is for a dot *not* enclosed in brackets
     KeywordAfterLet(String),
-    #[error("Unexpected keyword `{}`", .0)]
     UnexpectedKeyword(String),
 
-    #[error(transparent)]
     Deprecated(DeprecationError),
 
-    #[error("Expected {}", .0)]
     Expected(&'static str),
-    #[error("There are leftover tokens that couldn't be parsed")]
     LeftoverTokens,
-    #[error("Expected {}", .0)]
     ExpectedToken(Token),
     // TODO: Check if this is needed
-    #[error("Expected code point or character")]
     ExpectedCodePointOrChar,
-    #[error("The first number in a range must be smaller than the second")]
     RangeIsNotIncreasing,
-    #[error("This expression can't be negated")]
     UnallowedNot,
-    #[error("An expression can't be negated more than once")]
     UnallowedMultiNot(usize),
-    #[error("A pipe must be followed by an expression")]
     LonePipe,
-    #[error("A variable with the same name already exists in this scope")]
     LetBindingExists,
-    #[error("Unsupported escape sequence in string")]
     InvalidEscapeInStringAt(usize),
-    #[error(transparent)]
     CharString(CharStringError),
-    #[error(transparent)]
     CharClass(CharClassError),
-    #[error(transparent)]
     CodePoint(CodePointError),
-    #[error(transparent)]
-    Number(#[from] NumberError),
-    #[error(transparent)]
+    Number(NumberError),
     Repetition(RepetitionError),
 
-    #[error("Recursion limit reached")]
     RecursionLimit,
 }
 
@@ -109,108 +86,200 @@ impl From<DeprecationError> for ParseErrorKind {
     }
 }
 
+impl From<NumberError> for ParseErrorKind {
+    fn from(e: NumberError) -> Self {
+        ParseErrorKind::Number(e)
+    }
+}
+
+impl std::error::Error for ParseErrorKind {}
+
+impl core::fmt::Display for ParseErrorKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            ParseErrorKind::Multiple(_) => writeln!(f, "Multiple parsing errors encountered:"),
+
+            ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
+            ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
+            ParseErrorKind::Dot => write!(f, "The dot is not supported"),
+            ParseErrorKind::KeywordAfterLet(keyword) => {
+                write!(f, "Unexpected keyword `{}`", keyword)
+            }
+            ParseErrorKind::UnexpectedKeyword(keyword) => {
+                write!(f, "Unexpected keyword `{}`", keyword)
+            }
+
+            ParseErrorKind::Deprecated(deprecation) => deprecation.fmt(f),
+
+            ParseErrorKind::Expected(expected) => write!(f, "Expected {}", expected),
+            ParseErrorKind::LeftoverTokens => {
+                write!(f, "There are leftover tokens that couldn't be parsed")
+            }
+            ParseErrorKind::ExpectedToken(token) => write!(f, "Expected {}", token),
+            ParseErrorKind::ExpectedCodePointOrChar => {
+                write!(f, "Expected code point or character")
+            }
+            ParseErrorKind::RangeIsNotIncreasing => {
+                write!(f, "The first number in a range must be smaller than the second")
+            }
+            ParseErrorKind::UnallowedNot => write!(f, "This expression can't be negated"),
+            ParseErrorKind::UnallowedMultiNot(_) => {
+                write!(f, "An expression can't be negated more than once")
+            }
+            ParseErrorKind::LonePipe => write!(f, "A pipe must be followed by an expression"),
+            ParseErrorKind::LetBindingExists => {
+                write!(f, "A variable with the same name already exists in this scope")
+            }
+            ParseErrorKind::InvalidEscapeInStringAt(_) => {
+                write!(f, "Unsupported escape sequence in string")
+            }
+            ParseErrorKind::CharString(error) => error.fmt(f),
+            ParseErrorKind::CharClass(error) => error.fmt(f),
+            ParseErrorKind::CodePoint(error) => error.fmt(f),
+            ParseErrorKind::Number(error) => error.fmt(f),
+            ParseErrorKind::Repetition(error) => error.fmt(f),
+
+            ParseErrorKind::RecursionLimit => write!(f, "Recursion limit reached"),
+        }
+    }
+}
+
 /// An error that is returned when a deprecated feature is used
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeprecationError {
     /// Deprecated `[codepoint]`
-    #[error("`[codepoint]` is deprecated")]
     CodepointInSet,
     /// Deprecated `[cp]`
-    #[error("`[cp]` is deprecated")]
     CpInSet,
 }
 
+impl std::error::Error for DeprecationError {}
+
+impl core::fmt::Display for DeprecationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error = match self {
+            DeprecationError::CodepointInSet => "`[codepoint]` is deprecated",
+            DeprecationError::CpInSet => "`[cp]` is deprecated",
+        };
+
+        f.write_str(error)
+    }
+}
+
 /// An error that relates to a character string
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CharStringError {
     /// Empty string in a code point range within a character class, e.g.
     /// `[''-'z']`
-    #[error("Strings used in ranges can't be empty")]
     Empty,
-
     /// String in a code point range within a character class that contains
     /// multiple code points, e.g. `['abc'-'z']`
-    #[error("Strings used in ranges can only contain 1 code point")]
     TooManyCodePoints,
 }
 
+impl std::error::Error for CharStringError {}
+
+impl core::fmt::Display for CharStringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error = match self {
+            CharStringError::Empty => "Strings used in ranges can't be empty",
+            CharStringError::TooManyCodePoints => {
+                "Strings used in ranges can only contain 1 code point"
+            }
+        };
+
+        f.write_str(error)
+    }
+}
+
 /// An error that relates to a character class
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CharClassError {
     /// Empty character class, i.e. `[]`
-    #[error("This character class is empty")]
     Empty,
-
     /// This error is created when `[^` is encountered. This is a negated character class
     /// in a regex, but pomsky instead uses the `![` syntax.
-    #[error("`^` is not a valid token")]
     CaretInGroup,
-
     /// Descending code point range, e.g. `['z'-'a']`
-    #[error(
-        "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
-        *.0 as u32, *.1 as u32
-    )]
     DescendingRange(char, char),
-
     /// Invalid token within a character class
-    #[error("Expected string, range, code point or named character class")]
     Invalid,
-
     /// Character class contains incompatible shorthands, e.g. `[. codepoint]`
-    #[error("This combination of character classes is not allowed")]
     Unallowed,
-
     /// Unknown shorthand character class or Unicode property
-    #[error("Unknown character class `{}`", .found)]
     UnknownNamedClass {
         found: Box<str>,
         #[cfg(feature = "suggestions")]
         similar: Option<Box<str>>,
     },
-
     /// A character class that can't be negated, e.g. `[!ascii]`
-    #[error("This character class can't be negated")]
     Negative,
-
     /// Unexpected keyword within a character class, e.g. `[let]`
-    #[error("Unexpected keyword `{}`", .0)]
     Keyword(String),
 }
 
+impl std::error::Error for CharClassError {}
+
+impl core::fmt::Display for CharClassError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            CharClassError::Empty => write!(f, "This character class is empty"),
+            CharClassError::CaretInGroup => write!(f, "`^` is not a valid token"),
+            CharClassError::DescendingRange(a, b) => write!(
+                f,
+                "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
+                *a as u32, *b as u32
+            ),
+            CharClassError::Invalid => {
+                write!(f, "Expected string, range, code point or named character class")
+            }
+            CharClassError::Unallowed => {
+                write!(f, "This combination of character classes is not allowed")
+            }
+            CharClassError::UnknownNamedClass { found, .. } => {
+                write!(f, "Unknown character class `{}`", found)
+            }
+            CharClassError::Negative => write!(f, "This character class can't be negated"),
+            CharClassError::Keyword(keyword) => write!(f, "Unexpected keyword `{}`", keyword),
+        }
+    }
+}
+
 /// An error that relates to a Unicode code point
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CodePointError {
     /// Code point that is outside the allowed range, e.g. `U+200000`
-    #[error("This code point is outside the allowed range")]
     Invalid,
 }
 
+impl std::error::Error for CodePointError {}
+
+impl core::fmt::Display for CodePointError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error = match self {
+            CodePointError::Invalid => "This code point is outside the allowed range",
+        };
+
+        f.write_str(error)
+    }
+}
+
 /// An error that relates to parsing a number
-#[derive(Debug, Copy, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum NumberError {
     /// The parsed string is empty
-    #[error("cannot parse integer from empty string")]
     Empty,
-
     /// The parsed string contains a character that isn't a digit
-    #[error("invalid digit found in string")]
     InvalidDigit,
-
     /// The number is too large to fit in the target integer type
-    #[error("number too large")]
     TooLarge,
-
     /// The number is too small to fit in the target integer type
-    #[error("number too small")]
     TooSmall,
-
     /// The number is zero, but the target number type can't be zero
-    #[error("number would be zero for non-zero type")]
     Zero,
 }
 
@@ -227,18 +296,43 @@ impl From<ParseIntError> for NumberError {
     }
 }
 
+impl std::error::Error for NumberError {}
+
+impl core::fmt::Display for NumberError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error = match self {
+            NumberError::Empty => "cannot parse integer from empty string",
+            NumberError::InvalidDigit => "invalid digit found in string",
+            NumberError::TooLarge => "number too large",
+            NumberError::TooSmall => "number too small",
+            NumberError::Zero => "number would be zero for non-zero type",
+        };
+
+        f.write_str(error)
+    }
+}
+
 /// An error indicating an invalid repetition, e.g. `x{4,2}`
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RepetitionError {
     /// The second number in the repetition is greater than the first
-    #[error("Lower bound can't be greater than the upper bound")]
     NotAscending,
-
     /// Question mark after a repetition, e.g. `x{3}?`
-    #[error("Unexpected `?` following a repetition")]
     QmSuffix,
-
     /// Plus after a repetition, e.g. `x{3}+`
-    #[error("Unexpected `+` following a repetition")]
     PlusSuffix,
+}
+
+impl std::error::Error for RepetitionError {}
+
+impl core::fmt::Display for RepetitionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error = match self {
+            RepetitionError::NotAscending => "Lower bound can't be greater than the upper bound",
+            RepetitionError::QmSuffix => "Unexpected `?` following a repetition",
+            RepetitionError::PlusSuffix => "Unexpected `+` following a repetition",
+        };
+
+        f.write_str(error)
+    }
 }
