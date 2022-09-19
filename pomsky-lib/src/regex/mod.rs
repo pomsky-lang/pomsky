@@ -165,7 +165,12 @@ impl RegexProperty {
         }
         match self {
             RegexProperty::Category(c) => buf.push_str(c.as_str()),
-            RegexProperty::Script(s) => buf.push_str(s.as_str()),
+            RegexProperty::Script(s) => {
+                if flavor == RegexFlavor::JavaScript {
+                    buf.push_str("sc=");
+                }
+                buf.push_str(s.as_str());
+            }
             RegexProperty::Block(b) => match flavor {
                 RegexFlavor::DotNet => {
                     buf.push_str("Is");
