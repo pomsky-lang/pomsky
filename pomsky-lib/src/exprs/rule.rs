@@ -32,6 +32,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
                     return Err(CompileErrorKind::ReferenceInLet.at(r.span));
                 }
             }
+            Rule::Regex(_) => {}
             Rule::Range(_) => {}
             Rule::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
         }
@@ -58,6 +59,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             }),
             Rule::Reference(r) => r.compile(options, state),
             Rule::Range(r) => r.compile(options, state),
+            Rule::Regex(r) => r.compile(options, state),
             Rule::StmtExpr(m) => m.compile(options, state),
         }
     }
@@ -75,6 +77,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Variable(_) => {}
             Rule::Reference(r) => r.validate(options)?,
             Rule::Range(r) => r.validate(options)?,
+            Rule::Regex(r) => r.validate(options)?,
             Rule::StmtExpr(s) => s.validate(options)?,
         }
 

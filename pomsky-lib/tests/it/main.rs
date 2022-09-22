@@ -110,20 +110,20 @@ fn defer_main() -> Result<(), io::Error> {
                 "{t_tip}: you can rerun a specific test case with \
                 `cargo test --test it -- {t_filter}`\n\
                 where {t_filter} is a substring of the test case's file path\n",
-                t_tip = Yellow("tip"),
+                t_tip = Yellow("help"),
                 t_filter = Blue("<filter>"),
             );
             println!(
                 "{t_tip}: Automatically correct failed testcases with \
                 `cargo test --test it -- {t_bless}`\n",
-                t_tip = Yellow("tip"),
+                t_tip = Yellow("help"),
                 t_bless = Blue("--bless"),
             );
         }
     } else if ignored > 0 {
         println!(
             "{t_tip}: run ignored test cases with `cargo test --test it -- -i`",
-            t_tip = Yellow("tip"),
+            t_tip = Yellow("help"),
         );
     }
 

@@ -1,0 +1,5 @@
+#! expect=error
+[regex "]a-n^-"]
+-----
+ERROR: Unexpected keyword `regex`
+SPAN: 1..6

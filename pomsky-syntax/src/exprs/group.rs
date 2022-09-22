@@ -38,13 +38,13 @@ impl<'i> Group<'i> {
             GroupKind::Atomic => {
                 buf.push_str("atomic ");
             }
-            GroupKind::Normal => {}
+            GroupKind::Normal | GroupKind::Implicit => {}
         }
 
         if self.parts.is_empty() {
             buf.push_str("()");
         } else {
-            if use_parens {
+            if self.kind != GroupKind::Implicit {
                 buf.start_indentation("(");
             }
 
@@ -66,18 +66,23 @@ impl<'i> Group<'i> {
                 }
             }
 
-            if use_parens {
+            if self.kind != GroupKind::Implicit {
                 buf.end_indentation(")");
             }
         }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum GroupKind<'i> {
+    /// A (possibly named) capturing group e.g. `:foo`
     Capturing(Capture<'i>),
+    /// An atomic group
     Atomic,
+    /// A normal group with a set of parentheses
     Normal,
+    /// An implicit group, with no parentheses
+    Implicit,
 }
 
 impl GroupKind<'_> {

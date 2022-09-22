@@ -9,10 +9,7 @@ use crate::{
     regex::Regex,
 };
 
-use super::{
-    group::{RegexGroup, RegexGroupKind},
-    Rule, RuleExt,
-};
+use super::RuleExt;
 
 impl<'i> RuleExt<'i> for Repetition<'i> {
     fn get_capturing_groups(
@@ -29,14 +26,7 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        let mut content = self.rule.compile(options, state)?;
-
-        if let RepetitionKind { lower_bound: 0, upper_bound: Some(1) } = self.kind {
-            if let Rule::Repetition(_) = &self.rule {
-                content =
-                    Regex::Group(RegexGroup::new(vec![content], RegexGroupKind::NoneWithParens));
-            }
-        }
+        let content = self.rule.compile(options, state)?;
 
         let quantifier = match self.quantifier {
             Quantifier::Greedy => RegexQuantifier::Greedy,
@@ -54,12 +44,12 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexRepetition<'i> {
-    content: Regex<'i>,
-    kind: RepetitionKind,
-    quantifier: RegexQuantifier,
+    pub(crate) content: Regex<'i>,
+    pub(crate) kind: RepetitionKind,
+    pub(crate) quantifier: RegexQuantifier,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RegexQuantifier {
     Greedy,
     Lazy,

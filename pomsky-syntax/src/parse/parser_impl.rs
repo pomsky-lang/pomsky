@@ -144,7 +144,7 @@ impl<'i> Parser<'i> {
             let end = fixes.last().map(|f| f.span()).unwrap_or_default();
             let span = start.join(end);
 
-            Some(Rule::Group(Group::new(fixes, GroupKind::Normal, span)))
+            Some(Rule::Group(Group::new(fixes, GroupKind::Implicit, span)))
         })
     }
 
@@ -305,6 +305,8 @@ impl<'i> Parser<'i> {
             Rule::CharClass(CharClass::new(CharGroup::from_char(c), span))
         } else if let Some(rule) = self.parse_range()? {
             rule
+        } else if let Some(rule) = self.parse_regex()? {
+            rule
         } else if let Some(rule) = self.parse_variable()? {
             rule
         } else if self.consume(Token::Dot) {
@@ -333,15 +335,7 @@ impl<'i> Parser<'i> {
             .map_err(|p| ParseErrorKind::Expected("`)` or an expression").at(p.span))?;
         let span = start_span.join(self.last_span());
 
-        let rule = match (kind, rule) {
-            (GroupKind::Normal, rule) => rule,
-            (kind, Rule::Group(mut g)) if g.kind.is_normal() => {
-                g.kind = kind;
-                g.span = span;
-                Rule::Group(g)
-            }
-            (kind, rule) => Rule::Group(Group::new(vec![rule], kind, span)),
-        };
+        let rule = Rule::Group(Group::new(vec![rule], kind, span));
         Ok(Some(rule))
     }
 
@@ -657,6 +651,22 @@ impl<'i> Parser<'i> {
             }
 
             Ok(Some(Rule::Range(Range::new(start, end, radix, span))))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Parses an unescaped regex expression (`regex "[test]"`)
+    fn parse_regex(&mut self) -> PResult<Option<Rule<'i>>> {
+        if self.consume_reserved("regex") {
+            let span_start = self.last_span();
+            let lit = self.expect_as(Token::String)?;
+            let span_end = self.last_span();
+
+            let content = helper::parse_quoted_text(lit).map_err(|k| k.at(span_end))?;
+
+            let span = span_start.join(span_end);
+            Ok(Some(Rule::Regex(Regex::new(content, span))))
         } else {
             Ok(None)
         }

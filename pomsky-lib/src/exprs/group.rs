@@ -70,7 +70,7 @@ impl<'i> RuleExt<'i> for Group<'i> {
                 }
                 GroupKind::Capturing(Capture { name: None }) => RegexGroupKind::Capture,
                 GroupKind::Atomic => RegexGroupKind::Atomic,
-                GroupKind::Normal => RegexGroupKind::None,
+                GroupKind::Normal | GroupKind::Implicit => RegexGroupKind::Normal,
             },
         }))
     }
@@ -103,17 +103,17 @@ impl<'i> RuleExt<'i> for Group<'i> {
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexGroup<'i> {
-    parts: Vec<Regex<'i>>,
-    kind: RegexGroupKind<'i>,
+    pub(crate) parts: Vec<Regex<'i>>,
+    pub(crate) kind: RegexGroupKind<'i>,
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(PartialEq, Eq)]
 pub(crate) enum RegexGroupKind<'i> {
     Capture,
     NamedCapture(&'i str),
     Atomic,
-    None,
-    NoneWithParens,
+    Normal,
 }
 
 impl<'i> RegexGroup<'i> {
@@ -157,9 +157,12 @@ impl<'i> RegexGroup<'i> {
                 }
                 buf.push(')');
             }
-            RegexGroupKind::None => {
+            RegexGroupKind::Normal => {
+                let len = self.parts.len();
+
                 for part in &self.parts {
-                    let needs_parens = part.needs_parens_in_group();
+                    let needs_parens = len > 1 && part.needs_parens_in_sequence()
+                        || len == 1 && matches!(part, Regex::Unescaped(_));
                     if needs_parens {
                         buf.push_str("(?:");
                     }
@@ -169,22 +172,15 @@ impl<'i> RegexGroup<'i> {
                     }
                 }
             }
-            RegexGroupKind::NoneWithParens => {
-                for part in &self.parts {
-                    buf.push_str("(?:");
-                    part.codegen(buf, flavor);
-                    buf.push(')');
-                }
-            }
         }
     }
 
     pub(crate) fn needs_parens_before_repetition(&self) -> bool {
         match self.kind {
-            RegexGroupKind::None if self.parts.len() == 1 => {
+            RegexGroupKind::Normal if self.parts.len() == 1 => {
                 self.parts[0].needs_parens_before_repetition()
             }
-            RegexGroupKind::None => true,
+            RegexGroupKind::Normal => true,
             _ => false,
         }
     }
