@@ -19,7 +19,7 @@ pub struct ParseError {
 impl core::fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(std::ops::Range { start, end }) = self.span.range() {
-            write!(f, "{}\n  at {}..{}", self.kind, start, end)
+            write!(f, "{}\n  at {start}..{end}", self.kind)
         } else {
             self.kind.fmt(f)
         }
@@ -97,25 +97,25 @@ impl std::error::Error for ParseErrorKind {}
 impl core::fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            ParseErrorKind::Multiple(_) => writeln!(f, "Multiple parsing errors encountered:"),
+            ParseErrorKind::Multiple(_) => writeln!(f, "Multiple parsing errors encountered"),
 
             ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
             ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
             ParseErrorKind::Dot => write!(f, "The dot is not supported"),
             ParseErrorKind::KeywordAfterLet(keyword) => {
-                write!(f, "Unexpected keyword `{}`", keyword)
+                write!(f, "Unexpected keyword `{keyword}`")
             }
             ParseErrorKind::UnexpectedKeyword(keyword) => {
-                write!(f, "Unexpected keyword `{}`", keyword)
+                write!(f, "Unexpected keyword `{keyword}`")
             }
 
             ParseErrorKind::Deprecated(deprecation) => deprecation.fmt(f),
 
-            ParseErrorKind::Expected(expected) => write!(f, "Expected {}", expected),
+            ParseErrorKind::Expected(expected) => write!(f, "Expected {expected}"),
             ParseErrorKind::LeftoverTokens => {
                 write!(f, "There are leftover tokens that couldn't be parsed")
             }
-            ParseErrorKind::ExpectedToken(token) => write!(f, "Expected {}", token),
+            ParseErrorKind::ExpectedToken(token) => write!(f, "Expected {token}"),
             ParseErrorKind::ExpectedCodePointOrChar => {
                 write!(f, "Expected code point or character")
             }
@@ -227,10 +227,10 @@ impl core::fmt::Display for CharClassError {
         match self {
             CharClassError::Empty => write!(f, "This character class is empty"),
             CharClassError::CaretInGroup => write!(f, "`^` is not a valid token"),
-            CharClassError::DescendingRange(a, b) => write!(
+            &CharClassError::DescendingRange(a, b) => write!(
                 f,
                 "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
-                *a as u32, *b as u32
+                a as u32, b as u32
             ),
             CharClassError::Invalid => {
                 write!(f, "Expected string, range, code point or named character class")
@@ -239,10 +239,10 @@ impl core::fmt::Display for CharClassError {
                 write!(f, "This combination of character classes is not allowed")
             }
             CharClassError::UnknownNamedClass { found, .. } => {
-                write!(f, "Unknown character class `{}`", found)
+                write!(f, "Unknown character class `{found}`")
             }
             CharClassError::Negative => write!(f, "This character class can't be negated"),
-            CharClassError::Keyword(keyword) => write!(f, "Unexpected keyword `{}`", keyword),
+            CharClassError::Keyword(keyword) => write!(f, "Unexpected keyword `{keyword}`"),
         }
     }
 }

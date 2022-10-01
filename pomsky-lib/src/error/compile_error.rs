@@ -34,7 +34,7 @@ impl std::error::Error for CompileError {}
 impl core::fmt::Display for CompileError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if let Some(std::ops::Range { start, end }) = self.span.range() {
-            write!(f, "{}\n  at {}..{}", self.kind, start, end)
+            write!(f, "{}\n  at {start}..{end}", self.kind)
         } else {
             self.kind.fmt(f)
         }
@@ -87,13 +87,12 @@ impl std::error::Error for CompileErrorKind {}
 impl core::fmt::Display for CompileErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {}", kind),
+            CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {kind}"),
             CompileErrorKind::Unsupported(feature, flavor) => {
                 write!(
                     f,
-                    "Compile error: Unsupported feature `{}` in the `{:?}` regex flavor",
+                    "Compile error: Unsupported feature `{}` in the `{flavor:?}` regex flavor",
                     feature.name(),
-                    flavor
                 )
             }
             CompileErrorKind::UnsupportedPomskySyntax(inner) => inner.fmt(f),
@@ -101,13 +100,13 @@ impl core::fmt::Display for CompileErrorKind {
                 write!(f, "Group references this large aren't supported")
             }
             CompileErrorKind::UnknownReferenceNumber(group) => {
-                write!(f, "Reference to unknown group. There is no group number {}", group)
+                write!(f, "Reference to unknown group. There is no group number {group}")
             }
             CompileErrorKind::UnknownReferenceName { found, .. } => {
-                write!(f, "Reference to unknown group. There is no group named `{}`", found)
+                write!(f, "Reference to unknown group. There is no group named `{found}`")
             }
             CompileErrorKind::NameUsedMultipleTimes(name) => {
-                write!(f, "Compile error: Group name `{}` used multiple times", name)
+                write!(f, "Compile error: Group name `{name}` used multiple times")
             }
             CompileErrorKind::EmptyClass => {
                 write!(f, "Compile error: This character class is empty")
@@ -122,15 +121,13 @@ impl core::fmt::Display for CompileErrorKind {
                 write!(f, "References within `let` statements are currently not supported")
             }
             CompileErrorKind::UnknownVariable { found, .. } => {
-                write!(f, "Variable `{}` doesn't exist", found)
+                write!(f, "Variable `{found}` doesn't exist")
             }
             CompileErrorKind::RecursiveVariable => write!(f, "Variables can't be used recursively"),
-            CompileErrorKind::RangeIsTooBig(digits) => write!(
-                f,
-                "Range is too big, it isn't allowed to contain more than {} digits",
-                digits
-            ),
-            CompileErrorKind::Other(error) => write!(f, "Compile error: {}", error),
+            CompileErrorKind::RangeIsTooBig(digits) => {
+                write!(f, "Range is too big, it isn't allowed to contain more than {digits} digits")
+            }
+            CompileErrorKind::Other(error) => write!(f, "Compile error: {error}"),
         }
     }
 }
@@ -216,9 +213,9 @@ impl std::error::Error for UnsupportedError {}
 impl core::fmt::Display for UnsupportedError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let error = match self {
-            UnsupportedError::Grapheme => "Grapheme is not supported",
-            UnsupportedError::NumberedGroups => "Numbered capturing groups is not supported",
-            UnsupportedError::NamedGroups => "Named capturing groups is not supported",
+            UnsupportedError::Grapheme => "Grapheme isn't supported",
+            UnsupportedError::NumberedGroups => "Numbered capturing groups aren't supported",
+            UnsupportedError::NamedGroups => "Named capturing groups aren't supported",
             UnsupportedError::References => "References aren't supported",
             UnsupportedError::LazyMode => "Lazy mode isn't supported",
             UnsupportedError::Ranges => "Ranges aren't supported",
