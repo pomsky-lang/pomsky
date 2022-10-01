@@ -6,8 +6,7 @@ use pomsky_syntax::{
 
 use super::{compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError};
 
-#[cfg_attr(feature = "miette", derive(Debug, thiserror::Error))]
-#[cfg_attr(feature = "miette", error("{}", .msg))]
+#[cfg_attr(feature = "miette", derive(Debug))]
 #[non_exhaustive]
 /// A struct containing detailed information about an error, which can be
 /// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).
@@ -25,6 +24,16 @@ pub struct Diagnostic {
     /// The start and end byte positions of the source code where the error
     /// occurred.
     pub span: Span,
+}
+
+#[cfg(feature = "miette")]
+impl std::error::Error for Diagnostic {}
+
+#[cfg(feature = "miette")]
+impl core::fmt::Display for Diagnostic {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.msg.fmt(f)
+    }
 }
 
 /// Indicates whether a diagnostic is an error or a warning

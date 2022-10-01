@@ -569,7 +569,6 @@ dependencies = [
  "once_cell",
  "pomsky-syntax",
  "regex",
- "thiserror",
 ]
 
 [[package]]
@@ -581,7 +580,6 @@ dependencies = [
  "miette",
  "owo-colors",
  "pomsky",
- "thiserror",
 ]
 
 [[package]]
@@ -597,7 +595,6 @@ version = "0.7.0"
 dependencies = [
  "arbitrary",
  "strsim",
- "thiserror",
 ]
 
 [[package]]
