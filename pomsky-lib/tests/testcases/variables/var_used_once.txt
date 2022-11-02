@@ -1,3 +1,4 @@
+#! flavor=pcre
 let _ = "hello" | "world" << "test";
 _
 -----

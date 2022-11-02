@@ -20,6 +20,7 @@ pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: Regex
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '-' => buf.push_str(r#"\-"#),
+        '[' => buf.push_str(r#"\["#),
         ']' => buf.push_str(r#"\]"#),
         '^' => buf.push_str(r#"\^"#),
         c => compile_char(c, buf, flavor),
@@ -58,8 +59,9 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         '\r' => buf.push_str("\\r"),
         '\t' => buf.push_str("\\t"),
         '\x07' => buf.push_str("\\a"),
-        '\x1B' => buf.push_str("\\e"),
         '\x0C' => buf.push_str("\\f"),
+        // not supported in Rust:
+        // '\x1B' => buf.push_str("\\e"),
         ' ' => buf.push(' '),
         _ if c.is_ascii() => {
             if c.is_ascii_graphic() {

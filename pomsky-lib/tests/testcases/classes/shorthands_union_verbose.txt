@@ -1,3 +1,4 @@
+#! flavor=pcre
 [word digit space horiz_space vert_space]
 -----
 [\w\d\s\h\v]

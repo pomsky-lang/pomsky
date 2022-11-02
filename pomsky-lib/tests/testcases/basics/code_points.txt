@@ -1,3 +1,4 @@
+#! flavor=pcre
 # code points
 
 U+6 U+60 U+600 U+6000 U+F0000

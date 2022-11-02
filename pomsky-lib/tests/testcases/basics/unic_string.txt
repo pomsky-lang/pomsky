@@ -1,3 +1,4 @@
+#! flavor=pcre
 # unicode strings
 
 'ä Ŧ 🤦🏼‍♂️'

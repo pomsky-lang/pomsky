@@ -1,4 +1,4 @@
 #! compile=false
-![s !s]
+regex '['
 -----
-[^\s\S]
+[

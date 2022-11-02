@@ -73,6 +73,12 @@ fn defer_main() -> Result<(), io::Error> {
                 println!("         {}: {}", Blue("got"), Print(got, 14));
                 println!();
             }
+            TestResult::InvalidOutput(e) => {
+                failed += 1;
+                println!("{}: {}", path.to_string_lossy(), Red("invalid regex."));
+                println!("{e}");
+                println!();
+            }
             TestResult::Panic { message } => {
                 failed += 1;
                 println!("{}: {}", path.to_string_lossy(), Red("test panicked."));

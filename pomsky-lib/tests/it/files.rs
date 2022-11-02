@@ -18,24 +18,38 @@ pub(crate) enum TestResult {
     Blessed,
     IncorrectResult { input: String, expected: Result<String, String>, got: Result<String, String> },
     Panic { message: Option<String> },
+    InvalidOutput(regex::Error),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct Options {
+    /// The regex flavor to compile with
     flavor: RegexFlavor,
+    /// Whether this test should be ignored entirely
     ignore: bool,
+    /// Whether we expect a compilation error from pomsky or not
     expected_outcome: Outcome,
+    /// Whether we attempt to compile the output with the `regex` crate.
+    ///
+    /// Defaults to `true` if the regex flavor is `rust`.
+    compile: bool,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Self { flavor: RegexFlavor::Pcre, ignore: false, expected_outcome: Outcome::Success }
+        Self {
+            flavor: RegexFlavor::Rust,
+            ignore: false,
+            expected_outcome: Outcome::Success,
+            compile: true,
+        }
     }
 }
 
 impl Options {
     fn parse(line: &str, path: &Path) -> Self {
         let mut result = Options::default();
+        let mut compile = None;
 
         for part in line.trim_start_matches("#!").split(',') {
             let part = part.trim();
@@ -43,7 +57,7 @@ impl Options {
             match key {
                 "flavor" => {
                     result.flavor = match value.to_ascii_lowercase().as_str() {
-                        "pcre" | "" => RegexFlavor::Pcre,
+                        "pcre" => RegexFlavor::Pcre,
                         "js" | "javascript" => RegexFlavor::JavaScript,
                         "java" => RegexFlavor::Java,
                         ".net" | "dotnet" => RegexFlavor::DotNet,
@@ -79,12 +93,24 @@ impl Options {
                         }
                     }
                 }
+                "compile" => {
+                    compile = Some(match value {
+                        "yes" | "true" | "" => true,
+                        "no" | "false" => false,
+                        _ => {
+                            eprintln!("{}: Unknown boolean {value:?}", Yellow("Warning"));
+                            eprintln!("  in {path:?}");
+                            continue;
+                        }
+                    });
+                }
                 _ => {
                     eprintln!("{}: Unknown option {key:?}", Yellow("Warning"));
                     eprintln!("  in {path:?}");
                 }
             }
         }
+        result.compile = compile.unwrap_or_else(|| result.flavor == RegexFlavor::Rust);
         result
     }
 }
@@ -118,14 +144,24 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
         );
 
         match parsed {
-            Ok((mut got, warnings)) => {
+            Ok((regex, warnings)) => {
+                let mut got = regex.clone();
                 for warning in warnings {
                     got.push_str("\nWARNING: ");
                     got.write_fmt(format_args!("{}", warning)).unwrap();
                 }
 
                 match options.expected_outcome {
-                    Outcome::Success if got == expected => TestResult::Success,
+                    Outcome::Success if got == expected => {
+                        if options.compile {
+                            match regex::Regex::new(&regex) {
+                                Ok(_) => TestResult::Success,
+                                Err(e) => TestResult::InvalidOutput(e),
+                            }
+                        } else {
+                            TestResult::Success
+                        }
+                    }
                     _ if bless => {
                         let contents = create_content(
                             input,
@@ -210,7 +246,7 @@ fn create_content(input: &str, outcome: &str, options: Options) -> String {
     if options.ignore {
         option_strings.push(String::from("ignore"));
     }
-    if options.flavor != RegexFlavor::Pcre {
+    if options.flavor != RegexFlavor::Rust {
         option_strings.push(format!("flavor={:?}", options.flavor));
     }
 
