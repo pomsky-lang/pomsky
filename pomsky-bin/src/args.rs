@@ -2,7 +2,7 @@ use std::{io::Read, path::PathBuf, string::FromUtf8Error};
 
 use atty::Stream;
 use owo_colors::OwoColorize;
-use pomsky::options::RegexFlavor;
+use pomsky::{features::PomskyFeatures, options::RegexFlavor};
 
 pub(super) enum ParseArgsError {
     Lexopt(lexopt::Error),
@@ -36,6 +36,8 @@ pub(crate) struct Args {
     pub(crate) flavor: Option<RegexFlavor>,
     /// Does not print a new-line at the end of the compiled regular expression
     pub(crate) no_new_line: bool,
+    /// Set of allowed pomsky features
+    pub(crate) allowed_features: PomskyFeatures,
 }
 
 /// Compile a Pomsky expression to a regex
@@ -76,6 +78,11 @@ Compile pomsky expressions, a new regular expression language
     {a_debug  }              Show debug information
     {a_flavor           }    Regex flavor [possible values: pcre, python, java,
                              javascript, dotnet, ruby, rust]
+    {a_features         } Comma-separated list of allowed features
+                             [possible values: grapheme, numbered-groups,
+                             named-groups, atomic-groups, references,
+                             lazy-mode, ranges, variables, lookahead,
+                             lookbehind, boundaries, regexes, dot]
     {a_help  }               Print help information
     {a_no_new_line  }        Does not print a new-line at the end of the
                              compiled regular expression
@@ -89,6 +96,7 @@ Compile pomsky expressions, a new regular expression language
         a_input = green!(stream, "<INPUT>"),
         a_debug = green!(stream, "-d, --debug"),
         a_flavor = green!(stream, "-f, --flavor <FLAVOR>"),
+        a_features = green!(stream, "-allowed-features <LIST>"),
         a_help = green!(stream, "-h, --help"),
         a_no_new_line = green!(stream, "-n, --no-new-line"),
         a_path = green!(stream, "-p, --path <FILE>"),
@@ -108,6 +116,7 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
     let mut debug = false;
     let mut flavor = None;
     let mut no_new_line = false;
+    let mut allowed_features = None;
 
     let mut parser = lexopt::Parser::from_env();
     while let Some(arg) = parser.next()? {
@@ -152,6 +161,40 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
                 }
                 no_new_line = true;
             }
+            Long("allowed-features") => {
+                if allowed_features.is_some() {
+                    return Err(ParseArgsError::unexpected_twice("--allowed-features"));
+                }
+                let value = parser.value()?;
+                let lower = value.to_string_lossy().to_ascii_lowercase();
+
+                let mut features = PomskyFeatures::new();
+                for part in lower.split(',') {
+                    let part = part.trim();
+                    if !part.is_empty() {
+                        match part {
+                            "grapheme" => features.grapheme(true),
+                            "numbered-groups" => features.numbered_groups(true),
+                            "named-groups" => features.named_groups(true),
+                            "atomic-groups" => features.atomic_groups(true),
+                            "references" => features.references(true),
+                            "lazy-mode" => features.lazy_mode(true),
+                            "ranges" => features.ranges(true),
+                            "variables" => features.variables(true),
+                            "lookahead" => features.lookahead(true),
+                            "lookbehind" => features.lookbehind(true),
+                            "boundaries" => features.boundaries(true),
+                            "regexes" => features.regexes(true),
+                            "dot" => features.dot(true),
+                            s => {
+                                eprintln!("warning: unknown feature `{s}`");
+                                features
+                            }
+                        };
+                    }
+                }
+                allowed_features = Some(features);
+            }
             Value(val) if input_value.is_none() => {
                 input_value = Some(val.into_string().map_err(lexopt::Error::from)?);
             }
@@ -187,5 +230,11 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
         (None, None) => return Err(ParseArgsError::Other("No input provided".into())),
     };
 
-    Ok(Args { input, flavor, debug, no_new_line })
+    Ok(Args {
+        input,
+        flavor,
+        debug,
+        no_new_line,
+        allowed_features: allowed_features.unwrap_or_default(),
+    })
 }

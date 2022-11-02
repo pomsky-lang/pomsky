@@ -49,7 +49,7 @@ fn compile(input: &str, args: &Args) {
     let options = CompileOptions {
         flavor: args.flavor.unwrap_or(RegexFlavor::Pcre),
         max_range_size: 12,
-        ..Default::default()
+        allowed_features: args.allowed_features,
     };
 
     let (parsed, warnings) = match Expr::parse(input) {
