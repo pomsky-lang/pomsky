@@ -1,8 +1,9 @@
-use pomsky_syntax::exprs::Variable;
+use pomsky_syntax::exprs::{Rule, Variable};
 
 use crate::{
     compile::{CompileResult, CompileState},
     error::CompileErrorKind,
+    features::PomskyFeatures,
     options::CompileOptions,
 };
 
@@ -22,6 +23,16 @@ impl<'i> RuleExt<'i> for Variable<'i> {
             .find(|&(i, &(name, _))| name == self.name && !state.current_vars.contains(&i));
 
         if let Some((i, &(_, rule))) = rule {
+            match rule {
+                Rule::Boundary(_) => {
+                    options.allowed_features.require(PomskyFeatures::BOUNDARIES, self.span)?
+                }
+                Rule::Grapheme => {
+                    options.allowed_features.require(PomskyFeatures::GRAPHEME, self.span)?
+                }
+                _ => {}
+            }
+
             state.current_vars.insert(i);
             let res = rule.compile(options, state)?;
             state.current_vars.remove(&i);

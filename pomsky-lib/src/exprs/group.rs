@@ -5,6 +5,7 @@ use pomsky_syntax::exprs::{Capture, Group, GroupKind};
 use crate::{
     compile::{CompileResult, CompileState},
     error::{CompileError, CompileErrorKind, Feature},
+    features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -76,12 +77,21 @@ impl<'i> RuleExt<'i> for Group<'i> {
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         if let GroupKind::Atomic = self.kind {
+            options.allowed_features.require(PomskyFeatures::ATOMIC_GROUPS, self.span)?;
+
             if let RegexFlavor::JavaScript | RegexFlavor::Python | RegexFlavor::Rust =
                 options.flavor
             {
                 return Err(CompileErrorKind::Unsupported(Feature::AtomicGroups, options.flavor)
                     .at(self.span));
             }
+        } else if let GroupKind::Capturing(c) = self.kind {
+            let feature = match &c.name {
+                Some(_) => PomskyFeatures::NAMED_GROUPS,
+                None => PomskyFeatures::NUMBERED_GROUPS,
+            };
+
+            options.allowed_features.require(feature, self.span)?;
         }
 
         for rule in &self.parts {

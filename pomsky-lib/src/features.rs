@@ -28,6 +28,7 @@ impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
         feat.grapheme(bool::arbitrary(u)?);
         feat.numbered_groups(bool::arbitrary(u)?);
         feat.named_groups(bool::arbitrary(u)?);
+        feat.atomic_groups(bool::arbitrary(u)?);
         feat.references(bool::arbitrary(u)?);
         feat.lazy_mode(bool::arbitrary(u)?);
         feat.ranges(bool::arbitrary(u)?);
@@ -45,6 +46,7 @@ impl fmt::Debug for PomskyFeatures {
             .field("grapheme", &self.supports(Self::GRAPHEME))
             .field("numbered_groups", &self.supports(Self::NUMBERED_GROUPS))
             .field("named_groups", &self.supports(Self::NAMED_GROUPS))
+            .field("atomic_groups", &self.supports(Self::ATOMIC_GROUPS))
             .field("references", &self.supports(Self::REFERENCES))
             .field("lazy_mode", &self.supports(Self::LAZY_MODE))
             .field("ranges", &self.supports(Self::RANGES))
@@ -68,7 +70,8 @@ impl Default for PomskyFeatures {
                 | Self::VARIABLES
                 | Self::LOOKAHEAD
                 | Self::LOOKBEHIND
-                | Self::BOUNDARIES,
+                | Self::BOUNDARIES
+                | Self::ATOMIC_GROUPS,
         }
     }
 }
@@ -84,6 +87,16 @@ impl PomskyFeatures {
     pub(crate) const LOOKAHEAD: u16 = 1 << 7;
     pub(crate) const LOOKBEHIND: u16 = 1 << 8;
     pub(crate) const BOUNDARIES: u16 = 1 << 9;
+    pub(crate) const ATOMIC_GROUPS: u16 = 1 << 10;
+
+    /// Creates an empty set of features. With this set, all optional features
+    /// are disabled.
+    ///
+    /// Use `PomskyFeatures::default()` instead if you want features to be
+    /// enabled by default.
+    pub fn new() -> Self {
+        PomskyFeatures { bits: 0 }
+    }
 
     fn set_bit(&mut self, bit: u16, support: bool) {
         if support {
@@ -112,6 +125,7 @@ impl PomskyFeatures {
                 Self::LOOKAHEAD => UnsupportedError::Lookahead,
                 Self::LOOKBEHIND => UnsupportedError::Lookbehind,
                 Self::BOUNDARIES => UnsupportedError::Boundaries,
+                Self::ATOMIC_GROUPS => UnsupportedError::AtomicGroups,
                 _ => panic!("Unknown feature `0x{feature:0x}`"),
             })
             .at(span))
@@ -133,6 +147,13 @@ impl PomskyFeatures {
     /// Set support for named groups, e.g. `:test('!')`
     pub fn named_groups(&mut self, support: bool) -> Self {
         self.set_bit(Self::NAMED_GROUPS, support);
+        *self
+    }
+
+    /// Set support for atomic groups, e.g. `atomic ('if' | 'else' | 'while' |
+    /// 'for')`
+    pub fn atomic_groups(&mut self, support: bool) -> Self {
+        self.set_bit(Self::ATOMIC_GROUPS, support);
         *self
     }
 

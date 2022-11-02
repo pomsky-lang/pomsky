@@ -177,8 +177,8 @@ impl Diagnostic {
         }
     }
 
-    /// Same as [`Diagnostic::from_parse_error`], but returns a `Vec` and recursively flattens
-    /// [`ParseErrorKind::Multiple`].
+    /// Same as [`Diagnostic::from_parse_error`], but returns a `Vec` and
+    /// recursively flattens [`ParseErrorKind::Multiple`].
     pub fn from_parse_errors(error: ParseError, source_code: &str) -> Vec<Diagnostic> {
         match error.kind {
             ParseErrorKind::Multiple(multiple) => Vec::from(multiple)
@@ -279,7 +279,8 @@ impl Diagnostic {
         Diagnostic { severity, code, msg, source_code: None, help, span: Span::empty() }
     }
 
-    /// Returns a value that can display the diagnostic with the [`Display`] trait.
+    /// Returns a value that can display the diagnostic with the [`Display`]
+    /// trait.
     #[cfg(feature = "miette")]
     pub fn default_display(&self) -> impl std::fmt::Display + '_ {
         use miette::ReportHandler;

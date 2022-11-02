@@ -1,8 +1,8 @@
 //! # Pomsky
 //!
-//! To learn about the _pomsky language_, please read [the book](https://pomsky-lang.org/docs/).
+//! To learn about the _pomsky language_, please read [the book][book].
 //!
-//! The _pomsky macro_ can be [found here](https://docs.rs/pomsky-macro/latest/pomsky_macro/).
+//! The _pomsky macro_ can be [found here][macro].
 //!
 //! ## Usage
 //!
@@ -22,8 +22,8 @@
 //! };
 //! ```
 //!
-//! You can get fancy error messages with [miette](https://docs.rs/miette/latest/miette/)
-//! by enabling the `diagnostics` feature:
+//! You can get fancy error messages with [miette] by enabling the `diagnostics`
+//! feature:
 //!
 //! ```
 //! use pomsky::Expr;
@@ -37,6 +37,10 @@
 //!     Ok(compiled)
 //! }
 //! ```
+//!
+//! [book]: https://pomsky-lang.org/docs/
+//! [macro]: https://docs.rs/pomsky-macro/latest/pomsky_macro/
+//! [miette]: https://docs.rs/miette/latest/miette/
 
 #![warn(missing_docs)]
 

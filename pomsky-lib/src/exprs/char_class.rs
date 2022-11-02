@@ -36,8 +36,8 @@
 //!     e.g. `[ascii_alpha]` = `[a-zA-Z]`.
 //!
 //!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
-//!     For example: `[Letter]` compiles to `\p{Letter}`. Pomsky currently treats
-//!     any uppercase identifier except `R` as Unicode class.
+//!     For example: `[Letter]` compiles to `\p{Letter}`. Pomsky currently
+//!     treats any uppercase identifier except `R` as Unicode class.
 //!
 //! ### "Special" items
 //!
