@@ -1,6 +1,3 @@
-#! expect=error
 .
 -----
-ERROR: The dot is not supported
-HELP: Use `Codepoint` to match any code point, or `![n]` to exclude line breaks
-SPAN: 0..1
+.

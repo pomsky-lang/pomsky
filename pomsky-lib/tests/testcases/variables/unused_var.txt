@@ -1,6 +1,5 @@
 let _ = [.];
 -----
 
-WARNING: The dot is deprecated. Use `Codepoint` (or `C`) to match any character;
-Use `![n]` to match anything except for line breaks.
+WARNING: This syntax is deprecated. Use `.` without the brackets.
   at 9..10
