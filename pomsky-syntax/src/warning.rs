@@ -57,10 +57,9 @@ pub enum DeprecationWarning {
 impl fmt::Display for DeprecationWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeprecationWarning::Dot => f.write_str(
-                "The dot is deprecated. Use `Codepoint` (or `C`) to match any character;\n\
-                Use `![n]` to match anything except for line breaks.",
-            ),
+            DeprecationWarning::Dot => {
+                f.write_str("This syntax is deprecated. Use `.` without the brackets.")
+            }
         }
     }
 }

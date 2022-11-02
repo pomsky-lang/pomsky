@@ -193,7 +193,8 @@ impl<'i> Parser<'i> {
         Ok(Some(Rule::Lookaround(Box::new(Lookaround::new(rule, kind, start_span.join(span))))))
     }
 
-    /// Parse an atom expression with possibly multiple repetitions, e.g. `E {3,} lazy ?`.
+    /// Parse an atom expression with possibly multiple repetitions, e.g. `E
+    /// {3,} lazy ?`.
     fn parse_repeated(&mut self) -> PResult<Option<Rule<'i>>> {
         if let Some(mut rule) = self.parse_atom()? {
             let mut last_rep = LastRepToken::QuantifierOrNone;
@@ -209,8 +210,9 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parse a repetition that can follow an atom: `+`, `?`, `*`, `{x}`, `{x,}`, `{,x}` or `{x,y}`
-    /// optionally followed by the `greedy` or `lazy` keyword. `x` and `y` are number literals.
+    /// Parse a repetition that can follow an atom: `+`, `?`, `*`, `{x}`,
+    /// `{x,}`, `{,x}` or `{x,y}` optionally followed by the `greedy` or
+    /// `lazy` keyword. `x` and `y` are number literals.
     fn parse_repetition(
         &mut self,
         last_rep: &mut LastRepToken,
@@ -309,8 +311,8 @@ impl<'i> Parser<'i> {
             rule
         } else if let Some(rule) = self.parse_variable()? {
             rule
-        } else if self.consume(Token::Dot) {
-            return Err(ParseErrorKind::Dot.at(self.last_span()));
+        } else if let Some(rule) = self.parse_dot() {
+            rule
         } else {
             return Ok(None);
         };
@@ -365,11 +367,11 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parses a char set, surrounded by `[` `]`. This was previously called a "char class", but
-    /// that name is ambiguous and is being phased out.
+    /// Parses a char set, surrounded by `[` `]`. This was previously called a
+    /// "char class", but that name is ambiguous and is being phased out.
     ///
-    /// This function does _not_ parse exclamation marks in front of a char class, because
-    /// negation is handled separately.
+    /// This function does _not_ parse exclamation marks in front of a char
+    /// class, because negation is handled separately.
     fn parse_char_set(&mut self) -> PResult<Option<Rule<'i>>> {
         if self.consume(Token::OpenBracket) {
             let start_span = self.last_span();
@@ -402,9 +404,9 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parses a char group, i.e. the contents of a char set. This is a sequence of
-    /// characters, character classes, character ranges or Unicode properties.
-    /// Some of them can be negated.
+    /// Parses a char group, i.e. the contents of a char set. This is a sequence
+    /// of characters, character classes, character ranges or Unicode
+    /// properties. Some of them can be negated.
     fn parse_char_set_inner(&mut self) -> PResult<CharGroup> {
         let span_start = self.span();
 
@@ -463,7 +465,8 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parses a string literal or a character range in a char set, e.g. `"axd"` or `'0'-'7'`.
+    /// Parses a string literal or a character range in a char set, e.g. `"axd"`
+    /// or `'0'-'7'`.
     fn parse_char_group_chars_or_range(&mut self) -> PResult<Option<CharGroup>> {
         let span1 = self.span();
         let first = if let Some(first) = self.parse_string_or_char()? {
@@ -565,13 +568,14 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parses a boundary. For start and end, there are two syntaxes: `^`, `$` (new) and
-    /// `<%`, `%>` (deprecated). Word boundaries are `%`.
+    /// Parses a boundary. For start and end, there are two syntaxes: `^`, `$`
+    /// (new) and `<%`, `%>` (deprecated). Word boundaries are `%`.
     ///
     /// The deprecated syntax issues a warning.
     ///
-    /// This function does _not_ parse negated negated word boundaries (`!%`), since negation is
-    /// handled elsewhere. It also does _not_ parse the `Start` and `End` global variables.
+    /// This function does _not_ parse negated negated word boundaries (`!%`),
+    /// since negation is handled elsewhere. It also does _not_ parse the
+    /// `Start` and `End` global variables.
     fn parse_boundary(&mut self) -> PResult<Option<Rule<'i>>> {
         let span = self.span();
         let kind = if self.consume(Token::Caret) {
@@ -586,7 +590,8 @@ impl<'i> Parser<'i> {
         Ok(Some(Rule::Boundary(Boundary::new(kind, span))))
     }
 
-    /// Parses a reference. Supported syntaxes are `::name`, `::3`, `::+3` and `::-3`.
+    /// Parses a reference. Supported syntaxes are `::name`, `::3`, `::+3` and
+    /// `::-3`.
     fn parse_reference(&mut self) -> PResult<Option<Rule<'i>>> {
         if self.consume(Token::DoubleColon) {
             let start_span = self.last_span();
@@ -680,12 +685,21 @@ impl<'i> Parser<'i> {
             Ok(None)
         }
     }
+
+    /// Parses the dot
+    fn parse_dot(&mut self) -> Option<Rule<'i>> {
+        if self.consume(Token::Dot) {
+            Some(Rule::CharClass(CharClass::new(CharGroup::Dot, self.last_span())))
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Copy)]
 enum LastRepToken {
-    /// This means this is the first repetition, or the previous repetition explicitly
-    /// stated its quantifier (`greedy` or `lazy`).
+    /// This means this is the first repetition, or the previous repetition
+    /// explicitly stated its quantifier (`greedy` or `lazy`).
     QuantifierOrNone,
     /// Indicates the previous repetition didn't have a quantifier keyword
     Other,

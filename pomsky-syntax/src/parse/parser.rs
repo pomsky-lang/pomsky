@@ -10,9 +10,10 @@ use crate::{
 
 /// Parses a source string as a pomsky expression.
 ///
-/// The `recursion` argument determines how much nesting is allowed in the expression. Note that
-/// **pomsky will overflow the stack** when parsing an expression with too much nesting, so the
-/// `recursion` argument should be low enough to prevent that. The recommended default is 256.
+/// The `recursion` argument determines how much nesting is allowed in the
+/// expression. Note that **pomsky will overflow the stack** when parsing an
+/// expression with too much nesting, so the `recursion` argument should be low
+/// enough to prevent that. The recommended default is 256.
 pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning>), ParseError> {
     let tokens = tokenize(source);
 
@@ -90,6 +91,7 @@ impl<'i> Parser<'i> {
         self.tokens.get(self.offset).copied()
     }
 
+    /// Returns the span of the next token
     pub(super) fn span(&self) -> Span {
         self.tokens
             .get(self.offset)
@@ -97,6 +99,7 @@ impl<'i> Parser<'i> {
             .unwrap_or_else(|| Span::new(self.source.len(), self.source.len()))
     }
 
+    /// Returns the span of the previously consumed token
     pub(super) fn last_span(&self) -> Span {
         self.tokens[self.offset - 1].1
     }
