@@ -18,7 +18,7 @@ pub(crate) enum TestResult {
     Blessed,
     IncorrectResult { input: String, expected: Result<String, String>, got: Result<String, String> },
     Panic { message: Option<String> },
-    InvalidOutput(regex::Error),
+    InvalidOutput(String),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -110,9 +110,13 @@ impl Options {
                 }
             }
         }
-        result.compile = compile.unwrap_or_else(|| result.flavor == RegexFlavor::Rust);
+        result.compile = compile.unwrap_or_else(|| can_compile_regex(result.flavor));
         result
     }
+}
+
+fn can_compile_regex(flavor: RegexFlavor) -> bool {
+    flavor == RegexFlavor::Rust || flavor == RegexFlavor::Pcre
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -154,9 +158,32 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                 match options.expected_outcome {
                     Outcome::Success if got == expected => {
                         if options.compile {
-                            match regex::Regex::new(&regex) {
-                                Ok(_) => TestResult::Success,
-                                Err(e) => TestResult::InvalidOutput(e),
+                            match options.flavor {
+                                RegexFlavor::Rust => match regex::Regex::new(&regex) {
+                                    Ok(_) => TestResult::Success,
+                                    Err(e) => TestResult::InvalidOutput(e.to_string()),
+                                },
+                                RegexFlavor::Pcre => match pcre2::bytes::RegexBuilder::new()
+                                    .utf(true)
+                                    .build(&regex)
+                                {
+                                    Ok(_) => TestResult::Success,
+                                    Err(e) => TestResult::InvalidOutput(format!(
+                                        "{e}\n>\n> {}\n> {:width$}^",
+                                        &regex,
+                                        "",
+                                        width = regex[0..e.offset().unwrap_or(0)].chars().count()
+                                    )),
+                                },
+                                _ => {
+                                    eprintln!(
+                                        "{}: Flavor {:?} can't be compiled at the moment",
+                                        Yellow("Warning"),
+                                        options.flavor
+                                    );
+                                    eprintln!("  in {path:?}");
+                                    TestResult::Success
+                                }
                             }
                         } else {
                             TestResult::Success
