@@ -4,6 +4,7 @@ use crate::{
     compile::{CompileResult, CompileState},
     error::{CompileError, ParseError},
     options::CompileOptions,
+    regex::Count,
 };
 
 pub(crate) mod alternation;
@@ -15,6 +16,7 @@ pub(crate) mod literal;
 pub(crate) mod lookaround;
 pub(crate) mod range;
 pub(crate) mod reference;
+pub(crate) mod regex;
 pub(crate) mod repetition;
 pub(crate) mod rule;
 pub(crate) mod stmt;
@@ -90,10 +92,13 @@ impl<'i> Expr<'i> {
             variables: builtins,
             current_vars: Default::default(),
         };
-        let compiled = self.0.compile(options, &mut state)?;
+        let mut compiled = self.0.compile(options, &mut state)?;
+        let count = compiled.optimize();
 
         let mut buf = String::new();
-        compiled.codegen(&mut buf, options.flavor);
+        if count != Count::Zero {
+            compiled.codegen(&mut buf, options.flavor);
+        }
         Ok(buf)
     }
 

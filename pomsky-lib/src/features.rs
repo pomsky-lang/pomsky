@@ -36,6 +36,7 @@ impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
         feat.lookahead(bool::arbitrary(u)?);
         feat.lookbehind(bool::arbitrary(u)?);
         feat.boundaries(bool::arbitrary(u)?);
+        feat.regexes(bool::arbitrary(u)?);
         Ok(feat)
     }
 }
@@ -54,6 +55,7 @@ impl fmt::Debug for PomskyFeatures {
             .field("lookahead", &self.supports(Self::LOOKAHEAD))
             .field("lookbehind", &self.supports(Self::LOOKBEHIND))
             .field("boundaries", &self.supports(Self::BOUNDARIES))
+            .field("regexes", &self.supports(Self::REGEXES))
             .finish()
     }
 }
@@ -71,7 +73,8 @@ impl Default for PomskyFeatures {
                 | Self::LOOKAHEAD
                 | Self::LOOKBEHIND
                 | Self::BOUNDARIES
-                | Self::ATOMIC_GROUPS,
+                | Self::ATOMIC_GROUPS
+                | Self::REGEXES,
         }
     }
 }
@@ -88,6 +91,7 @@ impl PomskyFeatures {
     pub(crate) const LOOKBEHIND: u16 = 1 << 8;
     pub(crate) const BOUNDARIES: u16 = 1 << 9;
     pub(crate) const ATOMIC_GROUPS: u16 = 1 << 10;
+    pub(crate) const REGEXES: u16 = 1 << 11;
 
     /// Creates an empty set of features. With this set, all optional features
     /// are disabled.
@@ -126,6 +130,7 @@ impl PomskyFeatures {
                 Self::LOOKBEHIND => UnsupportedError::Lookbehind,
                 Self::BOUNDARIES => UnsupportedError::Boundaries,
                 Self::ATOMIC_GROUPS => UnsupportedError::AtomicGroups,
+                Self::REGEXES => UnsupportedError::Regexes,
                 _ => panic!("Unknown feature `0x{feature:0x}`"),
             })
             .at(span))
@@ -196,6 +201,13 @@ impl PomskyFeatures {
     /// Set support for boundaries, i.e. `%` and `!%`
     pub fn boundaries(&mut self, support: bool) -> Self {
         self.set_bit(Self::BOUNDARIES, support);
+        *self
+    }
+
+    /// Set support for raw regular expressions, e.g. `regex
+    /// '.[\p{Alpha}&&[^test]]'`
+    pub fn regexes(&mut self, support: bool) -> Self {
+        self.set_bit(Self::REGEXES, support);
         *self
     }
 }

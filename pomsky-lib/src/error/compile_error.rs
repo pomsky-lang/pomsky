@@ -207,6 +207,7 @@ pub(crate) enum UnsupportedError {
     Lookahead,
     Lookbehind,
     Boundaries,
+    Regexes,
 }
 
 impl std::error::Error for UnsupportedError {}
@@ -225,6 +226,7 @@ impl core::fmt::Display for UnsupportedError {
             UnsupportedError::Lookahead => "Lookahead isn't supported",
             UnsupportedError::Lookbehind => "Lookbehind isn't supported",
             UnsupportedError::Boundaries => "Word boundaries aren't supported",
+            UnsupportedError::Regexes => "Unescaped regexes aren't supported",
         };
 
         f.write_str(error)

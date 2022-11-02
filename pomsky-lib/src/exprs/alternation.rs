@@ -49,7 +49,7 @@ impl<'i> RuleExt<'i> for Alternation<'i> {
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexAlternation<'i> {
-    parts: Vec<Regex<'i>>,
+    pub(crate) parts: Vec<Regex<'i>>,
 }
 
 impl<'i> RegexAlternation<'i> {

@@ -130,11 +130,11 @@ impl<'i> RuleExt<'i> for CharClass {
                 if self.negative {
                     return Err(CompileErrorKind::EmptyClassNegated.at(span));
                 }
-                Ok(Regex::CharClass(RegexCharClass {
+                Ok(Regex::CharSet(RegexCharSet {
                     negative: false,
                     items: vec![
-                        RegexClassItem::Shorthand(RegexShorthand::Space),
-                        RegexClassItem::Shorthand(RegexShorthand::NotSpace),
+                        RegexCharSetItem::Shorthand(RegexShorthand::Space),
+                        RegexCharSetItem::Shorthand(RegexShorthand::NotSpace),
                     ],
                 }))
             }
@@ -142,22 +142,22 @@ impl<'i> RuleExt<'i> for CharClass {
                 (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
                 (1, false) => match items[0] {
                     GroupItem::Char(c) => Ok(Regex::Char(c)),
-                    GroupItem::Range { first, last } => Ok(Regex::CharClass(RegexCharClass {
+                    GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
                         negative: false,
-                        items: vec![RegexClassItem::Range { first, last }],
+                        items: vec![RegexCharSetItem::Range { first, last }],
                     })),
                     GroupItem::Named { name, negative } => {
                         named_class_to_regex(name, negative, options.flavor, span)
                     }
                 },
                 (1, true) => match items[0] {
-                    GroupItem::Char(c) => Ok(Regex::CharClass(RegexCharClass {
+                    GroupItem::Char(c) => Ok(Regex::CharSet(RegexCharSet {
                         negative: true,
-                        items: vec![RegexClassItem::Char(c)],
+                        items: vec![RegexCharSetItem::Char(c)],
                     })),
-                    GroupItem::Range { first, last } => Ok(Regex::CharClass(RegexCharClass {
+                    GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
                         negative: true,
-                        items: vec![RegexClassItem::Range { first, last }],
+                        items: vec![RegexCharSetItem::Range { first, last }],
                     })),
                     GroupItem::Named { name, negative } => {
                         named_class_to_regex(name, !negative, options.flavor, span)
@@ -167,9 +167,9 @@ impl<'i> RuleExt<'i> for CharClass {
                     let mut buf = Vec::new();
                     for item in items {
                         match *item {
-                            GroupItem::Char(c) => buf.push(RegexClassItem::Char(c)),
+                            GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
                             GroupItem::Range { first, last } => {
-                                buf.push(RegexClassItem::Range { first, last })
+                                buf.push(RegexCharSetItem::Range { first, last })
                             }
                             GroupItem::Named { name, negative } => {
                                 named_class_to_regex_class_items(
@@ -183,7 +183,7 @@ impl<'i> RuleExt<'i> for CharClass {
                         }
                     }
 
-                    Ok(Regex::CharClass(RegexCharClass { negative, items: buf }))
+                    Ok(Regex::CharSet(RegexCharSet { negative, items: buf }))
                 }
             },
         }
@@ -203,7 +203,7 @@ fn named_class_to_regex(
     Ok(match group {
         GroupName::Word => {
             if flavor == RegexFlavor::JavaScript {
-                Regex::CharClass(RegexCharClass {
+                Regex::CharSet(RegexCharSet {
                     negative,
                     items: vec![
                         RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false),
@@ -245,28 +245,28 @@ fn named_class_to_regex(
             };
 
             if negative {
-                Regex::CharClass(RegexCharClass {
+                Regex::CharSet(RegexCharSet {
                     negative: true,
-                    items: vec![RegexClassItem::Shorthand(shorthand)],
+                    items: vec![RegexCharSetItem::Shorthand(shorthand)],
                 })
             } else {
                 Regex::Shorthand(shorthand)
             }
         }
-        GroupName::HorizSpace => Regex::CharClass(RegexCharClass {
+        GroupName::HorizSpace => Regex::CharSet(RegexCharSet {
             negative,
             items: vec![
-                RegexClassItem::Char('\t'),
+                RegexCharSetItem::Char('\t'),
                 RegexProperty::Category(Category::Space_Separator).negative_item(false),
             ],
         }),
-        GroupName::VertSpace => Regex::CharClass(RegexCharClass {
+        GroupName::VertSpace => Regex::CharSet(RegexCharSet {
             negative,
             items: vec![
-                RegexClassItem::Range { first: '\x0A', last: '\x0D' },
-                RegexClassItem::Char('\u{85}'),
-                RegexClassItem::Char('\u{2028}'),
-                RegexClassItem::Char('\u{2029}'),
+                RegexCharSetItem::Range { first: '\x0A', last: '\x0D' },
+                RegexCharSetItem::Char('\u{85}'),
+                RegexCharSetItem::Char('\u{2028}'),
+                RegexCharSetItem::Char('\u{2029}'),
             ],
         }),
 
@@ -293,7 +293,7 @@ fn named_class_to_regex_class_items(
     negative: bool,
     flavor: RegexFlavor,
     span: Span,
-    buf: &mut Vec<RegexClassItem>,
+    buf: &mut Vec<RegexCharSetItem>,
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word => {
@@ -310,7 +310,7 @@ fn named_class_to_regex_class_items(
                     RegexProperty::Category(Category::Connector_Punctuation).negative_item(false),
                 );
             } else {
-                buf.push(RegexClassItem::Shorthand(if negative {
+                buf.push(RegexCharSetItem::Shorthand(if negative {
                     RegexShorthand::NotWord
                 } else {
                     RegexShorthand::Word
@@ -321,12 +321,12 @@ fn named_class_to_regex_class_items(
             if flavor == RegexFlavor::JavaScript {
                 buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(negative));
             } else if negative {
-                buf.push(RegexClassItem::Shorthand(RegexShorthand::NotDigit));
+                buf.push(RegexCharSetItem::Shorthand(RegexShorthand::NotDigit));
             } else {
-                buf.push(RegexClassItem::Shorthand(RegexShorthand::Digit));
+                buf.push(RegexCharSetItem::Shorthand(RegexShorthand::Digit));
             }
         }
-        GroupName::Space => buf.push(RegexClassItem::Shorthand(if negative {
+        GroupName::Space => buf.push(RegexCharSetItem::Shorthand(if negative {
             RegexShorthand::NotSpace
         } else {
             RegexShorthand::Space
@@ -342,21 +342,21 @@ fn named_class_to_regex_class_items(
         GroupName::HorizSpace | GroupName::VertSpace
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) =>
         {
-            buf.push(RegexClassItem::Shorthand(if group == GroupName::HorizSpace {
+            buf.push(RegexCharSetItem::Shorthand(if group == GroupName::HorizSpace {
                 RegexShorthand::HorizSpace
             } else {
                 RegexShorthand::VertSpace
             }));
         }
         GroupName::HorizSpace => {
-            buf.push(RegexClassItem::Char('\t'));
+            buf.push(RegexCharSetItem::Char('\t'));
             buf.push(RegexProperty::Category(Category::Space_Separator).negative_item(false));
         }
         GroupName::VertSpace => {
-            buf.push(RegexClassItem::Range { first: '\x0A', last: '\x0D' });
-            buf.push(RegexClassItem::Char('\u{85}'));
-            buf.push(RegexClassItem::Char('\u{2028}'));
-            buf.push(RegexClassItem::Char('\u{2029}'));
+            buf.push(RegexCharSetItem::Range { first: '\x0A', last: '\x0D' });
+            buf.push(RegexCharSetItem::Char('\u{85}'));
+            buf.push(RegexCharSetItem::Char('\u{2028}'));
+            buf.push(RegexCharSetItem::Char('\u{2029}'));
         }
 
         GroupName::Category(c) => buf.push(RegexProperty::Category(c).negative_item(negative)),
@@ -379,13 +379,13 @@ fn named_class_to_regex_class_items(
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexCharClass {
+pub(crate) struct RegexCharSet {
     negative: bool,
-    items: Vec<RegexClassItem>,
+    items: Vec<RegexCharSetItem>,
 }
 
-impl RegexCharClass {
-    pub(crate) fn new(items: Vec<RegexClassItem>) -> Self {
+impl RegexCharSet {
+    pub(crate) fn new(items: Vec<RegexCharSetItem>) -> Self {
         Self { negative: false, items }
     }
 
@@ -398,16 +398,16 @@ impl RegexCharClass {
 
         for item in &self.items {
             match *item {
-                RegexClassItem::Char(c) => {
+                RegexCharSetItem::Char(c) => {
                     literal::compile_char_esc_in_class(c, buf, flavor);
                 }
-                RegexClassItem::Range { first, last } => {
+                RegexCharSetItem::Range { first, last } => {
                     literal::compile_char_esc_in_class(first, buf, flavor);
                     buf.push('-');
                     literal::compile_char_esc_in_class(last, buf, flavor);
                 }
-                RegexClassItem::Shorthand(s) => s.codegen(buf),
-                RegexClassItem::Property { negative, value } => {
+                RegexCharSetItem::Shorthand(s) => s.codegen(buf),
+                RegexCharSetItem::Property { negative, value } => {
                     value.codegen(buf, negative, flavor)
                 }
             }
@@ -419,14 +419,14 @@ impl RegexCharClass {
 
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) enum RegexClassItem {
+pub(crate) enum RegexCharSetItem {
     Char(char),
     Range { first: char, last: char },
     Shorthand(RegexShorthand),
     Property { negative: bool, value: RegexProperty },
 }
 
-impl RegexClassItem {
+impl RegexCharSetItem {
     pub(crate) fn range_unchecked(first: char, last: char) -> Self {
         Self::Range { first, last }
     }

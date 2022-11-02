@@ -12,7 +12,7 @@ use crate::{
 
 use super::{
     alternation::RegexAlternation,
-    char_class::{RegexCharClass, RegexClassItem},
+    char_class::{RegexCharSet, RegexCharSetItem},
     group::{RegexGroup, RegexGroupKind},
     repetition::{RegexQuantifier, RegexRepetition},
     RuleExt,
@@ -471,7 +471,7 @@ impl Alt {
                 .map(|v| {
                     Regex::Group(RegexGroup::new(
                         v.iter().map(|r| r.to_regex()).collect(),
-                        RegexGroupKind::None,
+                        RegexGroupKind::Normal,
                     ))
                 })
                 .collect(),
@@ -483,38 +483,38 @@ impl Class {
     fn to_regex(self) -> Regex<'static> {
         let (a, b) = (self.start, self.end);
 
-        Regex::CharClass(RegexCharClass::new(match (a, b, a == b) {
+        Regex::CharSet(RegexCharSet::new(match (a, b, a == b) {
             (0..=9, _, true) => return Regex::Char((a + b'0') as char),
             (0..=9, 0..=9, _) => {
-                vec![RegexClassItem::range_unchecked((a + b'0') as char, (b + b'0') as char)]
+                vec![RegexCharSetItem::range_unchecked((a + b'0') as char, (b + b'0') as char)]
             }
             (10.., _, true) => vec![
-                RegexClassItem::Char((a + b'a' - 10) as char),
-                RegexClassItem::Char((a + b'A' - 10) as char),
+                RegexCharSetItem::Char((a + b'a' - 10) as char),
+                RegexCharSetItem::Char((a + b'A' - 10) as char),
             ],
             (10.., 10.., _) => vec![
-                RegexClassItem::range_unchecked((a + b'a' - 10) as char, (b + b'a' - 10) as char),
-                RegexClassItem::range_unchecked((a + b'A' - 10) as char, (b + b'A' - 10) as char),
+                RegexCharSetItem::range_unchecked((a + b'a' - 10) as char, (b + b'a' - 10) as char),
+                RegexCharSetItem::range_unchecked((a + b'A' - 10) as char, (b + b'A' - 10) as char),
             ],
             (9, 10, _) => vec![
-                RegexClassItem::Char('9'),
-                RegexClassItem::Char('a'),
-                RegexClassItem::Char('A'),
+                RegexCharSetItem::Char('9'),
+                RegexCharSetItem::Char('a'),
+                RegexCharSetItem::Char('A'),
             ],
             (_, 10, _) => vec![
-                RegexClassItem::range_unchecked((a + b'0') as char, '9'),
-                RegexClassItem::Char('a'),
-                RegexClassItem::Char('A'),
+                RegexCharSetItem::range_unchecked((a + b'0') as char, '9'),
+                RegexCharSetItem::Char('a'),
+                RegexCharSetItem::Char('A'),
             ],
             (9, _, _) => vec![
-                RegexClassItem::Char('9'),
-                RegexClassItem::range_unchecked('a', (b + b'a' - 10) as char),
-                RegexClassItem::range_unchecked('A', (b + b'A' - 10) as char),
+                RegexCharSetItem::Char('9'),
+                RegexCharSetItem::range_unchecked('a', (b + b'a' - 10) as char),
+                RegexCharSetItem::range_unchecked('A', (b + b'A' - 10) as char),
             ],
             _ => vec![
-                RegexClassItem::range_unchecked((a + b'0') as char, '9'),
-                RegexClassItem::range_unchecked('a', (b + b'a' - 10) as char),
-                RegexClassItem::range_unchecked('A', (b + b'A' - 10) as char),
+                RegexCharSetItem::range_unchecked((a + b'0') as char, '9'),
+                RegexCharSetItem::range_unchecked('a', (b + b'a' - 10) as char),
+                RegexCharSetItem::range_unchecked('A', (b + b'A' - 10) as char),
             ],
         }))
     }

@@ -1,8 +1,8 @@
 use crate::{error::ParseErrorKind, Span};
 
 use super::{
-    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Reference, Repetition,
-    StmtExpr, Variable,
+    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Reference, Regex,
+    Repetition, StmtExpr, Variable,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
@@ -33,6 +33,8 @@ pub enum Rule<'i> {
     Range(Range),
     /// An expression preceded by a modifier such as `enable lazy;`
     StmtExpr(Box<StmtExpr<'i>>),
+    /// A regex string, which is not escaped
+    Regex(Regex<'i>),
 
     /// A Unicode grapheme
     Grapheme,
@@ -53,6 +55,7 @@ impl<'i> Rule<'i> {
             Rule::Reference(r) => r.span,
             Rule::Range(r) => r.span,
             Rule::StmtExpr(m) => m.span,
+            Rule::Regex(r) => r.span,
             Rule::Grapheme => Span::empty(),
         }
     }
@@ -66,6 +69,7 @@ impl<'i> Rule<'i> {
             | Rule::Reference(_)
             | Rule::Range(_)
             | Rule::StmtExpr(_)
+            | Rule::Regex(_)
             | Rule::Grapheme => Err(ParseErrorKind::UnallowedNot),
 
             Rule::CharClass(c) => c.negate(),
@@ -89,6 +93,7 @@ impl<'i> Rule<'i> {
             Rule::Reference(r) => r.pretty_print(buf),
             Rule::Range(r) => r.pretty_print(buf),
             Rule::StmtExpr(s) => s.pretty_print(buf),
+            Rule::Regex(r) => r.pretty_print(buf),
             Rule::Grapheme => buf.push_str("Grapheme"),
         }
     }

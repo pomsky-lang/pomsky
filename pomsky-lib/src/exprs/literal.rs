@@ -88,5 +88,5 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
 }
 
 pub(crate) fn needs_parens_before_repetition(s: &str) -> bool {
-    s.chars().nth(1).is_some()
+    s.is_empty() || s.chars().nth(1).is_some()
 }

@@ -6,7 +6,7 @@ use crate::{
     exprs::{
         alternation::RegexAlternation,
         boundary::boundary_kind_codegen,
-        char_class::{RegexCharClass, RegexClassItem},
+        char_class::{RegexCharSet, RegexCharSetItem},
         group::RegexGroup,
         literal,
         lookaround::RegexLookaround,
@@ -16,14 +16,20 @@ use crate::{
     options::RegexFlavor,
 };
 
+mod optimize;
+
+pub(super) use optimize::Count;
+
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum Regex<'i> {
     /// A literal string
     Literal(Cow<'i, str>),
+    /// A regex string that is inserted verbatim into the output
+    Unescaped(Cow<'i, str>),
     /// A literal char
     Char(char),
     /// A character class, delimited with square brackets
-    CharClass(RegexCharClass),
+    CharSet(RegexCharSet),
     /// A shorthand such as `\w`
     Shorthand(RegexShorthand),
     /// A (Unicode) property such as Letter, Greek or Alphabetic
@@ -49,6 +55,12 @@ pub(crate) enum Regex<'i> {
     Reference(RegexReference),
 }
 
+impl Default for Regex<'_> {
+    fn default() -> Self {
+        Regex::Literal("".into())
+    }
+}
+
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexShorthand {
@@ -72,8 +84,8 @@ pub(crate) enum RegexProperty {
 }
 
 impl RegexProperty {
-    pub(crate) fn negative_item(self, negative: bool) -> RegexClassItem {
-        RegexClassItem::Property { negative, value: self }
+    pub(crate) fn negative_item(self, negative: bool) -> RegexCharSetItem {
+        RegexCharSetItem::Property { negative, value: self }
     }
 
     pub(crate) fn negative(self, negative: bool) -> Regex<'static> {
@@ -89,10 +101,13 @@ impl<'i> Regex<'i> {
                     literal::codegen_char_esc(c, buf, flavor);
                 }
             }
+            Regex::Unescaped(u) => {
+                buf.push_str(u);
+            }
             &Regex::Char(c) => {
                 literal::codegen_char_esc(c, buf, flavor);
             }
-            Regex::CharClass(c) => c.codegen(buf, flavor),
+            Regex::CharSet(c) => c.codegen(buf, flavor),
             Regex::Shorthand(s) => s.codegen(buf),
             Regex::Property { value, negative } => value.codegen(buf, *negative, flavor),
             Regex::Grapheme => buf.push_str("\\X"),
@@ -106,13 +121,14 @@ impl<'i> Regex<'i> {
         }
     }
 
-    pub(crate) fn needs_parens_in_group(&self) -> bool {
+    pub(crate) fn needs_parens_in_sequence(&self) -> bool {
         match self {
             Regex::Alternation(_) => true,
             Regex::Literal(_)
+            | Regex::Unescaped(_)
             | Regex::Char(_)
             | Regex::Group(_)
-            | Regex::CharClass(_)
+            | Regex::CharSet(_)
             | Regex::Grapheme
             | Regex::Repetition(_)
             | Regex::Boundary(_)
@@ -128,8 +144,11 @@ impl<'i> Regex<'i> {
         match self {
             Regex::Literal(l) => literal::needs_parens_before_repetition(l.borrow()),
             Regex::Group(g) => g.needs_parens_before_repetition(),
-            Regex::Repetition(_) | Regex::Alternation(_) | Regex::Boundary(_) => true,
-            Regex::CharClass(_)
+            Regex::Repetition(_)
+            | Regex::Alternation(_)
+            | Regex::Boundary(_)
+            | Regex::Unescaped(_) => true,
+            Regex::CharSet(_)
             | Regex::Char(_)
             | Regex::Grapheme
             | Regex::Lookaround(_)
