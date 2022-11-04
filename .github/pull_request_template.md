@@ -1,7 +1,7 @@
 <!--
     The title should start with one of the following:
         feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-    For example: "feat: Frobnicate syntax"
+    For example: "feat: frobnicate syntax"
 -->
 
 # Description
@@ -14,11 +14,11 @@
 
 Fixes # (issue)
 
-# Checklist:
-
-- [ ] My code is formatted with `cargo fmt`
-- [ ] My code compiles with the latest stable Rust toolchain
-- [ ] All tests pass with `cargo test`
-- [ ] My changes generate no new warnings with `cargo clippy`
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] My changes are covered by tests
+<!-- Checklist:
+   - My code is formatted with `cargo fmt`
+   - My code compiles with the latest stable Rust toolchain
+   - All tests pass with `cargo test`
+   - My changes generate no new warnings with `cargo clippy`
+   - I have commented my code, particularly in hard to understand areas
+   - My changes are covered by tests, if needed
+-->
