@@ -41,10 +41,8 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         let feature = match self.kind {
-            LookaroundKind::Ahead => PomskyFeatures::LOOKAHEAD,
-            LookaroundKind::Behind => PomskyFeatures::LOOKBEHIND,
-            LookaroundKind::AheadNegative => PomskyFeatures::LOOKAHEAD,
-            LookaroundKind::BehindNegative => PomskyFeatures::LOOKBEHIND,
+            LookaroundKind::Ahead | LookaroundKind::AheadNegative => PomskyFeatures::LOOKAHEAD,
+            LookaroundKind::Behind | LookaroundKind::BehindNegative => PomskyFeatures::LOOKBEHIND,
         };
         options.allowed_features.require(feature, self.span)
     }

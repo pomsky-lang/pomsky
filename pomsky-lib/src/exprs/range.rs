@@ -319,7 +319,7 @@ fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
                                 } else if let Rule::Repeat(r) = last2 {
                                     if r.rule == *last1 {
                                         let (min, max) = (r.min, r.max);
-                                        let _ = last.pop();
+                                        last.pop();
                                         let rule = last.pop().unwrap();
                                         last.push(rule.repeat(min + 1, max + 1));
                                     }

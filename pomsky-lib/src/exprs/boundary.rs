@@ -24,7 +24,7 @@ impl<'i> RuleExt<'i> for Boundary {
     }
 }
 
-pub(crate) fn boundary_kind_codegen(bk: &BoundaryKind, buf: &mut String) {
+pub(crate) fn boundary_kind_codegen(bk: BoundaryKind, buf: &mut String) {
     match bk {
         BoundaryKind::Start => buf.push('^'),
         BoundaryKind::Word => buf.push_str("\\b"),

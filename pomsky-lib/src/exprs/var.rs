@@ -25,10 +25,10 @@ impl<'i> RuleExt<'i> for Variable<'i> {
         if let Some((i, &(_, rule))) = rule {
             match rule {
                 Rule::Boundary(_) => {
-                    options.allowed_features.require(PomskyFeatures::BOUNDARIES, self.span)?
+                    options.allowed_features.require(PomskyFeatures::BOUNDARIES, self.span)?;
                 }
                 Rule::Grapheme => {
-                    options.allowed_features.require(PomskyFeatures::GRAPHEME, self.span)?
+                    options.allowed_features.require(PomskyFeatures::GRAPHEME, self.span)?;
                 }
                 _ => {}
             }

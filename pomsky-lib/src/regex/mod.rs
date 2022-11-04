@@ -115,7 +115,7 @@ impl<'i> Regex<'i> {
             Regex::Group(g) => g.codegen(buf, flavor),
             Regex::Alternation(a) => a.codegen(buf, flavor),
             Regex::Repetition(r) => r.codegen(buf, flavor),
-            Regex::Boundary(b) => boundary_kind_codegen(b, buf),
+            Regex::Boundary(b) => boundary_kind_codegen(*b, buf),
             Regex::Lookaround(l) => l.codegen(buf, flavor),
             Regex::Reference(r) => r.codegen(buf, flavor),
         }
@@ -161,7 +161,7 @@ impl<'i> Regex<'i> {
 }
 
 impl RegexShorthand {
-    pub(crate) fn codegen(&self, buf: &mut String) {
+    pub(crate) fn codegen(self, buf: &mut String) {
         match self {
             RegexShorthand::Word => buf.push_str("\\w"),
             RegexShorthand::Digit => buf.push_str("\\d"),
@@ -176,7 +176,7 @@ impl RegexShorthand {
 }
 
 impl RegexProperty {
-    pub(crate) fn codegen(&self, buf: &mut String, negative: bool, flavor: RegexFlavor) {
+    pub(crate) fn codegen(self, buf: &mut String, negative: bool, flavor: RegexFlavor) {
         if negative {
             buf.push_str("\\P{");
         } else {

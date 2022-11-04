@@ -19,8 +19,7 @@ impl Add for Count {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Count::Zero, Count::Zero) => Count::Zero,
-            (Count::Zero, Count::One) => Count::One,
-            (Count::One, Count::Zero) => Count::One,
+            (Count::Zero, Count::One) | (Count::One, Count::Zero) => Count::One,
             _ => Count::Many,
         }
     }

@@ -34,7 +34,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                         #[cfg(feature = "suggestions")]
                         similar: pomsky_syntax::find_suggestion(
                             name,
-                            state.used_names.keys().map(|key| key.as_str()),
+                            state.used_names.keys().map(String::as_str),
                         ),
                     }
                     .at(self.span));

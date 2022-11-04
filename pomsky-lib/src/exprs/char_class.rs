@@ -169,7 +169,7 @@ impl<'i> RuleExt<'i> for CharClass {
                         match *item {
                             GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
                             GroupItem::Range { first, last } => {
-                                buf.push(RegexCharSetItem::Range { first, last })
+                                buf.push(RegexCharSetItem::Range { first, last });
                             }
                             GroupItem::Named { name, negative } => {
                                 named_class_to_regex_class_items(
@@ -314,7 +314,7 @@ fn named_class_to_regex_class_items(
                     RegexShorthand::NotWord
                 } else {
                     RegexShorthand::Word
-                }))
+                }));
             }
         }
         GroupName::Digit => {
@@ -408,7 +408,7 @@ impl RegexCharSet {
                 }
                 RegexCharSetItem::Shorthand(s) => s.codegen(buf),
                 RegexCharSetItem::Property { negative, value } => {
-                    value.codegen(buf, negative, flavor)
+                    value.codegen(buf, negative, flavor);
                 }
             }
         }

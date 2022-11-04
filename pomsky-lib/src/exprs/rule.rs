@@ -18,22 +18,22 @@ impl<'i> RuleExt<'i> for Rule<'i> {
         within_variable: bool,
     ) -> Result<(), CompileError> {
         match self {
-            Rule::Literal(_) => {}
-            Rule::CharClass(_) => {}
-            Rule::Grapheme => {}
+            Rule::Literal(_)
+            | Rule::CharClass(_)
+            | Rule::Grapheme
+            | Rule::Boundary(_)
+            | Rule::Variable(_)
+            | Rule::Regex(_)
+            | Rule::Range(_) => {}
             Rule::Group(g) => g.get_capturing_groups(count, map, within_variable)?,
             Rule::Alternation(a) => a.get_capturing_groups(count, map, within_variable)?,
             Rule::Repetition(r) => r.get_capturing_groups(count, map, within_variable)?,
-            Rule::Boundary(_) => {}
             Rule::Lookaround(l) => l.get_capturing_groups(count, map, within_variable)?,
-            Rule::Variable(_) => {}
             Rule::Reference(r) => {
                 if within_variable {
                     return Err(CompileErrorKind::ReferenceInLet.at(r.span));
                 }
             }
-            Rule::Regex(_) => {}
-            Rule::Range(_) => {}
             Rule::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
         }
         Ok(())
@@ -66,15 +66,13 @@ impl<'i> RuleExt<'i> for Rule<'i> {
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         match self {
-            Rule::Literal(_) => {}
-            Rule::CharClass(_) => {}
+            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) => {}
             Rule::Grapheme => Grapheme {}.validate(options)?,
             Rule::Group(g) => g.validate(options)?,
             Rule::Alternation(a) => a.validate(options)?,
             Rule::Repetition(r) => r.validate(options)?,
             Rule::Boundary(b) => b.validate(options)?,
             Rule::Lookaround(l) => l.validate(options)?,
-            Rule::Variable(_) => {}
             Rule::Reference(r) => r.validate(options)?,
             Rule::Range(r) => r.validate(options)?,
             Rule::Regex(r) => r.validate(options)?,

@@ -102,6 +102,7 @@ impl PomskyFeatures {
     ///
     /// Use `PomskyFeatures::default()` instead if you want features to be
     /// enabled by default.
+    #[must_use]
     pub fn new() -> Self {
         PomskyFeatures { bits: 0 }
     }
@@ -114,11 +115,11 @@ impl PomskyFeatures {
         }
     }
 
-    fn supports(&self, bit: u16) -> bool {
+    fn supports(self, bit: u16) -> bool {
         (self.bits & bit) != 0
     }
 
-    pub(super) fn require(&self, feature: u16, span: Span) -> Result<(), CompileError> {
+    pub(super) fn require(self, feature: u16, span: Span) -> Result<(), CompileError> {
         if self.supports(feature) {
             Ok(())
         } else {
