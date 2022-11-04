@@ -11,13 +11,10 @@ impl<'i> Parser<'i> {
         let mut stmts = Vec::new();
 
         loop {
-            if let Some(stmt) = self.parse_mode_modifier()? {
-                stmts.push(stmt);
-            } else if let Some(stmt) = self.parse_let()? {
-                stmts.push(stmt);
-            } else {
+            let Some(stmt) = self.parse_mode_modifier()?.try_or_else(|| self.parse_let())? else {
                 break;
-            }
+            };
+            stmts.push(stmt);
         }
 
         self.recursion_start()?;
@@ -147,14 +144,12 @@ impl<'i> Parser<'i> {
             nots_span = nots_span.join(self.last_span());
         }
 
-        let mut rule = if let Some(rule) = self.parse_lookaround()? {
-            rule
-        } else if let Some(rule) = self.parse_repeated()? {
-            rule
-        } else if nots == 0 {
-            return Ok(None);
-        } else {
-            return Err(ParseErrorKind::Expected("expression").at(self.span()));
+        let Some(mut rule) = self.parse_lookaround()?.try_or_else(|| self.parse_repeated())? else {
+            if nots == 0 {
+               return Ok(None);
+            } else {
+               return Err(ParseErrorKind::Expected("expression").at(self.span()));
+            }
         };
 
         match nots {
@@ -284,31 +279,17 @@ impl<'i> Parser<'i> {
     }
 
     fn parse_atom(&mut self) -> PResult<Option<Rule<'i>>> {
-        let rule = if let Some(rule) = self.parse_group()? {
-            rule
-        } else if let Some(rule) = self.parse_string()? {
-            rule
-        } else if let Some(rule) = self.parse_char_set()? {
-            rule
-        } else if let Some(rule) = self.parse_boundary() {
-            rule
-        } else if let Some(rule) = self.parse_reference()? {
-            rule
-        } else if let Some((c, span)) = self.parse_code_point()? {
-            Rule::CharClass(CharClass::new(CharGroup::from_char(c), span))
-        } else if let Some(rule) = self.parse_range()? {
-            rule
-        } else if let Some(rule) = self.parse_regex()? {
-            rule
-        } else if let Some(rule) = self.parse_variable() {
-            rule
-        } else if let Some(rule) = self.parse_dot() {
-            rule
-        } else {
-            return Ok(None);
-        };
-
-        Ok(Some(rule))
+        Ok(self
+            .parse_group()?
+            .try_or_else(|| self.parse_string())?
+            .try_or_else(|| self.parse_char_set())?
+            .or_else(|| self.parse_boundary())
+            .try_or_else(|| self.parse_reference())?
+            .try_or_else(|| self.parse_code_point_rule())?
+            .try_or_else(|| self.parse_range())?
+            .try_or_else(|| self.parse_regex())?
+            .or_else(|| self.parse_variable())
+            .or_else(|| self.parse_dot()))
     }
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
@@ -460,17 +441,13 @@ impl<'i> Parser<'i> {
     /// or `'0'-'7'`.
     fn parse_char_group_chars_or_range(&mut self) -> PResult<Option<CharGroup>> {
         let span1 = self.span();
-        let first = if let Some(first) = self.parse_string_or_char()? {
-            first
-        } else {
+        let Some(first) = self.parse_string_or_char()? else {
             return Ok(None);
         };
 
         if self.consume(Token::Dash) {
             let span2 = self.span();
-            let last = if let Some(last) = self.parse_string_or_char()? {
-                last
-            } else {
+            let Some(last) = self.parse_string_or_char()? else {
                 return Err(ParseErrorKind::Expected("code point or character").at(self.span()));
             };
 
@@ -536,6 +513,14 @@ impl<'i> Parser<'i> {
                 }
             }
 
+            Ok(None)
+        }
+    }
+
+    fn parse_code_point_rule(&mut self) -> PResult<Option<Rule<'i>>> {
+        if let Some((c, span)) = self.parse_code_point()? {
+            Ok(Some(Rule::CharClass(CharClass::new(CharGroup::from_char(c), span))))
+        } else {
             Ok(None)
         }
     }
@@ -711,5 +696,19 @@ impl StringOrChar<'_> {
                 }
             }
         }))
+    }
+}
+
+trait TryOptionExt<T> {
+    fn try_or_else<E>(self, f: impl FnMut() -> Result<Option<T>, E>) -> Result<Option<T>, E>;
+}
+
+impl<T> TryOptionExt<T> for Option<T> {
+    #[inline(always)]
+    fn try_or_else<E>(self, mut f: impl FnMut() -> Result<Option<T>, E>) -> Result<Option<T>, E> {
+        match self {
+            Some(val) => Ok(Some(val)),
+            None => f(),
+        }
     }
 }
