@@ -20,7 +20,7 @@ pub enum LookaroundKind {
 
 impl<'i> Lookaround<'i> {
     pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
-        Lookaround { rule, kind, span }
+        Lookaround { kind, rule, span }
     }
 
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {

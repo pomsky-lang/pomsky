@@ -23,7 +23,7 @@ impl PrettyPrinter {
     }
 
     pub(crate) fn extend(&mut self, s: impl IntoIterator<Item = char>) {
-        for c in s.into_iter() {
+        for c in s {
             self.buf.push(c);
 
             if c == '\n' {
@@ -43,11 +43,11 @@ impl PrettyPrinter {
     }
 
     pub(crate) fn write_fmt(&mut self, v: impl Display) {
-        self.write(&format!("{v}"))
+        self.write(&format!("{v}"));
     }
 
     pub(crate) fn write_debug(&mut self, v: impl Debug) {
-        self.write(&format!("{v:?}"))
+        self.write(&format!("{v:?}"));
     }
 
     pub(crate) fn increase_indentation(&mut self, n: usize) {
@@ -87,11 +87,11 @@ impl PrettyPrinter {
             let _ = write!(self.buf, "{:X}", char as u32);
         } else {
             let prev_len = self.buf.len();
-            let _ = write!(self.buf, "{:?}", char);
+            let _ = write!(self.buf, "{char:?}");
             let new_len = self.buf.len();
 
             if new_len - prev_len > char.len_utf8() + 2 {
-                let _ = self.buf.drain(prev_len..);
+                drop(self.buf.drain(prev_len..));
                 self.buf.push_str("U+");
                 let _ = write!(self.buf, "{:X}", char as u32);
             }

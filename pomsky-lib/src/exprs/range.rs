@@ -203,7 +203,7 @@ impl<'i> RuleExt<'i> for Range {
 /// merged.
 fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
     let hi_digit = radix - 1;
-    let lo_digit = if is_first { 1 } else { 0 };
+    let lo_digit = u8::from(is_first);
 
     debug_assert!(a.len() <= b.len() && (a.len() < b.len() || a <= b));
 

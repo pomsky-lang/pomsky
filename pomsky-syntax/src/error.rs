@@ -61,8 +61,8 @@ pub enum ParseErrorKind {
 }
 
 impl ParseErrorKind {
-    /// Creates a [ParseError] from this error kind, and a [Span] indicating where the error
-    /// occurred.
+    /// Creates a [`ParseError`] from this error kind, and a [`Span`] indicating
+    /// where the error occurred.
     pub fn at(self, span: Span) -> ParseError {
         ParseError { kind: self, span }
     }
@@ -102,10 +102,8 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
             ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
             ParseErrorKind::Dot => write!(f, "The dot is not supported"),
-            ParseErrorKind::KeywordAfterLet(keyword) => {
-                write!(f, "Unexpected keyword `{keyword}`")
-            }
-            ParseErrorKind::UnexpectedKeyword(keyword) => {
+            ParseErrorKind::KeywordAfterLet(keyword)
+            | ParseErrorKind::UnexpectedKeyword(keyword) => {
                 write!(f, "Unexpected keyword `{keyword}`")
             }
 
@@ -199,8 +197,8 @@ impl core::fmt::Display for CharStringError {
 pub enum CharClassError {
     /// Empty character class, i.e. `[]`
     Empty,
-    /// This error is created when `[^` is encountered. This is a negated character class
-    /// in a regex, but pomsky instead uses the `![` syntax.
+    /// This error is created when `[^` is encountered. This is a negated
+    /// character class in a regex, but pomsky instead uses the `![` syntax.
     CaretInGroup,
     /// Descending code point range, e.g. `['z'-'a']`
     DescendingRange(char, char),

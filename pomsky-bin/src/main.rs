@@ -34,7 +34,7 @@ pub fn main() {
 
     match &args.input {
         Input::Value(input) => compile(input, &args),
-        Input::File(path) => match std::fs::read_to_string(&path) {
+        Input::File(path) => match std::fs::read_to_string(path) {
             Ok(input) => compile(&input, &args),
             Err(error) => {
                 let msg = error.to_string();

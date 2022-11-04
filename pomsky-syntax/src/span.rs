@@ -3,8 +3,9 @@ use std::{
     ops::Range,
 };
 
-/// A source code location, marked by the start and end byte offset. If both are zero,
-/// this is considered as "empty" or "missing", and [`Span::range`] returns `None`.
+/// A source code location, marked by the start and end byte offset. If both are
+/// zero, this is considered as "empty" or "missing", and [`Span::range`]
+/// returns `None`.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span {
     start: usize,
@@ -14,11 +15,13 @@ pub struct Span {
 impl Span {
     /// Constructs a new [`Span`]. If both `start` and `end` is 0, this is
     /// considered as "empty" or "missing"
+    #[must_use]
     pub fn new(start: usize, end: usize) -> Self {
         Span { start, end }
     }
 
     /// Constructs an empty [`Span`].
+    #[must_use]
     pub fn empty() -> Self {
         Span { start: 0, end: 0 }
     }
@@ -28,7 +31,8 @@ impl Span {
         self.end == 0
     }
 
-    /// Converts this span to a [`std::ops::Range`]. If it is empty, `None` is returned.
+    /// Converts this span to a [`std::ops::Range`]. If it is empty, `None` is
+    /// returned.
     pub fn range(self) -> Option<Range<usize>> {
         if self.is_empty() {
             None
@@ -37,12 +41,14 @@ impl Span {
         }
     }
 
-    /// Converts this span to a [`std::ops::Range`], without checking if it is empty.
+    /// Converts this span to a [`std::ops::Range`], without checking if it is
+    /// empty.
     pub fn range_unchecked(self) -> Range<usize> {
         self.start..self.end
     }
 
-    /// Returns a new span that points to this span's start, but has a length of 0.
+    /// Returns a new span that points to this span's start, but has a length of
+    /// 0.
     pub fn start(&self) -> Span {
         Span { start: self.start, end: self.start }
     }

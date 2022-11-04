@@ -32,7 +32,7 @@ pub(super) fn parse_quoted_text(input: &str) -> Result<Cow<'_, str>, ParseErrorK
                     }
                     Some(c) => {
                         char_len = c.len_utf8();
-                        buf.push(c)
+                        buf.push(c);
                     }
                     None => break,
                 }

@@ -1,15 +1,6 @@
 use std::{borrow::Borrow, collections::HashSet};
 
-use crate::{
-    error::{
-        CharClassError, CharStringError, CodePointError, NumberError, ParseError, ParseErrorKind,
-        RepetitionError,
-    },
-    exprs::*,
-    lexer::Token,
-    warning::ParseWarningKind,
-    Span,
-};
+use crate::{error::*, exprs::*, lexer::Token, warning::ParseWarningKind, Span};
 
 use super::{helper, Parser};
 
@@ -140,8 +131,8 @@ impl<'i> Parser<'i> {
         } else if fixes.len() == 1 {
             Some(fixes.pop().unwrap())
         } else {
-            let start = fixes.first().map(|f| f.span()).unwrap_or_default();
-            let end = fixes.last().map(|f| f.span()).unwrap_or_default();
+            let start = fixes.first().map(Rule::span).unwrap_or_default();
+            let end = fixes.last().map(Rule::span).unwrap_or_default();
             let span = start.join(end);
 
             Some(Rule::Group(Group::new(fixes, GroupKind::Implicit, span)))
@@ -299,7 +290,7 @@ impl<'i> Parser<'i> {
             rule
         } else if let Some(rule) = self.parse_char_set()? {
             rule
-        } else if let Some(rule) = self.parse_boundary()? {
+        } else if let Some(rule) = self.parse_boundary() {
             rule
         } else if let Some(rule) = self.parse_reference()? {
             rule
@@ -309,7 +300,7 @@ impl<'i> Parser<'i> {
             rule
         } else if let Some(rule) = self.parse_regex()? {
             rule
-        } else if let Some(rule) = self.parse_variable()? {
+        } else if let Some(rule) = self.parse_variable() {
             rule
         } else if let Some(rule) = self.parse_dot() {
             rule
@@ -322,7 +313,7 @@ impl<'i> Parser<'i> {
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
     fn parse_group(&mut self) -> PResult<Option<Rule<'i>>> {
-        let (kind, start_span) = self.parse_group_kind()?;
+        let (kind, start_span) = self.parse_group_kind();
         if !kind.is_normal() {
             self.expect(Token::OpenParen)?;
         } else if !self.consume(Token::OpenParen) {
@@ -342,17 +333,17 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses `:name` or just `:`. Returns the span of the colon with the name.
-    fn parse_group_kind(&mut self) -> PResult<(GroupKind<'i>, Span)> {
+    fn parse_group_kind(&mut self) -> (GroupKind<'i>, Span) {
         if self.consume_reserved("atomic") {
             let span = self.last_span();
-            Ok((GroupKind::Atomic, span))
+            (GroupKind::Atomic, span)
         } else if self.consume(Token::Colon) {
             let span = self.last_span();
             // TODO: Better diagnostic for `:let(`
             let name = self.consume_as(Token::Identifier);
-            Ok((GroupKind::Capturing(Capture::new(name)), span))
+            (GroupKind::Capturing(Capture::new(name)), span)
         } else {
-            Ok((GroupKind::Normal, self.span().start()))
+            (GroupKind::Normal, self.span().start())
         }
     }
 
@@ -507,7 +498,7 @@ impl<'i> Parser<'i> {
             StringOrChar::String(s)
         } else if let Some((c, _)) = self.parse_code_point()? {
             StringOrChar::Char(c)
-        } else if let Some(c) = self.parse_special_char()? {
+        } else if let Some(c) = self.parse_special_char() {
             StringOrChar::Char(c)
         } else {
             return Ok(None);
@@ -539,9 +530,8 @@ impl<'i> Parser<'i> {
 
                         if let Ok(c) = char::try_from(n) {
                             return Ok(Some((c, span)));
-                        } else {
-                            return Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span));
                         }
+                        return Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span));
                     }
                 }
             }
@@ -550,7 +540,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_special_char(&mut self) -> PResult<Option<char>> {
+    fn parse_special_char(&mut self) -> Option<char> {
         if let Some((Token::Identifier, string)) = self.peek() {
             let c = match string {
                 "n" => '\n',
@@ -559,12 +549,12 @@ impl<'i> Parser<'i> {
                 "a" => '\u{07}',
                 "e" => '\u{1B}',
                 "f" => '\u{0C}',
-                _ => return Ok(None),
+                _ => return None,
             };
             self.advance();
-            Ok(Some(c))
+            Some(c)
         } else {
-            Ok(None)
+            None
         }
     }
 
@@ -576,7 +566,7 @@ impl<'i> Parser<'i> {
     /// This function does _not_ parse negated negated word boundaries (`!%`),
     /// since negation is handled elsewhere. It also does _not_ parse the
     /// `Start` and `End` global variables.
-    fn parse_boundary(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_boundary(&mut self) -> Option<Rule<'i>> {
         let span = self.span();
         let kind = if self.consume(Token::Caret) {
             BoundaryKind::Start
@@ -585,9 +575,9 @@ impl<'i> Parser<'i> {
         } else if self.consume(Token::BWord) {
             BoundaryKind::Word
         } else {
-            return Ok(None);
+            return None;
         };
-        Ok(Some(Rule::Boundary(Boundary::new(kind, span))))
+        Some(Rule::Boundary(Boundary::new(kind, span)))
     }
 
     /// Parses a reference. Supported syntaxes are `::name`, `::3`, `::+3` and
@@ -637,9 +627,8 @@ impl<'i> Parser<'i> {
                     return Err(ParseErrorKind::Number(NumberError::TooLarge).at(span));
                 } else if n < 2 {
                     return Err(ParseErrorKind::Number(NumberError::TooSmall).at(span));
-                } else {
-                    n
                 }
+                n
             } else {
                 10u8
             };
@@ -678,12 +667,9 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses a variable (usage site).
-    fn parse_variable(&mut self) -> PResult<Option<Rule<'i>>> {
-        if let Some(ident) = self.consume_as(Token::Identifier) {
-            Ok(Some(Rule::Variable(Variable::new(ident, self.last_span()))))
-        } else {
-            Ok(None)
-        }
+    fn parse_variable(&mut self) -> Option<Rule<'i>> {
+        self.consume_as(Token::Identifier)
+            .map(|ident| Rule::Variable(Variable::new(ident, self.last_span())))
     }
 
     /// Parses the dot

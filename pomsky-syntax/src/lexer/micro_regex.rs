@@ -1,11 +1,12 @@
-//! This module provides simple regex-like automatons that can't backtrack, using the [MicroRegex]
-//! trait. This is currently only used for lexing.
+//! This module provides simple regex-like automatons that can't backtrack,
+//! using the [`MicroRegex`] trait. This is currently only used for lexing.
 
 /// A trait to construct simple regex-like automatons that can't backtrack.
 pub(crate) trait MicroRegex {
     type Context;
 
-    /// If the micro regex matches at the beginning of the haystack, return the length of the match.
+    /// If the micro regex matches at the beginning of the haystack, return the
+    /// length of the match.
     fn is_start(&self, haystack: &str) -> Option<(usize, Self::Context)>;
 
     fn split_off<'a>(&self, haystack: &'a str) -> Option<(&'a str, &'a str)> {

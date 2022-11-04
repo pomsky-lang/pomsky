@@ -18,7 +18,7 @@ pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning
     let tokens = tokenize(source);
 
     let mut errors = Vec::new();
-    for &(t, span) in tokens.iter() {
+    for &(t, span) in &tokens {
         match t {
             Token::Error => errors.push((span, None)),
             Token::ErrorMsg(m) => errors.push((span, Some(m))),
@@ -95,8 +95,7 @@ impl<'i> Parser<'i> {
     pub(super) fn span(&self) -> Span {
         self.tokens
             .get(self.offset)
-            .map(|&(_, s)| s)
-            .unwrap_or_else(|| Span::new(self.source.len(), self.source.len()))
+            .map_or_else(|| Span::new(self.source.len(), self.source.len()), |&(_, s)| s)
     }
 
     /// Returns the span of the previously consumed token
