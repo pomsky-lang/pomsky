@@ -1,6 +1,5 @@
 use std::{io, io::Write as _, process::exit};
 
-use atty::Stream;
 use pomsky::{
     error::{Diagnostic, ParseError, Severity},
     options::{CompileOptions, RegexFlavor},
@@ -27,7 +26,7 @@ pub fn main() {
                 ParseArgsError::Other(msg) => msg,
             };
             print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
-            eprintln!("{}", args::get_short_usage_and_help(Stream::Stderr));
+            args::print_short_usage_and_help_err();
             exit(2)
         }
     };

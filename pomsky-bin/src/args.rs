@@ -3,8 +3,6 @@ use std::{io::Read, path::PathBuf, string::FromUtf8Error};
 use atty::Stream;
 use pomsky::{features::PomskyFeatures, options::RegexFlavor};
 
-use crate::colors::format;
-
 pub(super) enum ParseArgsError {
     Lexopt(lexopt::Error),
     StdinUtf8(FromUtf8Error),
@@ -40,8 +38,8 @@ pub(crate) enum Input {
     File(PathBuf),
 }
 
-pub(super) fn get_short_usage_and_help(stream: Stream) -> String {
-    format(
+pub(super) fn print_short_usage_and_help_err() {
+    efprintln!(
         "\
 %y.USAGE.%:
     pomsky [OPTIONS] <INPUT>
@@ -49,7 +47,6 @@ pub(super) fn get_short_usage_and_help(stream: Stream) -> String {
     command | pomsky [OPTIONS]
 
 For more information try %c.--help.%",
-        stream,
     )
 }
 
