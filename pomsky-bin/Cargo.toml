@@ -20,8 +20,8 @@ path = "src/main.rs"
 
 [dependencies]
 atty = "0.2.14"
-owo-colors = { version = "3.5.0", features = ["supports-colors"] }
 lexopt = "0.2.1"
+supports-color = "1.3.0"
 
 [dependencies.miette]
 version = "5.3.1"

@@ -1,10 +1,6 @@
-use std::{
-    io::{self, Write as _},
-    process::exit,
-};
+use std::{io, io::Write as _, process::exit};
 
 use atty::Stream;
-use owo_colors::{OwoColorize, Style};
 use pomsky::{
     error::{Diagnostic, ParseError, Severity},
     options::{CompileOptions, RegexFlavor},
@@ -24,6 +20,10 @@ pub fn main() {
             let msg = match error {
                 ParseArgsError::Lexopt(error) => error.to_string(),
                 ParseArgsError::StdinUtf8(e) => format!("Could not parse stdin: {e}"),
+                ParseArgsError::UnexpectedTwice(option) => format!(
+                    "The argument '{option}' was provided more than once, \
+                    but cannot be used multiple times"
+                ),
                 ParseArgsError::Other(msg) => msg,
             };
             print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
@@ -94,12 +94,11 @@ fn print_parse_error(error: ParseError, input: &str) {
     let len = diagnostics.len();
 
     if len > 8 {
-        eprintln!("{}: some errors were omitted", cyan_bold!(Stderr, "note"));
+        efprintln!(lit "%C.note.%: some errors were omitted");
     }
 
-    eprintln!(
-        "{}: could not compile expression due to {}",
-        red_bold!(Stderr, "error"),
+    efprintln!(
+        "%R.error.%: could not compile expression due to {}",
         if len > 1 { format!("{len} previous errors") } else { "previous error".into() }
     );
 }
@@ -112,13 +111,12 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
     }
 
     if len > 8 {
-        eprintln!("{}: some warnings were omitted", cyan_bold!(Stderr, "note"));
+        efprintln!(lit "%C.note.%: some warnings were omitted");
     }
 
     if len > 0 {
-        eprintln!(
-            "{}: pomsky generated {len} {}",
-            yellow_bold!(Stderr, "warning"),
+        efprintln!(
+            "%Y.warning.%: pomsky generated {len} {}",
             if len > 1 { "warnings" } else { "warning" },
         );
     }
@@ -127,10 +125,10 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
 fn print_diagnostic(diagnostic: &Diagnostic) {
     match diagnostic.severity {
         Severity::Error => {
-            eprintln!("{}: {}", red_bold!(Stderr, "error"), diagnostic.default_display())
+            efprintln!("%R.error.%: {}", diagnostic.default_display())
         }
         Severity::Warning => {
-            eprintln!("{}: {}", yellow_bold!(Stderr, "warning"), diagnostic.default_display())
+            efprintln!("%Y.warning.%: {}", diagnostic.default_display())
         }
     }
 }

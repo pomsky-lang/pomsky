@@ -7,6 +7,7 @@ members = [
     "./benchmark",
 ]
 default-members = ["./pomsky-bin", "./pomsky-lib", "./pomsky-syntax"]
+resolver = "2"
 
 [profile.release]
 lto = "thin"
