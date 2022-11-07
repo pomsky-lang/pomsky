@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Language changes
+
+- Added inline regex expressions: Include text that is not transformed or validated. For example:
+
+  ```pomsky
+  regex '[\w[^a-f]]'
+  ```
+
+  This allows using regex features not yet supported by Pomsky, like nested character classes. Note, however, that Pomsky does not validate inline regexes, so there's no guarantee that the output is correct.
+
+- Added the dot (`.`). It matches anything except line breaks by default, or anything
+  _including_ line breaks in multiline mode.
+
+- Added an optimization pass, which removes redundant groups and simplifies repetitions. For example:
+
+  ```pomsky
+  ('a'?){1,5}
+  ```
+
+  This now compiles to `a{0,5}`. Previously, it would compile to the less optimal `(?:a?){1,5}`.
+
+  Optimizations are useful when making heavy use of variables to write readable code and still get the most efficient output. More optimizations are planned, stay tuned!
+
+### CLI changes
+
+- The CLI help interface was overhauled. It is now more informative and beautiful. To get help, type `pomsky -h` for short help, or `pomsky --help` for longer descriptions and additional details.
+
+- It is now possible to specify allowed features in the CLI. This was previously only possible in the Rust library. Use `pomsky --help` for more information.
+
+### Bugfixes
+
+- Fix Unicode script codegen for JavaScript: Pomsky now emits the correct syntax for Unicode scripts in JS.
+- Fix `[` not being escaped within character classes. This is required in regex flavors that support nested character classes.
+- Fix `\e` being emitted, even though it is not supported in the Rust flavor
+- Fix broken feature gates: A few feature gates were defunct and have been fixed.
+- Fix position of error report labels with Unicode chars: This was a long-standing bug in [miette] that was [fixed](https://github.com/zkat/miette/pull/202) recently.
+
+### Other
+
+- Audit dependencies using `cargo-audit` in continuous integration. This means that we'll be made aware of any vulnerability in our dependencies reported to the [RustSec database](https://rustsec.org/).
+
+- Make release binaries auditable: The binaries published on GitHub are now built with `cargo-auditable`. This means that `cargo audit bin /path/to/pomsky` can now scan all included dependencies.
+
+- Remove thiserror dependency from the `pomsky` and `pomsky-syntax` crates, improving compile time.
+
+- Testing improvements: Compile all PCRE and Rust regular expressions produced by integration tests to make sure the output is well-formed. This caught 2 of the bugs mentioned above! We're currently looking into ways to do the same with the other flavors.
+
 ## [0.7.0] - 2022-09-10
 
 ### Added
@@ -331,3 +378,4 @@ Initial release
 [0.3.0]: https://github.com/rulex-rs/pomsky/compare/v0.2...v0.3
 [0.2.0]: https://github.com/rulex-rs/pomsky/compare/v0.1...v0.2
 [0.1.0]: https://github.com/rulex-rs/pomsky/releases/tag/v0.1
+[miette]: https://crates.io/crates/miette
