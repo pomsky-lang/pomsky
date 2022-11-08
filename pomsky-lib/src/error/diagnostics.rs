@@ -146,8 +146,8 @@ impl Diagnostic {
                 If this is intentional, consider adding parentheses around the inner repetition."
                     .into(),
             ),
-            ParseErrorKind::Repetition(RepetitionError::PlusSuffix) => {
-                Some("Add parentheses around the inner repetition.".into())
+            ParseErrorKind::Repetition(RepetitionError::Multi) => {
+                Some("Add parentheses around the first repetition.".into())
             }
             ParseErrorKind::InvalidEscapeInStringAt(offset) => {
                 let span_start = span.range_unchecked().start;

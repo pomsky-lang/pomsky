@@ -1,3 +1,6 @@
+#! expect=error
 'test'{3,4} lazy {7}
 -----
-(?:(?:test){3,4}?){7}
+ERROR: Only one repetition allowed
+HELP: Add parentheses around the first repetition.
+SPAN: 17..20

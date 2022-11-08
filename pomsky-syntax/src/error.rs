@@ -317,8 +317,8 @@ pub enum RepetitionError {
     NotAscending,
     /// Question mark after a repetition, e.g. `x{3}?`
     QmSuffix,
-    /// Plus after a repetition, e.g. `x{3}+`
-    PlusSuffix,
+    /// Multiple consecutive repetitions
+    Multi,
 }
 
 impl std::error::Error for RepetitionError {}
@@ -328,7 +328,7 @@ impl core::fmt::Display for RepetitionError {
         let error = match self {
             RepetitionError::NotAscending => "Lower bound can't be greater than the upper bound",
             RepetitionError::QmSuffix => "Unexpected `?` following a repetition",
-            RepetitionError::PlusSuffix => "Unexpected `+` following a repetition",
+            RepetitionError::Multi => "Only one repetition allowed",
         };
 
         f.write_str(error)

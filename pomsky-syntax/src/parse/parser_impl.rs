@@ -183,9 +183,7 @@ impl<'i> Parser<'i> {
     /// {3,} lazy ?`.
     fn parse_repeated(&mut self) -> PResult<Option<Rule<'i>>> {
         if let Some(mut rule) = self.parse_atom()? {
-            let mut last_rep = LastRepToken::QuantifierOrNone;
-
-            while let Some((kind, quantifier, span)) = self.parse_repetition(&mut last_rep)? {
+            if let Some((kind, quantifier, span)) = self.parse_repetition()? {
                 let span = rule.span().join(span);
                 rule = Rule::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
             }
@@ -199,25 +197,14 @@ impl<'i> Parser<'i> {
     /// Parse a repetition that can follow an atom: `+`, `?`, `*`, `{x}`,
     /// `{x,}`, `{,x}` or `{x,y}` optionally followed by the `greedy` or
     /// `lazy` keyword. `x` and `y` are number literals.
-    fn parse_repetition(
-        &mut self,
-        last_rep: &mut LastRepToken,
-    ) -> PResult<Option<(RepetitionKind, Quantifier, Span)>> {
+    fn parse_repetition(&mut self) -> PResult<Option<(RepetitionKind, Quantifier, Span)>> {
         let start = self.span();
 
         let kind = if self.consume(Token::Plus) {
-            if *last_rep != LastRepToken::QuantifierOrNone {
-                return Err(ParseErrorKind::Repetition(RepetitionError::PlusSuffix).at(start));
-            }
-
             RepetitionKind::one_inf()
         } else if self.consume(Token::Star) {
             RepetitionKind::zero_inf()
         } else if self.consume(Token::QuestionMark) {
-            if *last_rep != LastRepToken::QuantifierOrNone {
-                return Err(ParseErrorKind::Repetition(RepetitionError::QmSuffix).at(start));
-            }
-
             RepetitionKind::zero_one()
         } else if let Some(kind) = self.parse_repetition_braces()? {
             kind
@@ -226,15 +213,22 @@ impl<'i> Parser<'i> {
         };
 
         let quantifier = if self.consume_reserved("greedy") {
-            *last_rep = LastRepToken::QuantifierOrNone;
             Quantifier::Greedy
         } else if self.consume_reserved("lazy") {
-            *last_rep = LastRepToken::QuantifierOrNone;
             Quantifier::Lazy
         } else {
-            *last_rep = LastRepToken::Other;
             Quantifier::Default
         };
+
+        let multi_span = self.span();
+        if self.consume(Token::Plus) || self.consume(Token::Star) {
+            return Err(ParseErrorKind::Repetition(RepetitionError::Multi).at(multi_span));
+        } else if self.consume(Token::QuestionMark) {
+            return Err(ParseErrorKind::Repetition(RepetitionError::QmSuffix).at(multi_span));
+        } else if self.parse_repetition_braces()?.is_some() {
+            return Err(ParseErrorKind::Repetition(RepetitionError::Multi)
+                .at(multi_span.join(self.last_span())));
+        }
 
         let end = self.last_span();
         Ok(Some((kind, quantifier, start.join(end))))
@@ -665,15 +659,6 @@ impl<'i> Parser<'i> {
             None
         }
     }
-}
-
-#[derive(PartialEq, Clone, Copy)]
-enum LastRepToken {
-    /// This means this is the first repetition, or the previous repetition
-    /// explicitly stated its quantifier (`greedy` or `lazy`).
-    QuantifierOrNone,
-    /// Indicates the previous repetition didn't have a quantifier keyword
-    Other,
 }
 
 #[derive(Clone, Copy)]

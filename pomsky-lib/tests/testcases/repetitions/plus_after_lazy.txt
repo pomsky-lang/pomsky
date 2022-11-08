@@ -1,3 +1,6 @@
+#! expect=error
 'hello'+lazy +
 -----
-(?:(?:hello)+?)+
+ERROR: Only one repetition allowed
+HELP: Add parentheses around the first repetition.
+SPAN: 13..14

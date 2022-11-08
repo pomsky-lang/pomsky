@@ -49,8 +49,8 @@ On the left are pomsky expressions, on the right is the compiled regex:
 # Unicode
 [Greek] U+30F Grapheme        # \p{Greek}\u030F\X
 
-# Boundaries
-Start End                     # ^$
+# Anchors, boundaries
+^ $                           # ^$
 % 'hello' !%                  # \bhello\B
 
 # Non-capturing groups
@@ -61,10 +61,10 @@ Start End                     # ^$
 :name('test')                 # (?P<name>test)
 
 # Lookahead/lookbehind
->> 'foo' | 'bar'              # (?=foo|bar)
-<< 'foo' | 'bar'              # (?<=foo|bar)
-!>> 'foo' | 'bar'             # (?!foo|bar)
-!<< 'foo' | 'bar'             # (?<!foo|bar)
+(>> 'foo' | 'bar')            # (?=foo|bar)
+(<< 'foo' | 'bar')            # (?<=foo|bar)
+(!>> 'foo' | 'bar')           # (?!foo|bar)
+(!<< 'foo' | 'bar')           # (?<!foo|bar)
 
 # Backreferences
 :('test') ::1                 # (test)\1
@@ -73,6 +73,9 @@ Start End                     # ^$
 # Ranges
 range '0'-'999'               # 0|[1-9][0-9]{0,2}
 range '0'-'255'               # 0|1[0-9]{0,2}|2(?:[0-4][0-9]?|5[0-5]?|[6-9])?|[3-9][0-9]?
+
+# Inline regex
+[\w[^abg]]                    # [\w[^abg]]
 ```
 
 ## Variables
