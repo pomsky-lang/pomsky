@@ -16,3 +16,21 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
     pub(crate) current_vars: HashSet<usize>,
 }
+
+impl<'c, 'i> CompileState<'c, 'i> {
+    pub(crate) fn new(
+        default_quantifier: RegexQuantifier,
+        used_names: HashMap<String, u32>,
+        groups_count: u32,
+        variables: Vec<(&'i str, &'c Rule<'i>)>,
+    ) -> Self {
+        CompileState {
+            next_idx: 1,
+            used_names,
+            groups_count,
+            default_quantifier,
+            variables,
+            current_vars: Default::default(),
+        }
+    }
+}

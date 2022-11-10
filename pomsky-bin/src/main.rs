@@ -10,7 +10,7 @@ use pomsky::{
 mod colors;
 mod args;
 
-use args::{Args, Input, ParseArgsError};
+use args::{Args, DiagnosticSet, Input, ParseArgsError};
 
 pub fn main() {
     let args = match args::parse_args() {
@@ -64,7 +64,7 @@ fn compile(input: &str, args: &Args) {
         eprintln!("{parsed:#?}\n");
     }
 
-    print_warnings(warnings, input);
+    print_warnings(warnings, input, args);
 
     let compiled =
         match parsed.compile(options).map_err(|err| Diagnostic::from_compile_error(err, input)) {
@@ -102,18 +102,26 @@ fn print_parse_error(error: ParseError, input: &str) {
     );
 }
 
-fn print_warnings(warnings: Vec<Warning>, input: &str) {
-    let len = warnings.len();
-
-    for warning in warnings.into_iter().take(8) {
-        print_diagnostic(&Diagnostic::from_warning(warning, input));
+fn print_warnings(warnings: Vec<Warning>, input: &str, args: &Args) {
+    if matches!(&args.warnings, DiagnosticSet::Enabled(set) if set.is_empty()) {
+        return;
     }
 
-    if len > 8 {
-        efprintln!(lit "%C.note.%: some warnings were omitted");
+    let mut len = 0;
+
+    for warning in warnings {
+        let diagnostic = Diagnostic::from_warning(warning, input);
+        if args.warnings.is_enabled(diagnostic.kind) {
+            len += 1;
+            match len {
+                1..=8 => print_diagnostic(&diagnostic),
+                9 => efprintln!(lit "%C.note.%: some warnings were omitted"),
+                _ => {}
+            }
+        }
     }
 
-    if len > 0 {
+    if len > 1 {
         efprintln!(
             "%Y.warning.%: pomsky generated {len} {}",
             if len > 1 { "warnings" } else { "warning" },
@@ -124,10 +132,10 @@ fn print_warnings(warnings: Vec<Warning>, input: &str) {
 fn print_diagnostic(diagnostic: &Diagnostic) {
     match diagnostic.severity {
         Severity::Error => {
-            efprintln!("%R.error.%: {}", diagnostic.default_display())
+            efprintln!("%R.error.%{}: {}", diagnostic.kind, diagnostic.default_display());
         }
         Severity::Warning => {
-            efprintln!("%Y.warning.%: {}", diagnostic.default_display())
+            efprintln!("%Y.warning.%{}: {}", diagnostic.kind, diagnostic.default_display());
         }
     }
 }

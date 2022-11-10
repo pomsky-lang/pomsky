@@ -4,7 +4,9 @@ use pomsky_syntax::{
     Span,
 };
 
-use super::{compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError};
+use super::{
+    compile_error::CompileErrorKind, CharClassError, CharStringError, CompileError, DiagnosticKind,
+};
 
 #[cfg_attr(feature = "miette", derive(Debug))]
 #[non_exhaustive]
@@ -24,6 +26,8 @@ pub struct Diagnostic {
     /// The start and end byte positions of the source code where the error
     /// occurred.
     pub span: Span,
+    /// The kind or origin of error/warning
+    pub kind: DiagnosticKind,
 }
 
 #[cfg(feature = "miette")]
@@ -104,9 +108,6 @@ impl Diagnostic {
                 let part2 = part2.trim_start_matches('-');
                 Some(format!("Switch the numbers: {}-{}", part2.trim(), part1.trim()))
             }
-            ParseErrorKind::Dot => Some(
-                "Use `Codepoint` to match any code point, or `![n]` to exclude line breaks".into(),
-            ),
             #[cfg(feature = "suggestions")]
             ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
                 similar: Some(ref similar),
@@ -175,6 +176,7 @@ impl Diagnostic {
             source_code: Some(source_code.into()),
             help,
             span,
+            kind: DiagnosticKind::from(&error.kind),
         }
     }
 
@@ -214,9 +216,10 @@ impl Diagnostic {
                     source_code: Some(source_code.into()),
                     help: Some(format!("Perhaps you meant `{similar}`")),
                     span,
+                    kind: DiagnosticKind::Resolve,
                 }
             }
-            _ => {
+            kind => {
                 let range = span.range().unwrap_or(0..source_code.len());
                 let span = Span::from(range);
 
@@ -227,6 +230,7 @@ impl Diagnostic {
                     source_code: Some(source_code.into()),
                     help: None,
                     span,
+                    kind: DiagnosticKind::from(&kind),
                 }
             }
         }
@@ -251,6 +255,7 @@ impl Diagnostic {
                 source_code: Some(source_code.into()),
                 help: None,
                 span,
+                kind: DiagnosticKind::from(&kind),
             }]
         }
     }
@@ -268,6 +273,7 @@ impl Diagnostic {
             source_code: Some(source_code.into()),
             help: None,
             span,
+            kind: DiagnosticKind::from(&warning.kind),
         }
     }
 
@@ -279,7 +285,15 @@ impl Diagnostic {
         msg: String,
         help: Option<String>,
     ) -> Self {
-        Diagnostic { severity, code, msg, source_code: None, help, span: Span::empty() }
+        Diagnostic {
+            severity,
+            code,
+            msg,
+            source_code: None,
+            help,
+            span: Span::empty(),
+            kind: DiagnosticKind::Other,
+        }
     }
 
     /// Returns a value that can display the diagnostic with the [`Display`]

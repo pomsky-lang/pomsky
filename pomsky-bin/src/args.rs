@@ -1,7 +1,7 @@
-use std::{io::Read, path::PathBuf, string::FromUtf8Error};
+use std::{io::Read, path::PathBuf, str::FromStr, string::FromUtf8Error};
 
 use atty::Stream;
-use pomsky::{features::PomskyFeatures, options::RegexFlavor};
+use pomsky::{error::DiagnosticKind, features::PomskyFeatures, options::RegexFlavor};
 
 pub(super) enum ParseArgsError {
     Lexopt(lexopt::Error),
@@ -29,6 +29,25 @@ pub(crate) struct Args {
     pub(crate) no_new_line: bool,
     /// Set of allowed pomsky features
     pub(crate) allowed_features: PomskyFeatures,
+    /// Set of allowed pomsky features
+    pub(crate) warnings: DiagnosticSet,
+}
+
+#[derive(Debug)]
+pub(crate) enum DiagnosticSet {
+    All,
+    Disabled(Vec<DiagnosticKind>),
+    Enabled(Vec<DiagnosticKind>),
+}
+
+impl DiagnosticSet {
+    pub(crate) fn is_enabled(&self, kind: DiagnosticKind) -> bool {
+        match self {
+            DiagnosticSet::All => true,
+            DiagnosticSet::Disabled(set) => !set.contains(&kind),
+            DiagnosticSet::Enabled(set) => set.contains(&kind),
+        }
+    }
 }
 
 /// Compile a Pomsky expression to a regex
@@ -74,7 +93,8 @@ Use %c.-h.% for short descriptions and %c.--help.% for more details.
     %g.-h, --help.%                           Print help information
     %g.-n, --no-new-line.%                    Don't print a new-line after the output
     %g.-p, --path <FILE>.%                    File containing the pomsky expression to compile
-    %g.-V, --version.%                        Print version information"
+    %g.-V, --version.%                        Print version information
+    %g.-W, --warnings <DIAGNOSTICS>.%         Disable certain warnings (disable all with %c.-W0.%)"
     ));
 }
 
@@ -118,6 +138,24 @@ Use %c.-h.% for short descriptions and %c.--help.% for more details.
 
     %g.-V, --version.%
             Print version information
+
+    %g.-W, --warnings <DIAGNOSTICS>.%
+            Disable some or all warnings. A single warning can be disabled by
+            specifying the name followed by `%c.=0.%`, for example:
+
+                %c.-Wcompat=0.%
+            
+            Multiple warnings can be disabled by setting this option multiple
+            times, or using a comma-separated list:
+
+                %c.-Wcompat=0 -Wdeprecated=0.%
+                %c.-Wcompat=0,deprecated=0.%
+            
+            To disable all warnings, use %c.-W0.%
+
+            Currently, the following warnings can be disabled:
+                compat          Compatibility warnings
+                deprecated      A used feature will be removed in the future
 
     %g.-d, --debug.%
             Show debug information
@@ -166,6 +204,7 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
     let mut flavor = None;
     let mut no_new_line = false;
     let mut allowed_features = None;
+    let mut warnings = DiagnosticSet::All;
 
     let mut parser = lexopt::Parser::from_env();
     while let Some(arg) = parser.next()? {
@@ -211,6 +250,54 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
                     return Err(ParseArgsError::UnexpectedTwice("no-new-line"));
                 }
                 no_new_line = true;
+            }
+            Short('W') | Long("warnings") => {
+                let value = parser.value()?;
+                let value = value.to_string_lossy();
+                if value.as_ref() == "0" {
+                    warnings = DiagnosticSet::Enabled(vec![]);
+                } else {
+                    let mut warning_list_own = vec![];
+                    let warning_list = match &mut warnings {
+                        DiagnosticSet::Disabled(set) => set,
+                        DiagnosticSet::Enabled(_) => continue,
+                        DiagnosticSet::All => &mut warning_list_own,
+                    };
+
+                    for warning in value.split(',') {
+                        let (kind_str, val) =
+                            warning.trim_start().rsplit_once('=').ok_or_else(|| {
+                                ParseArgsError::Other(format!(
+                                    "`{warning}` contains no `=`, try `-W{warning}=0` \
+                                    to disable {warning} warnings"
+                                ))
+                            })?;
+
+                        if val != "0" {
+                            return Err(ParseArgsError::Other(format!(
+                                "warnings can only be disabled, try `-W{kind_str}=0`"
+                            )));
+                        }
+
+                        let kind = DiagnosticKind::from_str(kind_str).map_err(|_| {
+                            ParseArgsError::Other(format!(
+                                "`{kind_str}` is not a recognized diagnostic kind"
+                            ))
+                        })?;
+
+                        let (DiagnosticKind::Compat | DiagnosticKind::Deprecated) = kind else {
+                            return Err(ParseArgsError::Other(format!(
+                                "`{kind_str}` diagnostic kind cannot be disabled"
+                            )))
+                        };
+
+                        warning_list.push(kind);
+                    }
+
+                    if matches!(warnings, DiagnosticSet::All) {
+                        warnings = DiagnosticSet::Disabled(warning_list_own);
+                    }
+                }
             }
             Long("allowed-features") => {
                 if allowed_features.is_some() {
@@ -296,5 +383,6 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
         debug,
         no_new_line,
         allowed_features: allowed_features.unwrap_or_default(),
+        warnings,
     })
 }

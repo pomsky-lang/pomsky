@@ -84,14 +84,8 @@ impl<'i> Expr<'i> {
             ("C", &codepoint),
         ];
 
-        let mut state = CompileState {
-            next_idx: 1,
-            used_names,
-            groups_count,
-            default_quantifier: RegexQuantifier::Greedy,
-            variables: builtins,
-            current_vars: Default::default(),
-        };
+        let mut state =
+            CompileState::new(RegexQuantifier::Greedy, used_names, groups_count, builtins);
         let mut compiled = self.0.compile(options, &mut state)?;
         let count = compiled.optimize();
 

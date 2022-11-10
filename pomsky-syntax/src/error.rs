@@ -34,7 +34,6 @@ pub enum ParseErrorKind {
 
     UnknownToken,
     LexErrorWithMessage(LexErrorMsg),
-    Dot, // this is for a dot *not* enclosed in brackets
     KeywordAfterLet(String),
     UnexpectedKeyword(String),
 
@@ -101,7 +100,6 @@ impl core::fmt::Display for ParseErrorKind {
 
             ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
             ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
-            ParseErrorKind::Dot => write!(f, "The dot is not supported"),
             ParseErrorKind::KeywordAfterLet(keyword)
             | ParseErrorKind::UnexpectedKeyword(keyword) => {
                 write!(f, "Unexpected keyword `{keyword}`")

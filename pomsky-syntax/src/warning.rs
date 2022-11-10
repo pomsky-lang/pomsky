@@ -28,14 +28,11 @@ impl ParseWarningKind {
 
 impl fmt::Display for ParseWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            ParseWarningKind::Deprecation(d) => {
-                if let Some(std::ops::Range { start, end }) = self.span.range() {
-                    write!(f, "{d}\n  at {start}..{end}")
-                } else {
-                    write!(f, "{d}")
-                }
-            }
+        let ParseWarningKind::Deprecation(warning) = &self.kind;
+        if let Some(std::ops::Range { start, end }) = self.span.range() {
+            write!(f, "{warning}\n  at {start}..{end}")
+        } else {
+            write!(f, "{warning}")
         }
     }
 }

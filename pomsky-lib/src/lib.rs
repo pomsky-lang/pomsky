@@ -47,6 +47,7 @@
 pub mod error;
 pub mod features;
 pub mod options;
+pub mod warning;
 
 mod compile;
 mod exprs;
