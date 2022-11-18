@@ -10,9 +10,6 @@ use pomsky::{
 mod format;
 mod args;
 
-#[cfg(test)]
-mod e2e_tests;
-
 use args::{Args, DiagnosticSet, Input};
 
 pub fn main() {

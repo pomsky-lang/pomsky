@@ -47,11 +47,10 @@ checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
 
 [[package]]
 name = "pomsky"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "arbitrary",
  "pomsky-syntax",
- "thiserror",
 ]
 
 [[package]]
@@ -64,10 +63,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky-syntax"
-version = "0.1.0"
-dependencies = [
- "thiserror",
-]
+version = "0.7.0"
 
 [[package]]
 name = "proc-macro2"
@@ -96,26 +92,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "thiserror"
-version = "1.0.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5f6586b7f764adc0231f4c79be7b920e766bb2f3e51b3661cdb263828f19994"
-dependencies = [
- "thiserror-impl",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12bafc5b54507e0149cdf1b145a5d80ab80a90bcd9275df43d4fff68460f6c21"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

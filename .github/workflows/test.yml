@@ -51,7 +51,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -78,3 +78,39 @@ jobs:
       - name: Build and run tests
         run: |
           cargo test --verbose
+
+  codecov:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install grcov
+        env:
+          TAG: v0.8.13
+        run: |
+          wget -c https://github.com/mozilla/grcov/releases/download/$TAG/grcov-x86_64-unknown-linux-gnu.tar.bz2
+          tar -xjf grcov-x86_64-unknown-linux-gnu.tar.bz2 -C ~/.cargo/bin/
+
+      - name: Run grcov
+        env:
+          PROJECT_NAME: pomsky
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          CARGO_INCREMENTAL: 0
+        run: |
+          cargo test -Zsparse-registry
+          zip -0 cov.zip $(find . -name "$PROJECT_NAME*.gc*" -print)
+          grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info
+
+      - name: Coveralls upload
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: 'lcov.info'

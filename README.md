@@ -12,6 +12,16 @@ Read **[the book](https://pomsky-lang.org/docs/)** to get started!
 
 </div>
 
+[![Test][test-badge]][test-link] [![Coverage Status][coverage-badge]][coverage-link]
+[![Crates.io][crates-badge]][crates-link]
+
+[test-badge]: https://github.com/rulex-rs/pomsky/actions/workflows/test.yml/badge.svg
+[test-link]: https://github.com/rulex-rs/pomsky/actions/workflows/test.yml
+[coverage-badge]: https://coveralls.io/repos/github/rulex-rs/pomsky/badge.svg?branch=main
+[coverage-link]: https://coveralls.io/github/rulex-rs/pomsky?branch=main
+[crates-badge]: https://img.shields.io/crates/v/pomsky
+[crates-link]: https://crates.io/crates/pomsky
+
 ## Examples
 
 On the left are pomsky expressions, on the right is the compiled regex:

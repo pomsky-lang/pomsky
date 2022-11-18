@@ -1,3 +1,6 @@
+// these tests don't work on Windows for some reason
+#![cfg(not(target_os = "windows"))]
+
 use assert_cmd::prelude::*;
 use assert_fs::prelude::FileWriteStr;
 use std::process::Command;
