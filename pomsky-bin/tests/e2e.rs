@@ -43,6 +43,40 @@ fn command_color(args: &[&str]) -> Command {
 }
 
 #[test]
+fn version() {
+    let mut cmd = command(&["-V"]);
+    cmd.assert().success().stderr("").stdout(format!("pomsky {}\n", env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
+fn help() {
+    let mut cmd = command(&["-h"]);
+    cmd.assert().success().stderr("").stdout(format!(r#"pomsky {}
+
+Compile pomsky expressions, a new regular expression language
+
+Use `-h` for short descriptions and `--help` for more details.
+
+USAGE:
+    pomsky [OPTIONS] <INPUT>
+    pomsky [OPTIONS] --path <PATH>
+    command | pomsky [OPTIONS]
+
+ARGS:
+    <INPUT>  Pomsky expression to compile
+
+OPTIONS:
+        --allowed-features <FEATURE>...  Comma-separated list of allowed features [default: all enabled]
+    -f, --flavor <FLAVOR>                Regex flavor [default: `pcre`]
+    -h, --help                           Print help information
+    -n, --no-new-line                    Don't print a new-line after the output
+    -p, --path <FILE>                    File containing the pomsky expression to compile
+    -V, --version                        Print version information
+    -W, --warnings <DIAGNOSTICS>         Disable certain warnings (disable all with `-W0`)
+"#, env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
 fn file_doesnt_exist() {
     let mut cmd = command(&["-p", "test/file/doesnt/exist"]);
     cmd.assert().failure().stderr(format!("{ERROR}No such file or directory (os error 2)\n"));
@@ -291,4 +325,23 @@ fn wrong_order() {
     cmd.assert()
         .failure()
         .stderr(format!("{ERROR}You can only provide an input or a path, but not both\n{USAGE}"));
+}
+
+#[test]
+fn specify_features() {
+    let mut cmd = command(&[
+        ":(.)",
+        "--allowed-features",
+        "variables,boundaries,dot,atomic-groups,lazy-mode,named-groups",
+    ]);
+    cmd.assert().failure().stderr(
+        r#"error(syntax): 
+  × Numbered capturing groups aren't supported
+   ╭────
+ 1 │ :(.)
+   · ──┬─
+   ·   ╰── error occurred here
+   ╰────
+"#,
+    );
 }
