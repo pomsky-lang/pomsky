@@ -60,31 +60,38 @@ fn empty_input() {
 #[test]
 fn pretty_print() {
     let mut cmd = command(&[
-        "let x = (>> 'test'?);
-        x{2} | x{3,5} | . C [w d] | range '0'-'7F' base 16 | :x() ::x",
+        "let x = >> 'test'?;
+        x{2} | x{3,5} | . C ![w d s n r t a e f] ['a'-'f'] | range '0'-'7F' base 16 |\
+        :x() ::x | (!<< 'a')+ | regex '['",
         "--debug",
     ]);
     cmd.assert()
         .success()
         .stdout(
-            "(?=(?:test)?){2}|(?=(?:test)?){3,5}|.[\\s\\S][\\w\\d]|\
-          0|[1-7][0-9a-fA-F]?|[8-9a-fA-F]|(?P<x>)\\1\n",
+            "(?=(?:test)?){2}|(?=(?:test)?){3,5}|.[\\s\\S]\
+            [^\\w\\d\\s\\n\\r\\t\\a\\x1B\\f][a-f]|\
+            0|[1-7][0-9a-fA-F]?|[8-9a-fA-F]|(?P<x>)\\1|(?<!a)+|[\n",
         )
         .stderr(
             r#"======================== debug ========================
-let x = (
-  >> "test"{0,1}
+let x = (>>
+  "test"{0,1}
 );
 | x{2}
 | x{3,5}
 | .
   C
-  [word digit]
+  ![word digit space n r t a e f]
+  ['a'-'f']
 | range '0'-'7F' base 16
 | :x(
     ""
   )
   ::x
+| (
+    !<< "a"
+  ){1,}
+| regex "["
 
 "#,
         );
