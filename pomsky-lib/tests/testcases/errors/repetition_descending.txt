@@ -1,0 +1,5 @@
+#! expect=error
+'test'{5, 3}
+-----
+ERROR: Lower bound can't be greater than the upper bound
+SPAN: 7..11

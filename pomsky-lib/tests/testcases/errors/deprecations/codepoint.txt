@@ -1,0 +1,6 @@
+#! expect=error
+[codepoint]
+-----
+ERROR: `[codepoint]` is deprecated
+HELP: Use `Codepoint` without brackets instead
+SPAN: 1..10

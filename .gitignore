@@ -1,2 +1,6 @@
 /target
 core.*
+
+# coverage info
+cov.zip
+lcov.info

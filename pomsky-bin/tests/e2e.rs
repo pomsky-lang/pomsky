@@ -55,14 +55,39 @@ fn file_doesnt_exist() {
 fn empty_input() {
     let mut cmd = command(&[]);
     cmd.assert().success().stdout("\n").stderr("");
+}
 
-    let mut cmd = command(&["--debug"]);
-    cmd.assert().success().stdout("\n").stderr(
-        r#"======================== debug ========================
-""
+#[test]
+fn pretty_print() {
+    let mut cmd = command(&[
+        "let x = (>> 'test'?);
+        x{2} | x{3,5} | . C [w d] | range '0'-'7F' base 16 | :x() ::x",
+        "--debug",
+    ]);
+    cmd.assert()
+        .success()
+        .stdout(
+            "(?=(?:test)?){2}|(?=(?:test)?){3,5}|.[\\s\\S][\\w\\d]|\
+          0|[1-7][0-9a-fA-F]?|[8-9a-fA-F]|(?P<x>)\\1\n",
+        )
+        .stderr(
+            r#"======================== debug ========================
+let x = (
+  >> "test"{0,1}
+);
+| x{2}
+| x{3,5}
+| .
+  C
+  [word digit]
+| range '0'-'7F' base 16
+| :x(
+    ""
+  )
+  ::x
 
 "#,
-    );
+        );
 }
 
 #[test]

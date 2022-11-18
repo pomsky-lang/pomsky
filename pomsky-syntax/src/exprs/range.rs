@@ -27,5 +27,10 @@ impl Range {
         buf.push_str("'-'");
         buf.extend(self.end.iter().map(|&n| hex(n)));
         buf.push('\'');
+
+        if self.radix != 10 {
+            buf.push_str(" base ");
+            buf.write_fmt(self.radix);
+        }
     }
 }

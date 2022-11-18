@@ -1,0 +1,5 @@
+![.]
+-----
+\\n
+WARNING: This syntax is deprecated. Use `.` without the brackets.
+  at 2..3

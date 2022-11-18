@@ -36,8 +36,8 @@
 //!     e.g. `[ascii_alpha]` = `[a-zA-Z]`.
 //!
 //!   - a [Unicode category, script or block](https://www.regular-expressions.info/unicode.html#category).\
-//!     For example: `[Letter]` compiles to `\p{Letter}`. Pomsky currently treats
-//!     any uppercase identifier except `R` as Unicode class.
+//!     For example: `[Letter]` compiles to `\p{Letter}`. Pomsky currently
+//!     treats any uppercase identifier except `R` as Unicode class.
 //!
 //! ### "Special" items
 //!
@@ -139,7 +139,7 @@ impl CharClass {
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match &self.inner {
             CharGroup::Dot if self.negative => buf.push_str("[n]"),
-            CharGroup::Dot => buf.push_str("[.]"),
+            CharGroup::Dot => buf.push_str("."),
             CharGroup::CodePoint => buf.push_str("Codepoint"),
             CharGroup::Items(items) => {
                 if self.negative {
