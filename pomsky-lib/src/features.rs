@@ -16,7 +16,7 @@ use crate::error::{CompileError, CompileErrorKind, UnsupportedError};
 ///     .grapheme(false)
 ///     .variables(false);
 /// ```
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct PomskyFeatures {
     bits: u16,
 }

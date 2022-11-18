@@ -7,25 +7,19 @@ use pomsky::{
 };
 
 #[macro_use]
-mod colors;
+mod format;
 mod args;
 
-use args::{Args, DiagnosticSet, Input, ParseArgsError};
+#[cfg(test)]
+mod e2e_tests;
+
+use args::{Args, DiagnosticSet, Input};
 
 pub fn main() {
     let args = match args::parse_args() {
         Ok(args) => args,
         Err(error) => {
-            let msg = match error {
-                ParseArgsError::Lexopt(error) => error.to_string(),
-                ParseArgsError::StdinUtf8(e) => format!("Could not parse stdin: {e}"),
-                ParseArgsError::UnexpectedTwice(option) => format!(
-                    "The argument '{option}' was provided more than once, \
-                    but cannot be used multiple times"
-                ),
-                ParseArgsError::Other(msg) => msg,
-            };
-            print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
+            print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, error.to_string(), None));
             args::print_short_usage_and_help_err();
             exit(2)
         }
@@ -36,8 +30,12 @@ pub fn main() {
         Input::File(path) => match std::fs::read_to_string(path) {
             Ok(input) => compile(&input, &args),
             Err(error) => {
-                let msg = error.to_string();
-                print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, msg, None));
+                print_diagnostic(&Diagnostic::ad_hoc(
+                    Severity::Error,
+                    None,
+                    error.to_string(),
+                    None,
+                ));
                 exit(3);
             }
         },
@@ -93,13 +91,15 @@ fn print_parse_error(error: ParseError, input: &str) {
     let len = diagnostics.len();
 
     if len > 8 {
-        efprintln!(lit "%C.note.%: some errors were omitted");
+        efprintln!(C!"note" ": some errors were omitted");
     }
 
-    efprintln!(
-        "%R.error.%: could not compile expression due to {}",
-        if len > 1 { format!("{len} previous errors") } else { "previous error".into() }
-    );
+    if len > 1 {
+        let len = len.to_string();
+        efprintln!(R!"error" ": could not compile expression due to " {&len} " previous errors");
+    } else {
+        efprintln!(R!"error" ": could not compile expression due to previous error");
+    }
 }
 
 fn print_warnings(warnings: Vec<Warning>, input: &str, args: &Args) {
@@ -115,27 +115,23 @@ fn print_warnings(warnings: Vec<Warning>, input: &str, args: &Args) {
             len += 1;
             match len {
                 1..=8 => print_diagnostic(&diagnostic),
-                9 => efprintln!(lit "%C.note.%: some warnings were omitted"),
+                9 => efprintln!(C!"note" ": some warnings were omitted"),
                 _ => {}
             }
         }
     }
 
     if len > 1 {
-        efprintln!(
-            "%Y.warning.%: pomsky generated {len} {}",
-            if len > 1 { "warnings" } else { "warning" },
-        );
+        let len = len.to_string();
+        efprintln!(Y!"warning" ": pomsky generated " {&len} " warnings");
     }
 }
 
 fn print_diagnostic(diagnostic: &Diagnostic) {
+    let kind = diagnostic.kind.to_string();
+    let display = diagnostic.default_display().to_string();
     match diagnostic.severity {
-        Severity::Error => {
-            efprintln!("%R.error.%{}: {}", diagnostic.kind, diagnostic.default_display());
-        }
-        Severity::Warning => {
-            efprintln!("%Y.warning.%{}: {}", diagnostic.kind, diagnostic.default_display());
-        }
+        Severity::Error => efprintln!(R!"error" {&kind} ": " {&display}),
+        Severity::Warning => efprintln!(Y!"warning" {&kind} ": " {&display}),
     }
 }

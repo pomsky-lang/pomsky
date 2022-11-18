@@ -31,3 +31,8 @@ features = ["fancy-no-backtrace"]
 version = "0.7.0"
 path = "../pomsky-lib"
 features = ["dbg", "miette", "suggestions"]
+
+[dev-dependencies]
+assert_cmd = "2.0.6"
+assert_fs = "1.0.9"
+predicates = "2.1.3"
