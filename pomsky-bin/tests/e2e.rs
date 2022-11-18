@@ -2,7 +2,7 @@
 #![cfg(not(target_os = "windows"))]
 
 use assert_cmd::prelude::*;
-use assert_fs::prelude::FileWriteStr;
+use assert_fs::prelude::{FileWriteBin, FileWriteStr};
 use std::process::Command;
 
 const RED: &str = "\u{1b}[31m";
@@ -208,6 +208,15 @@ fn path() {
 
     let mut cmd = command(&["-fJS", "-p", path]);
     cmd.assert().success().stdout("(?<foo>test)+\n");
+
+    file.write_binary(b"\xC3\x28").unwrap();
+    let path = file.path().to_str().unwrap();
+
+    let mut cmd = command(&["-fJS", "-p", path]);
+    cmd.assert()
+        .failure()
+        .stdout("")
+        .stderr(format!("{ERROR}stream did not contain valid UTF-8\n"));
 }
 
 #[test]

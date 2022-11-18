@@ -1,7 +1,5 @@
 use std::io::{self, Write};
 
-use atty::Stream;
-
 /// All supported colors in our formatting machinery
 #[allow(unused)]
 pub(crate) enum Color {
@@ -44,33 +42,21 @@ impl Color {
 
 macro_rules! efprintln {
     ($($args:tt)*) => {{
-        $crate::format::fwriteln(text![$($args)*], ::atty::Stream::Stderr);
+        $crate::format::efwriteln(text![$($args)*]);
     }};
 }
 
-pub(crate) fn fwriteln(segments: &[Segment], stream: Stream) {
+pub(crate) fn efwriteln(segments: &[Segment]) {
     let supports_color = matches!(
-        supports_color::on_cached(stream),
+        supports_color::on_cached(atty::Stream::Stderr),
         Some(supports_color::ColorLevel { has_basic: true, .. })
     );
 
-    match stream {
-        Stream::Stdout => {
-            let mut buf = std::io::stdout().lock();
-            for segment in segments {
-                let _ = segment.write(&mut buf, supports_color, 0);
-            }
-            let _ = buf.write_all(b"\n");
-        }
-        Stream::Stderr => {
-            let mut buf = std::io::stderr().lock();
-            for segment in segments {
-                let _ = segment.write(&mut buf, supports_color, 0);
-            }
-            let _ = buf.write_all(b"\n");
-        }
-        Stream::Stdin => panic!("Can't write to stdin"),
+    let mut buf = std::io::stderr().lock();
+    for segment in segments {
+        let _ = segment.write(&mut buf, supports_color, 0);
     }
+    let _ = buf.write_all(b"\n");
 }
 
 pub(crate) struct Help<'a>(pub(crate) &'a [HelpSection<'a>]);
