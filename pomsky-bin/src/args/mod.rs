@@ -16,7 +16,7 @@ mod parse;
 mod warnings;
 
 /// Compile a Pomsky expression to a regex
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub(crate) struct Args {
     /// Pomsky expression to compile
     pub(crate) input: Input,

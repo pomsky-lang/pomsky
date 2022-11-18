@@ -5,7 +5,7 @@ use std::fmt;
 use crate::span::Span;
 
 /// A warning.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ParseWarning {
     /// The kind of warning
     pub kind: ParseWarningKind,

@@ -1,0 +1,5 @@
+#! expect=error, flavor=JavaScript
+[InBasic_Latin]
+-----
+ERROR: Compile error: Unsupported feature `Unicode blocks (\p{InBlock})` in the `JavaScript` regex flavor
+SPAN: 0..15

@@ -1,7 +1,5 @@
 //! Contains pomsky features that can be individually enabled and disabled.
 
-use std::fmt;
-
 use pomsky_syntax::Span;
 
 use crate::error::{CompileError, CompileErrorKind, UnsupportedError};
@@ -39,26 +37,6 @@ impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
         feat.regexes(bool::arbitrary(u)?);
         feat.dot(bool::arbitrary(u)?);
         Ok(feat)
-    }
-}
-
-impl fmt::Debug for PomskyFeatures {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PomskyFeatures")
-            .field("grapheme", &self.supports(Self::GRAPHEME))
-            .field("numbered_groups", &self.supports(Self::NUMBERED_GROUPS))
-            .field("named_groups", &self.supports(Self::NAMED_GROUPS))
-            .field("atomic_groups", &self.supports(Self::ATOMIC_GROUPS))
-            .field("references", &self.supports(Self::REFERENCES))
-            .field("lazy_mode", &self.supports(Self::LAZY_MODE))
-            .field("ranges", &self.supports(Self::RANGES))
-            .field("variables", &self.supports(Self::VARIABLES))
-            .field("lookahead", &self.supports(Self::LOOKAHEAD))
-            .field("lookbehind", &self.supports(Self::LOOKBEHIND))
-            .field("boundaries", &self.supports(Self::BOUNDARIES))
-            .field("regexes", &self.supports(Self::REGEXES))
-            .field("dot", &self.supports(Self::DOT))
-            .finish()
     }
 }
 
@@ -222,4 +200,24 @@ impl PomskyFeatures {
         self.set_bit(Self::DOT, support);
         *self
     }
+}
+
+#[test]
+fn test_toggles() {
+    let features = PomskyFeatures::new()
+        .grapheme(true)
+        .numbered_groups(true)
+        .named_groups(true)
+        .atomic_groups(true)
+        .references(true)
+        .lazy_mode(true)
+        .ranges(true)
+        .variables(true)
+        .lookahead(true)
+        .lookbehind(true)
+        .boundaries(true)
+        .regexes(true)
+        .dot(true);
+
+    assert_eq!(features.bits, PomskyFeatures::default().bits);
 }

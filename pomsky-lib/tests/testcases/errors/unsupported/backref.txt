@@ -1,0 +1,5 @@
+#! expect=error
+:('test') ::1
+-----
+ERROR: Compile error: Unsupported feature `backreference` in the `Rust` regex flavor
+SPAN: 10..13

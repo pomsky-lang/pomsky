@@ -183,11 +183,11 @@ impl Feature {
             Feature::Grapheme => "grapheme cluster matcher (\\X)",
             Feature::UnicodeBlock => "Unicode blocks (\\p{InBlock})",
             Feature::UnicodeProp => "Unicode properties (\\p{Property})",
-            Feature::Backreference => "Backreference",
-            Feature::ForwardReference => "Forward reference",
-            Feature::RelativeReference => "Relative backreference",
-            Feature::NonNegativeRelativeReference => "Non-negative relative backreference",
-            Feature::NegativeShorthandW => "Negative `\\w` shorthand in character class",
+            Feature::Backreference => "backreference",
+            Feature::ForwardReference => "forward reference",
+            Feature::RelativeReference => "relative backreference",
+            Feature::NonNegativeRelativeReference => "non-negative relative backreference",
+            Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
         }
     }
 }

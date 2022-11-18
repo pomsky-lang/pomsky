@@ -2,7 +2,7 @@ use atty::Stream;
 
 use super::{Args, DiagnosticSet, Input, ParseArgsError};
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub(super) enum ArgsInner {
     Args(Args),
     HelpShort,

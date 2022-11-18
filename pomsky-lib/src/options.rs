@@ -3,7 +3,7 @@
 use crate::features::PomskyFeatures;
 
 /// Options passed to the pomsky compiler
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct CompileOptions {
     /// The targeted regex flavor. Pomsky makes sure that the emitted regex is

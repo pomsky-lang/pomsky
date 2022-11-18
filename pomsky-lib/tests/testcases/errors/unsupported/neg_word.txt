@@ -1,0 +1,5 @@
+#! expect=error, flavor=JavaScript
+['_' !w] !['_' !w]
+-----
+ERROR: Compile error: Unsupported feature `negative `\w` shorthand in character class` in the `JavaScript` regex flavor
+SPAN: 0..8
