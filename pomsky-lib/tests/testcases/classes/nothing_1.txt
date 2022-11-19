@@ -1,0 +1,6 @@
+#! expect=error
+![s !s]
+-----
+ERROR: Compile error: This negated character class matches nothing
+HELP: The group is empty because it contains both `space` and `!space`
+SPAN: 1..7

@@ -1,4 +1,0 @@
-#! compile=false
-![s !s]
------
-[^\s\S]

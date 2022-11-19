@@ -21,8 +21,6 @@ pub enum CharGroup {
     /// `[.]`, the [dot](https://www.regular-expressions.info/dot.html). Matches any code point
     /// except `\n`.
     Dot,
-    /// `[cp]` or `[codepoint]`. Matches any code point.
-    CodePoint,
     /// This variant is used for the remaining cases.
     Items(Vec<GroupItem>),
 }
@@ -185,4 +183,20 @@ pub enum GroupName {
     Script(Script),
     CodeBlock(CodeBlock),
     OtherProperties(OtherProperties),
+}
+
+impl GroupName {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            GroupName::Word => "word",
+            GroupName::Digit => "digit",
+            GroupName::Space => "space",
+            GroupName::HorizSpace => "horiz_space",
+            GroupName::VertSpace => "vert_space",
+            GroupName::Category(c) => c.as_str(),
+            GroupName::Script(s) => s.as_str(),
+            GroupName::CodeBlock(b) => b.as_str(),
+            GroupName::OtherProperties(o) => o.as_str(),
+        }
+    }
 }

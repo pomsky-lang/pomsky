@@ -65,7 +65,7 @@ pub(crate) enum CompileErrorKind {
     },
     NameUsedMultipleTimes(String),
     EmptyClass,
-    EmptyClassNegated,
+    EmptyClassNegated(&'static str),
     CaptureInLet,
     ReferenceInLet,
     UnknownVariable {
@@ -113,7 +113,7 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::EmptyClass => {
                 write!(f, "Compile error: This character class is empty")
             }
-            CompileErrorKind::EmptyClassNegated => {
+            CompileErrorKind::EmptyClassNegated(_) => {
                 write!(f, "Compile error: This negated character class matches nothing")
             }
             CompileErrorKind::CaptureInLet => {

@@ -140,7 +140,6 @@ impl CharClass {
         match &self.inner {
             CharGroup::Dot if self.negative => buf.push_str("[n]"),
             CharGroup::Dot => buf.push_str("."),
-            CharGroup::CodePoint => buf.push_str("Codepoint"),
             CharGroup::Items(items) => {
                 if self.negative {
                     buf.push_str("![");

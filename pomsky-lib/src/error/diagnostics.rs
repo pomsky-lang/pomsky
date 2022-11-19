@@ -207,7 +207,6 @@ impl Diagnostic {
             CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
             | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {
                 let range = span.range().unwrap_or(0..source_code.len());
-                let span = Span::from(range);
 
                 Diagnostic {
                     severity: Severity::Error,
@@ -215,7 +214,23 @@ impl Diagnostic {
                     msg: kind.to_string(),
                     source_code: Some(source_code.into()),
                     help: Some(format!("Perhaps you meant `{similar}`")),
-                    span,
+                    span: Span::from(range),
+                    kind: DiagnosticKind::Resolve,
+                }
+            }
+            CompileErrorKind::EmptyClassNegated(group_name) => {
+                let range = span.range().unwrap_or(0..source_code.len());
+
+                Diagnostic {
+                    severity: Severity::Error,
+                    code: None,
+                    msg: kind.to_string(),
+                    source_code: Some(source_code.into()),
+                    help: Some(format!(
+                        "The group is empty because it contains \
+                        both `{group_name}` and `!{group_name}`"
+                    )),
+                    span: Span::from(range),
                     kind: DiagnosticKind::Resolve,
                 }
             }
@@ -238,25 +253,11 @@ impl Diagnostic {
 
     /// Create one or multiple [`Diagnostic`]s from a [`CompileError`]
     #[must_use]
-    pub fn from_compile_errors(
-        CompileError { kind, span }: CompileError,
-        source_code: &str,
-    ) -> Vec<Self> {
-        if let CompileErrorKind::ParseError(kind) = kind {
-            Diagnostic::from_parse_errors(ParseError { kind, span }, source_code)
+    pub fn from_compile_errors(error: CompileError, source_code: &str) -> Vec<Self> {
+        if let CompileErrorKind::ParseError(kind) = error.kind {
+            Diagnostic::from_parse_errors(ParseError { kind, span: error.span }, source_code)
         } else {
-            let range = span.range().unwrap_or(0..source_code.len());
-            let span = Span::from(range);
-
-            vec![Diagnostic {
-                severity: Severity::Error,
-                code: None,
-                msg: kind.to_string(),
-                source_code: Some(source_code.into()),
-                help: None,
-                span,
-                kind: DiagnosticKind::from(&kind),
-            }]
+            vec![Diagnostic::from_compile_error(error, source_code)]
         }
     }
 

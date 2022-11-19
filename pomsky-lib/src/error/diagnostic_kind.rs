@@ -36,7 +36,7 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             CompileErrorKind::UnknownReferenceName { .. } => DiagnosticKind::Resolve,
             CompileErrorKind::NameUsedMultipleTimes(_) => DiagnosticKind::Resolve,
             CompileErrorKind::EmptyClass => DiagnosticKind::Syntax,
-            CompileErrorKind::EmptyClassNegated => DiagnosticKind::Syntax,
+            CompileErrorKind::EmptyClassNegated(_) => DiagnosticKind::Resolve,
             CompileErrorKind::CaptureInLet => DiagnosticKind::Unsupported,
             CompileErrorKind::ReferenceInLet => DiagnosticKind::Unsupported,
             CompileErrorKind::UnknownVariable { .. } => DiagnosticKind::Resolve,

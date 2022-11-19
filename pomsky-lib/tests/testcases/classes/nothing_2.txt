@@ -1,0 +1,6 @@
+#! expect=error
+![w !w]
+-----
+ERROR: Compile error: This negated character class matches nothing
+HELP: The group is empty because it contains both `word` and `!word`
+SPAN: 1..7

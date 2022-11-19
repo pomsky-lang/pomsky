@@ -126,18 +126,6 @@ impl<'i> RuleExt<'i> for CharClass {
             CharGroup::Dot => {
                 Ok(if self.negative { Regex::Literal(Cow::Borrowed("\\n")) } else { Regex::Dot })
             }
-            CharGroup::CodePoint => {
-                if self.negative {
-                    return Err(CompileErrorKind::EmptyClassNegated.at(span));
-                }
-                Ok(Regex::CharSet(RegexCharSet {
-                    negative: false,
-                    items: vec![
-                        RegexCharSetItem::Shorthand(RegexShorthand::Space),
-                        RegexCharSetItem::Shorthand(RegexShorthand::NotSpace),
-                    ],
-                }))
-            }
             CharGroup::Items(items) => match (items.len(), self.negative) {
                 (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
                 (1, false) => match items[0] {
@@ -164,6 +152,8 @@ impl<'i> RuleExt<'i> for CharClass {
                     }
                 },
                 (_, negative) => {
+                    let mut previous_group_names: Vec<(GroupName, bool)> = vec![];
+
                     let mut buf = Vec::new();
                     for item in items {
                         match *item {
@@ -171,10 +161,21 @@ impl<'i> RuleExt<'i> for CharClass {
                             GroupItem::Range { first, last } => {
                                 buf.push(RegexCharSetItem::Range { first, last });
                             }
-                            GroupItem::Named { name, negative } => {
+                            GroupItem::Named { name, negative: item_negative } => {
+                                if negative {
+                                    // if the group is negative, it can't contain both `w` and `!w`,
+                                    // where `w` is any group name that can be negated
+                                    if previous_group_names.contains(&(name, !item_negative)) {
+                                        return Err(CompileErrorKind::EmptyClassNegated(
+                                            name.as_str(),
+                                        )
+                                        .at(span));
+                                    }
+                                    previous_group_names.push((name, item_negative));
+                                }
                                 named_class_to_regex_class_items(
                                     name,
-                                    negative,
+                                    item_negative,
                                     options.flavor,
                                     span,
                                     &mut buf,
