@@ -79,7 +79,7 @@ jobs:
         run: |
           cargo test --verbose
 
-  codecov:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -91,12 +91,22 @@ jobs:
           toolchain: nightly
           override: true
 
+      - name: ⚡ Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-nightly-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Install grcov
         env:
           TAG: v0.8.13
         run: |
-          wget -c https://github.com/mozilla/grcov/releases/download/$TAG/grcov-x86_64-unknown-linux-gnu.tar.bz2
-          tar -xjf grcov-x86_64-unknown-linux-gnu.tar.bz2 -C ~/.cargo/bin/
+          mkdir -p ~/.local/bin
+          curl -sL https://github.com/mozilla/grcov/releases/download/$TAG/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar jxf - -C ~/.local/bin
+          echo ~/.local/bin >> $GITHUB_PATH
 
       - name: Run grcov
         env:
