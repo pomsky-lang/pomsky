@@ -16,15 +16,21 @@ impl<'i> RuleExt<'i> for Literal<'i> {
 
 /// Write a char to the output buffer with proper escaping. Assumes the char is
 /// inside a character class.
-pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: RegexFlavor) {
+pub(crate) fn compile_char_esc_in_class(
+    c: char,
+    buf: &mut String,
+    is_first: bool,
+    flavor: RegexFlavor,
+) {
     match c {
         '\\' => buf.push_str(r#"\\"#),
         '-' => buf.push_str(r#"\-"#),
         '[' => buf.push_str(r#"\["#),
         ']' => buf.push_str(r#"\]"#),
-        '^' => buf.push_str(r#"\^"#),
+        '^' if is_first => buf.push_str(r#"\^"#),
         '&' if flavor != RegexFlavor::JavaScript => buf.push_str(r#"\&"#),
         '|' if flavor != RegexFlavor::JavaScript => buf.push_str(r#"\|"#),
+        ':' if is_first && flavor == RegexFlavor::Pcre => buf.push_str(r#"\:"#),
         c => compile_char(c, buf, flavor),
     }
 }

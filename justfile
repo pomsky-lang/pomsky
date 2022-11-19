@@ -19,6 +19,7 @@ bench-plotters *flags:
     cargo bench -p benchmark -- --plotting-backend plotters {{flags}}
 
 coverage:
+    cargo clean
     RUSTFLAGS="{{ coverage_flags }}" RUSTDOCFLAGS="{{ coverage_flags }}" CARGO_INCREMENTAL=0 cargo +nightly test
     zip -0 cov.zip $(find . -name "pomsky*.gc*" -print)
     grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info

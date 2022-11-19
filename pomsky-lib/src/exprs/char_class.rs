@@ -395,21 +395,23 @@ impl RegexCharSet {
             buf.push('[');
         }
 
+        let mut is_first = true;
         for item in &self.items {
             match *item {
                 RegexCharSetItem::Char(c) => {
-                    literal::compile_char_esc_in_class(c, buf, flavor);
+                    literal::compile_char_esc_in_class(c, buf, is_first, flavor);
                 }
                 RegexCharSetItem::Range { first, last } => {
-                    literal::compile_char_esc_in_class(first, buf, flavor);
+                    literal::compile_char_esc_in_class(first, buf, is_first, flavor);
                     buf.push('-');
-                    literal::compile_char_esc_in_class(last, buf, flavor);
+                    literal::compile_char_esc_in_class(last, buf, false, flavor);
                 }
                 RegexCharSetItem::Shorthand(s) => s.codegen(buf),
                 RegexCharSetItem::Property { negative, value } => {
                     value.codegen(buf, negative, flavor);
                 }
             }
+            is_first = false;
         }
 
         buf.push(']');
