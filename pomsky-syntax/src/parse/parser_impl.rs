@@ -328,6 +328,10 @@ impl<'i> Parser<'i> {
                     return Err(ParseErrorKind::NonAsciiIdentAfterColon(c)
                         .at(Span::new(start, start + len)));
                 }
+
+                if name.len() > 32 {
+                    return Err(ParseErrorKind::GroupNameTooLong(name.len()).at(self.last_span()));
+                }
             }
             Ok((GroupKind::Capturing(Capture::new(name)), span))
         } else {

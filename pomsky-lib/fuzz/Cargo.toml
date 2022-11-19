@@ -11,6 +11,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 regex = "1.7.0"
+pcre2 = "0.2.3"
 
 [dependencies.pomsky]
 path = ".."

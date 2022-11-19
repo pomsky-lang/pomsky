@@ -37,6 +37,7 @@ pub enum ParseErrorKind {
     KeywordAfterLet(String),
     KeywordAfterColon(String),
     NonAsciiIdentAfterColon(char),
+    GroupNameTooLong(usize),
     UnexpectedKeyword(String),
 
     Deprecated(DeprecationError),
@@ -110,6 +111,9 @@ impl core::fmt::Display for ParseErrorKind {
             &ParseErrorKind::NonAsciiIdentAfterColon(char) => {
                 let num = char as u32;
                 write!(f, "Group name contains illegal code point `{char}` (U+{num:04X}). Group names must be ASCII only.")
+            }
+            &ParseErrorKind::GroupNameTooLong(len) => {
+                write!(f, "Group name is too long. It is {len} code points long, but must be at most 32 code points.")
             }
 
             ParseErrorKind::Deprecated(deprecation) => deprecation.fmt(f),
