@@ -288,7 +288,7 @@ impl<'i> Parser<'i> {
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
     fn parse_group(&mut self) -> PResult<Option<Rule<'i>>> {
-        let (kind, start_span) = self.parse_group_kind();
+        let (kind, start_span) = self.parse_group_kind()?;
         if !kind.is_normal() {
             self.expect(Token::OpenParen)?;
         } else if !self.consume(Token::OpenParen) {
@@ -308,17 +308,30 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses `:name` or just `:`. Returns the span of the colon with the name.
-    fn parse_group_kind(&mut self) -> (GroupKind<'i>, Span) {
+    fn parse_group_kind(&mut self) -> PResult<(GroupKind<'i>, Span)> {
         if self.consume_reserved("atomic") {
             let span = self.last_span();
-            (GroupKind::Atomic, span)
+            Ok((GroupKind::Atomic, span))
         } else if self.consume(Token::Colon) {
             let span = self.last_span();
-            // TODO: Better diagnostic for `:let(`
+
+            if let Some(keyword) = self.consume_as(Token::ReservedName) {
+                return Err(ParseErrorKind::KeywordAfterColon(keyword.into()).at(self.last_span()));
+            }
+
             let name = self.consume_as(Token::Identifier);
-            (GroupKind::Capturing(Capture::new(name)), span)
+            if let Some(name) = name {
+                if let Some(invalid_index) = name.find(|c: char| !c.is_ascii_alphanumeric()) {
+                    let c = name[invalid_index..].chars().next().unwrap();
+                    let start = self.last_span().range_unchecked().start + invalid_index;
+                    let len = c.len_utf8();
+                    return Err(ParseErrorKind::NonAsciiIdentAfterColon(c)
+                        .at(Span::new(start, start + len)));
+                }
+            }
+            Ok((GroupKind::Capturing(Capture::new(name)), span))
         } else {
-            (GroupKind::Normal, self.span().start())
+            Ok((GroupKind::Normal, self.span().start()))
         }
     }
 

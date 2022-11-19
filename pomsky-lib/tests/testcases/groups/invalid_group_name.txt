@@ -1,0 +1,5 @@
+#! expect=error
+:wütend('furious' | 'angry' | 'mad' | 'raging' | 'livid')
+-----
+ERROR: Group name contains illegal code point `ü` (U+00FC). Group names must be ASCII only.
+SPAN: 2..4

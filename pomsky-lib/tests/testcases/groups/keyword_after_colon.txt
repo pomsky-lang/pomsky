@@ -1,0 +1,5 @@
+#! expect=error
+:let('furious' | 'angry' | 'mad' | 'raging' | 'livid')
+-----
+ERROR: Unexpected keyword `let`
+SPAN: 1..4

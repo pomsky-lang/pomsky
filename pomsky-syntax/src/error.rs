@@ -35,6 +35,8 @@ pub enum ParseErrorKind {
     UnknownToken,
     LexErrorWithMessage(LexErrorMsg),
     KeywordAfterLet(String),
+    KeywordAfterColon(String),
+    NonAsciiIdentAfterColon(char),
     UnexpectedKeyword(String),
 
     Deprecated(DeprecationError),
@@ -101,8 +103,13 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
             ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
             ParseErrorKind::KeywordAfterLet(keyword)
-            | ParseErrorKind::UnexpectedKeyword(keyword) => {
+            | ParseErrorKind::UnexpectedKeyword(keyword)
+            | ParseErrorKind::KeywordAfterColon(keyword) => {
                 write!(f, "Unexpected keyword `{keyword}`")
+            }
+            &ParseErrorKind::NonAsciiIdentAfterColon(char) => {
+                let num = char as u32;
+                write!(f, "Group name contains illegal code point `{char}` (U+{num:04X}). Group names must be ASCII only.")
             }
 
             ParseErrorKind::Deprecated(deprecation) => deprecation.fmt(f),
