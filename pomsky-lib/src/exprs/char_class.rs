@@ -280,8 +280,7 @@ fn named_class_to_regex(
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
         },
         GroupName::OtherProperties(o) => {
-            // TODO: Find out which regex engines (other than PCRE) don't support these
-            if flavor == RegexFlavor::Pcre {
+            if flavor != RegexFlavor::JavaScript && flavor != RegexFlavor::Rust {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             }
             RegexProperty::Other(o).negative(negative)
@@ -369,8 +368,7 @@ fn named_class_to_regex_class_items(
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
         },
         GroupName::OtherProperties(o) => {
-            // TODO: Find out which regex engines (other than PCRE) don't support these
-            if flavor == RegexFlavor::Pcre {
+            if flavor != RegexFlavor::JavaScript && flavor != RegexFlavor::Rust {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             }
             buf.push(RegexProperty::Other(o).negative_item(negative));

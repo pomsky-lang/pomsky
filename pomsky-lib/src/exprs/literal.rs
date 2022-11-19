@@ -23,6 +23,8 @@ pub(crate) fn compile_char_esc_in_class(c: char, buf: &mut String, flavor: Regex
         '[' => buf.push_str(r#"\["#),
         ']' => buf.push_str(r#"\]"#),
         '^' => buf.push_str(r#"\^"#),
+        '&' if flavor != RegexFlavor::JavaScript => buf.push_str(r#"\&"#),
+        '|' if flavor != RegexFlavor::JavaScript => buf.push_str(r#"\|"#),
         c => compile_char(c, buf, flavor),
     }
 }
