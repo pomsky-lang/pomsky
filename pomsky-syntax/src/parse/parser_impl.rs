@@ -414,6 +414,8 @@ impl<'i> Parser<'i> {
                     return Err(ParseErrorKind::UnallowedMultiNot(nots).at(nots_span));
                 }
                 group
+            } else if nots > 0 {
+                return Err(ParseErrorKind::ExpectedToken(Token::Identifier).at(self.span()));
             } else {
                 break;
             };
