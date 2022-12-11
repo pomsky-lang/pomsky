@@ -2,5 +2,5 @@
 ![White_Space !White_Space]
 -----
 ERROR: Compile error: This negated character class matches nothing
-HELP: The group is empty because it contains both `White_Space` and `!White_Space`
+HELP: The group is empty because it contains both `White_Space` and `!White_Space`, which together match every code point
 SPAN: 1..27

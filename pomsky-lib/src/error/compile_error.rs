@@ -1,4 +1,4 @@
-use pomsky_syntax::{error::ParseErrorKind, Span};
+use pomsky_syntax::{error::ParseErrorKind, exprs::GroupItem, Span};
 
 use crate::options::RegexFlavor;
 
@@ -65,7 +65,10 @@ pub(crate) enum CompileErrorKind {
     },
     NameUsedMultipleTimes(String),
     EmptyClass,
-    EmptyClassNegated(&'static str),
+    EmptyClassNegated {
+        group1: GroupItem,
+        group2: GroupItem,
+    },
     CaptureInLet,
     ReferenceInLet,
     UnknownVariable {
@@ -113,7 +116,7 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::EmptyClass => {
                 write!(f, "Compile error: This character class is empty")
             }
-            CompileErrorKind::EmptyClassNegated(_) => {
+            CompileErrorKind::EmptyClassNegated { .. } => {
                 write!(f, "Compile error: This negated character class matches nothing")
             }
             CompileErrorKind::CaptureInLet => {

@@ -31,7 +31,7 @@ macro_rules! data {
         )*
     ) => {
         $(
-            #[derive(Clone, Copy, PartialEq, Eq)]
+            #[derive(Clone, Copy, PartialEq, Eq, Hash)]
             #[cfg_attr(feature = "dbg", derive(Debug))]
             #[allow(non_camel_case_types)]
             #[allow(clippy::enum_variant_names)]
@@ -457,7 +457,7 @@ data! {
 // Recursive expansion of data! macro
 // ===================================
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
@@ -485,7 +485,7 @@ impl Category {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
@@ -546,7 +546,7 @@ impl Script {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
@@ -614,7 +614,7 @@ impl CodeBlock {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]

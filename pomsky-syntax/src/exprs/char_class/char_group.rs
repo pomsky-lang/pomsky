@@ -6,6 +6,8 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
+use std::fmt;
+
 use crate::{
     error::{CharClassError, DeprecationError, ParseErrorKind},
     warning::DeprecationWarning,
@@ -104,7 +106,7 @@ impl CharGroup {
 }
 
 /// One item in a character class.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupItem {
     /// A Unicode code point. It can be denoted in quotes (e.g. `'a'`) or in
     /// hexadecimal notation (`U+201`).
@@ -171,7 +173,22 @@ impl GroupItem {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+impl fmt::Debug for GroupItem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Char(c) => c.fmt(f),
+            Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
+            &Self::Named { name, negative } => {
+                if negative {
+                    f.write_str("!")?;
+                }
+                f.write_str(name.as_str())
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]
 pub enum GroupName {
     Word,

@@ -102,7 +102,7 @@
 //! negated, the class is   removed and the negations cancel each other out:
 //! `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashSet};
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -152,10 +152,16 @@ impl<'i> RuleExt<'i> for CharClass {
                     }
                 },
                 (_, negative) => {
-                    let mut previous_group_names: Vec<(GroupName, bool)> = vec![];
+                    let mut prev_group_items: Vec<GroupItem> = vec![];
+                    let mut prev_items: HashSet<GroupItem> = HashSet::new();
 
                     let mut buf = Vec::new();
                     for item in items {
+                        if prev_items.contains(item) {
+                            continue;
+                        }
+                        prev_items.insert(*item);
+
                         match *item {
                             GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
                             GroupItem::Range { first, last } => {
@@ -163,15 +169,10 @@ impl<'i> RuleExt<'i> for CharClass {
                             }
                             GroupItem::Named { name, negative: item_negative } => {
                                 if negative {
-                                    // if the group is negative, it can't contain both `w` and `!w`,
-                                    // where `w` is any group name that can be negated
-                                    if previous_group_names.contains(&(name, !item_negative)) {
-                                        return Err(CompileErrorKind::EmptyClassNegated(
-                                            name.as_str(),
-                                        )
-                                        .at(span));
-                                    }
-                                    previous_group_names.push((name, item_negative));
+                                    check_char_class_empty(*item, &prev_group_items)
+                                        .map_err(|kind| kind.at(span))?;
+
+                                    prev_group_items.push(*item);
                                 }
                                 named_class_to_regex_class_items(
                                     name,
@@ -189,6 +190,26 @@ impl<'i> RuleExt<'i> for CharClass {
             },
         }
     }
+}
+
+fn check_char_class_empty(
+    item: GroupItem,
+    prev_group_items: &[GroupItem],
+) -> Result<(), CompileErrorKind> {
+    if let GroupItem::Named { mut name, negative } = item {
+        if name == GroupName::Category(Category::Separator) {
+            name = GroupName::Space;
+        }
+
+        // if the class is negative, it can't contain both `w` and
+        // `!w`, where `w` is any group name that can be negated
+        let negated = GroupItem::Named { name, negative: !negative };
+        if prev_group_items.contains(&negated) {
+            return Err(CompileErrorKind::EmptyClassNegated { group1: negated, group2: item });
+        }
+    }
+
+    Ok(())
 }
 
 /// Compiles a shorthand character class or Unicode category/script/block.

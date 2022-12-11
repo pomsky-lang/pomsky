@@ -2,5 +2,5 @@
 ![w !w]
 -----
 ERROR: Compile error: This negated character class matches nothing
-HELP: The group is empty because it contains both `word` and `!word`
+HELP: The group is empty because it contains both `word` and `!word`, which together match every code point
 SPAN: 1..7

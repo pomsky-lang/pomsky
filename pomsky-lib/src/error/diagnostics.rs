@@ -218,7 +218,7 @@ impl Diagnostic {
                     kind: DiagnosticKind::Resolve,
                 }
             }
-            CompileErrorKind::EmptyClassNegated(group_name) => {
+            CompileErrorKind::EmptyClassNegated { group1, group2 } => {
                 let range = span.range().unwrap_or(0..source_code.len());
 
                 Diagnostic {
@@ -227,8 +227,8 @@ impl Diagnostic {
                     msg: kind.to_string(),
                     source_code: Some(source_code.into()),
                     help: Some(format!(
-                        "The group is empty because it contains \
-                        both `{group_name}` and `!{group_name}`"
+                        "The group is empty because it contains both \
+                        `{group1:?}` and `{group2:?}`, which together match every code point",
                     )),
                     span: Span::from(range),
                     kind: DiagnosticKind::Resolve,

@@ -2,5 +2,5 @@
 ![s !s]
 -----
 ERROR: Compile error: This negated character class matches nothing
-HELP: The group is empty because it contains both `space` and `!space`
+HELP: The group is empty because it contains both `space` and `!space`, which together match every code point
 SPAN: 1..7

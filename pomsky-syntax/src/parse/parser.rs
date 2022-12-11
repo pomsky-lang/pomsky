@@ -157,11 +157,13 @@ impl<'i> Parser<'i> {
         }
     }
 
-    pub(super) fn consume_number<T: FromStr>(&mut self) -> PResult<Option<T>> {
+    pub(super) fn consume_number<T: FromStr + PartialOrd>(&mut self, max: T) -> PResult<Option<T>> {
         match self.peek_pair() {
             Some((Token::Number, span)) => {
                 let n = str::parse(self.source_at(span))
-                    .map_err(|_| ParseErrorKind::Number(NumberError::TooLarge).at(span))?;
+                    .ok()
+                    .and_then(|n| if n > max { None } else { Some(n) })
+                    .ok_or_else(|| ParseErrorKind::Number(NumberError::TooLarge).at(span))?;
                 self.offset += 1;
                 Ok(Some(n))
             }

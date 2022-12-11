@@ -6,6 +6,8 @@ use super::{helper, Parser};
 
 type PResult<T> = Result<T, ParseError>;
 
+const MAX_REPETITION: u32 = 65_535;
+
 impl<'i> Parser<'i> {
     pub(super) fn parse_modified(&mut self) -> PResult<Rule<'i>> {
         let mut stmts = Vec::new();
@@ -243,9 +245,9 @@ impl<'i> Parser<'i> {
             // of the allowed syntaxes is used: There must be at least one number, and if
             // there are two numbers, the comma is required. It also checks that the
             // numbers are in increasing order.
-            let lower = self.consume_number::<u32>()?;
+            let lower = self.consume_number(65_535)?;
             let comma = self.consume(Token::Comma);
-            let upper = self.consume_number::<u32>()?;
+            let upper = self.consume_number(65_535)?;
 
             let num_end = self.last_span();
             let num_span = num_start.join(num_end);
@@ -589,7 +591,7 @@ impl<'i> Parser<'i> {
                 let num = self.expect_number::<i32>()?;
                 // negating from positive to negative can't overflow, luckily
                 ReferenceTarget::Relative(-num)
-            } else if let Some(num) = self.consume_number::<u32>()? {
+            } else if let Some(num) = self.consume_number(MAX_REPETITION)? {
                 ReferenceTarget::Number(num)
             } else {
                 // TODO: Better diagnostic for `::let`
