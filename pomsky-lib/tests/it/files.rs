@@ -152,7 +152,7 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                 let mut got = regex.clone();
                 for warning in warnings {
                     got.push_str("\nWARNING: ");
-                    got.write_fmt(format_args!("{}", warning)).unwrap();
+                    got.write_fmt(format_args!("{warning}")).unwrap();
                 }
 
                 match options.expected_outcome {
