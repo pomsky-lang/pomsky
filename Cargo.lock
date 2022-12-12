@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky"
-version = "0.7.0"
+version = "0.8.1"
 dependencies = [
  "arbitrary",
  "atty",
@@ -810,7 +810,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky-bin"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -824,14 +824,14 @@ dependencies = [
 
 [[package]]
 name = "pomsky-macro"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "pomsky",
 ]
 
 [[package]]
 name = "pomsky-syntax"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "arbitrary",
  "strsim",

@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pomsky = { version = "0.7.0", path = "../pomsky-lib" }
+pomsky = { version = "0.8.0", path = "../pomsky-lib" }
 criterion = { git = "https://github.com/bheisler/criterion.rs", branch = "version-0.4" }
 melody_compiler = "0.18.1"
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-![Crown in double quotes logo](./assets/logo.svg)
+![Pomsky dog with orange glasses logo](./logo.png)
 
 # Pomsky
 
@@ -8,7 +8,7 @@
 
 A portable, modern regular expression language
 
-Read **[the book](https://pomsky-lang.org/docs/)** to get started!
+Read **[the book](https://pomsky-lang.org/docs/get-started/introduction/)** to get started!
 
 </div>
 
