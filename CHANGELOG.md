@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-12-12
+
+**Special announcement**: You can [sponsor me](https://github.com/sponsors/Aloso) now for my work on Pomsky. If you can spare a few dollars or convince your employer to donate, that would really help me to make maintaining Pomsky more sustainable. If I get enough donations, I can invest more time in the development of Pomsky, as there's still a lot of work to do!
+
+Remember that you can also help out by filing issues or contributing 😉
+
 ### Language changes
 
 - Added inline regex expressions: Include text that is not transformed or validated. For example:
@@ -18,17 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This allows using regex features not yet supported by Pomsky, like nested character classes. Note, however, that Pomsky does not validate inline regexes, so there's no guarantee that the output is correct.
 
 - Added the dot (`.`). It matches anything except line breaks by default, or anything
-  _including_ line breaks in multiline mode.
+  _including_ line breaks in multiline mode. [More information](https://www.regular-expressions.info/dot.html)
 
-- Added an optimization pass, which removes redundant groups and simplifies repetitions. For example:
-
-  ```pomsky
-  ('a'?){1,5}
-  ```
-
-  This now compiles to `a{0,5}`. Previously, it would compile to the less optimal `(?:a?){1,5}`.
+- Added an optimization pass, which removes redundant groups, simplifies repetitions and deduplicates the contents of character classes.
 
   Optimizations are useful when making heavy use of variables to write readable code and still get the most efficient output. More optimizations are planned, stay tuned!
+
+- Group names now must be no longer than 32 characters. For example, `:this_is_a_very_very_very_long_name()` is no longer allowed. The reason is that group names this long are unsupported by PCRE, and we're enforcing the same limit everywhere to make pomsky more consistent across regex flavors.
 
 ### CLI changes
 
@@ -39,10 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bugfixes
 
 - Fix Unicode script codegen for JavaScript: Pomsky now emits the correct syntax for Unicode scripts in JS.
-- Fix `[` not being escaped within character classes. This is required in regex flavors that support nested character classes.
+- Escape `[`, `&` and `|` within character classes. This is required in regex flavors that support nested character classes.
 - Fix `\e` being emitted, even though it is not supported in the Rust flavor
 - Fix broken feature gates: A few feature gates were defunct and have been fixed.
 - Fix position of error report labels with Unicode chars: This was a long-standing bug in [miette] that was [fixed](https://github.com/zkat/miette/pull/202) recently.
+- Don't silently ignore exclamation points at the end of a character class.
+- Only allow Unicode properties such as `Lowercase` or `Emoji` in regex flavors that support them.
 
 ### Other
 
@@ -52,7 +56,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove thiserror dependency from the `pomsky` and `pomsky-syntax` crates, improving compile time.
 
-- Testing improvements: Compile all PCRE and Rust regular expressions produced by integration tests to make sure the output is well-formed. This caught 2 of the bugs mentioned above! We're currently looking into ways to do the same with the other flavors.
+- Testing improvements:
+
+  - Compile all PCRE and Rust regular expressions produced by integration tests to make sure the output is well-formed. This caught some of the bugs mentioned above! We're currently looking into ways to do the same with the other flavors.
+
+  - Measure test coverage in CI and publish it to coveralls.io. The results are [here](https://coveralls.io/github/rulex-rs/pomsky?branch=main) (also accessible by clicking on the badge in the README). Note that the measurement is imperfect, so the results may not be accurate.
+
+  - Add end-to-end tests for the CLI and improve test coverage
 
 ## [0.7.0] - 2022-09-10
 
@@ -367,7 +377,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.7...HEAD
+[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.8...HEAD
+[0.8.0]: https://github.com/rulex-rs/pomsky/compare/v0.7...v0.8
 [0.7.0]: https://github.com/rulex-rs/pomsky/compare/v0.6...v0.7
 [0.6.0]: https://github.com/rulex-rs/pomsky/compare/v0.5...v0.6
 [0.5.0]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...v0.5
