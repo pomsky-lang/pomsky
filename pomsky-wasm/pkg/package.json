@@ -4,7 +4,7 @@
     "Ludwig Stecher <ludwig.stecher@gmx.de>"
   ],
   "description": "A portable, modern regular expression language",
-  "version": "0.1.3",
+  "version": "0.8.0",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
