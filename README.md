@@ -1,6 +1,6 @@
 <div align="center">
 
-![Pomsky dog with orange glasses logo](./logo.png)
+![Pomsky dog with orange glasses logo](./assets/logo.png)
 
 # Pomsky
 
