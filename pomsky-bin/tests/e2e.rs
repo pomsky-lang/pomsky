@@ -232,8 +232,8 @@ fn no_newline() {
 
     let mut cmd = command(&["-n", ":foo('test')+", "-n"]);
     cmd.assert().failure().stderr(format!(
-        r#"{ERROR}The argument 'no-new-line' was provided more than once, but cannot be used
-  │ multiple times
+        r#"{ERROR}The argument '--no-new-line' was provided more than once, but cannot be
+  │ used multiple times
 {USAGE}"#
     ));
 }
