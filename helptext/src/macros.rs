@@ -124,11 +124,12 @@ macro_rules! sections_impl {
 /// Segments are _not_ separated with commas, for example:
 ///
 /// ```
+/// # use helptext::text;
 /// // "warning" is yellow and bold, "world" is cyan, or wrapped in backticks
 /// let _segments = text!(Y!"warning" ": hello" c:"world");
 ///
-/// // the value of the FOO environment variable is printed in magenta
-/// let _segments = text!("FOO is " m!{env!("FOO")});
+/// // the value of an build-time environment variable is printed in magenta
+/// let _segments = text!("version is " m!{env!("CARGO_PKG_VERSION")});
 /// ```
 #[macro_export]
 macro_rules! text {
@@ -149,7 +150,9 @@ macro_rules! text {
 ///    [`text` macro][text] for the syntax. Example:
 ///
 ///    ```
+///    # helptext::sections!(
 ///    ["test" c:"cyan" R!"bold red"]
+///    # );
 ///    ```
 ///
 ///    Each section is terminated by a line break.
@@ -157,10 +160,12 @@ macro_rules! text {
 /// 2. Named sections. Example:
 ///
 ///    ```
+///    # helptext::sections!(
 ///    "USAGE" {
 ///        ["section 1"]
 ///        ["section 2"]
 ///    }
+///    # );
 ///    ```
 ///
 ///    Named sections are always preceded by a blank line. Child sections are
@@ -169,6 +174,7 @@ macro_rules! text {
 /// 3. Tables. Example:
 ///
 ///    ```
+///    # helptext::sections!(
 ///    table Auto {
 ///        "argument 1" => {
 ///            ["help for argument 1"]
@@ -178,6 +184,7 @@ macro_rules! text {
 ///            ["and some more help!"]
 ///        }
 ///    }
+///    # );
 ///    ```
 ///
 ///    With short help, this is rendered as
@@ -213,6 +220,7 @@ macro_rules! text {
 /// `Long` only appear in the long help. Example:
 ///
 /// ```
+/// # use helptext::sections;
 /// sections!(
 ///     Short ["Short help text"]
 ///     Long ["This is more detailed help text"]
