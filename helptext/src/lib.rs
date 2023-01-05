@@ -1,6 +1,4 @@
-//! A macro to print beautiful help messages.
-//!
-//! Every part can be
+//! A crate to print beautiful help messages.
 //!
 //! ```
 //! use helptext::{Help, sections};
@@ -65,6 +63,12 @@
 //!     );
 //! }
 //! ```
+//!
+//! Result:
+//!
+//! ![Short help](https://raw.githubusercontent.com/rulex-rs/pomsky/main/helptext/docs/short_help.png)
+//!
+//! ![Long help](https://raw.githubusercontent.com/rulex-rs/pomsky/main/helptext/docs/long_help.png)
 
 mod color;
 mod help;

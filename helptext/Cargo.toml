@@ -1,7 +1,16 @@
 [package]
 name = "helptext"
+description = "Create beautiful help messages"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+repository = "https://github.com/rulex-rs/pomsky/tree/main/helptext"
+readme = "README.md"
+keywords = ["help", "colors"]
+categories = ["command-line-utilities"]
+license = "MIT OR Apache-2.0"
+exclude = ["./docs/**"]
+documentation = "https://docs.rs/helptext"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
