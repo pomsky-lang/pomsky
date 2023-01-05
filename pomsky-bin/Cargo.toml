@@ -22,6 +22,7 @@ path = "src/main.rs"
 atty = "0.2.14"
 lexopt = "0.2.1"
 supports-color = "1.3.0"
+helptext = { version = "0.1.0", path = "../helptext" }
 
 [dependencies.miette]
 version = "5.3.1"

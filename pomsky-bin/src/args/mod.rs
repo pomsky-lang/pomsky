@@ -22,13 +22,15 @@ pub(crate) struct Args {
     pub(crate) input: Input,
     /// Show debug information
     pub(crate) debug: bool,
+    /// Whether output should be provided as JSON
+    pub(crate) json: bool,
     /// Regex flavor
     pub(crate) flavor: Option<RegexFlavor>,
     /// Does not print a new-line at the end of the compiled regular expression
     pub(crate) no_new_line: bool,
     /// Set of allowed pomsky features
     pub(crate) allowed_features: PomskyFeatures,
-    /// Set of allowed pomsky features
+    /// Set of warnings that should be emitted
     pub(crate) warnings: DiagnosticSet,
 }
 

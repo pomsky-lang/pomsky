@@ -1,4 +1,4 @@
-use crate::format::Help;
+use helptext::{sections, Help};
 
 const USAGE: Help = Help(sections![
     "USAGE" {
@@ -81,6 +81,9 @@ Currently, the following warnings can be disabled:"]
             }
             "-d, --debug" => {
                 Long ["Show debug information"]
+            }
+            "    --json" => {
+                Long ["Return output as JSON"]
             }
         }
     }

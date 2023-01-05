@@ -21,56 +21,30 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
     let mut no_new_line = false;
     let mut allowed_features = None;
     let mut warnings = DiagnosticSet::All;
+    let mut json = false;
 
     while let Some(arg) = parser.next()? {
         arg_count += 1;
 
         match arg {
-            Short('p') | Long("path") => {
-                if path.is_some() {
-                    return Err(ParseArgsError::UnexpectedTwice("--path"));
-                }
-                path = Some(parser.value()?.parse()?);
-            }
-            Short('d') | Long("debug") => {
-                if debug {
-                    return Err(ParseArgsError::UnexpectedTwice("--debug"));
-                }
-                debug = true;
-            }
+            Short('p') | Long("path") => path.set_arg(parser.value()?.parse()?, "--path")?,
+            Short('d') | Long("debug") => debug.set_arg(true, "--debug")?,
             Short('f') | Long("flavor") => {
-                if flavor.is_some() {
-                    return Err(ParseArgsError::UnexpectedTwice("--flavor"));
-                }
-                flavor = Some(super::flavors::parse_flavor(parser.value()?)?);
+                flavor.set_arg(super::flavors::parse_flavor(parser.value()?)?, "--flavor")?;
             }
-            Short('n') | Long("no-new-line") => {
-                if no_new_line {
-                    return Err(ParseArgsError::UnexpectedTwice("no-new-line"));
-                }
-                no_new_line = true;
-            }
+            Short('n') | Long("no-new-line") => no_new_line.set_arg(true, "--no-new-line")?,
             Short('W') | Long("warnings") => {
                 warnings = DiagnosticSet::parse(parser.value()?, warnings)?;
             }
-            Long("allowed-features") => {
-                if allowed_features.is_some() {
-                    return Err(ParseArgsError::UnexpectedTwice("--allowed-features"));
-                }
-                allowed_features = Some(super::features::parse_features(parser.value()?)?);
-            }
+            Long("allowed-features") => allowed_features
+                .set_arg(super::features::parse_features(parser.value()?)?, "--allowed-features")?,
+            Long("json") => json.set_arg(true, "--json")?,
             Value(val) if input_value.is_none() => {
                 input_value = Some(val.into_string().map_err(lexopt::Error::from)?);
             }
-            Short('h') => {
-                return Ok(ArgsInner::HelpShort);
-            }
-            Long("help") => {
-                return Ok(ArgsInner::HelpLong);
-            }
-            Short('V') | Long("version") => {
-                return Ok(ArgsInner::Version);
-            }
+            Short('h') => return Ok(ArgsInner::HelpShort),
+            Long("help") => return Ok(ArgsInner::HelpLong),
+            Short('V') | Long("version") => return Ok(ArgsInner::Version),
             _ => Err(arg.unexpected())?,
         }
     }
@@ -90,8 +64,39 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
         input,
         flavor,
         debug,
+        json,
         no_new_line,
         allowed_features: allowed_features.unwrap_or_default(),
         warnings,
     }))
+}
+
+trait SetArg {
+    type Set;
+
+    fn set_arg(&mut self, value: Self::Set, name: &'static str) -> Result<(), ParseArgsError>;
+}
+
+impl SetArg for bool {
+    type Set = bool;
+
+    fn set_arg(&mut self, value: bool, name: &'static str) -> Result<(), ParseArgsError> {
+        if *self == value {
+            return Err(ParseArgsError::UnexpectedTwice(name));
+        }
+        *self = value;
+        Ok(())
+    }
+}
+
+impl<T> SetArg for Option<T> {
+    type Set = T;
+
+    fn set_arg(&mut self, value: T, name: &'static str) -> Result<(), ParseArgsError> {
+        if self.is_some() {
+            return Err(ParseArgsError::UnexpectedTwice(name));
+        }
+        *self = Some(value);
+        Ok(())
+    }
 }
