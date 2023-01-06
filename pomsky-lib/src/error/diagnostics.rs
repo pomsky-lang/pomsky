@@ -49,6 +49,15 @@ pub enum Severity {
     Warning,
 }
 
+impl From<Severity> for &'static str {
+    fn from(value: Severity) -> Self {
+        match value {
+            Severity::Error => "error",
+            Severity::Warning => "warning",
+        }
+    }
+}
+
 #[cfg(feature = "miette")]
 impl miette::Diagnostic for Diagnostic {
     fn code<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
@@ -95,12 +104,16 @@ impl miette::Diagnostic for Diagnostic {
 impl Diagnostic {
     /// Create a [`Diagnostic`] from a [`ParseError`]
     #[must_use]
-    pub fn from_parse_error(error: ParseError, source_code: &str) -> Self {
-        let range = error.span.range().unwrap_or(0..source_code.len());
+    pub fn from_parse_error(error: &ParseError, source_code: &str) -> Self {
+        Self::from_parse_error_impl(error.span, &error.kind, source_code)
+    }
+
+    fn from_parse_error_impl(error_span: Span, kind: &ParseErrorKind, source_code: &str) -> Self {
+        let range = error_span.range().unwrap_or(0..source_code.len());
         let slice = &source_code[range.clone()];
         let mut span = Span::from(range);
 
-        let help = match error.kind {
+        let help = match kind {
             ParseErrorKind::LexErrorWithMessage(msg) => msg.get_help(slice),
             ParseErrorKind::RangeIsNotIncreasing => {
                 let dash_pos = slice.find('-').unwrap();
@@ -172,36 +185,50 @@ impl Diagnostic {
         Diagnostic {
             severity: Severity::Error,
             code: None,
-            msg: error.kind.to_string(),
+            msg: kind.to_string(),
             source_code: Some(source_code.into()),
             help,
             span,
-            kind: DiagnosticKind::from(&error.kind),
+            kind: DiagnosticKind::from(kind),
         }
     }
 
     /// Same as [`Diagnostic::from_parse_error`], but returns a `Vec` and
     /// recursively flattens [`ParseErrorKind::Multiple`].
     #[must_use]
-    pub fn from_parse_errors(error: ParseError, source_code: &str) -> Vec<Diagnostic> {
-        match error.kind {
-            ParseErrorKind::Multiple(multiple) => Vec::from(multiple)
-                .into_iter()
+    pub fn from_parse_errors(error: &ParseError, source_code: &str) -> Vec<Diagnostic> {
+        match &error.kind {
+            ParseErrorKind::Multiple(multiple) => multiple
+                .iter()
                 .flat_map(|err| Diagnostic::from_parse_errors(err, source_code))
                 .collect(),
             _ => vec![Diagnostic::from_parse_error(error, source_code)],
         }
     }
 
+    fn from_parse_errors_impl(
+        span: Span,
+        kind: &ParseErrorKind,
+        source_code: &str,
+    ) -> Vec<Diagnostic> {
+        match kind {
+            ParseErrorKind::Multiple(multiple) => multiple
+                .iter()
+                .flat_map(|err| Diagnostic::from_parse_errors(err, source_code))
+                .collect(),
+            _ => vec![Diagnostic::from_parse_error_impl(span, kind, source_code)],
+        }
+    }
+
     /// Create a [`Diagnostic`] from a [`CompileError`]
     #[must_use]
     pub fn from_compile_error(
-        CompileError { kind, span }: CompileError,
+        CompileError { kind, span }: &CompileError,
         source_code: &str,
     ) -> Self {
         match kind {
             CompileErrorKind::ParseError(kind) => {
-                Diagnostic::from_parse_error(ParseError { kind, span }, source_code)
+                Diagnostic::from_parse_error_impl(*span, kind, source_code)
             }
             #[cfg(feature = "suggestions")]
             CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
@@ -245,7 +272,7 @@ impl Diagnostic {
                     source_code: Some(source_code.into()),
                     help: None,
                     span,
-                    kind: DiagnosticKind::from(&kind),
+                    kind: DiagnosticKind::from(kind),
                 }
             }
         }
@@ -253,9 +280,9 @@ impl Diagnostic {
 
     /// Create one or multiple [`Diagnostic`]s from a [`CompileError`]
     #[must_use]
-    pub fn from_compile_errors(error: CompileError, source_code: &str) -> Vec<Self> {
-        if let CompileErrorKind::ParseError(kind) = error.kind {
-            Diagnostic::from_parse_errors(ParseError { kind, span: error.span }, source_code)
+    pub fn from_compile_errors(error: &CompileError, source_code: &str) -> Vec<Self> {
+        if let CompileErrorKind::ParseError(kind) = &error.kind {
+            Diagnostic::from_parse_errors_impl(error.span, kind, source_code)
         } else {
             vec![Diagnostic::from_compile_error(error, source_code)]
         }
@@ -263,7 +290,7 @@ impl Diagnostic {
 
     /// Create a [`Diagnostic`] from a [`CompileError`]
     #[must_use]
-    pub fn from_warning(warning: ParseWarning, source_code: &str) -> Self {
+    pub fn from_warning(warning: &ParseWarning, source_code: &str) -> Self {
         let range = warning.span.range().unwrap_or(0..source_code.len());
         let span = Span::from(range);
 

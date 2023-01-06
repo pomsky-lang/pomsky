@@ -81,6 +81,20 @@ impl Display for DiagnosticKind {
     }
 }
 
+impl From<DiagnosticKind> for &'static str {
+    fn from(val: DiagnosticKind) -> Self {
+        match val {
+            DiagnosticKind::Syntax => "syntax",
+            DiagnosticKind::Resolve => "resolve",
+            DiagnosticKind::Compat => "compat",
+            DiagnosticKind::Unsupported => "unsupported",
+            DiagnosticKind::Deprecated => "deprecated",
+            DiagnosticKind::Limits => "limits",
+            DiagnosticKind::Other => "other",
+        }
+    }
+}
+
 impl FromStr for DiagnosticKind {
     type Err = ();
 

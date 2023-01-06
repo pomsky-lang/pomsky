@@ -119,7 +119,7 @@ fn pomsky_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error>
         Ok((compiled, _warnings)) => Ok(Literal::string(&compiled)),
 
         Err(e) => {
-            let errors = Diagnostic::from_compile_errors(e, input)
+            let errors = Diagnostic::from_compile_errors(&e, input)
                 .into_iter()
                 .map(|d| diagnostic::fmt(d, &group))
                 .collect::<Vec<_>>();
