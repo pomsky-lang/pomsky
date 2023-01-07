@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{BooleanSetting, Stmt, StmtExpr};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
 };

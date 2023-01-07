@@ -242,56 +242,56 @@ fn no_newline() {
 fn lots_of_warnings() {
     let mut cmd = command(&["[.][.][.][.][.][.][.][.][.][.][.][.]"]);
     cmd.assert().success().stdout("............\n").stderr(
-        r#"warning(deprecated): 
+        r#"warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·  ┬
    ·  ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·     ┬
    ·     ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·        ┬
    ·        ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·           ┬
    ·           ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·              ┬
    ·              ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·                 ┬
    ·                 ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
    ·                    ┬
    ·                    ╰── warning originated here
    ╰────
-warning(deprecated): 
+warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
@@ -314,7 +314,7 @@ fn disable_warnings() {
 
     let mut cmd = command(&["[.]", "-Wcompat=0"]);
     cmd.assert().success().stdout(".\n").stderr(
-        r#"warning(deprecated): 
+        r#"warning P0105(deprecated): 
   ⚠ This syntax is deprecated. Use `.` without the brackets.
    ╭────
  1 │ [.]
@@ -344,7 +344,7 @@ fn specify_features() {
         "variables,boundaries,dot,atomic-groups,lazy-mode,named-groups",
     ]);
     cmd.assert().failure().stderr(
-        r#"error(syntax): 
+        r#"error P0302(syntax): 
   × Numbered capturing groups aren't supported
    ╭────
  1 │ :(.)

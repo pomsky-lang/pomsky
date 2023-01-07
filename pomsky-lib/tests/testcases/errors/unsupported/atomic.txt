@@ -1,5 +1,5 @@
 #! expect=error, flavor=JavaScript
 atomic ('test' '!'*)
 -----
-ERROR: Compile error: Unsupported feature `atomic groups` in the `JavaScript` regex flavor
+ERROR: Unsupported feature `atomic groups` in the `JavaScript` regex flavor
 SPAN: 0..20

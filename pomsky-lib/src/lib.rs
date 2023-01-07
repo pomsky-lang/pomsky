@@ -13,9 +13,9 @@
 //! use pomsky::options::{CompileOptions, RegexFlavor};
 //!
 //! let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
-//! let (regex, _warnings) = match Expr::parse_and_compile("'test'", options) {
-//!     Ok(regex) => regex,
-//!     Err(_) => {
+//! let regex = match Expr::parse_and_compile("'test'", options) {
+//!     (Some(regex), _warnings) => regex,
+//!     (None, diagnostics) => {
 //!         eprintln!("The input is not a valid pomsky expression");
 //!         return;
 //!     }
@@ -28,12 +28,19 @@
 //! ```
 //! use pomsky::Expr;
 //! use pomsky::options::{CompileOptions, RegexFlavor};
-//! use pomsky::error::Diagnostic;
+//! use pomsky::diagnose::Diagnostic;
 //!
 //! pub fn compile(input: &str) -> miette::Result<String> {
 //!     let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
-//!     let (compiled, _warnings) = Expr::parse_and_compile(input, options)
-//!         .map_err(|e| e.diagnostic(input))?;
+//!     let compiled = match Expr::parse_and_compile(input, options) {
+//!         (Some(regex), _warnings) => regex,
+//!         (None, diagnostics) => {
+//!             for diagnostic in diagnostics {
+//!                 eprintln!("{diagnostic}");
+//!             }
+//!             miette::bail!("Failed to compile pomsky expression");
+//!         }
+//!     };
 //!     Ok(compiled)
 //! }
 //! ```
@@ -44,6 +51,7 @@
 
 #![warn(missing_docs)]
 
+pub mod diagnose;
 pub mod error;
 pub mod features;
 pub mod options;
@@ -54,5 +62,4 @@ mod exprs;
 mod regex;
 
 pub use exprs::Expr;
-pub use pomsky_syntax::error::ParseError;
-pub use pomsky_syntax::warning::ParseWarning as Warning;
+pub use pomsky_syntax::diagnose::{ParseError, ParseWarning as Warning};

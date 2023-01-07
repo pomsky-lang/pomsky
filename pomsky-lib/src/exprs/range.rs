@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{Range, RepetitionKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind},
+    diagnose::{CompileError, CompileErrorKind},
     features::PomskyFeatures,
     options::CompileOptions,
     regex::Regex,
@@ -20,13 +20,7 @@ use super::{
 
 impl<'i> RuleExt<'i> for Range {
     fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
-        match range(&self.start, &self.end, true, self.radix) {
-            Ok(rule) => Ok(rule.to_regex()),
-            Err(Error) => {
-                Err(CompileErrorKind::Other("Expanding the range yielded an unexpected error")
-                    .at(self.span))
-            }
-        }
+        Ok(range(&self.start, &self.end, true, self.radix).to_regex())
     }
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
@@ -40,8 +34,8 @@ impl<'i> RuleExt<'i> for Range {
 /// This generates a set of rules that exactly match a string containing a
 /// number in a certain range.
 ///
-/// For example, `range(&[1,2,0], &[2,0,0], 0, 10)` matches "120", "125", "150",
-/// "199", "200", but not "119" or "201".
+/// For example, `range(&[1,2,0], &[2,0,0], true, 10)` matches "120", "125",
+/// "150", "199", "200", but not "119" or "201".
 ///
 /// The generated regex is always optimal in terms of search performance.
 /// However, it might be somewhat bigger than a regex optimized for size instead
@@ -68,13 +62,14 @@ impl<'i> RuleExt<'i> for Range {
 /// b = [7, 0, 5]
 /// ```
 ///
-/// This means we need a regex that matches a number between 10 and 799. By
+/// This means we need a regex that matches a number between 4 and 705. By
 /// looking at the first digit, we can deduce:
 ///
 /// - The number can't start with 0 (leading zeros aren't allowed)
-/// - The number can start with 1, 2 or 3, but must be followed 1 or 2 more
-///   digit in that case
-/// - The number can be 4, 5 or 6, and can be followed by 0, 1 or 2 more digits
+/// - The number can start with 1, 2 or 3, but then it must be followed with 1
+///   or 2 more digit in that case
+/// - The number can be 4, 5 or 6, in which case it can be followed by 0, 1 or 2
+///   more digits
 /// - If the number starts with 7, it can be followed by
 ///     - nothing
 ///     - a zero, and possibly a third digit that is at most 5
@@ -109,7 +104,7 @@ impl<'i> RuleExt<'i> for Range {
 /// 0. If the lower bound is 0, then an alternative containing _only_ 0 is added
 /// _once_.
 ///
-/// Now, for each of the above alternatives, we add two things: A character
+/// Now, for each of the above alternatives, we return two things: A character
 /// class matching the first digit, and _something_ matching the remaining
 /// digits. That _something_ is calculated by recursively calling the `range`
 /// function on the remaining digits. To make sure that this doesn't recurse for
@@ -155,8 +150,8 @@ impl<'i> RuleExt<'i> for Range {
 /// 4. `ax`
 /// 5. `ax+1 ..= 9`
 ///
-/// Alternative 1 and 5 are the same, if we substitute `ax` and `bx` with
-/// `min(ax, bx)` in 1. and with `max(ax, bx)` in step 5:
+/// Step 1 and 5 are the same either way, if we substitute `ax` and `bx` with
+/// `min(ax, bx)` in step 1 and with `max(ax, bx)` in step 5:
 ///
 /// ```no_test
 /// 1. [1-(min - 1)] [0-9]{la + 1, lb}  (first digit)
@@ -178,7 +173,7 @@ impl<'i> RuleExt<'i> for Range {
 /// can understand them by reading the code.
 ///
 /// The last step is to optimize the alternatives to be as compact as possible.
-/// This is achieved by simplifying and merging alternatives if possible. For
+/// This is achieved by simplifying and merging alternatives if applicable. For
 /// example,
 ///
 /// ```no_test
@@ -201,16 +196,16 @@ impl<'i> RuleExt<'i> for Range {
 /// `[0-9][0-9]` is not considered equal to `[0-9]{2}`. So this optimization
 /// also serves as a _normalization_, to ensure that equal alternatives can be
 /// merged.
-fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
+fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Rule {
     let hi_digit = radix - 1;
     let lo_digit = u8::from(is_first);
 
     debug_assert!(a.len() <= b.len() && (a.len() < b.len() || a <= b));
 
-    Ok(match (a.split_first(), b.split_first()) {
+    match (a.split_first(), b.split_first()) {
         (None, None) => Rule::Empty,
-        (Some(_), None) => return Err(Error),
-        (None, Some(_)) => range(&[0], b, false, radix)?.optional(),
+        (Some(_), None) => panic!("Unexpected error compiling a range. This is a bug!"),
+        (None, Some(_)) => range(&[0], b, false, radix).optional(),
         (Some((&ax, [])), Some((&bx, []))) => Rule::class(ax, bx),
         (Some((&ax, a_rest)), Some((&bx, b_rest))) => {
             let (min, max) = (u8::min(ax, bx), u8::max(ax, bx));
@@ -229,7 +224,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
                 Ordering::Equal => {
                     // 2.
                     alternatives
-                        .push(vec![Rule::class(ax, bx), range(a_rest, b_rest, false, radix)?]);
+                        .push(vec![Rule::class(ax, bx), range(a_rest, b_rest, false, radix)]);
                 }
                 // ax < bx:
                 Ordering::Less => {
@@ -240,7 +235,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
                         // 2.
                         alternatives.push(vec![
                             Rule::class(min, min),
-                            range(a_rest, &vec![hi_digit; b_rest.len()], false, radix)?,
+                            range(a_rest, &vec![hi_digit; b_rest.len()], false, radix),
                         ]);
                     }
                     if max - min >= 2 {
@@ -253,7 +248,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
                     // 4.
                     alternatives.push(vec![
                         Rule::class(max, max),
-                        range(&vec![0; a_rest.len()], b_rest, false, radix)?,
+                        range(&vec![0; a_rest.len()], b_rest, false, radix),
                     ]);
                 }
                 // ax > bx:
@@ -261,7 +256,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
                     // 2.
                     alternatives.push(vec![
                         Rule::class(min, min),
-                        range(&vec![0; a.len()], b_rest, false, radix)?,
+                        range(&vec![0; a.len()], b_rest, false, radix),
                     ]);
                     if max - min >= 2 && a_rest.len() + 2 <= b_rest.len() {
                         // 3.
@@ -273,7 +268,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
                     // 4.
                     alternatives.push(vec![
                         Rule::class(max, max),
-                        range(a_rest, &vec![hi_digit; b_rest.len() - 1], false, radix)?,
+                        range(a_rest, &vec![hi_digit; b_rest.len() - 1], false, radix),
                     ]);
                 }
             }
@@ -288,7 +283,7 @@ fn range(a: &[u8], b: &[u8], is_first: bool, radix: u8) -> Result<Rule, Error> {
 
             merge_and_optimize_alternatives(alternatives)
         }
-    })
+    }
 }
 
 fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
@@ -343,8 +338,6 @@ fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
         Rule::alt(alternatives)
     }
 }
-
-struct Error;
 
 #[derive(PartialEq, Eq)]
 enum Rule {

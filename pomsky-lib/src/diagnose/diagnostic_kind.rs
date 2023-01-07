@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use pomsky_syntax::{error::ParseErrorKind, warning::ParseWarningKind};
+use pomsky_syntax::diagnose::{ParseErrorKind, ParseWarningKind};
 
 use super::CompileErrorKind;
 
@@ -27,22 +27,23 @@ pub enum DiagnosticKind {
 
 impl From<&CompileErrorKind> for DiagnosticKind {
     fn from(kind: &CompileErrorKind) -> Self {
+        use CompileErrorKind as K;
         match kind {
-            CompileErrorKind::ParseError(p) => DiagnosticKind::from(p),
-            CompileErrorKind::Unsupported(_, _) => DiagnosticKind::Compat,
-            CompileErrorKind::UnsupportedPomskySyntax(_) => DiagnosticKind::Syntax,
-            CompileErrorKind::HugeReference => DiagnosticKind::Syntax,
-            CompileErrorKind::UnknownReferenceNumber(_) => DiagnosticKind::Resolve,
-            CompileErrorKind::UnknownReferenceName { .. } => DiagnosticKind::Resolve,
-            CompileErrorKind::NameUsedMultipleTimes(_) => DiagnosticKind::Resolve,
-            CompileErrorKind::EmptyClass => DiagnosticKind::Syntax,
-            CompileErrorKind::EmptyClassNegated { .. } => DiagnosticKind::Resolve,
-            CompileErrorKind::CaptureInLet => DiagnosticKind::Unsupported,
-            CompileErrorKind::ReferenceInLet => DiagnosticKind::Unsupported,
-            CompileErrorKind::UnknownVariable { .. } => DiagnosticKind::Resolve,
-            CompileErrorKind::RecursiveVariable => DiagnosticKind::Unsupported,
-            CompileErrorKind::RangeIsTooBig(_) => DiagnosticKind::Limits,
-            CompileErrorKind::Other(_) => DiagnosticKind::Other,
+            K::ParseError(p) => DiagnosticKind::from(p),
+            K::Unsupported(..) => DiagnosticKind::Compat,
+            K::UnsupportedPomskySyntax(_) | K::HugeReference => DiagnosticKind::Syntax,
+            K::UnknownReferenceNumber(_)
+            | K::UnknownReferenceName { .. }
+            | K::NameUsedMultipleTimes(_)
+            | K::EmptyClass
+            | K::EmptyClassNegated { .. }
+            | K::UnknownVariable { .. }
+            | K::NegatedHorizVertSpace
+            | K::RelativeRefZero => DiagnosticKind::Resolve,
+            K::CaptureInLet | K::ReferenceInLet | K::RecursiveVariable => {
+                DiagnosticKind::Unsupported
+            }
+            K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }
 }
@@ -50,7 +51,6 @@ impl From<&CompileErrorKind> for DiagnosticKind {
 impl From<&ParseErrorKind> for DiagnosticKind {
     fn from(kind: &ParseErrorKind) -> Self {
         match kind {
-            ParseErrorKind::Multiple(_) => panic!("Must not be called on multiple errors"),
             ParseErrorKind::LetBindingExists => DiagnosticKind::Resolve,
             ParseErrorKind::Deprecated(_) => DiagnosticKind::Deprecated,
             ParseErrorKind::RecursionLimit => DiagnosticKind::Limits,

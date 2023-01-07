@@ -1,6 +1,6 @@
 use std::{ffi::OsString, str::FromStr};
 
-use pomsky::error::DiagnosticKind;
+use pomsky::diagnose::DiagnosticKind;
 
 use super::ParseArgsError;
 

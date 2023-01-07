@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{Capture, Group, GroupKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, Feature},
+    diagnose::{CompileError, CompileErrorKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,

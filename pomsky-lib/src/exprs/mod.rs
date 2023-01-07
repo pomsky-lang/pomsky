@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, ParseError},
+    diagnose::{CompileError, Diagnostic},
     options::CompileOptions,
     regex::Count,
 };
@@ -22,7 +22,7 @@ pub(crate) mod rule;
 pub(crate) mod stmt;
 pub(crate) mod var;
 
-use pomsky_syntax::{exprs::*, warning::ParseWarning, Span};
+use pomsky_syntax::{exprs::*, Span};
 use repetition::RegexQuantifier;
 
 pub(crate) trait RuleExt<'i> {
@@ -55,18 +55,20 @@ impl<'i> Expr<'i> {
     ///
     /// The parsed `Expr` can be displayed with `Debug` if the `dbg` feature is
     /// enabled.
-    pub fn parse(input: &'i str) -> Result<(Self, Vec<ParseWarning>), ParseError> {
-        let (rule, warning) = pomsky_syntax::parse(input, 256)?;
-        Ok((Expr(rule), warning))
+    pub fn parse(input: &'i str) -> (Option<Self>, impl Iterator<Item = Diagnostic> + '_) {
+        let (rule, diagnostics) = pomsky_syntax::parse(input, 256);
+        (rule.map(Expr), diagnostics.into_iter().map(|d| Diagnostic::from_parser(&d, input)))
     }
 
     /// Compile a `Expr` that has been parsed, to a regex
-    pub fn compile(&self, options: CompileOptions) -> Result<String, CompileError> {
-        self.0.validate(&options)?;
+    pub fn compile(&self, input: &'i str, options: CompileOptions) -> Result<String, Diagnostic> {
+        self.0.validate(&options).map_err(|e| e.diagnostic(input))?;
 
         let mut used_names = HashMap::new();
         let mut groups_count = 0;
-        self.0.get_capturing_groups(&mut groups_count, &mut used_names, false)?;
+        self.0
+            .get_capturing_groups(&mut groups_count, &mut used_names, false)
+            .map_err(|e| e.diagnostic(input))?;
 
         let no_span = Span::empty();
 
@@ -92,7 +94,7 @@ impl<'i> Expr<'i> {
 
         let mut state =
             CompileState::new(RegexQuantifier::Greedy, used_names, groups_count, builtins);
-        let mut compiled = self.0.compile(options, &mut state)?;
+        let mut compiled = self.0.compile(options, &mut state).map_err(|e| e.diagnostic(input))?;
         let count = compiled.optimize();
 
         let mut buf = String::new();
@@ -106,10 +108,19 @@ impl<'i> Expr<'i> {
     pub fn parse_and_compile(
         input: &'i str,
         options: CompileOptions,
-    ) -> Result<(String, Vec<ParseWarning>), CompileError> {
-        let (parsed, warnings) = Self::parse(input)?;
-        let compiled = parsed.compile(options)?;
-        Ok((compiled, warnings))
+    ) -> (Option<String>, Vec<Diagnostic>) {
+        match Self::parse(input) {
+            (Some(parsed), warnings) => match parsed.compile(input, options) {
+                Ok(compiled) => (Some(compiled), warnings.collect()),
+                Err(error) => {
+                    let mut diagnostics = Vec::with_capacity(1 + warnings.size_hint().0);
+                    diagnostics.push(error);
+                    diagnostics.extend(warnings);
+                    (None, diagnostics)
+                }
+            },
+            (None, diagnostics) => (None, diagnostics.collect()),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{fmt::Write, ops::Range};
 
-use pomsky::error::Diagnostic;
+use pomsky::diagnose::Diagnostic;
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 pub(crate) fn fmt(diagnostic: Diagnostic, _: &Group) -> String {

@@ -6,7 +6,7 @@ use pomsky_syntax::exprs::{Boundary, BoundaryKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
     regex::Regex,

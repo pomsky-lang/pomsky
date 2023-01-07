@@ -5,21 +5,23 @@
 //! ## Usage
 //!
 //! ```
-//! let (result, warnings) = pomsky_syntax::parse("let x = 'test'; x*", 256).unwrap();
+//! let (result, warnings) = pomsky_syntax::parse("let x = 'test'; x*", 256);
+//! assert!(result.is_some());
 //! assert!(warnings.is_empty());
 //! ```
 
+mod error;
 mod lexer;
 mod parse;
 mod span;
 mod util;
+mod warning;
 
 #[cfg(feature = "dbg")]
 mod pretty_print;
 
-pub mod error;
+pub mod diagnose;
 pub mod exprs;
-pub mod warning;
 
 pub use parse::parse;
 pub use span::Span;

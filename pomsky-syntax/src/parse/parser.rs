@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 use crate::{
-    error::{NumberError, ParseError, ParseErrorKind},
+    diagnose::ParseDiagnostic,
+    diagnose::{NumberError, ParseError, ParseErrorKind, ParseWarning},
     exprs::*,
     lexer::{tokenize, Token},
-    warning::ParseWarning,
     Span,
 };
 
@@ -14,7 +14,7 @@ use crate::{
 /// expression. Note that **pomsky will overflow the stack** when parsing an
 /// expression with too much nesting, so the `recursion` argument should be low
 /// enough to prevent that. The recommended default is 256.
-pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning>), ParseError> {
+pub fn parse(source: &str, recursion: u32) -> (Option<Rule<'_>>, Vec<ParseDiagnostic>) {
     let tokens = tokenize(source);
 
     let mut errors = Vec::new();
@@ -30,9 +30,10 @@ pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning
         0 => {}
         1 => {
             let (span, msg) = errors.pop().unwrap();
-            return Err(msg
+            let error = msg
                 .map_or(ParseErrorKind::UnknownToken, ParseErrorKind::LexErrorWithMessage)
-                .at(span));
+                .at(span);
+            return (None, vec![error.into()]);
         }
         _ => {
             let errors = errors
@@ -40,10 +41,11 @@ pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning
                 .map(|(span, msg)| {
                     msg.map_or(ParseErrorKind::UnknownToken, ParseErrorKind::LexErrorWithMessage)
                         .at(span)
+                        .into()
                 })
                 .collect::<Vec<_>>();
 
-            return Err(ParseErrorKind::Multiple(errors.into_boxed_slice()).at(Span::empty()));
+            return (None, errors);
         }
     }
 
@@ -55,11 +57,20 @@ pub fn parse(source: &str, recursion: u32) -> Result<(Rule<'_>, Vec<ParseWarning
         recursion,
     };
 
-    let rule = parser.parse_modified()?;
+    let rule = match parser.parse_modified() {
+        Ok(rule) => rule,
+        Err(err) => {
+            let mut diagnostics = vec![err.into()];
+            diagnostics.extend(parser.warnings);
+            return (None, diagnostics);
+        }
+    };
     if parser.is_empty() {
-        Ok((rule, parser.warnings))
+        (Some(rule), parser.warnings)
     } else {
-        Err(ParseErrorKind::LeftoverTokens.at(parser.span()))
+        let mut diagnostics = vec![ParseErrorKind::LeftoverTokens.at(parser.span()).into()];
+        diagnostics.extend(parser.warnings);
+        (None, diagnostics)
     }
 }
 
@@ -69,7 +80,7 @@ pub(super) struct Parser<'i> {
     source: &'i str,
     tokens: Box<[(Token, Span)]>,
     offset: usize,
-    warnings: Vec<ParseWarning>,
+    warnings: Vec<ParseDiagnostic>,
     recursion: u32,
 }
 
@@ -120,7 +131,7 @@ impl<'i> Parser<'i> {
     }
 
     pub(super) fn add_warning(&mut self, warning: ParseWarning) {
-        self.warnings.push(warning);
+        self.warnings.push(warning.into());
     }
 
     pub(super) fn is(&mut self, token: Token) -> bool {

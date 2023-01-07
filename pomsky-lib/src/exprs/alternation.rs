@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    diagnose::CompileError,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };

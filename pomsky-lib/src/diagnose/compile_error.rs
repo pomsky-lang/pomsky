@@ -1,12 +1,16 @@
-use pomsky_syntax::{error::ParseErrorKind, exprs::GroupItem, Span};
+use pomsky_syntax::{
+    diagnose::{ParseError, ParseErrorKind},
+    exprs::GroupItem,
+    Span,
+};
 
 use crate::options::RegexFlavor;
 
-use super::{Diagnostic, ParseError};
+use super::{Diagnostic, Feature};
 
 /// An error that can occur during parsing or compiling
 #[derive(Debug, Clone)]
-pub struct CompileError {
+pub(crate) struct CompileError {
     pub(super) kind: CompileErrorKind,
     pub(super) span: Span,
 }
@@ -22,12 +26,6 @@ impl CompileError {
     #[must_use]
     pub fn diagnostic(&self, source_code: &str) -> Diagnostic {
         Diagnostic::from_compile_error(self, source_code)
-    }
-
-    /// Create one or more [Diagnostic]s from this error.
-    #[must_use]
-    pub fn diagnostics(&self, source_code: &str) -> Vec<Diagnostic> {
-        Diagnostic::from_compile_errors(self, source_code)
     }
 }
 
@@ -69,8 +67,10 @@ pub(crate) enum CompileErrorKind {
         group1: GroupItem,
         group2: GroupItem,
     },
+    NegatedHorizVertSpace,
     CaptureInLet,
     ReferenceInLet,
+    RelativeRefZero,
     UnknownVariable {
         found: Box<str>,
         #[cfg(feature = "suggestions")]
@@ -78,7 +78,6 @@ pub(crate) enum CompileErrorKind {
     },
     RecursiveVariable,
     RangeIsTooBig(u8),
-    Other(&'static str),
 }
 
 impl CompileErrorKind {
@@ -96,7 +95,7 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::Unsupported(feature, flavor) => {
                 write!(
                     f,
-                    "Compile error: Unsupported feature `{}` in the `{flavor:?}` regex flavor",
+                    "Unsupported feature `{}` in the `{flavor:?}` regex flavor",
                     feature.name(),
                 )
             }
@@ -111,19 +110,25 @@ impl core::fmt::Display for CompileErrorKind {
                 write!(f, "Reference to unknown group. There is no group named `{found}`")
             }
             CompileErrorKind::NameUsedMultipleTimes(name) => {
-                write!(f, "Compile error: Group name `{name}` used multiple times")
+                write!(f, "Group name `{name}` used multiple times")
             }
             CompileErrorKind::EmptyClass => {
-                write!(f, "Compile error: This character class is empty")
+                write!(f, "This character class is empty")
             }
             CompileErrorKind::EmptyClassNegated { .. } => {
-                write!(f, "Compile error: This negated character class matches nothing")
+                write!(f, "This negated character class matches nothing")
+            }
+            CompileErrorKind::NegatedHorizVertSpace => {
+                write!(f, "horiz_space and vert_space can't be negated within a character class")
             }
             CompileErrorKind::CaptureInLet => {
                 write!(f, "Capturing groups within `let` statements are currently not supported")
             }
             CompileErrorKind::ReferenceInLet => {
                 write!(f, "References within `let` statements are currently not supported")
+            }
+            CompileErrorKind::RelativeRefZero => {
+                write!(f, "Relative references can't be 0")
             }
             CompileErrorKind::UnknownVariable { found, .. } => {
                 write!(f, "Variable `{found}` doesn't exist")
@@ -132,65 +137,6 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::RangeIsTooBig(digits) => {
                 write!(f, "Range is too big, it isn't allowed to contain more than {digits} digits")
             }
-            CompileErrorKind::Other(error) => write!(f, "Compile error: {error}"),
-        }
-    }
-}
-
-/// A regex feature, which might not be supported in every regex flavor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Feature {
-    /// Named capturing groups, e.g. `(?<name>group)`
-    NamedCaptureGroups,
-    /// Atomic groups, e.g. `(?>group)`
-    AtomicGroups,
-    /// Lookahead or lookbehind, e.g. `(?=lookahead)`
-    Lookaround,
-    /// A single grapheme cluster, `\X`
-    Grapheme,
-    /// Unicode blocks, e.g. `\p{InBasic_Latin}`
-    UnicodeBlock,
-    /// Unicode properties, e.g. `\p{Whitespace}`
-    UnicodeProp,
-    /// Backreferences, e.g. `\4`
-    Backreference,
-    /// Forward references. They're like backreferences, but refer to a group
-    /// that syntactically appears _after_ the reference
-    ForwardReference,
-    /// A numeric reference relative to the current position, e.g. `\k<-2>`.
-    ///
-    /// Note that this enum variant is currently unused, because relative
-    /// references are converted to absolute references by Pomsky.
-    // TODO: maybe remove in next major version
-    RelativeReference,
-    /// A relative reference with a relative index of 0 or higher, e.g. `\k<-0>`
-    /// or `\k<+3>`. These aren't supported in any regex engine that I know
-    /// of.
-    ///
-    /// Note that this enum variant is currently unused, because relative
-    /// references are converted to absolute references by Pomsky.
-    // TODO: maybe remove in next major version
-    NonNegativeRelativeReference,
-    /// Negative `\w` shorthand, i.e. `[\W]`. This is not supported in
-    /// JavaScript when polyfilling Unicode support for `\w` and `\d`.
-    NegativeShorthandW,
-}
-
-impl Feature {
-    fn name(self) -> &'static str {
-        match self {
-            Feature::NamedCaptureGroups => "named capturing groups",
-            Feature::AtomicGroups => "atomic groups",
-            Feature::Lookaround => "lookahead/behind",
-            Feature::Grapheme => "grapheme cluster matcher (\\X)",
-            Feature::UnicodeBlock => "Unicode blocks (\\p{InBlock})",
-            Feature::UnicodeProp => "Unicode properties (\\p{Property})",
-            Feature::Backreference => "backreference",
-            Feature::ForwardReference => "forward reference",
-            Feature::RelativeReference => "relative backreference",
-            Feature::NonNegativeRelativeReference => "non-negative relative backreference",
-            Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
         }
     }
 }

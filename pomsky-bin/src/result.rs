@@ -1,4 +1,5 @@
-use serde::Serialize;
+use pomsky::diagnose::DiagnosticCode;
+use serde::{Serialize, Serializer};
 
 #[derive(Serialize)]
 pub(crate) struct CompilationResult {
@@ -42,7 +43,7 @@ impl CompilationResult {
 
     pub(crate) fn with_diagnostics(
         mut self,
-        diagnostics: impl IntoIterator<Item = pomsky::error::Diagnostic>,
+        diagnostics: impl IntoIterator<Item = pomsky::diagnose::Diagnostic>,
     ) -> Self {
         self.diagnostics.extend(diagnostics.into_iter().map(From::from));
         self
@@ -60,11 +61,14 @@ impl CompilationResult {
 pub(crate) struct Diagnostic {
     /// "error" | "warning"
     severity: &'static str,
-    /// See [`DiagnosticKind`](pomsky::error::DiagnosticKind)
+    /// See [`DiagnosticKind`](pomsky::diagnose::DiagnosticKind)
     ///
     /// Currently "syntax" | "resolve" | "compat" | "unsupported" | "deprecated"
     /// | "limits" | "other"
     kind: &'static str,
+    /// See [`DiagnosticCode`](pomsky::diagnose::DiagnosticCode)
+    #[serde(serialize_with = "opt_display", skip_serializing_if = "Option::is_none")]
+    code: Option<DiagnosticCode>,
     /// List of locations that should be underlined
     ///
     /// Currently guaranteed to contain exactly 1 span
@@ -79,6 +83,17 @@ pub(crate) struct Diagnostic {
     ///
     /// Currently unused and guaranteed to be empty
     fixes: Vec<QuickFix>,
+}
+
+fn opt_display<T, S>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    T: std::fmt::Display,
+    S: Serializer,
+{
+    match value {
+        Some(value) => serializer.collect_str(value),
+        None => serializer.serialize_none(),
+    }
 }
 
 #[derive(Serialize)]
@@ -143,11 +158,12 @@ pub(crate) struct Replacement {
     insert: String,
 }
 
-impl From<pomsky::error::Diagnostic> for Diagnostic {
-    fn from(value: pomsky::error::Diagnostic) -> Self {
+impl From<pomsky::diagnose::Diagnostic> for Diagnostic {
+    fn from(value: pomsky::diagnose::Diagnostic) -> Self {
         Diagnostic {
             severity: value.severity.into(),
             kind: value.kind.into(),
+            code: value.code,
             spans: value.span.range().into_iter().map(From::from).collect(),
             description: value.msg,
             help: value.help.into_iter().collect(),

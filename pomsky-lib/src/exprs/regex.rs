@@ -2,7 +2,7 @@ use pomsky_syntax::exprs::Regex as RegexLiteral;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
     regex::Regex,

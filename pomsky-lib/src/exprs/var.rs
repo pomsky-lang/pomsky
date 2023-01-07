@@ -2,7 +2,7 @@ use pomsky_syntax::exprs::{Rule, Variable};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileErrorKind,
+    diagnose::CompileErrorKind,
     features::PomskyFeatures,
     options::CompileOptions,
 };

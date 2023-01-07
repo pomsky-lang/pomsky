@@ -5,7 +5,7 @@ use pomsky_syntax::Span;
 
 use crate::{
     compile::CompileResult,
-    error::{CompileError, CompileErrorKind, Feature},
+    diagnose::{CompileError, CompileErrorKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,

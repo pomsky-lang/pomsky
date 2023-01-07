@@ -7,7 +7,6 @@ use std::iter::Peekable;
 use proc_macro::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
 
 use pomsky::{
-    error::Diagnostic,
     options::{CompileOptions, RegexFlavor},
     Expr,
 };
@@ -116,13 +115,10 @@ fn pomsky_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error>
     let input = input.trim_start_matches("/*«*/").trim_end_matches("/*»*/");
 
     match Expr::parse_and_compile(input, CompileOptions { flavor, ..Default::default() }) {
-        Ok((compiled, _warnings)) => Ok(Literal::string(&compiled)),
+        (Some(compiled), _warnings) => Ok(Literal::string(&compiled)),
 
-        Err(e) => {
-            let errors = Diagnostic::from_compile_errors(&e, input)
-                .into_iter()
-                .map(|d| diagnostic::fmt(d, &group))
-                .collect::<Vec<_>>();
+        (None, errors) => {
+            let errors = errors.into_iter().map(|d| diagnostic::fmt(d, &group)).collect::<Vec<_>>();
             bail!(errors.join("\n\n"), span)
         }
     }

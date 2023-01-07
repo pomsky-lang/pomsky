@@ -1,5 +1,5 @@
-#! expect=error, flavor=Rust
+#! expect=error
 >> 'test'
 -----
-ERROR: Compile error: Unsupported feature `lookahead/behind` in the `Rust` regex flavor
+ERROR: Unsupported feature `lookahead/behind` in the `Rust` regex flavor
 SPAN: 0..9

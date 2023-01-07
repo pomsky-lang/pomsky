@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{Quantifier, Repetition, RepetitionKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::CompileError,
+    diagnose::CompileError,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };

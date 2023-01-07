@@ -4,7 +4,7 @@ use std::fmt;
 
 use pomsky_syntax::Span;
 
-use crate::error::{CompileError, CompileErrorKind, UnsupportedError};
+use crate::diagnose::{CompileError, CompileErrorKind, UnsupportedError};
 
 /// A set of enabled pomsky features. By default, all features are enabled.
 /// You can disabled specific features with

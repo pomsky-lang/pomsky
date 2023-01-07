@@ -1,5 +1,5 @@
 #! expect=error
 ::1 :('test')
 -----
-ERROR: Compile error: Unsupported feature `forward reference` in the `Rust` regex flavor
+ERROR: Unsupported feature `forward reference` in the `Rust` regex flavor
 SPAN: 0..3

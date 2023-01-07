@@ -5,7 +5,7 @@ use std::{
 };
 
 use pomsky::{
-    error::CompileError,
+    diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
 };
 
@@ -148,11 +148,11 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
         );
 
         match parsed {
-            Ok((regex, warnings)) => {
+            (Some(regex), warnings) => {
                 let mut got = regex.clone();
                 for warning in warnings {
                     got.push_str("\nWARNING: ");
-                    got.write_fmt(format_args!("{warning}")).unwrap();
+                    got.write_fmt(format_args!("{warning}\n  at {}", warning.span)).unwrap();
                 }
 
                 match options.expected_outcome {
@@ -207,8 +207,8 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                     },
                 }
             }
-            Err(err) => {
-                let err = error_to_string(err, input);
+            (None, err) => {
+                let err = errors_to_string(err);
 
                 match options.expected_outcome {
                     Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
@@ -235,15 +235,18 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
     .unwrap_or_else(|message| TestResult::Panic { message })
 }
 
-fn error_to_string(err: CompileError, input: &str) -> String {
-    let diagnostics = err.diagnostics(input);
+fn errors_to_string(diagnostics: Vec<Diagnostic>) -> String {
     diagnostics
         .into_iter()
         .map(|diagnostic| {
+            let sev = match diagnostic.severity {
+                Severity::Error => "ERROR",
+                Severity::Warning => "WARNING",
+            };
             if let Some(help) = diagnostic.help {
-                format!("ERROR: {}\nHELP: {}\nSPAN: {}", diagnostic.msg, help, diagnostic.span)
+                format!("{sev}: {}\nHELP: {help}\nSPAN: {}", diagnostic.msg, diagnostic.span)
             } else {
-                format!("ERROR: {}\nSPAN: {}", diagnostic.msg, diagnostic.span)
+                format!("{sev}: {}\nSPAN: {}", diagnostic.msg, diagnostic.span)
             }
         })
         .collect::<Vec<_>>()

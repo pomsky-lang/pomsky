@@ -2,7 +2,7 @@ use pomsky_syntax::exprs::{Reference, ReferenceTarget};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, Feature},
+    diagnose::{CompileError, CompileErrorKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
@@ -60,11 +60,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 };
 
                 let num = match offset {
-                    0 => {
-                        return Err(
-                            CompileErrorKind::Other("Relative references can't be 0").at(self.span)
-                        )
-                    }
+                    0 => return Err(CompileErrorKind::RelativeRefZero.at(self.span)),
                     i32::MIN..=-1 => offset + (state.next_idx as i32),
                     1..=i32::MAX => offset + (state.next_idx as i32) - 1,
                 };

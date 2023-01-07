@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::Rule;
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind},
+    diagnose::{CompileError, CompileErrorKind},
     options::CompileOptions,
 };
 

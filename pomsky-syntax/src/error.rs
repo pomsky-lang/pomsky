@@ -5,9 +5,9 @@ use std::{
     num::{IntErrorKind, ParseIntError},
 };
 
-use crate::Span;
+use crate::{lexer::Token, Span};
 
-pub use crate::lexer::{LexErrorMsg, Token};
+pub use crate::lexer::LexErrorMsg;
 
 /// An error than can occur only during parsing
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,8 +30,6 @@ impl core::fmt::Display for ParseError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ParseErrorKind {
-    Multiple(Box<[ParseError]>),
-
     UnknownToken,
     LexErrorWithMessage(LexErrorMsg),
     KeywordAfterLet(String),
@@ -45,8 +43,6 @@ pub enum ParseErrorKind {
     Expected(&'static str),
     LeftoverTokens,
     ExpectedToken(Token),
-    // TODO: Check if this is needed
-    ExpectedCodePointOrChar,
     RangeIsNotIncreasing,
     UnallowedNot,
     UnallowedMultiNot(usize),
@@ -99,8 +95,6 @@ impl std::error::Error for ParseErrorKind {}
 impl core::fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            ParseErrorKind::Multiple(_) => writeln!(f, "Multiple parsing errors encountered"),
-
             ParseErrorKind::UnknownToken => write!(f, "Unknown token"),
             ParseErrorKind::LexErrorWithMessage(msg) => msg.fmt(f),
             ParseErrorKind::KeywordAfterLet(keyword)
@@ -123,9 +117,6 @@ impl core::fmt::Display for ParseErrorKind {
                 write!(f, "There are leftover tokens that couldn't be parsed")
             }
             ParseErrorKind::ExpectedToken(token) => write!(f, "Expected {token}"),
-            ParseErrorKind::ExpectedCodePointOrChar => {
-                write!(f, "Expected code point or character")
-            }
             ParseErrorKind::RangeIsNotIncreasing => {
                 write!(f, "The first number in a range must be smaller than the second")
             }
@@ -223,8 +214,6 @@ pub enum CharClassError {
     },
     /// A character class that can't be negated, e.g. `[!ascii]`
     Negative,
-    /// Unexpected keyword within a character class, e.g. `[let]`
-    Keyword(String),
 }
 
 impl std::error::Error for CharClassError {}
@@ -233,7 +222,7 @@ impl core::fmt::Display for CharClassError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             CharClassError::Empty => write!(f, "This character class is empty"),
-            CharClassError::CaretInGroup => write!(f, "`^` is not a valid token"),
+            CharClassError::CaretInGroup => write!(f, "`^` is not allowed here"),
             &CharClassError::DescendingRange(a, b) => write!(
                 f,
                 "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
@@ -249,7 +238,6 @@ impl core::fmt::Display for CharClassError {
                 write!(f, "Unknown character class `{found}`")
             }
             CharClassError::Negative => write!(f, "This character class can't be negated"),
-            CharClassError::Keyword(keyword) => write!(f, "Unexpected keyword `{keyword}`"),
         }
     }
 }

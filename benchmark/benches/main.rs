@@ -26,7 +26,7 @@ static SAMPLES: &[(&str, &str)] = &[
     ("modes", MODES),
 ];
 
-const VERSION_RULEX: &str = include_str!("./files/version.pom");
+const VERSION_POMSKY: &str = include_str!("./files/version.pom");
 const VERSION_MELODY: &str = include_str!("./files/version.melody");
 
 pub fn parse(c: &mut Criterion) {
@@ -34,7 +34,12 @@ pub fn parse(c: &mut Criterion) {
 
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
-        group.bench_function(sample_name, |b| b.iter(|| Expr::parse(black_box(sample)).unwrap()));
+        group.bench_function(sample_name, |b| {
+            b.iter(|| {
+                let (expr, _warnings) = Expr::parse(black_box(sample));
+                expr.unwrap()
+            })
+        });
     }
 }
 
@@ -44,8 +49,9 @@ pub fn compile(c: &mut Criterion) {
     for &(sample_name, sample) in SAMPLES {
         group.throughput(Throughput::Bytes(sample.len() as u64));
         group.bench_function(sample_name, |b| {
-            let (expr, _warnings) = Expr::parse(black_box(sample)).unwrap();
-            b.iter(|| black_box(&expr).compile(ruby()).unwrap())
+            let (expr, _warnings) = Expr::parse(black_box(sample));
+            let expr = expr.unwrap();
+            b.iter(|| black_box(&expr).compile(black_box(sample), ruby()).unwrap())
         });
     }
 }
@@ -60,11 +66,12 @@ pub fn range(c: &mut Criterion) {
             let max = "3458709621".repeat(((size + 9) / 10) as usize);
             let max = &max[..size as usize];
             let input = format!("range '0'-'{max}'");
-            let (expr, _warnings) = Expr::parse(black_box(&input)).unwrap();
+            let (expr, _warnings) = Expr::parse(black_box(&input));
+            let expr = expr.unwrap();
 
             b.iter(|| {
                 black_box(&expr)
-                    .compile(CompileOptions { max_range_size: 100, ..Default::default() })
+                    .compile(&input, CompileOptions { max_range_size: 100, ..Default::default() })
                     .unwrap()
             })
         });
@@ -74,9 +81,13 @@ pub fn range(c: &mut Criterion) {
 pub fn competition(c: &mut Criterion) {
     let mut group = c.benchmark_group("version number");
 
-    group.throughput(Throughput::Bytes(VERSION_RULEX.len() as u64));
+    group.throughput(Throughput::Bytes(VERSION_POMSKY.len() as u64));
     group.bench_function("rulex", |b| {
-        b.iter(|| Expr::parse_and_compile(black_box(VERSION_RULEX), Default::default()).unwrap())
+        b.iter(|| {
+            let (expr, _warnings) =
+                Expr::parse_and_compile(black_box(VERSION_POMSKY), Default::default());
+            expr.unwrap()
+        })
     });
 
     group.throughput(Throughput::Bytes(VERSION_MELODY.len() as u64));

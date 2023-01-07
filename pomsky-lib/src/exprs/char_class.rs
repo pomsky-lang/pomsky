@@ -106,7 +106,7 @@ use std::{borrow::Cow, collections::HashSet};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    error::{CompileError, CompileErrorKind, Feature},
+    diagnose::{CompileError, CompileErrorKind, Feature},
     exprs::literal,
     options::{CompileOptions, RegexFlavor},
     regex::{Regex, RegexProperty, RegexShorthand},
@@ -354,10 +354,7 @@ fn named_class_to_regex_class_items(
         })),
 
         GroupName::HorizSpace | GroupName::VertSpace if negative => {
-            return Err(CompileErrorKind::Other(
-                "horiz_space and vert_space can't be negated within a character class",
-            )
-            .at(span));
+            return Err(CompileErrorKind::NegatedHorizVertSpace.at(span));
         }
 
         GroupName::HorizSpace | GroupName::VertSpace
