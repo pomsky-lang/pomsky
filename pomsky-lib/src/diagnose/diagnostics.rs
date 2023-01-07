@@ -5,7 +5,7 @@ use pomsky_syntax::{
 
 use super::{diagnostic_code::DiagnosticCode, CompileError, CompileErrorKind, DiagnosticKind};
 
-#[cfg_attr(feature = "miette", derive(Debug))]
+#[derive(Debug)]
 #[non_exhaustive]
 /// A struct containing detailed information about an error, which can be
 /// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).

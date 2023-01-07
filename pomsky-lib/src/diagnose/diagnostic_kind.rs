@@ -5,8 +5,7 @@ use pomsky_syntax::diagnose::{ParseErrorKind, ParseWarningKind};
 use super::CompileErrorKind;
 
 /// The kind or origin of the error/warning
-#[cfg_attr(feature = "miette", derive(Debug))]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum DiagnosticKind {
     /// Invalid syntax error
