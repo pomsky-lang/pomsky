@@ -7,7 +7,7 @@ fn main() {
         if let Ok((input, compile_options)) = Arbitrary::arbitrary(&mut u) {
             let result = Expr::parse_and_compile(input, compile_options);
 
-            if let Ok((regex, _warnings)) = result {
+            if let (Some(regex), _warnings) = result {
                 let features = compile_options.allowed_features;
 
                 // the first check is just to make it less likely to run into regex's nesting

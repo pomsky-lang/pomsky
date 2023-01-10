@@ -1,1 +1,1 @@
-:test(:foo(:this_is_a_really_long_capturing_group_name() :bar() :() :baz('test' :(:(:()):())):()))
+:test(:foo(:thisisareallylongcapturinggroup() :bar() :() :baz('test' :(:(:()):())):()))
