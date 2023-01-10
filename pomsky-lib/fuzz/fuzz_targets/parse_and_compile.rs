@@ -10,7 +10,7 @@ fuzz_target!(|data: (&str, CompileOptions)| {
     let (input, compile_options) = data;
     let result = Expr::parse_and_compile(input, compile_options);
 
-    if let Ok((regex, _warnings)) = result {
+    if let (Some(regex), _warnings) = result {
         let features = compile_options.allowed_features;
 
         // the first check is just to make it less likely to run into regex's nesting

@@ -1,11 +1,10 @@
 use std::{
     fmt, fs, io,
     path::{Path, PathBuf},
-    process,
-    sync::mpsc::Sender,
-    thread,
-    time::Instant,
+    time::{Duration, Instant},
 };
+
+use tokio::runtime::Builder;
 
 use crate::{args::Args, color::Color::*, files::TestResult};
 
@@ -14,56 +13,68 @@ mod color;
 mod args;
 mod files;
 mod fuzzer;
-mod timeout;
+mod processes;
 
 pub fn main() {
-    let child = thread::Builder::new()
-        // a large stack is required in debug builds
-        .stack_size(8 * 1024 * 1024)
-        .spawn(|| match defer_main() {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("error: {e}");
-                process::exit(1);
-            }
-        })
+    let runtime = Builder::new_multi_thread()
+        .worker_threads(8)
+        .thread_name("pomsky-it-worker")
+        .thread_stack_size(8 * 1024 * 1024)
+        .enable_io()
+        .build()
         .unwrap();
 
-    // Wait for thread to join
-    child.join().unwrap();
+    runtime.block_on(async { defer_main().await });
+
+    runtime.shutdown_timeout(Duration::from_secs(10));
 }
 
-fn defer_main() -> Result<(), io::Error> {
+async fn defer_main() {
     println!("\nrunning integration tests");
+
+    let args = Args::parse();
+
+    let mut filtered = 0;
+    let mut samples = vec![];
+    collect_samples("./tests/testcases".into(), &mut samples, &args.filter, &mut filtered).unwrap();
+    let paths = samples.iter().map(|(path, _)| path.to_owned()).collect::<Vec<_>>();
+
+    println!("{} test cases found", samples.len());
+
+    let proc = processes::Processes::new();
 
     let mut results = Vec::new();
 
-    let args = Args::parse();
     if args.include_ignored {
         println!("{}", Yellow("including ignored cases!"));
     }
 
-    let (tx, child) = timeout::timeout_thread();
-
     println!();
     let start = Instant::now();
-    test_dir_recursive("./tests/testcases".into(), &mut results, tx, &args, args.bless)?;
+
+    let mut handles = Vec::new();
+    for (path, content) in samples {
+        let proc = proc.clone();
+        let handle =
+            tokio::spawn(files::test_file(content, path, args.include_ignored, args.bless, proc));
+        handles.push(handle);
+    }
+    for handle in handles {
+        results.push(handle.await.unwrap());
+    }
+
     let elapsed = start.elapsed();
     println!();
-
-    child.join().unwrap();
 
     let mut ok = 0;
     let mut failed = 0;
     let mut blessed = 0;
     let mut ignored = 0;
-    let mut filtered = 0;
 
-    for (path, result) in results {
+    for (result, path) in results.into_iter().zip(paths) {
         match result {
             TestResult::Success => ok += 1,
             TestResult::Ignored => ignored += 1,
-            TestResult::Filtered => filtered += 1,
             TestResult::Blessed => blessed += 1,
             TestResult::IncorrectResult { input, expected, got } => {
                 failed += 1;
@@ -79,15 +90,12 @@ fn defer_main() -> Result<(), io::Error> {
                 println!("{e}");
                 println!();
             }
-            TestResult::Panic { message } => {
-                failed += 1;
-                println!("{}: {}", path.to_string_lossy(), Red("test panicked."));
-                if let Some(message) = message {
-                    println!("     {}: {message}", Blue("message"));
-                }
-                println!();
-            }
         }
+    }
+
+    if args.stats {
+        eprintln!("Stats");
+        eprintln!("  JS was invoked {} times", proc.get_js_count().await);
     }
 
     println!(
@@ -134,7 +142,7 @@ fn defer_main() -> Result<(), io::Error> {
     }
 
     if failed > 0 {
-        process::exit(failed);
+        std::process::exit(failed);
     }
 
     if args.fuzz_ranges {
@@ -158,48 +166,6 @@ fn defer_main() -> Result<(), io::Error> {
             color!(Red if failed > 0; failed, " failed"),
             elapsed,
         );
-    }
-
-    Ok(())
-}
-
-fn test_dir_recursive(
-    path: PathBuf,
-    results: &mut Vec<(PathBuf, TestResult)>,
-    tx: Sender<PathBuf>,
-    args: &Args,
-    bless: bool,
-) -> Result<(), io::Error> {
-    let path = &path;
-    if !path.exists() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("file {:?} not found", Blue(path)),
-        ));
-    }
-    if path.is_dir() {
-        for test in fs::read_dir(path)? {
-            test_dir_recursive(test?.path(), results, tx.clone(), args, bless)?;
-        }
-        Ok(())
-    } else if path.is_file() {
-        let mut content = std::fs::read_to_string(path)?;
-        content.retain(|c| c != '\r');
-        results.push((
-            path.to_owned(),
-            if filter_matches(&args.filter, path) {
-                tx.send(path.to_owned()).unwrap();
-                files::test_file(&content, path, args, bless)
-            } else {
-                TestResult::Filtered
-            },
-        ));
-        Ok(())
-    } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("unexpected file type of {:?}", Blue(path)),
-        ))
     }
 }
 
@@ -227,4 +193,41 @@ fn pad_left(s: &str, padding: usize) -> String {
         .enumerate()
         .map(|(i, line)| if i == 0 { line.to_string() } else { format!("\n{:padding$}{line}", "") })
         .collect()
+}
+
+fn collect_samples(
+    path: PathBuf,
+    buf: &mut Vec<(PathBuf, String)>,
+    filter: &str,
+    filter_count: &mut u64,
+) -> io::Result<()> {
+    let path_ref = &path;
+    if !path_ref.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("file {:?} not found", Blue(path_ref)),
+        ));
+    }
+
+    if path_ref.is_dir() {
+        for test in fs::read_dir(path_ref)? {
+            collect_samples(test?.path(), buf, filter, filter_count)?;
+        }
+        Ok(())
+    } else if path_ref.is_file() {
+        let mut content = std::fs::read_to_string(path_ref)?;
+        content.retain(|c| c != '\r');
+
+        if filter_matches(filter, path_ref) {
+            buf.push((path, content));
+        } else {
+            *filter_count += 1;
+        }
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("unexpected file type of {:?}", Blue(path_ref)),
+        ))
+    }
 }

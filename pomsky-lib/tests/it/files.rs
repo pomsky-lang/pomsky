@@ -1,23 +1,22 @@
 use std::{
     fmt::Write as _,
-    panic::{catch_unwind, UnwindSafe},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use pomsky::{
     diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
 };
+use tokio::task::spawn_blocking;
 
-use crate::{color::Color::*, Args};
+use crate::{color::Color::*, processes::Processes};
 
 pub(crate) enum TestResult {
     Success,
     Ignored,
-    Filtered,
     Blessed,
     IncorrectResult { input: String, expected: Result<String, String>, got: Result<String, String> },
-    Panic { message: Option<String> },
+    // Panic { message: Option<String> },
     InvalidOutput(String),
 }
 
@@ -116,7 +115,7 @@ impl Options {
 }
 
 fn can_compile_regex(flavor: RegexFlavor) -> bool {
-    flavor == RegexFlavor::Rust || flavor == RegexFlavor::Pcre
+    matches!(flavor, RegexFlavor::Rust | RegexFlavor::Pcre | RegexFlavor::JavaScript)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -134,39 +133,47 @@ impl Outcome {
     }
 }
 
-pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) -> TestResult {
-    let (input, expected, options) = process_content(content, path);
+pub(crate) async fn test_file(
+    content: String,
+    path: PathBuf,
+    include_ignored: bool,
+    bless: bool,
+    proc: Processes,
+) -> TestResult {
+    let (input, expected, options) = process_content(&content, &path);
+    let input_owned = input.to_string();
 
-    if options.ignore && !args.include_ignored {
+    if options.ignore && !include_ignored {
         return TestResult::Ignored;
     }
 
-    catch_panics(|| {
-        let parsed = pomsky::Expr::parse_and_compile(
-            input,
+    let parsed = spawn_blocking(move || {
+        pomsky::Expr::parse_and_compile(
+            &input_owned,
             CompileOptions { flavor: options.flavor, ..Default::default() },
-        );
+        )
+    })
+    .await
+    .unwrap();
 
-        match parsed {
-            (Some(regex), warnings) => {
-                let mut got = regex.clone();
-                for warning in warnings {
-                    got.push_str("\nWARNING: ");
-                    got.write_fmt(format_args!("{warning}\n  at {}", warning.span)).unwrap();
-                }
+    match parsed {
+        (Some(regex), warnings) => {
+            let mut got = regex.clone();
+            for warning in warnings {
+                got.push_str("\nWARNING: ");
+                got.write_fmt(format_args!("{warning}\n  at {}", warning.span)).unwrap();
+            }
 
-                match options.expected_outcome {
-                    Outcome::Success if got == expected => {
-                        if options.compile {
-                            match options.flavor {
-                                RegexFlavor::Rust => match regex::Regex::new(&regex) {
-                                    Ok(_) => TestResult::Success,
-                                    Err(e) => TestResult::InvalidOutput(e.to_string()),
-                                },
-                                RegexFlavor::Pcre => match pcre2::bytes::RegexBuilder::new()
-                                    .utf(true)
-                                    .build(&regex)
-                                {
+            match options.expected_outcome {
+                Outcome::Success if got == expected => {
+                    if options.compile {
+                        match options.flavor {
+                            RegexFlavor::Rust => match regex::Regex::new(&regex) {
+                                Ok(_) => TestResult::Success,
+                                Err(e) => TestResult::InvalidOutput(e.to_string()),
+                            },
+                            RegexFlavor::Pcre => {
+                                match pcre2::bytes::RegexBuilder::new().utf(true).build(&regex) {
                                     Ok(_) => TestResult::Success,
                                     Err(e) => TestResult::InvalidOutput(format!(
                                         "{e}\n>\n> {}\n> {:width$}^",
@@ -174,65 +181,65 @@ pub(crate) fn test_file(content: &str, path: &Path, args: &Args, bless: bool) ->
                                         "",
                                         width = regex[0..e.offset().unwrap_or(0)].chars().count()
                                     )),
-                                },
-                                _ => {
-                                    eprintln!(
-                                        "{}: Flavor {:?} can't be compiled at the moment",
-                                        Yellow("Warning"),
-                                        options.flavor
-                                    );
-                                    eprintln!("  in {path:?}");
-                                    TestResult::Success
                                 }
                             }
-                        } else {
-                            TestResult::Success
+                            RegexFlavor::JavaScript => proc.test_js(&regex).await,
+                            _ => {
+                                eprintln!(
+                                    "{}: Flavor {:?} can't be compiled at the moment",
+                                    Yellow("Warning"),
+                                    options.flavor
+                                );
+                                eprintln!("  in {path:?}");
+                                TestResult::Success
+                            }
                         }
+                    } else {
+                        TestResult::Success
                     }
-                    _ if bless => {
-                        let contents = create_content(
-                            input,
-                            &got,
-                            Options { expected_outcome: Outcome::Success, ..options },
-                        );
-                        std::fs::write(path, contents)
-                            .expect("Failed to bless test because of IO error");
-
-                        TestResult::Blessed
-                    }
-                    outcome => TestResult::IncorrectResult {
-                        input: input.to_string(),
-                        expected: outcome.of(expected.to_string()),
-                        got: Ok(got),
-                    },
                 }
-            }
-            (None, err) => {
-                let err = errors_to_string(err);
+                _ if bless => {
+                    let contents = create_content(
+                        input,
+                        &got,
+                        Options { expected_outcome: Outcome::Success, ..options },
+                    );
+                    std::fs::write(path, contents)
+                        .expect("Failed to bless test because of IO error");
 
-                match options.expected_outcome {
-                    Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
-                    _ if bless => {
-                        let contents = create_content(
-                            input,
-                            &err,
-                            Options { expected_outcome: Outcome::Error, ..options },
-                        );
-                        std::fs::write(path, contents)
-                            .expect("Failed to bless test because of IO error");
-
-                        TestResult::Blessed
-                    }
-                    outcome => TestResult::IncorrectResult {
-                        input: input.to_string(),
-                        expected: outcome.of(expected.to_string()),
-                        got: Err(err),
-                    },
+                    TestResult::Blessed
                 }
+                outcome => TestResult::IncorrectResult {
+                    input: input.to_string(),
+                    expected: outcome.of(expected.to_string()),
+                    got: Ok(got),
+                },
             }
         }
-    })
-    .unwrap_or_else(|message| TestResult::Panic { message })
+        (None, err) => {
+            let err = errors_to_string(err);
+
+            match options.expected_outcome {
+                Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
+                _ if bless => {
+                    let contents = create_content(
+                        input,
+                        &err,
+                        Options { expected_outcome: Outcome::Error, ..options },
+                    );
+                    std::fs::write(path, contents)
+                        .expect("Failed to bless test because of IO error");
+
+                    TestResult::Blessed
+                }
+                outcome => TestResult::IncorrectResult {
+                    input: input.to_string(),
+                    expected: outcome.of(expected.to_string()),
+                    got: Err(err),
+                },
+            }
+        }
+    }
 }
 
 fn errors_to_string(diagnostics: Vec<Diagnostic>) -> String {
@@ -287,12 +294,4 @@ fn create_content(input: &str, outcome: &str, options: Options) -> String {
     };
 
     option_strings + input + "\n-----\n" + outcome
-}
-
-fn catch_panics<R>(f: impl Fn() -> R + UnwindSafe) -> Result<R, Option<String>> {
-    catch_unwind(f).map_err(|err| {
-        err.downcast_ref::<String>()
-            .map(ToOwned::to_owned)
-            .or_else(|| err.downcast_ref::<&str>().map(|s| s.to_string()))
-    })
 }

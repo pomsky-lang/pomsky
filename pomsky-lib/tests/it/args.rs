@@ -1,11 +1,10 @@
 use std::process::exit;
 
-use crate::color::Color::*;
-
 pub(crate) struct Args {
     pub include_ignored: bool,
     pub filter: String,
     pub bless: bool,
+    pub stats: bool,
 
     pub fuzz_ranges: bool,
     pub fuzz_start: usize,
@@ -15,21 +14,27 @@ pub(crate) struct Args {
 
 impl Args {
     pub(crate) fn parse() -> Self {
+        use lexopt::prelude::*;
+
         let mut include_ignored = false;
         let mut filter = String::new();
         let mut bless = false;
+        let mut stats = false;
+
         let mut fuzz_ranges = false;
         let mut fuzz_start = 0;
         let mut fuzz_step = 1;
         let mut thoroughness = 40;
 
-        for arg in std::env::args().skip(1) {
-            match arg.as_str() {
-                "--" => {}
-                "-i" | "--ignored" | "--include-ignored" => include_ignored = true,
-                "--fuzz-ranges" => fuzz_ranges = true,
-                "--bless" => bless = true,
-                "help" | "--help" | "-h" => {
+        let mut parser = lexopt::Parser::from_env();
+        while let Some(arg) = parser.next().unwrap() {
+            match arg {
+                Long("") => {}
+                Short('i') | Long("ignored") | Long("include-ignored") => include_ignored = true,
+                Long("fuzz-ranges") => fuzz_ranges = true,
+                Long("bless") => bless = true,
+                Long("stats") => stats = true,
+                Short('h') | Long("help") => {
                     eprintln!(
                         "USAGE:\n    \
                             cargo test --test it -- [OPTIONS]\n\
@@ -45,25 +50,22 @@ impl Args {
                     );
                     exit(0);
                 }
-                s if s.starts_with("--thoroughness=") => {
-                    let s = s.strip_prefix("--thoroughness=").unwrap();
-                    thoroughness = s.parse().unwrap();
-                }
-                s if s.starts_with("--fuzz-start=") => {
-                    let s = s.strip_prefix("--fuzz-start=").unwrap();
-                    fuzz_start = s.parse().unwrap();
-                }
-                s if s.starts_with("--fuzz-step=") => {
-                    let s = s.strip_prefix("--fuzz-step=").unwrap();
-                    fuzz_step = s.parse().unwrap();
-                }
-                s if !s.starts_with('-') => filter = arg,
-                option => eprintln!(
-                    "{}: unrecognized option {option:?}\ntry `--help` help",
-                    Yellow("Warning")
-                ),
+                Long("thoroughness") => thoroughness = parser.value().unwrap().parse().unwrap(),
+                Long("fuzz-start") => fuzz_start = parser.value().unwrap().parse().unwrap(),
+                Long("fuzz-step") => fuzz_step = parser.value().unwrap().parse().unwrap(),
+                Value(arg) => filter = arg.to_string_lossy().to_string(),
+                _ => Err(arg.unexpected()).unwrap(),
             }
         }
-        Args { include_ignored, filter, bless, fuzz_ranges, fuzz_start, fuzz_step, thoroughness }
+        Args {
+            include_ignored,
+            filter,
+            bless,
+            stats,
+            fuzz_ranges,
+            fuzz_start,
+            fuzz_step,
+            thoroughness,
+        }
     }
 }
