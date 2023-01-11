@@ -280,7 +280,9 @@ fn named_class_to_regex(
             items: vec![
                 RegexCharSetItem::Char('\t'),
                 if flavor == RegexFlavor::Python {
-                    return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+                    return Err(
+                        CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span)
+                    );
                 } else {
                     RegexProperty::Category(Category::Space_Separator).negative_item(false)
                 },
