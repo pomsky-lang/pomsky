@@ -11,7 +11,10 @@ rl.on('line', (line) => {
   try {
     new RegExp(line, 'u')
   } catch (e) {
-    console.log(e.message.replace(/\n/g, ' | '))
+    const message = e.message.replace(/[\n\\]/g, (c) =>
+      c === '\\' ? '\\\\' : '\\n'
+    )
+    console.log(message)
     return
   }
   console.log('success')

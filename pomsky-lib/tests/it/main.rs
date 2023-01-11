@@ -95,7 +95,8 @@ async fn defer_main() {
 
     if args.stats {
         eprintln!("Stats");
-        eprintln!("  JS was invoked {} times", proc.get_js_count().await);
+        eprintln!("  Java was invoked {} times", proc.get_java_count().await);
+        eprintln!("  JS   was invoked {} times", proc.get_js_count().await);
     }
 
     println!(

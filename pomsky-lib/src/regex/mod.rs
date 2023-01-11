@@ -197,7 +197,7 @@ impl RegexProperty {
                 }
                 RegexFlavor::Java => {
                     buf.push_str("In");
-                    buf.push_str(&b.as_str().replace('-', ""));
+                    buf.push_str(&b.as_str().replace('-', "_"));
                 }
                 _ => {
                     buf.push_str("In");
