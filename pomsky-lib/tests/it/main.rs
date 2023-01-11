@@ -41,7 +41,7 @@ async fn defer_main() {
 
     println!("{} test cases found", samples.len());
 
-    let proc = processes::Processes::new();
+    let proc = processes::Processes::default();
 
     let mut results = Vec::new();
 
@@ -60,7 +60,13 @@ async fn defer_main() {
         handles.push(handle);
     }
     for handle in handles {
-        results.push(handle.await.unwrap());
+        match handle.await {
+            Ok(result) => results.push(result),
+            Err(e) => {
+                eprintln!("{e}");
+                std::process::exit(1);
+            }
+        }
     }
 
     let elapsed = start.elapsed();
@@ -95,8 +101,9 @@ async fn defer_main() {
 
     if args.stats {
         eprintln!("Stats");
-        eprintln!("  Java was invoked {} times", proc.get_java_count().await);
-        eprintln!("  JS   was invoked {} times", proc.get_js_count().await);
+        eprintln!("  Java   was invoked {} times", proc.java.get_count().await);
+        eprintln!("  JS     was invoked {} times", proc.js.get_count().await);
+        eprintln!("  Python was invoked {} times", proc.py.get_count().await);
     }
 
     println!(

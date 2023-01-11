@@ -79,6 +79,8 @@ impl<'i> RuleExt<'i> for Group<'i> {
         if let GroupKind::Atomic = self.kind {
             options.allowed_features.require(PomskyFeatures::ATOMIC_GROUPS, self.span)?;
 
+            // Python supports atomic groups since 3.11, but it's fairly new, so we forbid
+            // it for now
             if let RegexFlavor::JavaScript | RegexFlavor::Python | RegexFlavor::Rust =
                 options.flavor
             {

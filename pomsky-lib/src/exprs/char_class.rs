@@ -279,7 +279,11 @@ fn named_class_to_regex(
             negative,
             items: vec![
                 RegexCharSetItem::Char('\t'),
-                RegexProperty::Category(Category::Space_Separator).negative_item(false),
+                if flavor == RegexFlavor::Python {
+                    return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+                } else {
+                    RegexProperty::Category(Category::Space_Separator).negative_item(false)
+                },
             ],
         }),
         GroupName::VertSpace => Regex::CharSet(RegexCharSet {
@@ -292,6 +296,9 @@ fn named_class_to_regex(
             ],
         }),
 
+        _ if flavor == RegexFlavor::Python => {
+            return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+        }
         GroupName::Category(c) => RegexProperty::Category(c).negative(negative),
         GroupName::Script(s) => RegexProperty::Script(s).negative(negative),
         GroupName::CodeBlock(b) => match flavor {
@@ -368,7 +375,11 @@ fn named_class_to_regex_class_items(
         }
         GroupName::HorizSpace => {
             buf.push(RegexCharSetItem::Char('\t'));
-            buf.push(RegexProperty::Category(Category::Space_Separator).negative_item(false));
+            if flavor == RegexFlavor::Python {
+                return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+            } else {
+                buf.push(RegexProperty::Category(Category::Space_Separator).negative_item(false));
+            }
         }
         GroupName::VertSpace => {
             buf.push(RegexCharSetItem::Range { first: '\x0A', last: '\x0D' });
@@ -377,6 +388,9 @@ fn named_class_to_regex_class_items(
             buf.push(RegexCharSetItem::Char('\u{2029}'));
         }
 
+        _ if flavor == RegexFlavor::Python => {
+            return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
+        }
         GroupName::Category(c) => buf.push(RegexProperty::Category(c).negative_item(negative)),
         GroupName::Script(s) => buf.push(RegexProperty::Script(s).negative_item(negative)),
         GroupName::CodeBlock(b) => match flavor {

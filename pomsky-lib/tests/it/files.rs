@@ -115,10 +115,8 @@ impl Options {
 }
 
 fn can_compile_regex(flavor: RegexFlavor) -> bool {
-    matches!(
-        flavor,
-        RegexFlavor::Rust | RegexFlavor::Pcre | RegexFlavor::JavaScript | RegexFlavor::Java
-    )
+    use RegexFlavor::*;
+    matches!(flavor, Rust | Pcre | JavaScript | Java | Python)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -188,6 +186,7 @@ pub(crate) async fn test_file(
                             }
                             RegexFlavor::JavaScript => proc.test_js(&regex).await,
                             RegexFlavor::Java => proc.test_java(&regex).await,
+                            RegexFlavor::Python => proc.test_py(&regex).await,
                             _ => {
                                 eprintln!(
                                     "{}: Flavor {:?} can't be compiled at the moment",
