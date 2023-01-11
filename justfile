@@ -28,9 +28,8 @@ coverage:
 test:
     cargo test
 
-# test pomsky, include ignored tests
-test-ignored:
-    cargo test -- --ignored
+test-it *args:
+    cargo test --test it --all-features -- "$@"
 
 # fuzz pomsky ranges
 fuzz-ranges *flags:

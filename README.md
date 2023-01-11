@@ -151,17 +151,20 @@ Pomsky looks for mistakes and displays helpful diagnostics:
 
 I wrote an in-depth comparison with similar projects, which [you can find here][comparison].
 
-## Roadmap
+## Code of Conduct
 
-[You can find the Roadmap here.][roadmap]
+The Code of Conduct [can be found here](./CODE_OF_CONDUCT.md).
 
 ## Contributing
 
 You can contribute by using Pomsky and providing feedback. If you find a bug or have a question,
 please create an issue.
 
-I also gladly accept code contributions. To make sure that CI succeeds, please run `cargo fmt`,
-`cargo clippy` and `cargo test` before creating a pull request.
+I also gladly accept code contributions. [More information](./CONTRIBUTING.md)
+
+## Sponsor this project
+
+[Go to sponsors page](https://github.com/sponsors/Aloso/)
 
 ## License
 
@@ -172,6 +175,5 @@ Dual-licensed under the [MIT license][mit-license] or the [Apache 2.0 license][a
 [billion-lols]: https://en.wikipedia.org/wiki/Billion_laughs_attack
 [security]: https://pomsky-lang.org/docs/reference/security/
 [comparison]: https://pomsky-lang.org/docs/reference/comparison/
-[roadmap]: https://github.com/orgs/rulex-rs/projects/1
 [mit-license]: https://opensource.org/licenses/MIT
 [apache-2-license]: https://opensource.org/licenses/Apache-2.0
