@@ -1,4 +1,8 @@
-use std::{path::PathBuf, process::Stdio, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+};
 
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Lines},
@@ -73,6 +77,18 @@ impl Processes {
         match &mut *guard {
             Some(_) => {}
             place @ None => {
+                let compiled =
+                    concat!(env!("CARGO_MANIFEST_DIR"), "/tests/java/RegexTesterAsync.class");
+                if !Path::new(compiled).exists() {
+                    let result = Command::new("javac")
+                        .current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/java"))
+                        .arg("RegexTesterAsync.java")
+                        .output()
+                        .await
+                        .unwrap();
+                    assert!(result.status.success(), "Could not compile Java file");
+                }
+
                 let (stdin, reader) =
                     Self::start_process("java", "tests/java", &["RegexTesterAsync"]);
                 *place = Some((stdin, reader, 0));
