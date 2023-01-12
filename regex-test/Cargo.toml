@@ -19,4 +19,4 @@ onig = "6.4.0"
 [dependencies.tokio]
 version = "1.24.1"
 optional = true
-features = ["sync", "net", "io-util", "process"]
+features = ["sync", "net", "io-util", "process", "macros"]

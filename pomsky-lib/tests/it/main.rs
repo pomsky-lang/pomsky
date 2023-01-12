@@ -43,6 +43,7 @@ async fn defer_main() {
     println!("{} test cases found", samples.len());
 
     let rt = Arc::new(RegexTest::default());
+    rt.init_processes().await;
 
     let mut results = Vec::new();
 
