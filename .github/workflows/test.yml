@@ -10,32 +10,24 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: rustfmt
       - uses: actions/checkout@v3
-      - name: Run `cargo fmt`
-        uses: actions-rs/cargo@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          command: fmt
-          args: --all -- --check
+          components: rustfmt
+
+      - name: Format
+        run: cargo fmt --all -- --check
 
   clippy:
     needs: rustfmt
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
           components: clippy
-
-      - name: Checkout
-        uses: actions/checkout@v3
 
       - name: ⚡ Cache
         uses: actions/cache@v3
@@ -46,7 +38,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run `cargo clippy`
+      - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -57,14 +49,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
+      - uses: actions/checkout@v3
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Checkout
-        uses: actions/checkout@v3
+        uses: dtolnay/rust-toolchain@stable
 
       - name: ⚡ Cache
         uses: actions/cache@v3
@@ -77,19 +64,14 @@ jobs:
 
       - name: Build and run tests
         run: |
-          cargo test --verbose
+          cargo test
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Install grcov
         env:
