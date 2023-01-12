@@ -1,9 +1,11 @@
 use std::{
     fmt, fs, io,
     path::{Path, PathBuf},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
+use regex_test::r#async::RegexTest;
 use tokio::runtime::Builder;
 
 use crate::{args::Args, color::Color::*, files::TestResult};
@@ -13,7 +15,6 @@ mod color;
 mod args;
 mod files;
 mod fuzzer;
-mod processes;
 
 pub fn main() {
     let runtime = Builder::new_multi_thread()
@@ -41,7 +42,7 @@ async fn defer_main() {
 
     println!("{} test cases found", samples.len());
 
-    let proc = processes::Processes::default();
+    let rt = Arc::new(RegexTest::default());
 
     let mut results = Vec::new();
 
@@ -54,9 +55,9 @@ async fn defer_main() {
 
     let mut handles = Vec::new();
     for (path, content) in samples {
-        let proc = proc.clone();
+        let rt = rt.clone();
         let handle =
-            tokio::spawn(files::test_file(content, path, args.include_ignored, args.bless, proc));
+            tokio::spawn(files::test_file(content, path, args.include_ignored, args.bless, rt));
         handles.push(handle);
     }
     for handle in handles {
@@ -101,9 +102,12 @@ async fn defer_main() {
 
     if args.stats {
         eprintln!("Stats");
-        eprintln!("  Java   was invoked {} times", proc.java.get_count().await);
-        eprintln!("  JS     was invoked {} times", proc.js.get_count().await);
-        eprintln!("  Python was invoked {} times", proc.py.get_count().await);
+        eprintln!("  Java   was invoked {} times", rt.java.get_count().await);
+        eprintln!("  JS     was invoked {} times", rt.js.get_count().await);
+        eprintln!("  Python was invoked {} times", rt.py.get_count().await);
+        eprintln!("  Ruby   was invoked {} times", rt.ruby.get_count());
+        eprintln!("  Rust   was invoked {} times", rt.rust.get_count());
+        eprintln!("  PCRE   was invoked {} times", rt.pcre.get_count());
     }
 
     println!(

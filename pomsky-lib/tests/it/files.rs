@@ -1,15 +1,17 @@
 use std::{
     fmt::Write as _,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use pomsky::{
     diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
 };
+use regex_test::r#async::RegexTest;
 use tokio::task::spawn_blocking;
 
-use crate::{color::Color::*, processes::Processes};
+use crate::color::Color::*;
 
 pub(crate) enum TestResult {
     Success,
@@ -116,7 +118,7 @@ impl Options {
 
 fn can_compile_regex(flavor: RegexFlavor) -> bool {
     use RegexFlavor::*;
-    matches!(flavor, Rust | Pcre | JavaScript | Java | Python)
+    matches!(flavor, Rust | Pcre | Ruby | JavaScript | Java | Python)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -139,7 +141,7 @@ pub(crate) async fn test_file(
     path: PathBuf,
     include_ignored: bool,
     bless: bool,
-    proc: Processes,
+    proc: Arc<RegexTest>,
 ) -> TestResult {
     let (input, expected, options) = process_content(&content, &path);
     let input_owned = input.to_string();
@@ -168,25 +170,13 @@ pub(crate) async fn test_file(
             match options.expected_outcome {
                 Outcome::Success if got == expected => {
                     if options.compile {
-                        match options.flavor {
-                            RegexFlavor::Rust => match regex::Regex::new(&regex) {
-                                Ok(_) => TestResult::Success,
-                                Err(e) => TestResult::InvalidOutput(e.to_string()),
-                            },
-                            RegexFlavor::Pcre => {
-                                match pcre2::bytes::RegexBuilder::new().utf(true).build(&regex) {
-                                    Ok(_) => TestResult::Success,
-                                    Err(e) => TestResult::InvalidOutput(format!(
-                                        "{e}\n>\n> {}\n> {:width$}^",
-                                        &regex,
-                                        "",
-                                        width = regex[0..e.offset().unwrap_or(0)].chars().count()
-                                    )),
-                                }
-                            }
-                            RegexFlavor::JavaScript => proc.test_js(&regex).await,
-                            RegexFlavor::Java => proc.test_java(&regex).await,
-                            RegexFlavor::Python => proc.test_py(&regex).await,
+                        let outcome = match options.flavor {
+                            RegexFlavor::Rust => proc.test_rust(&regex),
+                            RegexFlavor::Pcre => proc.test_pcre(&regex),
+                            RegexFlavor::Ruby => proc.test_ruby(&regex),
+                            RegexFlavor::JavaScript => proc.test_js(regex).await,
+                            RegexFlavor::Java => proc.test_java(regex).await,
+                            RegexFlavor::Python => proc.test_python(regex).await,
                             _ => {
                                 eprintln!(
                                     "{}: Flavor {:?} can't be compiled at the moment",
@@ -194,8 +184,12 @@ pub(crate) async fn test_file(
                                     options.flavor
                                 );
                                 eprintln!("  in {path:?}");
-                                TestResult::Success
+                                regex_test::Outcome::Success
                             }
+                        };
+                        match outcome {
+                            regex_test::Outcome::Success => TestResult::Success,
+                            regex_test::Outcome::Error(e) => TestResult::InvalidOutput(e),
                         }
                     } else {
                         TestResult::Success

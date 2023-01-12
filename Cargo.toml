@@ -5,6 +5,7 @@ members = [
     "./pomsky-bin",
     "./pomsky-macro",
     "./helptext",
+    "./regex-test",
     "./benchmark",
 ]
 default-members = ["./pomsky-bin", "./pomsky-lib", "./pomsky-syntax"]
