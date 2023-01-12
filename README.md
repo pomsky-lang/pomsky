@@ -4,11 +4,9 @@
 
 # Pomsky
 
-ℹ️ Pomsky was previously named **Rulex**. [More information](https://pomsky-lang.org/blog/renaming-rulex/) ℹ️
-
 A portable, modern regular expression language
 
-Read **[the book](https://pomsky-lang.org/docs/get-started/introduction/)** to get started!
+**[documentation](https://pomsky-lang.org/docs/get-started/introduction/) · [website](https://pomsky-lang.org) · [Discord server](https://discord.gg/uwap2uxMFp)**
 
 </div>
 
