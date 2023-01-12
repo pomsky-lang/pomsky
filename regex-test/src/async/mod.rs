@@ -19,11 +19,10 @@ pub struct RegexTest {
 
 impl RegexTest {
     pub async fn init_processes(&self) {
-        tokio::join!(
-            self.js.start("js", "node", &["tester-async.js"]),
-            self.py.start("python", "python", &["tester_async.py"]),
-            self.spawn_java(),
-        );
+        tokio::join!(self.test_js("x"), self.test_java("x"), self.test_python("x"));
+        self.js.reset_count().await;
+        self.java.reset_count().await;
+        self.py.reset_count().await;
     }
 
     pub fn test_rust(&self, regex: &str) -> Outcome {
@@ -52,11 +51,6 @@ impl RegexTest {
     }
 
     pub async fn test_java(&self, regex: impl Into<String>) -> Outcome {
-        self.spawn_java().await;
-        self.java.test(regex).await
-    }
-
-    async fn spawn_java(&self) {
         self.java
             .start_with("java", "java", &["TesterAsync"], || {
                 let compiled = concat!(env!("CARGO_MANIFEST_DIR"), "/java/TesterAsync.class");
@@ -70,5 +64,7 @@ impl RegexTest {
                 }
             })
             .await;
+
+        self.java.test(regex).await
     }
 }

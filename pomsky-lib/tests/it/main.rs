@@ -42,14 +42,16 @@ async fn defer_main() {
 
     println!("{} test cases found", samples.len());
 
-    let rt = Arc::new(RegexTest::default());
-    rt.init_processes().await;
-
-    let mut results = Vec::new();
-
     if args.include_ignored {
         println!("{}", Yellow("including ignored cases!"));
     }
+
+    let start = Instant::now();
+    let rt = Arc::new(RegexTest::default());
+    rt.init_processes().await;
+    println!("test setup completed in {:.2?}", start.elapsed());
+
+    let mut results = Vec::new();
 
     println!();
     let start = Instant::now();

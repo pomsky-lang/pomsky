@@ -82,4 +82,12 @@ impl Process {
             _ => 0,
         }
     }
+
+    pub(super) async fn reset_count(&self) {
+        let mut guard = self.data.lock().await;
+        match &mut *guard {
+            Some((_, _, count)) => *count = 0,
+            _ => {}
+        }
+    }
 }

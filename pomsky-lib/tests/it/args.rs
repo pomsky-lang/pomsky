@@ -29,7 +29,6 @@ impl Args {
         let mut parser = lexopt::Parser::from_env();
         while let Some(arg) = parser.next().unwrap() {
             match arg {
-                Long("") => {}
                 Short('i') | Long("ignored") | Long("include-ignored") => include_ignored = true,
                 Long("fuzz-ranges") => fuzz_ranges = true,
                 Long("bless") => bless = true,
@@ -42,6 +41,7 @@ impl Args {
                         OPTIONS:\n    \
                             -i,--ignored            Include ignored test cases\n    \
                             --bless                 Bless failed test cases\n    \
+                            --stats                 Show some statistics\n    \
                             --fuzz-ranges           Fuzz the `range '...'-'...' syntax`\n    \
                             --thoroughness=<NUMBER> Specify how thorough each range is fuzzed [default: 40]\n    \
                             --fuzz-start=<NUMBER>   Specify the bound where to start fuzzing [default: 0]\n    \

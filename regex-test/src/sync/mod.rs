@@ -1,4 +1,4 @@
-use std::{path::Path, process::Command};
+use std::{path::Path, process::Command, thread};
 
 use crate::Outcome;
 
@@ -18,6 +18,17 @@ pub struct RegexTest {
 }
 
 impl RegexTest {
+    pub fn init_processes(&self) {
+        thread::scope(|scope| {
+            scope.spawn(|| self.test_js("x"));
+            scope.spawn(|| self.test_java("x"));
+            scope.spawn(|| self.test_python("x"));
+        });
+        self.js.reset_count();
+        self.java.reset_count();
+        self.py.reset_count();
+    }
+
     pub fn test_rust(&self, regex: &str) -> Outcome {
         self.rust.add_one();
         crate::native::rust(regex)

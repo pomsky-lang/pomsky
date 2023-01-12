@@ -74,11 +74,19 @@ impl Process {
         }
     }
 
-    pub async fn get_count(&self) -> usize {
+    pub fn get_count(&self) -> usize {
         let guard = self.data.lock().unwrap();
         match &*guard {
             &Some((_, _, count)) => count,
             _ => 0,
+        }
+    }
+
+    pub fn reset_count(&self) {
+        let mut guard = self.data.lock().unwrap();
+        match &mut *guard {
+            Some((_, _, count)) => *count = 0,
+            _ => {}
         }
     }
 }
