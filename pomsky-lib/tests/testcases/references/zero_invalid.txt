@@ -1,0 +1,5 @@
+#! expect=error
+::0
+-----
+ERROR: Reference to unknown group. There is no group number 0
+SPAN: 0..3

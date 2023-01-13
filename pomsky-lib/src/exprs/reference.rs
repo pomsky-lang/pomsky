@@ -41,6 +41,10 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 }
             },
             ReferenceTarget::Number(idx) => {
+                if idx == 0 {
+                    return Err(CompileErrorKind::UnknownReferenceNumber(0).at(self.span));
+                }
+
                 let direction = if idx > 99 {
                     return Err(CompileErrorKind::HugeReference.at(self.span));
                 } else if idx > state.groups_count {
