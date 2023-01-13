@@ -1,0 +1,5 @@
+#! expect=error, flavor=Ruby
+(((>> 'test')))* (((!<< 'test'))){3}
+-----
+ERROR: Unsupported feature `repeated lookaround` in the `Ruby` regex flavor
+SPAN: 0..16

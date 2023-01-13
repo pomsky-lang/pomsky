@@ -39,6 +39,8 @@ pub enum Feature {
     /// Having backreferences to both named and numbered groups is not supported
     /// in Ruby.
     MixedReferences,
+    /// Lookarounds can't be repeated in Ruby, even when wrapped in a group
+    RepeatedLookaround,
 }
 
 impl Feature {
@@ -56,6 +58,7 @@ impl Feature {
             Feature::NonNegativeRelativeReference => "non-negative relative backreference",
             Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
             Feature::MixedReferences => "references to both named and numbered groups",
+            Feature::RepeatedLookaround => "repeated lookaround",
         }
     }
 }

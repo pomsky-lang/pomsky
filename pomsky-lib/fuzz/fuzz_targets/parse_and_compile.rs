@@ -36,10 +36,12 @@ fn check(regex: &str, features: PomskyFeatures, flavor: RegexFlavor) {
     let outcome = match flavor {
         RegexFlavor::Java => test.test_java(regex),
         RegexFlavor::JavaScript => test.test_js(regex),
-        RegexFlavor::Python => test.test_python(regex),
         RegexFlavor::Ruby => test.test_ruby(regex),
         RegexFlavor::Rust => test.test_rust(regex),
-        // Pomsky currently doesn't check if loobehind has repetitions for PCRE
+        // Pomsky currently doesn't check if loobehind has repetitions
+        RegexFlavor::Python if features == { features }.lookbehind(false) => {
+            test.test_python(regex)
+        }
         RegexFlavor::Pcre if features == { features }.lookbehind(false) => test.test_pcre(&regex),
         _ => Outcome::Success,
     };

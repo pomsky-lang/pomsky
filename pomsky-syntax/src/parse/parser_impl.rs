@@ -303,7 +303,8 @@ impl<'i> Parser<'i> {
 
         self.expect(Token::CloseParen)
             .map_err(|p| ParseErrorKind::Expected("`)` or an expression").at(p.span))?;
-        let span = start_span.join(self.last_span());
+        // start_span may be 0..0, so we need to use join_unchecked
+        let span = start_span.join_unchecked(self.last_span());
 
         let rule = Rule::Group(Group::new(vec![rule], kind, span));
         Ok(Some(rule))

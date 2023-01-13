@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{Quantifier, Repetition, RepetitionKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::CompileError,
+    diagnose::{CompileError, CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -27,6 +27,11 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         let content = self.rule.compile(options, state)?;
+
+        if options.flavor == RegexFlavor::Ruby && content.is_lookaround() {
+            return Err(CompileErrorKind::Unsupported(Feature::RepeatedLookaround, options.flavor)
+                .at(self.span));
+        }
 
         let quantifier = match self.quantifier {
             Quantifier::Greedy => RegexQuantifier::Greedy,
@@ -71,7 +76,7 @@ impl<'i> RegexRepetition<'i> {
             return;
         }
 
-        if self.content.needs_parens_before_repetition() {
+        if self.content.needs_parens_before_repetition(flavor) {
             buf.push_str("(?:");
             self.content.codegen(buf, flavor);
             buf.push(')');

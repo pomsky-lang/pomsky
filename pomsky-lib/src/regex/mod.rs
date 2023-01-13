@@ -140,22 +140,43 @@ impl<'i> Regex<'i> {
         }
     }
 
-    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
+    pub(crate) fn needs_parens_before_repetition(&self, flavor: RegexFlavor) -> bool {
         match self {
             Regex::Literal(l) => literal::needs_parens_before_repetition(l.borrow()),
-            Regex::Group(g) => g.needs_parens_before_repetition(),
+            Regex::Group(g) => g.needs_parens_before_repetition(flavor),
             Regex::Repetition(_)
             | Regex::Alternation(_)
             | Regex::Boundary(_)
             | Regex::Unescaped(_) => true,
+            Regex::Lookaround(_) => matches!(flavor, RegexFlavor::JavaScript),
             Regex::CharSet(_)
             | Regex::Char(_)
             | Regex::Grapheme
-            | Regex::Lookaround(_)
             | Regex::Reference(_)
             | Regex::Shorthand(_)
             | Regex::Property { .. }
             | Regex::Dot => false,
+        }
+    }
+
+    pub(crate) fn result_is_empty(&self) -> bool {
+        match self {
+            Regex::Literal(l) => l.is_empty(),
+            Regex::Group(g) => g.parts.iter().all(Regex::result_is_empty),
+            Regex::Unescaped(r) => r.is_empty(),
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_lookaround(&self) -> bool {
+        match self {
+            Regex::Lookaround(_) => true,
+            Regex::Literal(l) => l == "",
+            Regex::Group(g) => {
+                let mut iter = g.parts.iter().filter(|part| !part.result_is_empty());
+                iter.next().map_or(false, Regex::is_lookaround) && iter.next().is_none()
+            }
+            _ => false,
         }
     }
 }

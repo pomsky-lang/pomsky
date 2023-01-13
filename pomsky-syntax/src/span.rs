@@ -64,6 +64,10 @@ impl Span {
             (true, true) => Span::empty(),
         }
     }
+
+    pub(crate) fn join_unchecked(self, other: Span) -> Span {
+        Span { start: usize::min(self.start, other.start), end: usize::max(self.end, other.end) }
+    }
 }
 
 impl From<Range<usize>> for Span {

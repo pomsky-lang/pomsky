@@ -177,10 +177,10 @@ impl<'i> RegexGroup<'i> {
         }
     }
 
-    pub(crate) fn needs_parens_before_repetition(&self) -> bool {
+    pub(crate) fn needs_parens_before_repetition(&self, flavor: RegexFlavor) -> bool {
         match self.kind {
             RegexGroupKind::Normal if self.parts.len() == 1 => {
-                self.parts[0].needs_parens_before_repetition()
+                self.parts[0].needs_parens_before_repetition(flavor)
             }
             RegexGroupKind::Normal => true,
             _ => false,
