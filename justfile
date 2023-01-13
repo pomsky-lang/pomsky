@@ -25,8 +25,8 @@ coverage:
     grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info
 
 # test pomsky
-test:
-    cargo test
+test *args:
+    cargo test "$@"
 
 test-it *args:
     cargo test --test it --all-features -- "$@"

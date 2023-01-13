@@ -3,7 +3,48 @@
 
 use assert_cmd::prelude::*;
 use assert_fs::prelude::{FileWriteBin, FileWriteStr};
-use std::process::Command;
+use predicates::reflection::{Case, Parameter, PredicateReflection};
+
+use pomsky::diagnose::DiagnosticCode;
+use pomsky_bin::{CompilationResult, Diagnostic, Kind, Severity, Span, Timings, Version};
+
+use std::{fmt, process::Command};
+
+pub struct Output(pub CompilationResult);
+
+impl fmt::Display for Output {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string_pretty(&self.0).unwrap())
+    }
+}
+
+impl predicates::Predicate<[u8]> for Output {
+    fn eval(&self, variable: &[u8]) -> bool {
+        match serde_json::from_slice::<CompilationResult>(variable) {
+            Ok(mut res) => {
+                res.timings.all = 0;
+                self.0 == res
+            }
+            Err(_) => false,
+        }
+    }
+
+    fn find_case(&self, expected: bool, variable: &[u8]) -> Option<Case> {
+        let actual = self.eval(variable);
+        if expected == actual {
+            Some(Case::new(Some(self), actual))
+        } else {
+            None
+        }
+    }
+}
+
+impl PredicateReflection for Output {
+    fn parameters<'a>(&'a self) -> Box<dyn Iterator<Item = Parameter<'a>> + 'a> {
+        let params = [Parameter::new("expected output", self)];
+        Box::new(params.into_iter())
+    }
+}
 
 const RED: &str = "\u{1b}[31m";
 // const RED_BOLD: &str = "\u{1b}[31;1m";
@@ -74,6 +115,21 @@ OPTIONS:
     -V, --version                        Print version information
     -W, --warnings <DIAGNOSTICS>         Disable certain warnings (disable all with `-W0`)
 "#, env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
+fn unknown_flag() {
+    let mut cmd = command(&["-k", "test/file/doesnt/exist"]);
+    cmd.assert().failure().stderr(format!(
+        "{ERROR}invalid option '-k'
+
+USAGE:
+    pomsky [OPTIONS] <INPUT>
+    pomsky [OPTIONS] --path <PATH>
+    command | pomsky [OPTIONS]
+For more information try `--help`
+"
+    ));
 }
 
 #[test]
@@ -353,4 +409,76 @@ fn specify_features() {
    ╰────
 "#,
     );
+}
+
+#[test]
+fn json_output() {
+    let mut cmd = command(&["..[word]", "--json"]);
+    cmd.assert()
+        .success()
+        .stdout(Output(CompilationResult {
+            version: Version::V1,
+            success: true,
+            output: Some("..\\w".into()),
+            diagnostics: vec![],
+            timings: Timings { all: 0 },
+        }))
+        .stderr("");
+}
+
+#[test]
+fn json_output_warnings() {
+    let mut cmd = command(&["[.][.]", "--json"]);
+    cmd.assert()
+        .success()
+        .stdout(Output(CompilationResult {
+            version: Version::V1,
+            success: true,
+            output: Some("..".into()),
+            diagnostics: vec![
+                Diagnostic {
+                    severity: Severity::Warning,
+                    kind: Kind::Deprecated,
+                    code: Some(DiagnosticCode::DeprecatedSyntax),
+                    spans: vec![Span { start: 1, end: 2, label: None }],
+                    description: "This syntax is deprecated. Use `.` without the brackets.".into(),
+                    help: vec![],
+                    fixes: vec![],
+                },
+                Diagnostic {
+                    severity: Severity::Warning,
+                    kind: Kind::Deprecated,
+                    code: Some(DiagnosticCode::DeprecatedSyntax),
+                    spans: vec![Span { start: 4, end: 5, label: None }],
+                    description: "This syntax is deprecated. Use `.` without the brackets.".into(),
+                    help: vec![],
+                    fixes: vec![],
+                },
+            ],
+            timings: Timings { all: 0 },
+        }))
+        .stderr("");
+}
+
+#[test]
+fn json_output_errors() {
+    let mut cmd = command(&["[cp][^test]", "--json"]);
+    cmd.assert()
+        .failure()
+        .stdout(Output(CompilationResult {
+            version: Version::V1,
+            success: false,
+            output: None,
+            diagnostics: vec![Diagnostic {
+                severity: Severity::Error,
+                kind: Kind::Deprecated,
+                code: Some(DiagnosticCode::DeprecatedSyntax),
+                spans: vec![Span { start: 1, end: 3, label: None }],
+                description: "`[cp]` is deprecated".into(),
+                help: vec!["Use `C` without brackets instead".into()],
+                fixes: vec![],
+            }],
+            timings: Timings { all: 0 },
+        }))
+        .stderr("");
 }

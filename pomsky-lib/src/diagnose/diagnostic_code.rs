@@ -7,57 +7,84 @@ use pomsky_syntax::diagnose::{
 
 use super::CompileErrorKind;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u16)]
-#[non_exhaustive]
-#[allow(missing_docs)]
-pub enum DiagnosticCode {
-    // Lex errors
-    UnknownToken = 1,
-    RegexGroupSyntax = 2,
-    RegexBackslashSyntax = 3,
-    UnclosedString = 4,
-    DeprecatedToken = 5,
+macro_rules! diagnostic_code {
+    {
+        $( #[$m:meta] )*
+        $visib:vis enum $name:ident {
+            $( $variant:ident = $num:literal, )*
+        }
+    } => {
+        $( #[$m] )*
+        $visib enum $name {
+            $( $variant = $num, )*
+        }
 
-    // Parse errors
-    UnexpectedToken = 100,
-    UnexpectedReservedWord = 101,
-    NonAsciiIdentAfterColon = 102,
-    IdentTooLong = 103,
-    RangeIsNotIncreasing = 104,
-    DeprecatedSyntax = 105,
-    UnallowedNot = 106,
-    UnallowedMultiNot = 107,
-    InvalidEscapeInString = 108,
-    CodePointInvalid = 109,
-    InvalidNumber = 110,
-    RepetitionNotAscending = 111,
-    RepetitionChain = 112,
-    CharRangeStringEmpty = 113,
-    CharRangeTooManyCodePoints = 114,
-    CharClassHasDescendingRange = 115,
-    CharClassUnknownShorthand = 116,
-    CharClassIllegalNegation = 117,
-    CharClassUnallowedCombination = 118,
-    NegatedHorizVertSpace = 119,
+        impl TryFrom<u16> for $name {
+            type Error = ();
 
-    // Currently a parse error, but it should be a compile error
-    LetBindingExists = 300,
+            fn try_from(value: u16) -> Result<Self, Self::Error> {
+                Ok(match value {
+                    $( $num => $name::$variant, )*
+                    _ => return Err(()),
+                })
+            }
+        }
+    };
+}
 
-    // Compile errors
-    UnsupportedRegexFeature = 301,
-    UnsupportedPomskySyntax = 302,
-    HugeReference = 303,
-    UnknownReference = 304,
-    NameUsedMultipleTimes = 305,
-    EmptyClass = 306,
-    EmptyClassNegated = 307,
-    CaptureInLet = 308,
-    ReferenceInLet = 309,
-    UnknownVariable = 310,
-    RecursiveVariable = 311,
-    RangeIsTooBig = 312,
-    RecursionLimit = 313,
+diagnostic_code! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    #[repr(u16)]
+    #[non_exhaustive]
+    #[allow(missing_docs)]
+    pub enum DiagnosticCode {
+        // Lex errors
+        UnknownToken = 1,
+        RegexGroupSyntax = 2,
+        RegexBackslashSyntax = 3,
+        UnclosedString = 4,
+        DeprecatedToken = 5,
+
+        // Parse errors
+        UnexpectedToken = 100,
+        UnexpectedReservedWord = 101,
+        NonAsciiIdentAfterColon = 102,
+        IdentTooLong = 103,
+        RangeIsNotIncreasing = 104,
+        DeprecatedSyntax = 105,
+        UnallowedNot = 106,
+        UnallowedMultiNot = 107,
+        InvalidEscapeInString = 108,
+        CodePointInvalid = 109,
+        InvalidNumber = 110,
+        RepetitionNotAscending = 111,
+        RepetitionChain = 112,
+        CharRangeStringEmpty = 113,
+        CharRangeTooManyCodePoints = 114,
+        CharClassHasDescendingRange = 115,
+        CharClassUnknownShorthand = 116,
+        CharClassIllegalNegation = 117,
+        CharClassUnallowedCombination = 118,
+        NegatedHorizVertSpace = 119,
+
+        // Currently a parse error, but it should be a compile error
+        LetBindingExists = 300,
+
+        // Compile errors
+        UnsupportedRegexFeature = 301,
+        UnsupportedPomskySyntax = 302,
+        HugeReference = 303,
+        UnknownReference = 304,
+        NameUsedMultipleTimes = 305,
+        EmptyClass = 306,
+        EmptyClassNegated = 307,
+        CaptureInLet = 308,
+        ReferenceInLet = 309,
+        UnknownVariable = 310,
+        RecursiveVariable = 311,
+        RangeIsTooBig = 312,
+        RecursionLimit = 313,
+    }
 }
 
 impl fmt::Display for DiagnosticCode {
