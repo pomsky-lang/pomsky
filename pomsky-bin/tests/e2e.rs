@@ -159,7 +159,7 @@ fn pretty_print() {
         .success()
         .stdout(
             "(?=(?:test)?){2}|(?=(?:test)?){3,5}|.[\\s\\S]\
-            [^\\w\\d\\s\\n\\r\\t\\a\\x1B\\f][a-f]|\
+            [^\\w\\d\\s\\n\\r\\t\\x07\\x1B\\f][a-f]|\
             0|[1-7][0-9a-fA-F]?|[8-9a-fA-F]|(?P<x>)\\1|(?<!a)+|[\n",
         )
         .stderr(

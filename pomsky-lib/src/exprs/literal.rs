@@ -65,10 +65,11 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         '\n' => buf.push_str("\\n"),
         '\r' => buf.push_str("\\r"),
         '\t' => buf.push_str("\\t"),
-        '\x07' => buf.push_str("\\a"),
         '\x0C' => buf.push_str("\\f"),
         // not supported in Rust:
         // '\x1B' => buf.push_str("\\e"),
+        // not supported in JS:
+        // '\x07' => buf.push_str("\\a"),
         ' ' => buf.push(' '),
         _ if c.is_ascii() => {
             if c.is_ascii_graphic() {
