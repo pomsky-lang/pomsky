@@ -28,8 +28,8 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
     ) -> CompileResult<'i> {
         let content = self.rule.compile(options, state)?;
 
-        if options.flavor == RegexFlavor::Ruby && content.is_lookaround() {
-            return Err(CompileErrorKind::Unsupported(Feature::RepeatedLookaround, options.flavor)
+        if options.flavor == RegexFlavor::Ruby && content.is_assertion() {
+            return Err(CompileErrorKind::Unsupported(Feature::RepeatedAssertion, options.flavor)
                 .at(self.span));
         }
 

@@ -1,5 +1,5 @@
 #! expect=error, flavor=Ruby
-(>> 'test')* (!<< 'test'){3}
+^? %+ (%)+
 -----
 ERROR: Unsupported feature `single repeated assertion` in the `Ruby` regex flavor
-SPAN: 0..12
+SPAN: 0..2

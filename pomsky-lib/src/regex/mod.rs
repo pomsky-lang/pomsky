@@ -7,7 +7,7 @@ use crate::{
         alternation::RegexAlternation,
         boundary::boundary_kind_codegen,
         char_class::{RegexCharSet, RegexCharSetItem},
-        group::RegexGroup,
+        group::{RegexGroup, RegexGroupKind},
         literal,
         lookaround::RegexLookaround,
         reference::RegexReference,
@@ -168,14 +168,14 @@ impl<'i> Regex<'i> {
         }
     }
 
-    pub(crate) fn is_lookaround(&self) -> bool {
+    pub(crate) fn is_assertion(&self) -> bool {
         match self {
-            Regex::Lookaround(_) => true,
-            Regex::Literal(l) => l == "",
-            Regex::Group(g) => {
+            Regex::Lookaround(_) | Regex::Boundary(_) => true,
+            Regex::Group(g) if matches!(g.kind, RegexGroupKind::Normal) => {
                 let mut iter = g.parts.iter().filter(|part| !part.result_is_empty());
-                iter.next().map_or(false, Regex::is_lookaround) && iter.next().is_none()
+                iter.next().map_or(false, Regex::is_assertion) && iter.next().is_none()
             }
+            Regex::Alternation(g) => g.parts.iter().any(Regex::is_assertion),
             _ => false,
         }
     }

@@ -40,7 +40,7 @@ pub enum Feature {
     /// in Ruby.
     MixedReferences,
     /// Lookarounds can't be repeated in Ruby, even when wrapped in a group
-    RepeatedLookaround,
+    RepeatedAssertion,
 }
 
 impl Feature {
@@ -58,7 +58,7 @@ impl Feature {
             Feature::NonNegativeRelativeReference => "non-negative relative backreference",
             Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
             Feature::MixedReferences => "references to both named and numbered groups",
-            Feature::RepeatedLookaround => "repeated lookaround",
+            Feature::RepeatedAssertion => "single repeated assertion",
         }
     }
 }
