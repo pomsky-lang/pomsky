@@ -18,6 +18,10 @@ pub struct RegexTest {
 }
 
 impl RegexTest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn init_processes(&self) {
         thread::scope(|scope| {
             scope.spawn(|| self.test_js("x"));

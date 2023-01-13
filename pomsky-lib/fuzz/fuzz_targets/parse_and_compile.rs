@@ -1,10 +1,18 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 
+use once_cell::sync::OnceCell;
 use pomsky::{
+    features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     Expr,
 };
+use regex_test::{sync::RegexTest, Outcome};
+
+fn get_test() -> &'static RegexTest {
+    static TEST: OnceCell<RegexTest> = OnceCell::new();
+    TEST.get_or_init(RegexTest::new)
+}
 
 fuzz_target!(|data: (&str, CompileOptions)| {
     let (input, compile_options) = data;
@@ -14,22 +22,31 @@ fuzz_target!(|data: (&str, CompileOptions)| {
         let features = compile_options.allowed_features;
 
         // the first check is just to make it less likely to run into regex's nesting
-        // limit; the second check is to ignore compile errors produced by raw
-        // regexes, which pomsky doesn't validate
-        if regex.len() < 2048 && features == { features }.regexes(false) {
-            match compile_options.flavor {
-                RegexFlavor::Rust => {
-                    regex::Regex::new(&regex).unwrap();
-                }
-                // Pomsky currently doesn't check if loobehind has repetitions for PCRE
-                RegexFlavor::Pcre if features == { features }.lookbehind(false) => {
-                    pcre2::bytes::RegexBuilder::new().utf(true).build(&regex).unwrap();
-                }
-                _ => {}
-            }
+        // limit; the second check is because regex-test doesn't work with empty inputs;
+        // the third check is to ignore compile errors produced by raw regexes, which
+        // pomsky doesn't validate
+        if regex.len() < 2048 && !regex.is_empty() && features == { features }.regexes(false) {
+            check(&regex, features, compile_options.flavor);
         }
     }
 });
+
+fn check(regex: &str, features: PomskyFeatures, flavor: RegexFlavor) {
+    let test = get_test();
+    let outcome = match flavor {
+        RegexFlavor::Java => test.test_java(regex),
+        RegexFlavor::JavaScript => test.test_js(regex),
+        RegexFlavor::Python => test.test_python(regex),
+        RegexFlavor::Ruby => test.test_ruby(regex),
+        RegexFlavor::Rust => test.test_rust(regex),
+        // Pomsky currently doesn't check if loobehind has repetitions for PCRE
+        RegexFlavor::Pcre if features == { features }.lookbehind(false) => test.test_pcre(&regex),
+        _ => Outcome::Success,
+    };
+    if let Outcome::Error(e) = outcome {
+        panic!("Regex {regex:?} is invalid in the {flavor:?} flavor:\n{e}");
+    }
+}
 
 #[cfg(any())]
 fn failing_to_compile_in_pcre() {

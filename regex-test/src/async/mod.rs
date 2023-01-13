@@ -18,6 +18,10 @@ pub struct RegexTest {
 }
 
 impl RegexTest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub async fn init_processes(&self) {
         tokio::join!(self.test_js("x"), self.test_java("x"), self.test_python("x"));
         self.js.reset_count().await;

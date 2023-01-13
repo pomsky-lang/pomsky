@@ -1,5 +1,6 @@
-/// Calculates the distance between the provided name and the provided options, and returns the
-/// option with the lowest distance, if the distance is lower than a certain threshold.
+/// Calculates the distance between the provided name and the provided options,
+/// and returns the option with the lowest distance, if the distance is lower
+/// than a certain threshold.
 #[cfg(feature = "suggestions")]
 pub fn find_suggestion<'a>(name: &str, options: impl Iterator<Item = &'a str>) -> Option<Box<str>> {
     options

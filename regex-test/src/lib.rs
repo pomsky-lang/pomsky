@@ -5,6 +5,7 @@ mod count;
 mod native;
 
 #[cfg(any(feature = "sync", feature = "async"))]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Outcome {
     Success,
     Error(String),
