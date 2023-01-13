@@ -86,10 +86,14 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 options.flavor,
             )
             .at(self.span)),
-            RegexFlavor::JavaScript if direction == ReferenceDirection::Forwards => {
+
+            RegexFlavor::JavaScript | RegexFlavor::Python
+                if direction == ReferenceDirection::Forwards =>
+            {
                 Err(CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
                     .at(self.span))
             }
+
             _ => Ok(Regex::Reference(match options.flavor {
                 RegexFlavor::Ruby => {
                     if let Some(group_name) = state.used_names_vec[number as usize].as_ref() {
