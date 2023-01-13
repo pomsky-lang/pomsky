@@ -1,3 +1,7 @@
+//! This crate provides the [`pomsky!`] macro to compile [pomsky] expressions at
+//! compile time.
+//!
+//! [pomsky]: https://pomsky-lang.org
 #![cfg_attr(feature = "diagnostics", feature(proc_macro_span))]
 
 extern crate proc_macro;
@@ -13,6 +17,55 @@ use pomsky::{
 
 mod diagnostic;
 
+/// Macro to compile a [pomsky] expression at compile time.
+///
+/// ### Example
+///
+/// ```
+/// const REGEX: &str = pomsky! {
+///     let number = '-'? [digit]+;
+///     let op = ["+-*/"];
+///     number (op number)*
+/// };
+/// ```
+///
+/// **NOTE**: Code points (e.g. `U+FFEF`) should be written without the `+`
+/// (i.e., `UFFEF`), because rustfmt surrounds `+` with spaces by default, which
+/// would break parsing.
+///
+/// The regex flavor defaults to `Rust`, so it can be used with the [regex]
+/// crate:
+///
+/// ```rust,no_test
+/// use regex::Regex;
+///
+/// fn get_regex() -> Regex {
+///     Regex::new(pomsky! { ... }).unwrap()
+/// }
+/// ```
+///
+/// If you want to use a different flavor, you can specify it in the first line,
+/// like so:
+///
+/// ```rust,no_test
+/// pomsky! {
+///     #flavor = Pcre
+///     // your pomsky expression goes here
+/// }
+/// ```
+///
+/// Available flavors are
+///
+/// - **DotNet** (C#, F#)
+/// - **Java**
+/// - **JavaScript** (ECMAScript, Dart)
+/// - **Pcre** (Crystal, Delphi, Elixir, Erlang, Hack, Julia, PHP, R, Vala, ...)
+/// - **Python** (`re` module)
+/// - **Ruby**
+/// - **Rust** (`regex` crate)
+///
+/// [pomsky]: https://pomsky-lang.org
+/// [regex]: https://docs.rs/regex
 #[proc_macro]
 pub fn pomsky(items: TokenStream) -> TokenStream {
     let group = Group::new(Delimiter::None, items);
