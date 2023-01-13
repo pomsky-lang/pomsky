@@ -82,7 +82,7 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         _ if c.is_alphanumeric() && c.len_utf16() == 1 => {
             buf.push(c);
         }
-        _ if c as u32 <= 0xFF => {
+        _ if c as u32 <= 0xFF && flavor != RegexFlavor::Ruby => {
             write!(buf, "\\x{:02X}", c as u32).unwrap();
         }
         _ if c as u32 <= 0xFFFF && !matches!(flavor, RegexFlavor::Pcre) => {

@@ -34,11 +34,12 @@ fuzz_target!(|data: (&str, CompileOptions)| {
 fn check(regex: &str, features: PomskyFeatures, flavor: RegexFlavor) {
     let test = get_test();
     let outcome = match flavor {
-        RegexFlavor::Java => test.test_java(regex),
+        // Pomsky currently doesn't check if loobehind has repetitions, so we don't check some
+        // regexes
+        RegexFlavor::Java if features == { features }.lookbehind(false) => test.test_java(regex),
         RegexFlavor::JavaScript => test.test_js(regex),
         RegexFlavor::Ruby => test.test_ruby(regex),
         RegexFlavor::Rust => test.test_rust(regex),
-        // Pomsky currently doesn't check if loobehind has repetitions
         RegexFlavor::Python if features == { features }.lookbehind(false) => {
             test.test_python(regex)
         }
