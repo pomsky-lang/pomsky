@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2023-01-13
+
+Join our [Discord](https://discord.gg/uwap2uxMFp) to get help or meet other users and contributors!
+
+If you want to contribute, Pomsky now has a [contributor's guide](./CONTRIBUTING.md) and a [code of conduct](./CODE_OF_CONDUCT.md).
+
+### CLI changes
+
+- Added `--json` flag to work better with other tools and IDEs. Someone's already working on an
+  IntelliJ plugin, which will be announced soon!
+- Every error and warning now has a diagnostic code such as `P0116`
+
+### Bugfixes
+
+- Pomsky allowed Unicode properties (`\p{Prop}`) in Python, even though Python doesn't support
+  these. This is now fixed.
+- Unicode properties containing a dash (`-`) were incorrectly compiled in the Java flavor. Fixed
+
+### Other
+
+- The test harness was improved to also compile the output of all Python, Java, JavaScript and Ruby
+  test cases to detect syntax errors. All flavors except C# are tested in this way now.
+
+- Major refactor of error handling, so that reporting multiple errors at once becomes less awkward.
+  This will enable us to report better diagnostics in the future.
+
+- GitHub CI improvements
+
+- Website improvements: Replaced PNG with SVG logo, new images and more spacing on the home page, redesigned “examples” section, new color palette, breadcrumbs on documentation pages, added Discord icon, bugfixes
+
 ## [0.8.0] - 2022-12-12
 
 **Special announcement**: You can [sponsor me](https://github.com/sponsors/Aloso) now for my work on Pomsky. If you can spare a few dollars or convince your employer to donate, that would really help me to make maintaining Pomsky more sustainable. If I get enough donations, I can invest more time in the development of Pomsky, as there's still a lot of work to do!

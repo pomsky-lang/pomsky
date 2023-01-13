@@ -34,3 +34,13 @@ test-it *args:
 # fuzz pomsky ranges
 fuzz-ranges *flags:
     cargo test --test it -- --fuzz-ranges {{flags}}
+
+publish *args:
+    # only run this once versions are bumped and the changelog is up to date!
+
+    cargo publish --manifest-path helptext/Cargo.toml --token $CARGO_TOKEN "$@"
+    cargo publish --manifest-path pomsky-syntax/Cargo.toml --token $CARGO_TOKEN "$@"
+    cargo publish --manifest-path pomsky-lib/Cargo.toml --token $CARGO_TOKEN "$@"
+    cargo publish --manifest-path pomsky-macro/Cargo.toml --token $CARGO_TOKEN "$@"
+    cargo publish --manifest-path pomsky-bin/Cargo.toml --token $CARGO_TOKEN "$@"
+    echo \n"next steps:"\n"  publish WASM"\n"  publish git tag"\n"  update GitHub release assets"\n"  write blog post"\n""
