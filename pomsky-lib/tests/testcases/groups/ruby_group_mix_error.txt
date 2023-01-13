@@ -1,0 +1,5 @@
+#! expect=error, flavor=Ruby
+:test1() ::1 ::test1 :() :test3(:test4() :( ::3 )) ::2 ::3 ::test3 ::4 ::test4
+-----
+ERROR: Unsupported feature `references to both named and numbered groups` in the `Ruby` regex flavor
+SPAN: 51..54

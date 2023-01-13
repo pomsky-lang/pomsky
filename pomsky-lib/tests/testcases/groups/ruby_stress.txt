@@ -1,0 +1,4 @@
+#! flavor=Ruby
+:test1() ::1 ::test1 :() :test3(:test4() :( ::3 )) ::3 ::test3 ::4 ::test4
+-----
+(?<test1>)\k<test1>\k<test1>()(?<test3>(?<test4>)(\k<test3>))\k<test3>\k<test3>\k<test4>\k<test4>

@@ -86,7 +86,22 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 Err(CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
                     .at(self.span))
             }
-            _ => Ok(Regex::Reference(RegexReference { number })),
+            _ => Ok(Regex::Reference(match options.flavor {
+                RegexFlavor::Ruby => {
+                    if let Some(group_name) = state.used_names_vec[number as usize].as_ref() {
+                        RegexReference::Name(group_name.clone())
+                    } else if !state.has_named {
+                        RegexReference::Number(number)
+                    } else {
+                        return Err(CompileErrorKind::Unsupported(
+                            Feature::MixedReferences,
+                            options.flavor,
+                        )
+                        .at(self.span));
+                    }
+                }
+                _ => RegexReference::Number(number),
+            })),
         }
     }
 
@@ -96,16 +111,23 @@ impl<'i> RuleExt<'i> for Reference<'i> {
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexReference {
-    number: u32,
+pub(crate) enum RegexReference {
+    Number(u32),
+    Name(String),
 }
 
 impl RegexReference {
     pub(crate) fn codegen(&self, buf: &mut String, _: RegexFlavor) {
         use std::fmt::Write;
 
-        debug_assert!(self.number <= 99);
-
-        write!(buf, "\\{}", self.number).unwrap();
+        match self {
+            &RegexReference::Number(number) => {
+                debug_assert!(number <= 99);
+                write!(buf, "\\{number}").unwrap();
+            }
+            RegexReference::Name(name) => {
+                write!(buf, "\\k<{name}>").unwrap();
+            }
+        }
     }
 }

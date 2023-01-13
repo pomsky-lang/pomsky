@@ -36,6 +36,9 @@ pub enum Feature {
     /// Negative `\w` shorthand, i.e. `[\W]`. This is not supported in
     /// JavaScript when polyfilling Unicode support for `\w` and `\d`.
     NegativeShorthandW,
+    /// Having backreferences to both named and numbered groups is not supported
+    /// in Ruby.
+    MixedReferences,
 }
 
 impl Feature {
@@ -52,6 +55,7 @@ impl Feature {
             Feature::RelativeReference => "relative backreference",
             Feature::NonNegativeRelativeReference => "non-negative relative backreference",
             Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
+            Feature::MixedReferences => "references to both named and numbered groups",
         }
     }
 }
