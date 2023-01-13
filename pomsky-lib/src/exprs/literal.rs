@@ -88,9 +88,12 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         _ if c as u32 <= 0xFFFF && !matches!(flavor, RegexFlavor::Pcre) => {
             write!(buf, "\\u{:04X}", c as u32).unwrap();
         }
+        _ if matches!(flavor, RegexFlavor::Python) => {
+            write!(buf, "\\U{:08X}", c as u32).unwrap();
+        }
         _ => {
             match flavor {
-                RegexFlavor::Pcre => buf.push_str("\\x"),
+                RegexFlavor::Pcre | RegexFlavor::Java | RegexFlavor::Ruby => buf.push_str("\\x"),
                 _ => buf.push_str("\\u"),
             }
             write!(buf, "{{{:X}}}", c as u32).unwrap();
