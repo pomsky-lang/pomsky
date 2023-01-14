@@ -38,7 +38,7 @@ impl core::fmt::Display for Diagnostic {
 }
 
 /// Indicates whether a diagnostic is an error or a warning
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Severity {
     /// Error
     Error,

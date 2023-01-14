@@ -8,8 +8,6 @@ mod serde_code;
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct CompilationResult {
     /// Schema version
-    ///
-    /// Currently "1"
     pub version: Version,
     /// Whether compilation succeeded
     ///
@@ -93,6 +91,8 @@ pub struct Diagnostic {
     ///
     /// Currently unused and guaranteed to be empty
     pub fixes: Vec<QuickFix>,
+    /// Visual representation of the diagnostic as displayed in the CLI
+    pub visual: String,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -202,6 +202,16 @@ pub struct Replacement {
 
 impl From<pomsky::diagnose::Diagnostic> for Diagnostic {
     fn from(value: pomsky::diagnose::Diagnostic) -> Self {
+        let kind = value.kind.to_string();
+        let display = value.default_display();
+        let severity: &str = value.severity.into();
+
+        let visual = match value.code {
+            Some(code) => format!("{severity} {code}{kind}: {display}"),
+            None => format!("{severity}{kind}: {display}"),
+        };
+        drop(display);
+
         Diagnostic {
             severity: value.severity.into(),
             kind: value.kind.into(),
@@ -210,6 +220,7 @@ impl From<pomsky::diagnose::Diagnostic> for Diagnostic {
             description: value.msg,
             help: value.help.into_iter().collect(),
             fixes: vec![],
+            visual,
         }
     }
 }

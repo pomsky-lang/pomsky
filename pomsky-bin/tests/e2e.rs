@@ -10,11 +10,25 @@ use pomsky_bin::{CompilationResult, Diagnostic, Kind, Severity, Span, Timings, V
 
 use std::{fmt, process::Command};
 
-pub struct Output(pub CompilationResult);
+pub struct Output {
+    ignore_visual: bool,
+    expected: CompilationResult,
+}
+
+impl Output {
+    pub fn new(expected: CompilationResult) -> Self {
+        Output { ignore_visual: true, expected }
+    }
+
+    pub fn ignore_visual(mut self, ignore_visual: bool) -> Self {
+        self.ignore_visual = ignore_visual;
+        self
+    }
+}
 
 impl fmt::Display for Output {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string_pretty(&self.0).unwrap())
+        write!(f, "{}", serde_json::to_string_pretty(&self.expected).unwrap())
     }
 }
 
@@ -23,7 +37,12 @@ impl predicates::Predicate<[u8]> for Output {
         match serde_json::from_slice::<CompilationResult>(variable) {
             Ok(mut res) => {
                 res.timings.all = 0;
-                self.0 == res
+                if self.ignore_visual {
+                    for d in &mut res.diagnostics {
+                        d.visual = String::new();
+                    }
+                }
+                self.expected == res
             }
             Err(_) => false,
         }
@@ -416,7 +435,7 @@ fn json_output() {
     let mut cmd = command(&["..[word]", "--json"]);
     cmd.assert()
         .success()
-        .stdout(Output(CompilationResult {
+        .stdout(Output::new(CompilationResult {
             version: Version::V1,
             success: true,
             output: Some("..\\w".into()),
@@ -431,7 +450,7 @@ fn json_output_warnings() {
     let mut cmd = command(&["[.][.]", "--json"]);
     cmd.assert()
         .success()
-        .stdout(Output(CompilationResult {
+        .stdout(Output::new(CompilationResult {
             version: Version::V1,
             success: true,
             output: Some("..".into()),
@@ -444,6 +463,7 @@ fn json_output_warnings() {
                     description: "This syntax is deprecated. Use `.` without the brackets.".into(),
                     help: vec![],
                     fixes: vec![],
+                    visual: String::new(),
                 },
                 Diagnostic {
                     severity: Severity::Warning,
@@ -453,6 +473,7 @@ fn json_output_warnings() {
                     description: "This syntax is deprecated. Use `.` without the brackets.".into(),
                     help: vec![],
                     fixes: vec![],
+                    visual: String::new(),
                 },
             ],
             timings: Timings { all: 0 },
@@ -465,20 +486,34 @@ fn json_output_errors() {
     let mut cmd = command(&["[cp][^test]", "--json"]);
     cmd.assert()
         .failure()
-        .stdout(Output(CompilationResult {
-            version: Version::V1,
-            success: false,
-            output: None,
-            diagnostics: vec![Diagnostic {
-                severity: Severity::Error,
-                kind: Kind::Deprecated,
-                code: Some(DiagnosticCode::DeprecatedSyntax),
-                spans: vec![Span { start: 1, end: 3, label: None }],
-                description: "`[cp]` is deprecated".into(),
-                help: vec!["Use `C` without brackets instead".into()],
-                fixes: vec![],
-            }],
-            timings: Timings { all: 0 },
-        }))
+        .stdout(
+            Output::new(CompilationResult {
+                version: Version::V1,
+                success: false,
+                output: None,
+                diagnostics: vec![Diagnostic {
+                    severity: Severity::Error,
+                    kind: Kind::Deprecated,
+                    code: Some(DiagnosticCode::DeprecatedSyntax),
+                    spans: vec![Span { start: 1, end: 3, label: None }],
+                    description: "`[cp]` is deprecated".into(),
+                    help: vec!["Use `C` without brackets instead".into()],
+                    fixes: vec![],
+                    visual: String::from(
+                        "error P0105(deprecated): 
+  × `[cp]` is deprecated
+   ╭────
+ 1 │ [cp][^test]
+   ·  ─┬
+   ·   ╰── error occurred here
+   ╰────
+  help: Use `C` without brackets instead
+",
+                    ),
+                }],
+                timings: Timings { all: 0 },
+            })
+            .ignore_visual(false),
+        )
         .stderr("");
 }
