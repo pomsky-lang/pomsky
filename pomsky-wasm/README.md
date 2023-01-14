@@ -5,24 +5,34 @@ Node.js/WASM module of [pomsky](..).
 ## Usage
 
 ```js
-import { compile } from "pomsky-wasm";
+import { compile } from 'pomsky-wasm'
 
-const { output } = compile(`^ C* '.' C* $`, "js");
+const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
 ```
+
+If this doesn't work with your bundler, try initializing the module explicitly:
+
+```js
+import init, { compile } from 'pomsky-wasm'
+
+await init()
+const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
+```
+
+Don't forget to check if `output === null`, which means that compilation failed, and you have to look at the diagnostics. Even when the expression compiled successfully, `diagnostics` may contain useful warnings.
 
 ### With vite
 
-If you're using vite, you also need to install `vite-plugin-wasm` and update your vite config like this:
+If you're using vite, you also need to update your vite config like this:
 
 ```diff
   import { defineConfig } from 'vite'
-+ import wasm from 'vite-plugin-wasm'
 
-  export default defineConfig({
-    plugins: [
-+     wasm()
-    ],
-  })
+  export default defineConfig(({ mode }) => ({
++   optimizeDeps: {
++     exclude: mode === 'production' ? [] : ['pomsky-wasm'],
++   },
+  }))
 ```
 
 ## License

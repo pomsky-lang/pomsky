@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use pomsky::{
-    error::Diagnostic,
+    diagnose::Diagnostic,
     options::{CompileOptions, RegexFlavor},
     Expr,
 };
@@ -15,36 +15,42 @@ extern "C" {
     pub type PomskyDiagnostic;
 
     #[wasm_bindgen(constructor)]
-    fn new(message: String, help: Option<String>, range: &[usize]) -> PomskyDiagnostic;
+    fn new(
+        kind: &str,
+        code: Option<String>,
+        message: String,
+        help: Option<String>,
+        range: &[usize],
+    ) -> PomskyDiagnostic;
 
     #[wasm_bindgen(typescript_type = "PomskyError")]
     pub type PomskyError;
 
     #[wasm_bindgen(constructor)]
-    fn new(message: String, diagnostics: Option<Vec<PomskyDiagnostic>>) -> PomskyError;
+    fn new(message: String) -> PomskyError;
 
     #[wasm_bindgen(typescript_type = "PomskyResult")]
     pub type PomskyResult;
 
     #[wasm_bindgen(constructor)]
-    fn new(output: String, warnings: Vec<PomskyDiagnostic>) -> PomskyResult;
+    fn new(output: Option<String>, warnings: Vec<PomskyDiagnostic>) -> PomskyResult;
 }
 
 #[wasm_bindgen(typescript_custom_section)]
 const ITEXT_STYLE: &str = r#"
 interface PomskyDiagnostic {
+    kind: "error" | "warning";
+    code: string;
     message: string;
     help: string | null;
     range: [number, number];
 }
 
-interface PomskyError extends Error {
-    diagnostics: PomskyDiagnostic[];
-}
+interface PomskyError extends Error {}
 
 interface PomskyResult {
-    output: string;
-    warnings: PomskyDiagnostic[];
+    output: string | null;
+    diagnostics: PomskyDiagnostic[];
 }
 "#;
 
@@ -64,31 +70,17 @@ pub fn compile(input: &str, flavor: &str) -> Result<PomskyResult, PomskyError> {
     utils::set_panic_hook();
 
     let flavor = parse_flavor(flavor)
-        .ok_or_else(|| PomskyError::new(format!("Unknown regex flavor `{flavor}`"), None))?;
+        .ok_or_else(|| PomskyError::new(format!("Unknown regex flavor `{flavor}`")))?;
 
-    let result = Expr::parse_and_compile(
+    let (result, diagnostics) = Expr::parse_and_compile(
         input,
         CompileOptions { flavor, max_range_size: 12, ..Default::default() },
     );
 
-    match result {
-        Ok((output, warnings)) => Ok(PomskyResult::new(
-            output,
-            warnings
-                .into_iter()
-                .map(|warning| convert_diagnostic(input, Diagnostic::from_warning(warning, input)))
-                .collect(),
-        )),
-        Err(err) => {
-            let diagnostics = err
-                .diagnostics(input)
-                .into_iter()
-                .map(|d| convert_diagnostic(input, d))
-                .collect::<Vec<_>>();
-
-            Err(PomskyError::new("Failed to compile pomsky expression".into(), Some(diagnostics)))
-        }
-    }
+    Ok(PomskyResult::new(
+        result,
+        diagnostics.into_iter().map(|d| convert_diagnostic(input, d)).collect(),
+    ))
 }
 
 fn parse_flavor(flavor: &str) -> Option<RegexFlavor> {
@@ -110,7 +102,13 @@ fn convert_diagnostic(input: &str, d: Diagnostic) -> PomskyDiagnostic {
     let start16 = prefix.encode_utf16().count();
     let end16 = start16 + content.encode_utf16().count();
 
-    PomskyDiagnostic::new(d.msg, d.help, &[start16, end16])
+    PomskyDiagnostic::new(
+        d.kind.into(),
+        d.code.map(|c| c.to_string()),
+        d.msg,
+        d.help,
+        &[start16, end16],
+    )
 }
 
 fn split_in_three(input: &str, cut1: usize, cut2: usize) -> (&str, &str, &str) {

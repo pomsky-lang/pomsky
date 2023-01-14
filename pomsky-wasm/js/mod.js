@@ -1,10 +1,14 @@
 export class PomskyDiagnostic {
   /**
+   * @param {"error" | "warning"} kind
+   * @param {string} code
    * @param {string} message
    * @param {string?} help
    * @param {[number, number]} range
    */
-  constructor(message, help, range) {
+  constructor(kind, code, message, help, range) {
+    this.kind = kind
+    this.code = code
     this.message = message
     this.help = help
     this.range = [range[0], range[1]]
@@ -14,21 +18,19 @@ export class PomskyDiagnostic {
 export class PomskyError extends Error {
   /**
    * @param {string} message
-   * @param {PomskyDiagnostic[]} diagnostics
    */
-  constructor(message, diagnostics) {
+  constructor(message) {
     super(message)
-    this.diagnostics = diagnostics
   }
 }
 
 export class PomskyResult {
   /**
-   * @param {string} output
-   * @param {PomskyDiagnostic[]} warnings
+   * @param {string | null} output
+   * @param {PomskyDiagnostic[]} diagnostics
    */
-  constructor(output, warnings) {
+  constructor(output, diagnostics) {
     this.output = output
-    this.warnings = warnings
+    this.diagnostics = diagnostics
   }
 }
