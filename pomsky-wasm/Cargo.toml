@@ -5,7 +5,7 @@ members = ["."]
 name = "pomsky-wasm"
 description = "A portable, modern regular expression language"
 homepage = "https://pomsky-lang.org"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -23,7 +23,7 @@ wasm-bindgen = "0.2.82"
 
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
-pomsky = { version = "0.8.1", features = ["miette"] }
+pomsky = { version = "0.9.0", features = ["miette"] }
 
 miette = { version = "5.3.0", features = ["fancy"] }
 

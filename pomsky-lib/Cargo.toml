@@ -1,7 +1,7 @@
 [package]
 name = "pomsky"
 description = "A new regular expression language"
-version = "0.8.1"
+version = "0.9.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
@@ -21,7 +21,7 @@ dbg = ["pomsky-syntax/dbg"]
 suggestions = ["pomsky-syntax/suggestions"]
 
 [dependencies]
-pomsky-syntax = { version = "0.8.0", path = "../pomsky-syntax" }
+pomsky-syntax = { version = "0.9.0", path = "../pomsky-syntax" }
 arbitrary = { version = "1.1.3", features = ["derive"], optional = true }
 miette = { version = "5.3.1", features = ["fancy"], optional = true }
 
@@ -31,7 +31,7 @@ tokio = { version = "1.24.1", features = ["rt-multi-thread"] }
 atty = "0.2.14"
 once_cell = "1.14.0"
 regex = "1.7.0"
-regex-test = { path = "../regex-test", features = ["async"], default-features = false}
+regex-test = { path = "../regex-test", features = ["async"], default-features = false }
 
 [[test]]
 name = "it"

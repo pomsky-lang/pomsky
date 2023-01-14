@@ -8,7 +8,7 @@ macro_rules! efprintln {
 
 pub(crate) fn efwriteln(segments: &[helptext::Segment]) {
     let supports_color = matches!(
-        supports_color::on_cached(atty::Stream::Stderr),
+        supports_color::on_cached(supports_color::Stream::Stderr),
         Some(supports_color::ColorLevel { has_basic: true, .. })
     );
 

@@ -1,4 +1,5 @@
 use helptext::{sections, Help};
+use supports_color::Stream;
 
 const USAGE: Help = Help(sections![
     "USAGE" {
@@ -123,36 +124,22 @@ Currently, the following warnings can be disabled:"]
 ]);
 
 pub(crate) fn print_short_usage_and_help_err() {
-    let _ = USAGE.write(
-        &mut std::io::stderr().lock(),
-        false,
-        matches!(
-            supports_color::on_cached(atty::Stream::Stderr),
-            Some(supports_color::ColorLevel { has_basic: true, .. })
-        ),
-    );
+    let _ = USAGE.write(&mut std::io::stderr().lock(), false, is_colored(Stream::Stderr));
 }
 
 pub(crate) fn print_help() {
-    let _ = HELP.write(
-        &mut std::io::stdout().lock(),
-        false,
-        matches!(
-            supports_color::on_cached(atty::Stream::Stdout),
-            Some(supports_color::ColorLevel { has_basic: true, .. })
-        ),
-    );
+    let _ = HELP.write(&mut std::io::stdout().lock(), false, is_colored(Stream::Stdout));
 }
 
 pub(crate) fn print_long_help() {
-    let _ = HELP.write(
-        &mut std::io::stdout().lock(),
-        true,
-        matches!(
-            supports_color::on_cached(atty::Stream::Stdout),
-            Some(supports_color::ColorLevel { has_basic: true, .. })
-        ),
-    );
+    let _ = HELP.write(&mut std::io::stdout().lock(), true, is_colored(Stream::Stdout));
+}
+
+fn is_colored(stream: Stream) -> bool {
+    matches!(
+        supports_color::on_cached(stream),
+        Some(supports_color::ColorLevel { has_basic: true, .. })
+    )
 }
 
 pub(crate) fn print_version() {
