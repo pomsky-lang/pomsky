@@ -16,6 +16,7 @@ extern "C" {
 
     #[wasm_bindgen(constructor)]
     fn new(
+        severity: &str,
         kind: &str,
         code: Option<String>,
         message: String,
@@ -39,7 +40,8 @@ extern "C" {
 #[wasm_bindgen(typescript_custom_section)]
 const ITEXT_STYLE: &str = r#"
 interface PomskyDiagnostic {
-    kind: "error" | "warning";
+    severity: "error" | "warning";
+    kind: string;
     code: string;
     message: string;
     help: string | null;
@@ -103,6 +105,7 @@ fn convert_diagnostic(input: &str, d: Diagnostic) -> PomskyDiagnostic {
     let end16 = start16 + content.encode_utf16().count();
 
     PomskyDiagnostic::new(
+        d.severity.into(),
         d.kind.into(),
         d.code.map(|c| c.to_string()),
         d.msg,

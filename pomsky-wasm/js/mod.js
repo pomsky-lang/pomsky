@@ -1,12 +1,14 @@
 export class PomskyDiagnostic {
   /**
-   * @param {"error" | "warning"} kind
+   * @param {"error" | "warning"} severity
+   * @param {string} kind
    * @param {string} code
    * @param {string} message
    * @param {string?} help
    * @param {[number, number]} range
    */
-  constructor(kind, code, message, help, range) {
+  constructor(severity, kind, code, message, help, range) {
+    this.severity = severity
     this.kind = kind
     this.code = code
     this.message = message
