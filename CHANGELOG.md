@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.0] - 2023-01-13
+## [0.9.0] - 2023-01-14
 
 Join our [Discord](https://discord.gg/uwap2uxMFp) to get help or meet other users and contributors!
 
@@ -21,14 +21,25 @@ If you want to contribute, Pomsky now has a [contributor's guide](./CONTRIBUTING
 
 ### Bugfixes
 
-- Pomsky allowed Unicode properties (`\p{Prop}`) in Python, even though Python doesn't support
-  these. This is now fixed.
-- Unicode properties containing a dash (`-`) were incorrectly compiled in the Java flavor. Fixed
+- Don't allow `::0`, which doesn't work
+- In Python, don't allow Unicode properties (`\p{Prop}`), since Python doesn't support these
+- In Python, don't allow forward references, since Python doesn't support these
+- In Python, emit `\UHHHHHHHH` (where `H` is a hex digit) rather than `\u{...}` for large code
+  points
+- In Java, replace dashes (`-`) in Unicode properties with underscores rather than removing them
+- In Java and Ruby, emit `\x{...}` rather than `\u{...}` for large code points
+- In Ruby, enforce that expressions with named capturing groups can't contain references to
+  unnamed groups
+- In Ruby, don't emit `\xHH` (where `HH` are two hex digits) for non-ASCII code points, since Ruby
+  treats them as bytes rather than code points, and bytes above `\x7F` may be invalid in UTF-8
+- In Ruby, disallow repeated assertions (boundaries or lookarounds)
+- In JS, wrap repeated assertions in an extra non-capturing group
 
 ### Other
 
-- The test harness was improved to also compile the output of all Python, Java, JavaScript and Ruby
-  test cases to detect syntax errors. All flavors except C# are tested in this way now.
+- The test harness and fuzzer were improved to also compile the output of all Python, Java,
+  JavaScript and Ruby test cases to detect syntax errors. All flavors except C# are tested in this
+  way now, and the fuzzer already found a few bugs.
 
 - Major refactor of error handling, so that reporting multiple errors at once becomes less awkward.
   This will enable us to report better diagnostics in the future.

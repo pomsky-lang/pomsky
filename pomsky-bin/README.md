@@ -1,6 +1,7 @@
 # Pomsky CLI
 
-This CLI allows you to compile [pomsky expressions](../README.md) to regexes in the command line.
+This CLI allows you to compile [pomsky expressions](https://pomsky-lang.org/) to regexes in the
+command line.
 
 ## Use pre-built binaries
 

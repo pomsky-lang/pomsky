@@ -1,6 +1,6 @@
 <div align="center">
 
-![Pomsky dog with orange glasses logo](./assets/logo.png)
+![Pomsky dog with orange glasses logo](https://raw.githubusercontent.com/rulex-rs/pomsky/main/assets/logo.png)
 
 # Pomsky
 
