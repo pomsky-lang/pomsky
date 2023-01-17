@@ -50,8 +50,8 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexLookaround<'i> {
-    content: Regex<'i>,
-    kind: LookaroundKind,
+    pub(crate) content: Regex<'i>,
+    pub(crate) kind: LookaroundKind,
 }
 
 impl<'i> RegexLookaround<'i> {

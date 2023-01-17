@@ -102,6 +102,10 @@ impl<'i> Regex<'i> {
 
                 Count::One
             }
+            Regex::Lookaround(l) => {
+                l.content.optimize();
+                Count::One
+            }
             Regex::Unescaped(_) => Count::Many,
             Regex::Char(_)
             | Regex::CharSet(_)
@@ -110,7 +114,6 @@ impl<'i> Regex<'i> {
             | Regex::Grapheme
             | Regex::Dot
             | Regex::Boundary(_)
-            | Regex::Lookaround(_)
             | Regex::Reference(_) => Count::One,
         }
     }
