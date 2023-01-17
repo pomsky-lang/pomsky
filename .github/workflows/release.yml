@@ -39,7 +39,7 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            This is a new release of Pomsky. See what's new in the [changelog](https://github.com/rulex-rs/pomsky/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
+            This is a new release of Pomsky. See what's new in the [changelog](https://github.com/pomsky-lang/pomsky/blob/${{ steps.vars.outputs.tag }}/CHANGELOG.md).
 
             ### Installation
             If you're running on Linux, macOS or Windows, you can use the binaries below.

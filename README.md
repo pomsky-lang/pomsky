@@ -1,6 +1,6 @@
 <div align="center">
 
-![Pomsky dog with orange glasses logo](https://raw.githubusercontent.com/rulex-rs/pomsky/main/assets/logo.png)
+![Pomsky dog with orange glasses logo](https://raw.githubusercontent.com/pomsky-lang/pomsky/main/assets/logo.svg)
 
 # Pomsky
 
@@ -13,16 +13,16 @@ A portable, modern regular expression language
 [![Test][test-badge]][test-link] [![Coverage Status][coverage-badge]][coverage-link]
 [![Crates.io][crates-badge]][crates-link]
 
-[test-badge]: https://github.com/rulex-rs/pomsky/actions/workflows/test.yml/badge.svg
-[test-link]: https://github.com/rulex-rs/pomsky/actions/workflows/test.yml
-[coverage-badge]: https://coveralls.io/repos/github/rulex-rs/pomsky/badge.svg?branch=main
-[coverage-link]: https://coveralls.io/github/rulex-rs/pomsky?branch=main
+[test-badge]: https://github.com/pomsky-lang/pomsky/actions/workflows/test.yml/badge.svg
+[test-link]: https://github.com/pomsky-lang/pomsky/actions/workflows/test.yml
+[coverage-badge]: https://coveralls.io/repos/github/pomsky-lang/pomsky/badge.svg?branch=main
+[coverage-link]: https://coveralls.io/github/pomsky-lang/pomsky?branch=main
 [crates-badge]: https://img.shields.io/crates/v/pomsky
 [crates-link]: https://crates.io/crates/pomsky
 
 ## Examples
 
-On the left are pomsky expressions, on the right is the compiled regex:
+On the left are Pomsky expressions, on the right is the compiled regex:
 
 ```py
 # String
@@ -119,7 +119,7 @@ Pomsky solves these problems with a new, simpler but also more powerful syntax:
 ## Compatibility
 
 Pomsky is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust. The regex
-flavor must be specified during compilation, so pomsky can ensure that the produced regex works as
+flavor must be specified during compilation, so Pomsky can ensure that the produced regex works as
 desired on the targeted regex engine.
 
 **Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
@@ -138,8 +138,8 @@ This may make you vulnerable for denial of service attacks, like the
 Pomsky looks for mistakes and displays helpful diagnostics:
 
 - It shows an error if you use a feature not supported by the targeted regex flavor
-- It detects syntax errors and shows suggestions how to resolve them
-- It parses backslash escapes (which are not allowed in a pomsky expression) and explains what to
+- It detects syntax errors and shows suggestions on how to resolve them
+- It parses backslash escapes (which are not allowed in a Pomsky expression) and explains what to
   write instead
 - It looks for likely mistakes and displays warnings
 - It looks for patterns that can be very slow for certain inputs and are susceptible to

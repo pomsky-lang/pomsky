@@ -1,13 +1,13 @@
 # Contributing to Pomsky
 
-There are multiple ways to contribute to pomsky. The easiest way is to use Pomsky and report any bugs or issues you find in the [issue tracker](https://github.com/rulex-rs/pomsky/issues) or propose new features. If you'd like to contribute code, please read on. You can also [sponsor me](https://github.com/sponsors/Aloso) to support Pomsky's development.
+There are multiple ways to contribute to pomsky. The easiest way is to use Pomsky and report any bugs or issues you find in the [issue tracker](https://github.com/pomsky-lang/pomsky/issues) or propose new features. If you'd like to contribute code, please read on. You can also [sponsor me](https://github.com/sponsors/Aloso) to support Pomsky's development.
 
 ## Conduct
 
 When participating in discussions, please follow the [code of conduct](./CODE_OF_CONDUCT.md). To make sure this remains a friendly and safe space for everyone, all official communication venues are moderated. This currently includes
 
-- [Issue tracker](https://github.com/rulex-rs/pomsky/issues)
-- [GitHub discussions](https://github.com/rulex-rs/pomsky/discussions)
+- [Issue tracker](https://github.com/pomsky-lang/pomsky/issues)
+- [GitHub discussions](https://github.com/pomsky-lang/pomsky/discussions)
 
 If you notice a comment that violates the Code of Conduct, is offending, or violates any law, please [reach out](mailto:ludwig.stecher@gmx.de). If you have questions or are unsure if a comment is allowed, feel free to reach out as well.
 
@@ -21,7 +21,7 @@ Pomsky is written in Rust. To contribute code, you should be comfortable writing
 
 ### Finding something to contribute
 
-Issues that might be suitable to start contributing are labelled [good first issue](https://github.com/rulex-rs/pomsky/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22). Once you found an issue you want to fix, please add a comment to tell us that you're working on it. If you need help, I can give you mentoring instructions, don't hesitate to ask.
+Issues that might be suitable to start contributing are labelled [good first issue](https://github.com/pomsky-lang/pomsky/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22). Once you found an issue you want to fix, please add a comment to tell us that you're working on it. If you need help, I can give you mentoring instructions, don't hesitate to ask.
 
 If what you want to implement doesn't have an issue yet, please open an issue first. This doesn't apply to code quality and documentation improvements.
 

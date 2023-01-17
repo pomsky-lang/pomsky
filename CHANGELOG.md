@@ -101,7 +101,7 @@ Remember that you can also help out by filing issues or contributing 😉
 
   - Compile all PCRE and Rust regular expressions produced by integration tests to make sure the output is well-formed. This caught some of the bugs mentioned above! We're currently looking into ways to do the same with the other flavors.
 
-  - Measure test coverage in CI and publish it to coveralls.io. The results are [here](https://coveralls.io/github/rulex-rs/pomsky?branch=main) (also accessible by clicking on the badge in the README). Note that the measurement is imperfect, so the results may not be accurate.
+  - Measure test coverage in CI and publish it to coveralls.io. The results are [here](https://coveralls.io/github/pomsky-lang/pomsky?branch=main) (also accessible by clicking on the badge in the README). Note that the measurement is imperfect, so the results may not be accurate.
 
   - Add end-to-end tests for the CLI and improve test coverage
 
@@ -216,7 +216,7 @@ Remember that you can also help out by filing issues or contributing 😉
 
 This is the first release since [Rulex was renamed to Pomsky](https://pomsky-lang.org/blog/renaming-rulex/).
 
-If you are using the `rulex` crate, replace it with `pomsky`. The `rulex-macro` crate should be replaced with `pomsky-macro`. To install the new binary, [see instructions](https://github.com/rulex-rs/pomsky/releases/tag/v0.5). If you installed rulex with cargo, you can remove it with
+If you are using the `rulex` crate, replace it with `pomsky`. The `rulex-macro` crate should be replaced with `pomsky-macro`. To install the new binary, [see instructions](https://github.com/pomsky-lang/pomsky/releases/tag/v0.5). If you installed rulex with cargo, you can remove it with
 
 ```sh
 rm $(type -P rulex)
@@ -286,7 +286,7 @@ the ASCII line break.
 
 ### Fixed/improved
 
-- [#29](https://github.com/rulex-rs/pomsky/pull/29): Fix a miscompilation of a repeated empty group,
+- [#29](https://github.com/pomsky-lang/pomsky/pull/29): Fix a miscompilation of a repeated empty group,
   e.g. `()?`. Thanks, [sebastiantoh](https://github.com/sebastiantoh)!
 
 - Make the parser more permissive to parse arbitrary negated expressions. This results in better
@@ -418,16 +418,16 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/rulex-rs/pomsky/compare/v0.8...HEAD
-[0.8.0]: https://github.com/rulex-rs/pomsky/compare/v0.7...v0.8
-[0.7.0]: https://github.com/rulex-rs/pomsky/compare/v0.6...v0.7
-[0.6.0]: https://github.com/rulex-rs/pomsky/compare/v0.5...v0.6
-[0.5.0]: https://github.com/rulex-rs/pomsky/compare/v0.4.3...v0.5
-[0.4.3]: https://github.com/rulex-rs/pomsky/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/rulex-rs/pomsky/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/rulex-rs/pomsky/compare/v0.4...v0.4.1
-[0.4.0]: https://github.com/rulex-rs/pomsky/compare/v0.3...v0.4
-[0.3.0]: https://github.com/rulex-rs/pomsky/compare/v0.2...v0.3
-[0.2.0]: https://github.com/rulex-rs/pomsky/compare/v0.1...v0.2
-[0.1.0]: https://github.com/rulex-rs/pomsky/releases/tag/v0.1
+[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.8...HEAD
+[0.8.0]: https://github.com/pomsky-lang/pomsky/compare/v0.7...v0.8
+[0.7.0]: https://github.com/pomsky-lang/pomsky/compare/v0.6...v0.7
+[0.6.0]: https://github.com/pomsky-lang/pomsky/compare/v0.5...v0.6
+[0.5.0]: https://github.com/pomsky-lang/pomsky/compare/v0.4.3...v0.5
+[0.4.3]: https://github.com/pomsky-lang/pomsky/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/pomsky-lang/pomsky/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/pomsky-lang/pomsky/compare/v0.4...v0.4.1
+[0.4.0]: https://github.com/pomsky-lang/pomsky/compare/v0.3...v0.4
+[0.3.0]: https://github.com/pomsky-lang/pomsky/compare/v0.2...v0.3
+[0.2.0]: https://github.com/pomsky-lang/pomsky/compare/v0.1...v0.2
+[0.1.0]: https://github.com/pomsky-lang/pomsky/releases/tag/v0.1
 [miette]: https://crates.io/crates/miette

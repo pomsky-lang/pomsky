@@ -66,9 +66,9 @@
 //!
 //! Result:
 //!
-//! ![Short help](https://raw.githubusercontent.com/rulex-rs/pomsky/main/helptext/docs/short_help.png)
+//! ![Short help](https://raw.githubusercontent.com/pomsky-lang/pomsky/main/helptext/docs/short_help.png)
 //!
-//! ![Long help](https://raw.githubusercontent.com/rulex-rs/pomsky/main/helptext/docs/long_help.png)
+//! ![Long help](https://raw.githubusercontent.com/pomsky-lang/pomsky/main/helptext/docs/long_help.png)
 
 mod color;
 mod help;
