@@ -8,7 +8,7 @@ use crate::{
     options::CompileOptions,
 };
 
-use super::{grapheme::Grapheme, RuleExt};
+use super::{dot::Dot, grapheme::Grapheme, RuleExt};
 
 impl<'i> RuleExt<'i> for Rule<'i> {
     fn get_capturing_groups(
@@ -21,6 +21,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Literal(_)
             | Rule::CharClass(_)
             | Rule::Grapheme
+            | Rule::Dot
             | Rule::Boundary(_)
             | Rule::Variable(_)
             | Rule::Regex(_)
@@ -49,6 +50,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::CharClass(c) => c.compile(options, state),
             Rule::Group(g) => g.compile(options, state),
             Rule::Grapheme => Grapheme {}.compile(options),
+            Rule::Dot => Dot {}.compile(options),
             Rule::Alternation(a) => a.compile(options, state),
             Rule::Repetition(r) => r.compile(options, state),
             Rule::Boundary(b) => b.compile(options, state),
@@ -66,19 +68,18 @@ impl<'i> RuleExt<'i> for Rule<'i> {
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         match self {
-            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) => {}
-            Rule::Grapheme => Grapheme {}.validate(options)?,
-            Rule::Group(g) => g.validate(options)?,
-            Rule::Alternation(a) => a.validate(options)?,
-            Rule::Repetition(r) => r.validate(options)?,
-            Rule::Boundary(b) => b.validate(options)?,
-            Rule::Lookaround(l) => l.validate(options)?,
-            Rule::Reference(r) => r.validate(options)?,
-            Rule::Range(r) => r.validate(options)?,
-            Rule::Regex(r) => r.validate(options)?,
-            Rule::StmtExpr(s) => s.validate(options)?,
+            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) => Ok(()),
+            Rule::Grapheme => Grapheme {}.validate(options),
+            Rule::Dot => Dot {}.validate(options),
+            Rule::Group(g) => g.validate(options),
+            Rule::Alternation(a) => a.validate(options),
+            Rule::Repetition(r) => r.validate(options),
+            Rule::Boundary(b) => b.validate(options),
+            Rule::Lookaround(l) => l.validate(options),
+            Rule::Reference(r) => r.validate(options),
+            Rule::Range(r) => r.validate(options),
+            Rule::Regex(r) => r.validate(options),
+            Rule::StmtExpr(s) => s.validate(options),
         }
-
-        Ok(())
     }
 }

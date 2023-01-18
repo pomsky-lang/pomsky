@@ -38,6 +38,8 @@ pub enum Rule<'i> {
 
     /// A Unicode grapheme
     Grapheme,
+    /// The dot
+    Dot,
 }
 
 impl<'i> Rule<'i> {
@@ -57,6 +59,7 @@ impl<'i> Rule<'i> {
             Rule::StmtExpr(m) => m.span,
             Rule::Regex(r) => r.span,
             Rule::Grapheme => Span::empty(),
+            Rule::Dot => Span::empty(),
         }
     }
 
@@ -70,7 +73,8 @@ impl<'i> Rule<'i> {
             | Rule::Range(_)
             | Rule::StmtExpr(_)
             | Rule::Regex(_)
-            | Rule::Grapheme => Err(ParseErrorKind::UnallowedNot),
+            | Rule::Grapheme
+            | Rule::Dot => Err(ParseErrorKind::UnallowedNot),
 
             Rule::CharClass(c) => c.negate(),
             Rule::Repetition(r) => r.rule.negate(),
@@ -95,6 +99,7 @@ impl<'i> Rule<'i> {
             Rule::StmtExpr(s) => s.pretty_print(buf),
             Rule::Regex(r) => r.pretty_print(buf),
             Rule::Grapheme => buf.push_str("Grapheme"),
+            Rule::Dot => buf.push_str("."),
         }
     }
 }

@@ -1,8 +1,0 @@
-#! expect=error
-[. n]
------
-ERROR: This combination of character classes is not allowed
-SPAN: 1..4
-
-WARNING: This syntax is deprecated. Use `.` without the brackets.
-SPAN: 1..2

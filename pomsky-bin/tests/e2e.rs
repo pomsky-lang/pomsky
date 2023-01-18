@@ -314,6 +314,7 @@ fn no_newline() {
 }
 
 #[test]
+#[ignore = "this is now an error, so there are no warnings"]
 fn lots_of_warnings() {
     let mut cmd = command(&["[.][.][.][.][.][.][.][.][.][.][.][.]"]);
     cmd.assert().success().stdout("............\n").stderr(
@@ -380,6 +381,7 @@ warning: pomsky generated 12 warnings
 }
 
 #[test]
+#[ignore = "this is now an error, so there are no warnings"]
 fn disable_warnings() {
     let mut cmd = command(&["[.]", "-W0"]);
     cmd.assert().success().stdout(".\n").stderr("");
@@ -446,6 +448,7 @@ fn json_output() {
 }
 
 #[test]
+#[ignore = "this is now an error, so there are no warnings"]
 fn json_output_warnings() {
     let mut cmd = command(&["[.][.]", "--json"]);
     cmd.assert()

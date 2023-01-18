@@ -68,6 +68,9 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
         ParseErrorKind::Deprecated(DeprecationError::CpInSet) => {
             Some("Use `C` without brackets instead".into())
         }
+        ParseErrorKind::Deprecated(DeprecationError::DotInSet) => {
+            Some("Use `.` without brackets instead".into())
+        }
         _ => None,
     }
 }

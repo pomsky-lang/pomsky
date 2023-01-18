@@ -116,12 +116,12 @@ pub(crate) mod unicode;
 #[derive(Clone, PartialEq, Eq)]
 pub struct CharClass {
     pub negative: bool,
-    pub inner: CharGroup,
+    pub inner: Vec<GroupItem>,
     pub span: Span,
 }
 
 impl CharClass {
-    pub fn new(inner: CharGroup, span: Span) -> Self {
+    pub fn new(inner: Vec<GroupItem>, span: Span) -> Self {
         CharClass { inner, span, negative: false }
     }
 
@@ -137,24 +137,18 @@ impl CharClass {
 
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
-        match &self.inner {
-            CharGroup::Dot if self.negative => buf.push_str("[n]"),
-            CharGroup::Dot => buf.push_str("."),
-            CharGroup::Items(items) => {
-                if self.negative {
-                    buf.push_str("![");
-                } else {
-                    buf.push('[');
-                }
-
-                for (i, item) in items.iter().enumerate() {
-                    if i > 0 {
-                        buf.push(' ');
-                    }
-                    item.pretty_print(buf);
-                }
-                buf.push(']');
-            }
+        if self.negative {
+            buf.push_str("![");
+        } else {
+            buf.push('[');
         }
+
+        for (i, item) in self.inner.iter().enumerate() {
+            if i > 0 {
+                buf.push(' ');
+            }
+            item.pretty_print(buf);
+        }
+        buf.push(']');
     }
 }

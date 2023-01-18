@@ -1,5 +1,2 @@
-let _ = [.];
+let _ = .;
 -----
-
-WARNING: This syntax is deprecated. Use `.` without the brackets.
-  at 9..10

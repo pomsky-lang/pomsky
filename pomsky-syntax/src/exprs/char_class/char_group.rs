@@ -19,34 +19,20 @@ use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 ///
 /// Refer to the [`char_class` module](crate::char_class) for more information.
 #[derive(Clone, PartialEq, Eq)]
-pub enum CharGroup {
-    /// `[.]`, the [dot](https://www.regular-expressions.info/dot.html). Matches any code point
-    /// except `\n`.
-    Dot,
+pub struct CharGroup {
     /// This variant is used for the remaining cases.
-    Items(Vec<GroupItem>),
+    pub items: Vec<GroupItem>,
 }
 
 impl CharGroup {
     /// Tries to create a `CharGroup` from a range of characters (inclusive).
     /// Returns `None` if `last` is lower than `first`.
-    pub(crate) fn try_from_range(first: char, last: char) -> Option<Self> {
+    pub(crate) fn try_from_range(first: char, last: char) -> Option<Vec<GroupItem>> {
         if first <= last {
-            Some(CharGroup::Items(vec![GroupItem::Range { first, last }]))
+            Some(vec![GroupItem::Range { first, last }])
         } else {
             None
         }
-    }
-
-    /// Creates a `CharGroup` from a string, by iterating over the `char`s and
-    /// adding each of them to the list.
-    pub(crate) fn from_chars(chars: &str) -> Self {
-        CharGroup::Items(chars.chars().map(GroupItem::Char).collect())
-    }
-
-    /// Creates a `CharGroup` from a single `char`.
-    pub(crate) fn from_char(c: char) -> Self {
-        CharGroup::Items(vec![GroupItem::Char(c)])
     }
 
     /// Try to create a `CharGroup` from the name of a character class. Fails if
@@ -62,10 +48,10 @@ impl CharGroup {
     pub(crate) fn try_from_group_name(
         name: &str,
         negative: bool,
-    ) -> Result<(Self, Option<DeprecationWarning>), ParseErrorKind> {
+    ) -> Result<(Vec<GroupItem>, Option<DeprecationWarning>), ParseErrorKind> {
         Ok(match name {
             _ if name == "ascii" || name.starts_with("ascii_") => {
-                (CharGroup::Items(super::ascii::parse_ascii_group(name, negative)?), None)
+                (super::ascii::parse_ascii_group(name, negative)?, None)
             }
 
             "codepoint" | "cp" | "." if negative => {
@@ -74,34 +60,13 @@ impl CharGroup {
 
             "codepoint" => return Err(DeprecationError::CodepointInSet.into()),
             "cp" => return Err(DeprecationError::CpInSet.into()),
-            "." => (CharGroup::Dot, Some(DeprecationWarning::Dot)),
+            "." => return Err(DeprecationError::DotInSet.into()),
 
-            _ => (
-                CharGroup::Items(vec![GroupItem::Named {
-                    name: super::unicode::parse_group_name(name)?,
-                    negative,
-                }]),
-                None,
-            ),
-        })
-    }
-
-    /// Tries to add another `CharGroup` to this one. Fails if one of them is a
-    /// `[.]` or `[cp]`. If it succeeds, it just appends the new items to
-    /// the existing ones.
-    ///
-    /// The previous implementation was much more advanced and merged
-    /// overlapping ranges using a `BTreeSet` with a custom (technically
-    /// incorrect) `PartialEq` implementation. This added
-    /// a lot of complexity for very little return, so I decided to ditch it.
-    pub(crate) fn add(&mut self, other: CharGroup) -> Result<(), CharClassError> {
-        match (self, other) {
-            (CharGroup::Items(it), CharGroup::Items(other)) => {
-                it.extend(other);
-                Ok(())
+            _ => {
+                let name = super::unicode::parse_group_name(name)?;
+                (vec![GroupItem::Named { name, negative }], None)
             }
-            _ => Err(CharClassError::Unallowed),
-        }
+        })
     }
 }
 

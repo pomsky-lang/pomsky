@@ -1,5 +1,3 @@
-[w] [d] [s] ![w] ![d] ![s] [.]
+[w] [d] [s] ![w] ![d] ![s]
 -----
-\w\d\s\W\D\S.
-WARNING: This syntax is deprecated. Use `.` without the brackets.
-  at 28..29
+\w\d\s\W\D\S

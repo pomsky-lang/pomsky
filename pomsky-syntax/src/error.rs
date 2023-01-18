@@ -149,6 +149,8 @@ pub enum DeprecationError {
     CodepointInSet,
     /// Deprecated `[cp]`
     CpInSet,
+    /// Deprecated `[.]`
+    DotInSet,
 }
 
 impl std::error::Error for DeprecationError {}
@@ -158,6 +160,7 @@ impl core::fmt::Display for DeprecationError {
         let error = match self {
             DeprecationError::CodepointInSet => "`[codepoint]` is deprecated",
             DeprecationError::CpInSet => "`[cp]` is deprecated",
+            DeprecationError::DotInSet => "`[.]` is deprecated",
         };
 
         f.write_str(error)

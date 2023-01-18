@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashSet};
+use std::collections::HashSet;
 
 use crate::{error::*, exprs::*, lexer::Token, warning::ParseWarningKind, Span};
 
@@ -378,10 +378,8 @@ impl<'i> Parser<'i> {
             })?;
             let span = start_span.join(self.last_span());
 
-            if let CharGroup::Items(v) = &inner {
-                if v.is_empty() {
-                    return Err(ParseErrorKind::CharClass(CharClassError::Empty).at(span));
-                }
+            if inner.is_empty() {
+                return Err(ParseErrorKind::CharClass(CharClassError::Empty).at(span));
             }
 
             Ok(Some(Rule::CharClass(CharClass::new(inner, span))))
@@ -393,9 +391,7 @@ impl<'i> Parser<'i> {
     /// Parses a char group, i.e. the contents of a char set. This is a sequence
     /// of characters, character classes, character ranges or Unicode
     /// properties. Some of them can be negated.
-    fn parse_char_set_inner(&mut self) -> PResult<CharGroup> {
-        let span_start = self.span();
-
+    fn parse_char_set_inner(&mut self) -> PResult<Vec<GroupItem>> {
         let mut items = Vec::new();
         loop {
             let mut nots_span = self.span();
@@ -405,7 +401,7 @@ impl<'i> Parser<'i> {
                 nots_span = nots_span.join(self.last_span());
             }
 
-            let item = if let Some(group) = self.parse_char_group_chars_or_range()? {
+            let group = if let Some(group) = self.parse_char_group_chars_or_range()? {
                 if nots > 0 {
                     return Err(ParseErrorKind::UnallowedNot.at(nots_span));
                 }
@@ -420,22 +416,14 @@ impl<'i> Parser<'i> {
             } else {
                 break;
             };
-            items.push(item);
+            items.extend(group);
         }
 
-        let mut iter = items.into_iter();
-        let mut group = iter.next().unwrap_or_else(|| CharGroup::Items(vec![]));
-
-        for item in iter {
-            group
-                .add(item)
-                .map_err(|e| ParseErrorKind::CharClass(e).at(span_start.join(self.last_span())))?;
-        }
-        Ok(group)
+        Ok(items)
     }
 
     /// Parses an identifier or dot in a char set
-    fn parse_char_group_ident(&mut self, negative: bool) -> PResult<Option<CharGroup>> {
+    fn parse_char_group_ident(&mut self, negative: bool) -> PResult<Option<Vec<GroupItem>>> {
         if self.consume(Token::Dot) || self.consume(Token::Identifier) {
             let span = self.last_span();
 
@@ -455,7 +443,7 @@ impl<'i> Parser<'i> {
 
     /// Parses a string literal or a character range in a char set, e.g. `"axd"`
     /// or `'0'-'7'`.
-    fn parse_char_group_chars_or_range(&mut self) -> PResult<Option<CharGroup>> {
+    fn parse_char_group_chars_or_range(&mut self) -> PResult<Option<Vec<GroupItem>>> {
         let span1 = self.span();
         let Some(first) = self.parse_string_or_char()? else {
             return Ok(None);
@@ -477,10 +465,11 @@ impl<'i> Parser<'i> {
             Ok(Some(group))
         } else {
             let group = match first {
-                StringOrChar::String(s) => CharGroup::from_chars(
-                    helper::parse_quoted_text(s).map_err(|k| k.at(span1))?.borrow(),
-                ),
-                StringOrChar::Char(c) => CharGroup::from_char(c),
+                StringOrChar::String(s) => {
+                    let chars = helper::parse_quoted_text(s).map_err(|k| k.at(span1))?;
+                    chars.chars().map(GroupItem::Char).collect()
+                }
+                StringOrChar::Char(c) => vec![GroupItem::Char(c)],
             };
             Ok(Some(group))
         }
@@ -535,7 +524,7 @@ impl<'i> Parser<'i> {
 
     fn parse_code_point_rule(&mut self) -> PResult<Option<Rule<'i>>> {
         if let Some((c, span)) = self.parse_code_point()? {
-            Ok(Some(Rule::CharClass(CharClass::new(CharGroup::from_char(c), span))))
+            Ok(Some(Rule::CharClass(CharClass::new(vec![GroupItem::Char(c)], span))))
         } else {
             Ok(None)
         }
@@ -676,7 +665,7 @@ impl<'i> Parser<'i> {
     /// Parses the dot
     fn parse_dot(&mut self) -> Option<Rule<'i>> {
         if self.consume(Token::Dot) {
-            Some(Rule::CharClass(CharClass::new(CharGroup::Dot, self.last_span())))
+            Some(Rule::Dot)
         } else {
             None
         }

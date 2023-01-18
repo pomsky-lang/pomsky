@@ -102,7 +102,7 @@
 //! negated, the class is   removed and the negations cancel each other out:
 //! `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
-use std::{borrow::Cow, collections::HashSet};
+use std::collections::HashSet;
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -113,7 +113,7 @@ use crate::{
 };
 
 use pomsky_syntax::{
-    exprs::{Category, CharClass, CharGroup, GroupItem, GroupName, OtherProperties},
+    exprs::{Category, CharClass, GroupItem, GroupName, OtherProperties},
     Span,
 };
 
@@ -122,72 +122,67 @@ use super::RuleExt;
 impl<'i> RuleExt<'i> for CharClass {
     fn compile(&self, options: CompileOptions, _: &mut CompileState<'_, 'i>) -> CompileResult<'i> {
         let span = self.span;
-        match &self.inner {
-            CharGroup::Dot => {
-                Ok(if self.negative { Regex::Literal(Cow::Borrowed("\\n")) } else { Regex::Dot })
-            }
-            CharGroup::Items(items) => match (items.len(), self.negative) {
-                (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
-                (1, false) => match items[0] {
-                    GroupItem::Char(c) => Ok(Regex::Char(c)),
-                    GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
-                        negative: false,
-                        items: vec![RegexCharSetItem::Range { first, last }],
-                    })),
-                    GroupItem::Named { name, negative } => {
-                        named_class_to_regex(name, negative, options.flavor, span)
-                    }
-                },
-                (1, true) => match items[0] {
-                    GroupItem::Char(c) => Ok(Regex::CharSet(RegexCharSet {
-                        negative: true,
-                        items: vec![RegexCharSetItem::Char(c)],
-                    })),
-                    GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
-                        negative: true,
-                        items: vec![RegexCharSetItem::Range { first, last }],
-                    })),
-                    GroupItem::Named { name, negative } => {
-                        named_class_to_regex(name, !negative, options.flavor, span)
-                    }
-                },
-                (_, negative) => {
-                    let mut prev_group_items: Vec<GroupItem> = vec![];
-                    let mut prev_items: HashSet<GroupItem> = HashSet::new();
-
-                    let mut buf = Vec::new();
-                    for item in items {
-                        if prev_items.contains(item) {
-                            continue;
-                        }
-                        prev_items.insert(*item);
-
-                        match *item {
-                            GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
-                            GroupItem::Range { first, last } => {
-                                buf.push(RegexCharSetItem::Range { first, last });
-                            }
-                            GroupItem::Named { name, negative: item_negative } => {
-                                if negative {
-                                    check_char_class_empty(*item, &prev_group_items)
-                                        .map_err(|kind| kind.at(span))?;
-
-                                    prev_group_items.push(*item);
-                                }
-                                named_class_to_regex_class_items(
-                                    name,
-                                    item_negative,
-                                    options.flavor,
-                                    span,
-                                    &mut buf,
-                                )?;
-                            }
-                        }
-                    }
-
-                    Ok(Regex::CharSet(RegexCharSet { negative, items: buf }))
+        match (self.inner.len(), self.negative) {
+            (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
+            (1, false) => match self.inner[0] {
+                GroupItem::Char(c) => Ok(Regex::Char(c)),
+                GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
+                    negative: false,
+                    items: vec![RegexCharSetItem::Range { first, last }],
+                })),
+                GroupItem::Named { name, negative } => {
+                    named_class_to_regex(name, negative, options.flavor, span)
                 }
             },
+            (1, true) => match self.inner[0] {
+                GroupItem::Char(c) => Ok(Regex::CharSet(RegexCharSet {
+                    negative: true,
+                    items: vec![RegexCharSetItem::Char(c)],
+                })),
+                GroupItem::Range { first, last } => Ok(Regex::CharSet(RegexCharSet {
+                    negative: true,
+                    items: vec![RegexCharSetItem::Range { first, last }],
+                })),
+                GroupItem::Named { name, negative } => {
+                    named_class_to_regex(name, !negative, options.flavor, span)
+                }
+            },
+            (_, negative) => {
+                let mut prev_group_items: Vec<GroupItem> = vec![];
+                let mut prev_items: HashSet<GroupItem> = HashSet::new();
+
+                let mut buf = Vec::new();
+                for item in &self.inner {
+                    if prev_items.contains(item) {
+                        continue;
+                    }
+                    prev_items.insert(*item);
+
+                    match *item {
+                        GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
+                        GroupItem::Range { first, last } => {
+                            buf.push(RegexCharSetItem::Range { first, last });
+                        }
+                        GroupItem::Named { name, negative: item_negative } => {
+                            if negative {
+                                check_char_class_empty(*item, &prev_group_items)
+                                    .map_err(|kind| kind.at(span))?;
+
+                                prev_group_items.push(*item);
+                            }
+                            named_class_to_regex_class_items(
+                                name,
+                                item_negative,
+                                options.flavor,
+                                span,
+                                &mut buf,
+                            )?;
+                        }
+                    }
+                }
+
+                Ok(Regex::CharSet(RegexCharSet { negative, items: buf }))
+            }
         }
     }
 }

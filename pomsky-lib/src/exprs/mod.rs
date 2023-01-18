@@ -10,6 +10,7 @@ use crate::{
 pub(crate) mod alternation;
 pub(crate) mod boundary;
 pub(crate) mod char_class;
+pub(crate) mod dot;
 pub(crate) mod grapheme;
 pub(crate) mod group;
 pub(crate) mod literal;
@@ -76,10 +77,10 @@ impl<'i> Expr<'i> {
         let end = Rule::Boundary(Boundary::new(BoundaryKind::End, no_span));
         let grapheme = Rule::Grapheme;
         let codepoint = Rule::CharClass(CharClass::new(
-            CharGroup::Items(vec![
+            vec![
                 GroupItem::Named { name: GroupName::Space, negative: false },
                 GroupItem::Named { name: GroupName::Space, negative: true },
-            ]),
+            ],
             no_span,
         ));
 
