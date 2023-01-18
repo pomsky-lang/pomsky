@@ -9,7 +9,7 @@
 use std::fmt;
 
 use crate::{
-    error::{CharClassError, DeprecationError, ParseErrorKind},
+    error::{DeprecationError, ParseErrorKind},
     warning::DeprecationWarning,
 };
 
@@ -53,15 +53,7 @@ impl CharGroup {
             _ if name == "ascii" || name.starts_with("ascii_") => {
                 (super::ascii::parse_ascii_group(name, negative)?, None)
             }
-
-            "codepoint" | "cp" | "." if negative => {
-                return Err(CharClassError::Negative.into());
-            }
-
-            "codepoint" => return Err(DeprecationError::CodepointInSet.into()),
-            "cp" => return Err(DeprecationError::CpInSet.into()),
             "." => return Err(DeprecationError::DotInSet.into()),
-
             _ => {
                 let name = super::unicode::parse_group_name(name)?;
                 (vec![GroupItem::Named { name, negative }], None)

@@ -145,10 +145,6 @@ impl core::fmt::Display for ParseErrorKind {
 /// An error that is returned when a deprecated feature is used
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeprecationError {
-    /// Deprecated `[codepoint]`
-    CodepointInSet,
-    /// Deprecated `[cp]`
-    CpInSet,
     /// Deprecated `[.]`
     DotInSet,
 }
@@ -158,8 +154,6 @@ impl std::error::Error for DeprecationError {}
 impl core::fmt::Display for DeprecationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let error = match self {
-            DeprecationError::CodepointInSet => "`[codepoint]` is deprecated",
-            DeprecationError::CpInSet => "`[cp]` is deprecated",
             DeprecationError::DotInSet => "`[.]` is deprecated",
         };
 

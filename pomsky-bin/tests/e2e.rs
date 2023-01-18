@@ -486,7 +486,7 @@ fn json_output_warnings() {
 
 #[test]
 fn json_output_errors() {
-    let mut cmd = command(&["[cp][^test]", "--json"]);
+    let mut cmd = command(&["[.][^test]", "--json"]);
     cmd.assert()
         .failure()
         .stdout(
@@ -498,19 +498,19 @@ fn json_output_errors() {
                     severity: Severity::Error,
                     kind: Kind::Deprecated,
                     code: Some(DiagnosticCode::DeprecatedSyntax),
-                    spans: vec![Span { start: 1, end: 3, label: None }],
-                    description: "`[cp]` is deprecated".into(),
-                    help: vec!["Use `C` without brackets instead".into()],
+                    spans: vec![Span { start: 1, end: 2, label: None }],
+                    description: "`[.]` is deprecated".into(),
+                    help: vec!["Use `.` without brackets instead".into()],
                     fixes: vec![],
                     visual: String::from(
                         "error P0105(deprecated): 
-  × `[cp]` is deprecated
+  × `[.]` is deprecated
    ╭────
- 1 │ [cp][^test]
-   ·  ─┬
-   ·   ╰── error occurred here
+ 1 │ [.][^test]
+   ·  ┬
+   ·  ╰── error occurred here
    ╰────
-  help: Use `C` without brackets instead
+  help: Use `.` without brackets instead
 ",
                     ),
                 }],

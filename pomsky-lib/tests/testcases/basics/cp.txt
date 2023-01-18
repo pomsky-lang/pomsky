@@ -1,6 +1,3 @@
-#! expect=error
-[cp]
+C Codepoint
 -----
-ERROR: `[cp]` is deprecated
-HELP: Use `C` without brackets instead
-SPAN: 1..3
+[\s\S][\s\S]

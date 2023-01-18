@@ -39,23 +39,6 @@
 //!     For example: `[Letter]` compiles to `\p{Letter}`. Pomsky currently
 //!     treats any uppercase identifier except `R` as Unicode class.
 //!
-//! ### "Special" items
-//!
-//! There are also three special variants:
-//!
-//! - `[cp]` or `[codepoint]`, matching a code point
-//! - `[.]` (the [dot](https://www.regular-expressions.info/dot.html)), matching
-//!   any code point except the ASCII line break (`\n`)
-//!
-//! A character class containing `cp` or `.` can't contain anything else. Note
-//! that:
-//!
-//! - combining `[cp]` with anything else would be equivalent to `[cp]`
-//! - combining `[.]` with anything other than `[cp]` or `[n]` would be
-//!   equivalent to `[.]`
-//!
-//! They also require special treatment when negating them (see below).
-//!
 //! ## Compilation
 //!
 //! When a character class contains only a single item (e.g. `[w]`), the
@@ -64,9 +47,6 @@
 //! - `['a']` = `a`
 //! - `[w]` = `\w`
 //! - `[Letter]` = `\p{Letter}`
-//! - `[.]` = `.`
-//!
-//! The exception is `[cp]`, which compiles to `[\S\s]`.
 //!
 //! When there is more than one item or a range (e.g. `['a'-'z' '!']`), a regex
 //! character class is created:
@@ -88,15 +68,9 @@
 //!   (`![w]` = `\W`), except when there is more than one item in the class
 //!   (`![w '-']` = `[^\w\-]`)
 //!
-//! - Special classes:
-//!   - `![.]` = `\n`
-//!   - `![cp]` is an error, as this would result in an empty group, which is
-//!     only allowed in JavaScript; instead we could return `[^\S\s]`, but this
-//!     doesn't have a use case, since it matches nothing (it always fails).
-//!
 //! - `w`, `s`, `d` and Unicode categories/scripts/blocks can be negated
-//!   individually _within a character class_, e.g. `[s !s]` = `[\s\S]`
-//!   (equivalent to `[cp]`), `![!Latin 'a']` = `[^\P{Latin}a]`.
+//!   individually _within a character class_, e.g. `[s !s]` = `[\s\S]`,
+//!   `![!Latin 'a']` = `[^\P{Latin}a]`.
 //!
 //!   When a negated character class only contains 1 item, which is also
 //! negated, the class is   removed and the negations cancel each other out:

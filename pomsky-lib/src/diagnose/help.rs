@@ -62,12 +62,6 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
                 https://pomsky-lang.org/docs/language-tour/variables/"
                 .into(),
         ),
-        ParseErrorKind::Deprecated(DeprecationError::CodepointInSet) => {
-            Some("Use `Codepoint` without brackets instead".into())
-        }
-        ParseErrorKind::Deprecated(DeprecationError::CpInSet) => {
-            Some("Use `C` without brackets instead".into())
-        }
         ParseErrorKind::Deprecated(DeprecationError::DotInSet) => {
             Some("Use `.` without brackets instead".into())
         }
