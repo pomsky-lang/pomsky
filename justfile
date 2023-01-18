@@ -35,6 +35,12 @@ test-it *args:
 fuzz-ranges *flags:
     cargo test --test it -- --fuzz-ranges {{flags}}
 
+bump-versions:
+    cargo set-version --bump minor -p pomsky-syntax
+    cargo set-version --bump minor -p pomsky-lib
+    cargo set-version --bump minor -p pomsky-bin
+    cargo set-version --bump minor -p pomsky-macro
+
 publish *args:
     # only run this once versions are bumped and the changelog is up to date!
 
