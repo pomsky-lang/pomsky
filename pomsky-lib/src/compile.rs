@@ -2,7 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use pomsky_syntax::exprs::Rule;
 
-use crate::{diagnose::CompileError, exprs::repetition::RegexQuantifier, regex::Regex};
+use crate::{
+    diagnose::{CompileError, Diagnostic},
+    exprs::repetition::RegexQuantifier,
+    regex::Regex,
+};
 
 pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
 
@@ -17,6 +21,8 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) default_quantifier: RegexQuantifier,
     pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
     pub(crate) current_vars: HashSet<usize>,
+
+    pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
 impl<'c, 'i> CompileState<'c, 'i> {
@@ -45,6 +51,8 @@ impl<'c, 'i> CompileState<'c, 'i> {
             default_quantifier,
             variables,
             current_vars: Default::default(),
+
+            diagnostics: vec![],
         }
     }
 }

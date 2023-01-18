@@ -5,7 +5,7 @@ use pomsky_syntax::{
 
 use super::{diagnostic_code::DiagnosticCode, CompileError, CompileErrorKind, DiagnosticKind};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 /// A struct containing detailed information about an error, which can be
 /// displayed beautifully with [miette](https://docs.rs/miette/latest/miette/).
@@ -16,8 +16,6 @@ pub struct Diagnostic {
     pub msg: String,
     /// The error code (optional)
     pub code: Option<DiagnosticCode>,
-    /// The source code where the error occurred
-    pub source_code: Option<String>,
     /// An (optional) help message explaining how the error could be fixed
     pub help: Option<String>,
     /// The start and end byte positions of the source code where the error
@@ -55,40 +53,6 @@ impl From<Severity> for &'static str {
     }
 }
 
-#[cfg(feature = "miette")]
-impl miette::Diagnostic for Diagnostic {
-    fn help<'a>(&'a self) -> Option<Box<dyn std::fmt::Display + 'a>> {
-        self.help.as_deref().map(|h| Box::new(h) as Box<dyn std::fmt::Display + 'a>)
-    }
-
-    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-        self.source_code.as_ref().map(|s| s as &dyn miette::SourceCode)
-    }
-
-    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
-        if let Some(std::ops::Range { start, end }) = self.span.range() {
-            let label = match self.severity {
-                Severity::Error => "error occurred here",
-                Severity::Warning => "warning originated here",
-            };
-            Some(Box::new(std::iter::once(miette::LabeledSpan::new(
-                Some(label.into()),
-                start,
-                end - start,
-            ))))
-        } else {
-            None
-        }
-    }
-
-    fn severity(&self) -> Option<miette::Severity> {
-        Some(match self.severity {
-            Severity::Error => miette::Severity::Error,
-            Severity::Warning => miette::Severity::Warning,
-        })
-    }
-}
-
 impl Diagnostic {
     pub(crate) fn from_parse_error(
         error_span: Span,
@@ -106,7 +70,6 @@ impl Diagnostic {
             severity: Severity::Error,
             code,
             msg: kind.to_string(),
-            source_code: Some(source_code.into()),
             help,
             span,
             kind: DiagnosticKind::from(kind),
@@ -129,7 +92,6 @@ impl Diagnostic {
                     severity: Severity::Error,
                     code,
                     msg: kind.to_string(),
-                    source_code: Some(source_code.into()),
                     help: Some(format!("Perhaps you meant `{similar}`")),
                     span: Span::from(range),
                     kind: DiagnosticKind::Resolve,
@@ -143,7 +105,6 @@ impl Diagnostic {
                     severity: Severity::Error,
                     code,
                     msg: kind.to_string(),
-                    source_code: Some(source_code.into()),
                     help: Some(format!(
                         "The group is empty because it contains both \
                         `{group1:?}` and `{group2:?}`, which together match every code point",
@@ -161,7 +122,6 @@ impl Diagnostic {
                     severity: Severity::Error,
                     code,
                     msg: kind.to_string(),
-                    source_code: Some(source_code.into()),
                     help: None,
                     span,
                     kind: DiagnosticKind::from(kind),
@@ -178,7 +138,6 @@ impl Diagnostic {
             severity: Severity::Warning,
             code: Some(DiagnosticCode::from(kind)),
             msg: kind.to_string(),
-            source_code: Some(source_code.into()),
             help: None,
             span,
             kind: DiagnosticKind::from(kind),
@@ -201,34 +160,75 @@ impl Diagnostic {
         msg: String,
         help: Option<String>,
     ) -> Self {
-        Diagnostic {
-            severity,
-            code,
-            msg,
-            source_code: None,
-            help,
-            span: Span::empty(),
-            kind: DiagnosticKind::Other,
-        }
+        Diagnostic { severity, code, msg, help, span: Span::empty(), kind: DiagnosticKind::Other }
     }
 
     /// Returns a value that can display the diagnostic with the [`Display`]
     /// trait.
     #[cfg(feature = "miette")]
     #[must_use]
-    pub fn default_display(&self) -> impl std::fmt::Display + '_ {
+    pub fn default_display(
+        &self,
+        source_code: Option<impl Into<String>>,
+    ) -> impl std::fmt::Display + '_ {
         use miette::ReportHandler;
         use std::fmt;
 
         #[derive(Debug)]
-        struct DiagnosticPrinter<'a>(&'a Diagnostic);
+        struct MietteDiagnostic {
+            diagnostic: Diagnostic,
+            code: Option<String>,
+        }
 
-        impl fmt::Display for DiagnosticPrinter<'_> {
+        impl fmt::Display for MietteDiagnostic {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                miette::MietteHandler::default().debug(self.0, f)
+                self.diagnostic.fmt(f)
             }
         }
 
-        DiagnosticPrinter(self)
+        impl std::error::Error for MietteDiagnostic {}
+
+        impl miette::Diagnostic for MietteDiagnostic {
+            fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
+                self.diagnostic.help.as_deref().map(|h| Box::new(h) as Box<dyn fmt::Display + 'a>)
+            }
+
+            fn source_code(&self) -> Option<&dyn miette::SourceCode> {
+                self.code.as_ref().map(|s| s as &dyn miette::SourceCode)
+            }
+
+            fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+                if let Some(std::ops::Range { start, end }) = self.diagnostic.span.range() {
+                    let label = match self.diagnostic.severity {
+                        Severity::Error => "error occurred here",
+                        Severity::Warning => "warning originated here",
+                    };
+                    Some(Box::new(std::iter::once(miette::LabeledSpan::new(
+                        Some(label.into()),
+                        start,
+                        end - start,
+                    ))))
+                } else {
+                    None
+                }
+            }
+
+            fn severity(&self) -> Option<miette::Severity> {
+                Some(match self.diagnostic.severity {
+                    Severity::Error => miette::Severity::Error,
+                    Severity::Warning => miette::Severity::Warning,
+                })
+            }
+        }
+
+        struct Handler(MietteDiagnostic);
+
+        impl fmt::Display for Handler {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                miette::MietteHandler::default().debug(&self.0, f)
+            }
+        }
+
+        Handler(MietteDiagnostic { diagnostic: self.clone(), code: source_code.map(Into::into) })
     }
 }

@@ -171,7 +171,8 @@ fn pomsky_impl(items: impl Iterator<Item = TokenTree>) -> Result<Literal, Error>
         (Some(compiled), _warnings) => Ok(Literal::string(&compiled)),
 
         (None, errors) => {
-            let errors = errors.into_iter().map(|d| diagnostic::fmt(d, &group)).collect::<Vec<_>>();
+            let errors =
+                errors.into_iter().map(|d| diagnostic::fmt(d, &group, input)).collect::<Vec<_>>();
             bail!(errors.join("\n\n"), span)
         }
     }

@@ -18,7 +18,10 @@ pub fn main() {
     let args = match args::parse_args() {
         Ok(args) => args,
         Err(error) => {
-            print_diagnostic(&Diagnostic::ad_hoc(Severity::Error, None, error.to_string(), None));
+            print_diagnostic(
+                &Diagnostic::ad_hoc(Severity::Error, None, error.to_string(), None),
+                None,
+            );
             args::print_short_usage_and_help_err();
             exit(2)
         }
@@ -29,12 +32,10 @@ pub fn main() {
         Input::File(path) => match std::fs::read_to_string(path) {
             Ok(input) => compile(&input, &args),
             Err(error) => {
-                print_diagnostic(&Diagnostic::ad_hoc(
-                    Severity::Error,
+                print_diagnostic(
+                    &Diagnostic::ad_hoc(Severity::Error, None, error.to_string(), None),
                     None,
-                    error.to_string(),
-                    None,
-                ));
+                );
                 exit(3);
             }
         },
@@ -53,35 +54,50 @@ fn compile(input: &str, args: &Args) {
     let (parsed, warnings) = match Expr::parse(input) {
         (Some(res), warnings) => (res, warnings),
         (None, err) => {
-            print_parse_errors(err, start.elapsed().as_micros(), args.json);
+            print_parse_errors(err, Some(input), start.elapsed().as_micros(), args.json);
             exit(1);
         }
     };
-    let warnings = warnings.collect::<Vec<_>>();
+    let mut warnings = warnings.collect::<Vec<_>>();
 
     if args.debug {
         eprintln!("======================== debug ========================");
         eprintln!("{parsed:#?}\n");
     }
 
-    print_warnings(&warnings, args);
+    if !args.json {
+        print_warnings(&warnings, args, Some(input));
+    }
 
     let compiled = match parsed.compile(input, options) {
-        Ok(res) => res,
-        Err(err) => {
+        (Some(res), compile_warnings) => {
+            if args.json {
+                warnings.extend(compile_warnings);
+            } else {
+                print_warnings(&compile_warnings, args, Some(input));
+            }
+
+            res
+        }
+        (None, errors) => {
             if args.json {
                 CompilationResult::error(start.elapsed().as_micros())
-                    .with_diagnostics([err])
-                    .with_diagnostics(warnings.into_iter().filter_map(|w| {
-                        if args.warnings.is_enabled(w.kind) {
-                            Some(w)
-                        } else {
-                            None
-                        }
-                    }))
+                    .with_diagnostics(errors, Some(input))
+                    .with_diagnostics(
+                        warnings.into_iter().filter_map(|w| {
+                            if args.warnings.is_enabled(w.kind) {
+                                Some(w)
+                            } else {
+                                None
+                            }
+                        }),
+                        Some(input),
+                    )
                     .output_json();
             } else {
-                print_diagnostic(&err);
+                for err in &errors {
+                    print_diagnostic(err, Some(input));
+                }
             }
             std::process::exit(1);
         }
@@ -89,13 +105,16 @@ fn compile(input: &str, args: &Args) {
 
     if args.json {
         CompilationResult::success(compiled, start.elapsed().as_micros())
-            .with_diagnostics(warnings.into_iter().filter_map(|w| {
-                if args.warnings.is_enabled(w.kind) {
-                    Some(w)
-                } else {
-                    None
-                }
-            }))
+            .with_diagnostics(
+                warnings.into_iter().filter_map(|w| {
+                    if args.warnings.is_enabled(w.kind) {
+                        Some(w)
+                    } else {
+                        None
+                    }
+                }),
+                Some(input),
+            )
             .output_json();
     } else if args.no_new_line {
         print!("{compiled}");
@@ -105,14 +124,19 @@ fn compile(input: &str, args: &Args) {
     }
 }
 
-fn print_parse_errors(mut diagnostics: impl Iterator<Item = Diagnostic>, time: u128, json: bool) {
+fn print_parse_errors(
+    mut diagnostics: impl Iterator<Item = Diagnostic>,
+    source_code: Option<&str>,
+    time: u128,
+    json: bool,
+) {
     if json {
-        CompilationResult::error(time).with_diagnostics(diagnostics).output_json();
+        CompilationResult::error(time).with_diagnostics(diagnostics, source_code).output_json();
     } else {
         let mut len = 0;
         for d in (&mut diagnostics).take(8) {
             len += 1;
-            print_diagnostic(&d);
+            print_diagnostic(&d, source_code);
         }
 
         len += diagnostics.count();
@@ -130,8 +154,8 @@ fn print_parse_errors(mut diagnostics: impl Iterator<Item = Diagnostic>, time: u
     }
 }
 
-fn print_warnings(warnings: &[Diagnostic], args: &Args) {
-    if args.json || matches!(&args.warnings, DiagnosticSet::Enabled(set) if set.is_empty()) {
+fn print_warnings(warnings: &[Diagnostic], args: &Args, source_code: Option<&str>) {
+    if matches!(&args.warnings, DiagnosticSet::Enabled(set) if set.is_empty()) {
         return;
     }
 
@@ -141,7 +165,7 @@ fn print_warnings(warnings: &[Diagnostic], args: &Args) {
         if args.warnings.is_enabled(diagnostic.kind) {
             len += 1;
             match len {
-                1..=8 => print_diagnostic(diagnostic),
+                1..=8 => print_diagnostic(diagnostic, source_code),
                 9 => efprintln!(C!"note" ": some warnings were omitted"),
                 _ => {}
             }
@@ -154,9 +178,9 @@ fn print_warnings(warnings: &[Diagnostic], args: &Args) {
     }
 }
 
-fn print_diagnostic(diagnostic: &Diagnostic) {
+fn print_diagnostic(diagnostic: &Diagnostic, source_code: Option<&str>) {
     let kind = diagnostic.kind.to_string();
-    let display = diagnostic.default_display().to_string();
+    let display = diagnostic.default_display(source_code).to_string();
     if let Some(code) = diagnostic.code {
         let code = code.to_string();
         match diagnostic.severity {

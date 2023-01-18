@@ -3,21 +3,20 @@ use std::{fmt::Write, ops::Range};
 use pomsky::diagnose::Diagnostic;
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
-pub(crate) fn fmt(diagnostic: Diagnostic, _: &Group) -> String {
+pub(crate) fn fmt(diagnostic: Diagnostic, _: &Group, input: &str) -> String {
     let mut buf = String::new();
     buf.push_str("error: ");
     buf.push_str(&diagnostic.msg);
     buf.push('\n');
 
     if let Some(range) = diagnostic.span.range() {
-        let source_code = diagnostic.source_code.as_deref().unwrap_or_default();
-        let slice = &source_code[range.clone()];
+        let slice = &input[range.clone()];
         let Range { start, end } = range;
 
-        let before = source_code[..start].lines().next_back().unwrap_or_default();
-        let after = source_code[end..].lines().next().unwrap_or_default();
+        let before = input[..start].lines().next_back().unwrap_or_default();
+        let after = input[end..].lines().next().unwrap_or_default();
 
-        let line_number = source_code[..start].lines().count().max(1);
+        let line_number = input[..start].lines().count().max(1);
         let line_number_len = (line_number as f32).log10().floor() as usize + 1;
         let before_len = before.chars().count();
         let arrow_len = slice.chars().count().max(1);

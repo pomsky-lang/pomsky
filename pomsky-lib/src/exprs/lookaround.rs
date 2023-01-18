@@ -4,7 +4,7 @@ use pomsky_syntax::exprs::{Lookaround, LookaroundKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::{CompileError, CompileErrorKind, Feature},
+    diagnose::{CompatWarning, CompileError, CompileErrorKind, CompileWarningKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
@@ -27,10 +27,21 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        if options.flavor == RegexFlavor::Rust {
-            return Err(
-                CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor).at(self.span)
-            );
+        match options.flavor {
+            RegexFlavor::Rust => {
+                return Err(CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor)
+                    .at(self.span));
+            }
+            RegexFlavor::JavaScript
+                if matches!(self.kind, LookaroundKind::Behind | LookaroundKind::BehindNegative) =>
+            {
+                state.diagnostics.push(
+                    CompileWarningKind::Compat(CompatWarning::JsLookbehind)
+                        .at(self.span)
+                        .diagnostic(),
+                );
+            }
+            _ => (),
         }
 
         Ok(Regex::Lookaround(Box::new(RegexLookaround {

@@ -52,8 +52,9 @@ impl CompilationResult {
     pub fn with_diagnostics(
         mut self,
         diagnostics: impl IntoIterator<Item = pomsky::diagnose::Diagnostic>,
+        source_code: Option<&str>,
     ) -> Self {
-        self.diagnostics.extend(diagnostics.into_iter().map(From::from));
+        self.diagnostics.extend(diagnostics.into_iter().map(|d| Diagnostic::from(d, source_code)));
         self
     }
 
@@ -200,10 +201,10 @@ pub struct Replacement {
     pub insert: String,
 }
 
-impl From<pomsky::diagnose::Diagnostic> for Diagnostic {
-    fn from(value: pomsky::diagnose::Diagnostic) -> Self {
+impl Diagnostic {
+    fn from(value: pomsky::diagnose::Diagnostic, source_code: Option<&str>) -> Self {
         let kind = value.kind.to_string();
-        let display = value.default_display();
+        let display = value.default_display(source_code);
         let severity: &str = value.severity.into();
 
         let visual = match value.code {

@@ -84,6 +84,9 @@ diagnostic_code! {
         RecursiveVariable = 311,
         RangeIsTooBig = 312,
         RecursionLimit = 313,
+
+        // Warning indicating something might not be supported
+        PossiblyUnsupported = 400,
     }
 }
 

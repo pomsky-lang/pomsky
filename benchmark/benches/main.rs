@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
 use pomsky::{
+    diagnose::Diagnostic,
     options::{CompileOptions, RegexFlavor},
     Expr,
 };
@@ -51,7 +52,7 @@ pub fn compile(c: &mut Criterion) {
         group.bench_function(sample_name, |b| {
             let (expr, _warnings) = Expr::parse(black_box(sample));
             let expr = expr.unwrap();
-            b.iter(|| black_box(&expr).compile(black_box(sample), ruby()).unwrap())
+            b.iter(|| unwrap_compiled(black_box(&expr).compile(black_box(sample), ruby())))
         });
     }
 }
@@ -70,11 +71,17 @@ pub fn range(c: &mut Criterion) {
             let expr = expr.unwrap();
 
             b.iter(|| {
-                black_box(&expr)
-                    .compile(&input, CompileOptions { max_range_size: 100, ..Default::default() })
-                    .unwrap()
+                let options = CompileOptions { max_range_size: 100, ..Default::default() };
+                unwrap_compiled(black_box(&expr).compile(&input, options))
             })
         });
+    }
+}
+
+fn unwrap_compiled(compiled: (Option<String>, Vec<Diagnostic>)) -> String {
+    match compiled {
+        (Some(s), _) => s,
+        (None, _) => panic!("compilation failed"),
     }
 }
 

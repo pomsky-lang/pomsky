@@ -314,90 +314,23 @@ fn no_newline() {
 }
 
 #[test]
-#[ignore = "this is now an error, so there are no warnings"]
-fn lots_of_warnings() {
-    let mut cmd = command(&["[.][.][.][.][.][.][.][.][.][.][.][.]"]);
-    cmd.assert().success().stdout("............\n").stderr(
-        r#"warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
+fn disable_warnings() {
+    let mut cmd = command(&["<< 'test'", "-W0", "-fJS"]);
+    cmd.assert().success().stdout("(?<=test)\n").stderr("");
+
+    let mut cmd = command(&["<< 'test'", "-Wcompat=0", "-fJS"]);
+    cmd.assert().success().stdout("(?<=test)\n").stderr("");
+
+    let mut cmd = command(&["<< 'test'", "-Wdeprecated=0", "-fJS"]);
+    cmd.assert().success().stdout("(?<=test)\n").stderr(
+        r#"warning P0400(compat): 
+  ⚠ Lookbehind is not supported in all browsers, e.g. Safari
    ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·  ┬
-   ·  ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·     ┬
+ 1 │ << 'test'
+   · ────┬────
    ·     ╰── warning originated here
    ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·        ┬
-   ·        ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·           ┬
-   ·           ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·              ┬
-   ·              ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·                 ┬
-   ·                 ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·                    ┬
-   ·                    ╰── warning originated here
-   ╰────
-warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.][.][.][.][.][.][.][.][.][.][.][.]
-   ·                       ┬
-   ·                       ╰── warning originated here
-   ╰────
-note: some warnings were omitted
-warning: pomsky generated 12 warnings
-"#,
-    );
-}
-
-#[test]
-#[ignore = "this is now an error, so there are no warnings"]
-fn disable_warnings() {
-    let mut cmd = command(&["[.]", "-W0"]);
-    cmd.assert().success().stdout(".\n").stderr("");
-
-    let mut cmd = command(&["[.]", "-Wdeprecated=0"]);
-    cmd.assert().success().stdout(".\n").stderr("");
-
-    let mut cmd = command(&["[.]", "-Wcompat=0"]);
-    cmd.assert().success().stdout(".\n").stderr(
-        r#"warning P0105(deprecated): 
-  ⚠ This syntax is deprecated. Use `.` without the brackets.
-   ╭────
- 1 │ [.]
-   ·  ┬
-   ·  ╰── warning originated here
-   ╰────
+  help: Avoid lookbehind if the regex should work in different browsers
 "#,
     );
 }
@@ -448,33 +381,36 @@ fn json_output() {
 }
 
 #[test]
-#[ignore = "this is now an error, so there are no warnings"]
 fn json_output_warnings() {
-    let mut cmd = command(&["[.][.]", "--json"]);
+    let mut cmd = command(&[". (<< 'a') (<< 'a')", "--json", "-fJS"]);
     cmd.assert()
         .success()
         .stdout(Output::new(CompilationResult {
             version: Version::V1,
             success: true,
-            output: Some("..".into()),
+            output: Some(".(?<=a)(?<=a)".into()),
             diagnostics: vec![
                 Diagnostic {
                     severity: Severity::Warning,
-                    kind: Kind::Deprecated,
-                    code: Some(DiagnosticCode::DeprecatedSyntax),
-                    spans: vec![Span { start: 1, end: 2, label: None }],
-                    description: "This syntax is deprecated. Use `.` without the brackets.".into(),
-                    help: vec![],
+                    kind: Kind::Compat,
+                    code: Some(DiagnosticCode::PossiblyUnsupported),
+                    spans: vec![Span { start: 3, end: 9, label: None }],
+                    description: "Lookbehind is not supported in all browsers, e.g. Safari".into(),
+                    help: vec![
+                        "Avoid lookbehind if the regex should work in different browsers".into()
+                    ],
                     fixes: vec![],
                     visual: String::new(),
                 },
                 Diagnostic {
                     severity: Severity::Warning,
-                    kind: Kind::Deprecated,
-                    code: Some(DiagnosticCode::DeprecatedSyntax),
-                    spans: vec![Span { start: 4, end: 5, label: None }],
-                    description: "This syntax is deprecated. Use `.` without the brackets.".into(),
-                    help: vec![],
+                    kind: Kind::Compat,
+                    code: Some(DiagnosticCode::PossiblyUnsupported),
+                    spans: vec![Span { start: 12, end: 18, label: None }],
+                    description: "Lookbehind is not supported in all browsers, e.g. Safari".into(),
+                    help: vec![
+                        "Avoid lookbehind if the regex should work in different browsers".into()
+                    ],
                     fixes: vec![],
                     visual: String::new(),
                 },

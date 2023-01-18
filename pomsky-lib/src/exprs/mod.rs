@@ -62,14 +62,20 @@ impl<'i> Expr<'i> {
     }
 
     /// Compile a `Expr` that has been parsed, to a regex
-    pub fn compile(&self, input: &'i str, options: CompileOptions) -> Result<String, Diagnostic> {
-        self.0.validate(&options).map_err(|e| e.diagnostic(input))?;
+    pub fn compile(
+        &self,
+        input: &'i str,
+        options: CompileOptions,
+    ) -> (Option<String>, Vec<Diagnostic>) {
+        if let Err(e) = self.0.validate(&options) {
+            return (None, vec![e.diagnostic(input)]);
+        }
 
         let mut used_names = HashMap::new();
         let mut groups_count = 0;
-        self.0
-            .get_capturing_groups(&mut groups_count, &mut used_names, false)
-            .map_err(|e| e.diagnostic(input))?;
+        if let Err(e) = self.0.get_capturing_groups(&mut groups_count, &mut used_names, false) {
+            return (None, vec![e.diagnostic(input)]);
+        }
 
         let no_span = Span::empty();
 
@@ -95,14 +101,17 @@ impl<'i> Expr<'i> {
 
         let mut state =
             CompileState::new(RegexQuantifier::Greedy, used_names, groups_count, builtins);
-        let mut compiled = self.0.compile(options, &mut state).map_err(|e| e.diagnostic(input))?;
+        let mut compiled = match self.0.compile(options, &mut state) {
+            Ok(compiled) => compiled,
+            Err(e) => return (None, vec![e.diagnostic(input)]),
+        };
         let count = compiled.optimize();
 
         let mut buf = String::new();
         if count != Count::Zero {
             compiled.codegen(&mut buf, options.flavor);
         }
-        Ok(buf)
+        (Some(buf), state.diagnostics)
     }
 
     /// Parse a string to a `Expr` and compile it to a regex.
@@ -111,12 +120,19 @@ impl<'i> Expr<'i> {
         options: CompileOptions,
     ) -> (Option<String>, Vec<Diagnostic>) {
         match Self::parse(input) {
-            (Some(parsed), warnings) => match parsed.compile(input, options) {
-                Ok(compiled) => (Some(compiled), warnings.collect()),
-                Err(error) => {
-                    let mut diagnostics = Vec::with_capacity(1 + warnings.size_hint().0);
-                    diagnostics.push(error);
-                    diagnostics.extend(warnings);
+            (Some(parsed), warnings1) => match parsed.compile(input, options) {
+                (Some(compiled), warnings2) => {
+                    let mut diagnostics =
+                        Vec::with_capacity(warnings1.size_hint().0 + warnings2.len());
+                    diagnostics.extend(warnings1);
+                    diagnostics.extend(warnings2);
+                    (Some(compiled), diagnostics)
+                }
+                (None, errors) => {
+                    let mut diagnostics =
+                        Vec::with_capacity(warnings1.size_hint().0 + errors.len());
+                    diagnostics.extend(errors);
+                    diagnostics.extend(warnings1);
                     (None, diagnostics)
                 }
             },
