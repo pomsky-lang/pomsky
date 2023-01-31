@@ -10,8 +10,6 @@ A portable, modern regular expression language
 
 </div>
 
-**The website is out of order temporarily.**
-
 [![Test][test-badge]][test-link] [![Coverage Status][coverage-badge]][coverage-link]
 [![Crates.io][crates-badge]][crates-link]
 
