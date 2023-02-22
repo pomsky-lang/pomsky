@@ -18,6 +18,8 @@
     "LICENSE_MIT",
     "LICENSE_APACHE"
   ],
+  "main": "pomsky_wasm.js",
+  "type": "module",
   "module": "pomsky_wasm.js",
   "homepage": "https://pomsky-lang.org",
   "types": "pomsky_wasm.d.ts",
