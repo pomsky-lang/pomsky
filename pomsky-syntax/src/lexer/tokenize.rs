@@ -1,7 +1,7 @@
 use crate::Span;
 
 use super::{
-    micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
+    micro_regex::{Capture, CharIs, Either, Many0, Many1, MicroRegex},
     LexErrorMsg, Token,
 };
 
@@ -38,7 +38,7 @@ macro_rules! consume_chain {
 macro_rules! reserved_word_pattern {
     {} => (
         "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable" |
-        "if" | "else" | "recursion" | "regex"
+        "if" | "else" | "recursion" | "regex" | "test"
     );
 }
 
@@ -97,7 +97,9 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     };
 
                     if let Some((len, _)) = (
-                        "U+", Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                        'U',
+                        Either('+', Either('_', "")),
+                        Many1(CharIs(|c| c.is_ascii_hexdigit())),
                     ).is_start(input) => (len, Token::CodePoint);
 
                     if let Some((len, _)) = (

@@ -33,6 +33,7 @@ pub enum ParseErrorKind {
     UnknownToken,
     LexErrorWithMessage(LexErrorMsg),
     KeywordAfterLet(String),
+    CodePointAfterLet(String),
     KeywordAfterColon(String),
     NonAsciiIdentAfterColon(char),
     GroupNameTooLong(usize),
@@ -101,6 +102,9 @@ impl core::fmt::Display for ParseErrorKind {
             | ParseErrorKind::UnexpectedKeyword(keyword)
             | ParseErrorKind::KeywordAfterColon(keyword) => {
                 write!(f, "Unexpected keyword `{keyword}`")
+            }
+            ParseErrorKind::CodePointAfterLet(cp) => {
+                write!(f, "Expected identifier, got codepoint {cp}")
             }
             &ParseErrorKind::NonAsciiIdentAfterColon(char) => {
                 let num = char as u32;

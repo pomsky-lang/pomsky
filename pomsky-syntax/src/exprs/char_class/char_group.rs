@@ -8,10 +8,7 @@
 
 use std::fmt;
 
-use crate::{
-    error::{DeprecationError, ParseErrorKind},
-    warning::DeprecationWarning,
-};
+use crate::error::{DeprecationError, ParseErrorKind};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -48,15 +45,15 @@ impl CharGroup {
     pub(crate) fn try_from_group_name(
         name: &str,
         negative: bool,
-    ) -> Result<(Vec<GroupItem>, Option<DeprecationWarning>), ParseErrorKind> {
+    ) -> Result<Vec<GroupItem>, ParseErrorKind> {
         Ok(match name {
             _ if name == "ascii" || name.starts_with("ascii_") => {
-                (super::ascii::parse_ascii_group(name, negative)?, None)
+                super::ascii::parse_ascii_group(name, negative)?
             }
             "." => return Err(DeprecationError::DotInSet.into()),
             _ => {
                 let name = super::unicode::parse_group_name(name)?;
-                (vec![GroupItem::Named { name, negative }], None)
+                vec![GroupItem::Named { name, negative }]
             }
         })
     }

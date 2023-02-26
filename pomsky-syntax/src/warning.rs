@@ -5,7 +5,7 @@ use std::fmt;
 use crate::span::Span;
 
 /// A warning.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ParseWarning {
     /// The kind of warning
     pub kind: ParseWarningKind,
@@ -14,7 +14,7 @@ pub struct ParseWarning {
 }
 
 /// A warning without a span pointing to the source of the warning
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum ParseWarningKind {
     /// A deprecation warning
     Deprecation(DeprecationWarning),
@@ -45,17 +45,18 @@ impl fmt::Display for ParseWarningKind {
 }
 
 /// A deprecation warning: Indicates that something shouldn't be used anymore
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum DeprecationWarning {
-    /// The `[.]` dot
-    Dot,
+    /// U+147A, U147A
+    Unicode(String),
 }
 
 impl fmt::Display for DeprecationWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeprecationWarning::Dot => {
-                f.write_str("This syntax is deprecated. Use `.` without the brackets.")
+            DeprecationWarning::Unicode(u) => {
+                let rest = u.trim_start_matches(|c| matches!(c, 'U' | '+'));
+                write!(f, "This syntax is deprecated. Use `U_{rest}` instead.")
             }
         }
     }

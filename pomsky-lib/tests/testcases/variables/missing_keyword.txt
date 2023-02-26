@@ -1,0 +1,6 @@
+#! expect=error
+hello = 'hello';
+hello
+-----
+ERROR: There are leftover tokens that couldn't be parsed
+SPAN: 6..7

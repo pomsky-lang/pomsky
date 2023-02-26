@@ -1,4 +1,4 @@
 #! flavor=pcre
-[U+0-U+16 U+30 U+10FFFF]
+[U_0-U_16 U_30 U_10FFFF]
 -----
 [\x00-\x160\x{10FFFF}]

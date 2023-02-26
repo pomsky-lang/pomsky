@@ -155,9 +155,11 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
             P::NonAsciiIdentAfterColon(_) => Self::NonAsciiIdentAfterColon,
             P::GroupNameTooLong(_) => Self::IdentTooLong,
             P::Deprecated(_) => Self::DeprecatedSyntax,
-            P::Expected(_) | P::LeftoverTokens | P::ExpectedToken(_) | P::LonePipe => {
-                Self::UnexpectedToken
-            }
+            P::Expected(_)
+            | P::LeftoverTokens
+            | P::ExpectedToken(_)
+            | P::LonePipe
+            | P::CodePointAfterLet(_) => Self::UnexpectedToken,
             P::RangeIsNotIncreasing => Self::RangeIsNotIncreasing,
             P::UnallowedNot => Self::UnallowedNot,
             P::UnallowedMultiNot(_) => Self::UnallowedMultiNot,

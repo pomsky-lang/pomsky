@@ -1,6 +1,12 @@
 use std::collections::HashSet;
 
-use crate::{error::*, exprs::*, lexer::Token, warning::ParseWarningKind, Span};
+use crate::{
+    diagnose::{DeprecationWarning, ParseWarningKind},
+    error::*,
+    exprs::*,
+    lexer::Token,
+    Span,
+};
 
 use super::{helper, Parser};
 
@@ -68,6 +74,9 @@ impl<'i> Parser<'i> {
             let name = self.expect_as(Token::Identifier).map_err(|e| {
                 if self.is(Token::ReservedName) {
                     ParseErrorKind::KeywordAfterLet(self.source_at(self.span()).to_owned())
+                        .at(e.span)
+                } else if self.is(Token::CodePoint) {
+                    ParseErrorKind::CodePointAfterLet(self.source_at(self.span()).to_owned())
                         .at(e.span)
                 } else {
                     e
@@ -427,12 +436,9 @@ impl<'i> Parser<'i> {
         if self.consume(Token::Dot) || self.consume(Token::Identifier) {
             let span = self.last_span();
 
-            let (item, warning) = CharGroup::try_from_group_name(self.source_at(span), negative)
+            let item = CharGroup::try_from_group_name(self.source_at(span), negative)
                 .map_err(|e| e.at(span))?;
 
-            if let Some(warning) = warning {
-                self.add_warning(ParseWarningKind::Deprecation(warning).at(span));
-            }
             Ok(Some(item))
         } else if let Some(name) = self.consume_as(Token::ReservedName) {
             Err(ParseErrorKind::UnexpectedKeyword(name.to_owned()).at(self.last_span()))
@@ -491,7 +497,13 @@ impl<'i> Parser<'i> {
     fn parse_code_point(&mut self) -> PResult<Option<(char, Span)>> {
         if let Some(cp) = self.consume_as(Token::CodePoint) {
             let span = self.last_span();
-            let hex = &cp[2..];
+            let hex = cp.trim_start_matches(|c| matches!(c, 'U' | '_' | '+'));
+
+            if !cp.starts_with("U_") {
+                let warning = DeprecationWarning::Unicode(cp.into());
+                self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
+            }
+
             if hex.len() > 6 {
                 Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
             } else {
@@ -502,22 +514,6 @@ impl<'i> Parser<'i> {
                     .ok_or_else(|| ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
             }
         } else {
-            if self.is(Token::Identifier) {
-                let span = self.span();
-                let str = self.source_at(span);
-
-                if let Some(rest) = str.strip_prefix('U') {
-                    if let Ok(n) = u32::from_str_radix(rest, 16) {
-                        self.advance();
-
-                        if let Ok(c) = char::try_from(n) {
-                            return Ok(Some((c, span)));
-                        }
-                        return Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span));
-                    }
-                }
-            }
-
             Ok(None)
         }
     }
@@ -589,7 +585,7 @@ impl<'i> Parser<'i> {
                 // TODO: Better diagnostic for `::let`
                 let name = self
                     .expect_as(Token::Identifier)
-                    .map_err(|p| ParseErrorKind::Expected("number of group name").at(p.span))?;
+                    .map_err(|p| ParseErrorKind::Expected("number or group name").at(p.span))?;
                 ReferenceTarget::Named(name)
             };
 

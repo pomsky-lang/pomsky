@@ -68,7 +68,7 @@ pub enum Token {
     /// `"Hello"` or `'Hello'` (`Hello`)
     String,
 
-    /// `U+FFF03` (Unicode code point)
+    /// `U_FFF03` or `U+FFF03` (Unicode code point)
     CodePoint,
 
     /// `12` (number in repetition)
