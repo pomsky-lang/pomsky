@@ -94,7 +94,11 @@ use pomsky_syntax::{
 use super::RuleExt;
 
 impl<'i> RuleExt<'i> for CharClass {
-    fn compile(&self, options: CompileOptions, _: &mut CompileState<'_, 'i>) -> CompileResult<'i> {
+    fn compile(
+        &self,
+        options: CompileOptions,
+        state: &mut CompileState<'_, 'i>,
+    ) -> CompileResult<'i> {
         let span = self.span;
         match (self.inner.len(), self.negative) {
             (0, _) => Err(CompileErrorKind::EmptyClass.at(span)),
@@ -105,7 +109,7 @@ impl<'i> RuleExt<'i> for CharClass {
                     items: vec![RegexCharSetItem::Range { first, last }],
                 })),
                 GroupItem::Named { name, negative } => {
-                    named_class_to_regex(name, negative, options.flavor, span)
+                    named_class_to_regex(name, negative, state.ascii_only, options.flavor, span)
                 }
             },
             (1, true) => match self.inner[0] {
@@ -118,7 +122,7 @@ impl<'i> RuleExt<'i> for CharClass {
                     items: vec![RegexCharSetItem::Range { first, last }],
                 })),
                 GroupItem::Named { name, negative } => {
-                    named_class_to_regex(name, !negative, options.flavor, span)
+                    named_class_to_regex(name, !negative, state.ascii_only, options.flavor, span)
                 }
             },
             (_, negative) => {
@@ -147,6 +151,7 @@ impl<'i> RuleExt<'i> for CharClass {
                             named_class_to_regex_class_items(
                                 name,
                                 item_negative,
+                                state.ascii_only,
                                 options.flavor,
                                 span,
                                 &mut buf,
@@ -161,6 +166,7 @@ impl<'i> RuleExt<'i> for CharClass {
     }
 }
 
+/// Check if the character set is empty, i.e. matches nothing, e.g. `![w !w]`
 fn check_char_class_empty(
     item: GroupItem,
     prev_group_items: &[GroupItem],
@@ -188,12 +194,23 @@ fn check_char_class_empty(
 fn named_class_to_regex(
     group: GroupName,
     negative: bool,
+    ascii: bool,
     flavor: RegexFlavor,
     span: Span,
 ) -> CompileResult<'static> {
     Ok(match group {
         GroupName::Word => {
-            if flavor == RegexFlavor::JavaScript {
+            if ascii && (flavor != RegexFlavor::JavaScript) {
+                Regex::CharSet(RegexCharSet {
+                    negative,
+                    items: vec![
+                        RegexCharSetItem::Range { first: 'a', last: 'z' },
+                        RegexCharSetItem::Range { first: 'A', last: 'Z' },
+                        RegexCharSetItem::Range { first: '0', last: '9' },
+                        RegexCharSetItem::Char('_'),
+                    ],
+                })
+            } else if !ascii && (flavor == RegexFlavor::JavaScript) {
                 Regex::CharSet(RegexCharSet {
                     negative,
                     items: vec![
@@ -213,7 +230,12 @@ fn named_class_to_regex(
             }
         }
         GroupName::Digit => {
-            if flavor == RegexFlavor::JavaScript {
+            if ascii && (flavor != RegexFlavor::JavaScript) {
+                Regex::CharSet(RegexCharSet {
+                    negative,
+                    items: vec![RegexCharSetItem::Range { first: '0', last: '9' }],
+                })
+            } else if !ascii && flavor == RegexFlavor::JavaScript {
                 RegexProperty::Category(Category::Decimal_Number).negative(negative)
             } else {
                 Regex::Shorthand(if negative {
@@ -223,6 +245,22 @@ fn named_class_to_regex(
                 })
             }
         }
+        GroupName::Space if ascii => Regex::CharSet(RegexCharSet {
+            negative,
+            items: vec![
+                RegexCharSetItem::Char(' '),
+                RegexCharSetItem::Range { first: '\x09', last: '\x0D' }, // \t\n\v\f\r
+            ],
+        }),
+        GroupName::HorizSpace if ascii => {
+            Regex::CharSet(RegexCharSet { negative, items: vec![RegexCharSetItem::Char('\t')] })
+        }
+        GroupName::VertSpace if ascii => Regex::CharSet(RegexCharSet {
+            negative,
+            items: vec![RegexCharSetItem::Range { first: '\x0A', last: '\x0D' }],
+        }),
+        _ if ascii => return Err(CompileErrorKind::UnicodeInAsciiMode.at(span)),
+
         GroupName::Space if negative => Regex::Shorthand(RegexShorthand::NotSpace),
         GroupName::Space => Regex::Shorthand(RegexShorthand::Space),
 
@@ -290,24 +328,40 @@ fn named_class_to_regex(
 fn named_class_to_regex_class_items(
     group: GroupName,
     negative: bool,
+    ascii: bool,
     flavor: RegexFlavor,
     span: Span,
     buf: &mut Vec<RegexCharSetItem>,
 ) -> Result<(), CompileError> {
+    if ascii
+        && negative
+        && !(flavor == RegexFlavor::JavaScript
+            && (group == GroupName::Digit || group == GroupName::Word))
+    {
+        return Err(CompileErrorKind::NegativeShorthandInAsciiMode.at(span));
+    }
+
     match group {
         GroupName::Word => {
-            if let RegexFlavor::JavaScript = flavor {
+            if ascii && (flavor != RegexFlavor::JavaScript) {
+                buf.extend([
+                    RegexCharSetItem::Range { first: 'a', last: 'z' },
+                    RegexCharSetItem::Range { first: 'A', last: 'Z' },
+                    RegexCharSetItem::Range { first: '0', last: '9' },
+                    RegexCharSetItem::Char('_'),
+                ]);
+            } else if !ascii && (flavor == RegexFlavor::JavaScript) {
                 if negative {
                     return Err(
                         CompileErrorKind::Unsupported(Feature::NegativeShorthandW, flavor).at(span)
                     );
                 }
-                buf.push(RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false));
-                buf.push(RegexProperty::Category(Category::Mark).negative_item(false));
-                buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(false));
-                buf.push(
+                buf.extend([
+                    RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false),
+                    RegexProperty::Category(Category::Mark).negative_item(false),
+                    RegexProperty::Category(Category::Decimal_Number).negative_item(false),
                     RegexProperty::Category(Category::Connector_Punctuation).negative_item(false),
-                );
+                ]);
             } else {
                 buf.push(RegexCharSetItem::Shorthand(if negative {
                     RegexShorthand::NotWord
@@ -317,14 +371,28 @@ fn named_class_to_regex_class_items(
             }
         }
         GroupName::Digit => {
-            if flavor == RegexFlavor::JavaScript {
+            if ascii && (flavor != RegexFlavor::JavaScript) {
+                buf.push(RegexCharSetItem::Range { first: '0', last: '9' });
+            } else if !ascii && (flavor == RegexFlavor::JavaScript) {
                 buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(negative));
-            } else if negative {
-                buf.push(RegexCharSetItem::Shorthand(RegexShorthand::NotDigit));
             } else {
-                buf.push(RegexCharSetItem::Shorthand(RegexShorthand::Digit));
+                buf.push(RegexCharSetItem::Shorthand(if negative {
+                    RegexShorthand::NotDigit
+                } else {
+                    RegexShorthand::Digit
+                }));
             }
         }
+        GroupName::Space if ascii => buf.extend([
+            RegexCharSetItem::Char(' '),
+            RegexCharSetItem::Range { first: '\x09', last: '\x0D' }, // \t\n\v\f\r
+        ]),
+        GroupName::HorizSpace if ascii => buf.push(RegexCharSetItem::Char('\t')),
+        GroupName::VertSpace if ascii => {
+            buf.push(RegexCharSetItem::Range { first: '\x0A', last: '\x0D' });
+        }
+        _ if ascii => return Err(CompileErrorKind::UnicodeInAsciiMode.at(span)),
+
         GroupName::Space => buf.push(RegexCharSetItem::Shorthand(if negative {
             RegexShorthand::NotSpace
         } else {

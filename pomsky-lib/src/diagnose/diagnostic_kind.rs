@@ -39,9 +39,11 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::UnknownVariable { .. }
             | K::NegatedHorizVertSpace
             | K::RelativeRefZero => DiagnosticKind::Resolve,
-            K::CaptureInLet | K::ReferenceInLet | K::RecursiveVariable => {
-                DiagnosticKind::Unsupported
-            }
+            K::CaptureInLet
+            | K::ReferenceInLet
+            | K::RecursiveVariable
+            | K::NegativeShorthandInAsciiMode
+            | K::UnicodeInAsciiMode => DiagnosticKind::Unsupported,
             K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }

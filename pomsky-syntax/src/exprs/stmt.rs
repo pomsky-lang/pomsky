@@ -19,6 +19,17 @@ pub enum Stmt<'i> {
 #[derive(Clone, PartialEq, Eq)]
 pub enum BooleanSetting {
     Lazy,
+    Unicode,
+}
+
+impl BooleanSetting {
+    #[cfg(feature = "dbg")]
+    fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
+        match self {
+            BooleanSetting::Lazy => buf.write("lazy"),
+            BooleanSetting::Unicode => buf.write("unicode"),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -46,8 +57,15 @@ impl<'i> StmtExpr<'i> {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match &self.stmt {
-            Stmt::Enable(BooleanSetting::Lazy) => buf.write("enable lazy;\n"),
-            Stmt::Disable(BooleanSetting::Lazy) => buf.write("disable lazy;\n"),
+            Stmt::Enable(setting) | Stmt::Disable(setting) => {
+                buf.write(if matches!(&self.stmt, Stmt::Enable(_)) {
+                    "enable "
+                } else {
+                    "disable "
+                });
+                setting.pretty_print(buf);
+                buf.write(";\n");
+            }
             Stmt::Let(r#let) => {
                 buf.push_str("let ");
                 buf.write(r#let.name);

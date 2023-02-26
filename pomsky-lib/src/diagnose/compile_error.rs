@@ -78,6 +78,8 @@ pub(crate) enum CompileErrorKind {
     },
     RecursiveVariable,
     RangeIsTooBig(u8),
+    NegativeShorthandInAsciiMode,
+    UnicodeInAsciiMode,
 }
 
 impl CompileErrorKind {
@@ -137,6 +139,12 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::RangeIsTooBig(digits) => {
                 write!(f, "Range is too big, it isn't allowed to contain more than {digits} digits")
             }
+            CompileErrorKind::NegativeShorthandInAsciiMode => {
+                write!(f, "Shorthands currently can't be negated when Unicode is disabled")
+            }
+            CompileErrorKind::UnicodeInAsciiMode => {
+                write!(f, "Unicode properties can't be used when Unicode is disabled")
+            }
         }
     }
 }
@@ -153,6 +161,7 @@ pub(crate) enum UnsupportedError {
     AtomicGroups,
     References,
     LazyMode,
+    AsciiMode,
     Ranges,
     Variables,
     Lookahead,
@@ -173,6 +182,7 @@ impl core::fmt::Display for UnsupportedError {
             UnsupportedError::AtomicGroups => "Atomic groups aren't supported",
             UnsupportedError::References => "References aren't supported",
             UnsupportedError::LazyMode => "Lazy mode isn't supported",
+            UnsupportedError::AsciiMode => "Disabling Unicode isn't supported",
             UnsupportedError::Ranges => "Ranges aren't supported",
             UnsupportedError::Variables => "Variables aren't supported",
             UnsupportedError::Lookahead => "Lookahead isn't supported",

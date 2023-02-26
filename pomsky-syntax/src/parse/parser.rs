@@ -202,16 +202,6 @@ impl<'i> Parser<'i> {
         }
     }
 
-    pub(super) fn expect_reserved(&mut self, reserved: &'static str) -> PResult<()> {
-        match self.peek_pair() {
-            Some((Token::ReservedName, s)) if self.source_at(s) == reserved => {
-                self.offset += 1;
-                Ok(())
-            }
-            _ => Err(ParseErrorKind::Expected(reserved).at(self.span())),
-        }
-    }
-
     pub(super) fn expect_number<T: FromStr>(&mut self) -> PResult<T> {
         match self.peek_pair() {
             Some((Token::Number, span)) => {

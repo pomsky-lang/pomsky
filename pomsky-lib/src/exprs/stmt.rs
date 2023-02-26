@@ -30,18 +30,27 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         match &self.stmt {
-            Stmt::Enable(BooleanSetting::Lazy) => {
-                let prev = state.default_quantifier;
-                state.default_quantifier = RegexQuantifier::Lazy;
+            Stmt::Enable(_) | Stmt::Disable(_) => {
+                let prev_quantifier = state.default_quantifier;
+                let prev_ascii = state.ascii_only;
+                match &self.stmt {
+                    Stmt::Enable(BooleanSetting::Lazy) => {
+                        state.default_quantifier = RegexQuantifier::Lazy;
+                    }
+                    Stmt::Disable(BooleanSetting::Lazy) => {
+                        state.default_quantifier = RegexQuantifier::Greedy;
+                    }
+                    Stmt::Enable(BooleanSetting::Unicode) => {
+                        state.ascii_only = false;
+                    }
+                    Stmt::Disable(BooleanSetting::Unicode) => {
+                        state.ascii_only = true;
+                    }
+                    Stmt::Let(_) => unreachable!(),
+                }
                 let res = self.rule.compile(options, state)?;
-                state.default_quantifier = prev;
-                Ok(res)
-            }
-            Stmt::Disable(BooleanSetting::Lazy) => {
-                let prev = state.default_quantifier;
-                state.default_quantifier = RegexQuantifier::Greedy;
-                let res = self.rule.compile(options, state)?;
-                state.default_quantifier = prev;
+                state.default_quantifier = prev_quantifier;
+                state.ascii_only = prev_ascii;
                 Ok(res)
             }
             Stmt::Let(r#let) => {
@@ -58,7 +67,10 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
             Stmt::Enable(BooleanSetting::Lazy) => {
                 options.allowed_features.require(PomskyFeatures::LAZY_MODE, self.span)?;
             }
-            Stmt::Disable(_) => {}
+            Stmt::Disable(BooleanSetting::Unicode) => {
+                options.allowed_features.require(PomskyFeatures::ASCII_MODE, self.span)?;
+            }
+            Stmt::Enable(_) | Stmt::Disable(_) => {}
             Stmt::Let(l) => {
                 options.allowed_features.require(PomskyFeatures::VARIABLES, l.name_span)?;
                 l.rule.validate(options)?;

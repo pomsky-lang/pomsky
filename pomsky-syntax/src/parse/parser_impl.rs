@@ -51,19 +51,26 @@ impl<'i> Parser<'i> {
     }
 
     fn parse_mode_modifier(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
-        let stmt = if self.consume_reserved("enable") {
-            Stmt::Enable(BooleanSetting::Lazy)
+        let mode = if self.consume_reserved("enable") {
+            true
         } else if self.consume_reserved("disable") {
-            Stmt::Disable(BooleanSetting::Lazy)
+            false
         } else {
             return Ok(None);
         };
 
         let span_start = self.last_span();
-        self.expect_reserved("lazy")?;
+        let setting = if self.consume_reserved("lazy") {
+            BooleanSetting::Lazy
+        } else if let Some("unicode") = self.consume_as(Token::Identifier) {
+            BooleanSetting::Unicode
+        } else {
+            return Err(ParseErrorKind::Expected("`lazy` or `unicode`").at(self.span()));
+        };
         self.expect(Token::Semicolon)?;
-        let span_end = self.last_span();
+        let stmt = if mode { Stmt::Enable(setting) } else { Stmt::Disable(setting) };
 
+        let span_end = self.last_span();
         Ok(Some((stmt, span_start.join(span_end))))
     }
 

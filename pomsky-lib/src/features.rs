@@ -30,6 +30,7 @@ impl fmt::Debug for PomskyFeatures {
             .field("atomic_groups", &self.supports(Self::ATOMIC_GROUPS))
             .field("references", &self.supports(Self::REFERENCES))
             .field("lazy_mode", &self.supports(Self::LAZY_MODE))
+            .field("ascii_mode", &self.supports(Self::ASCII_MODE))
             .field("ranges", &self.supports(Self::RANGES))
             .field("variables", &self.supports(Self::VARIABLES))
             .field("lookahead", &self.supports(Self::LOOKAHEAD))
@@ -51,6 +52,7 @@ impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
         feat.atomic_groups(bool::arbitrary(u)?);
         feat.references(bool::arbitrary(u)?);
         feat.lazy_mode(bool::arbitrary(u)?);
+        feat.ascii_mode(bool::arbitrary(u)?);
         feat.ranges(bool::arbitrary(u)?);
         feat.variables(bool::arbitrary(u)?);
         feat.lookahead(bool::arbitrary(u)?);
@@ -70,6 +72,7 @@ impl Default for PomskyFeatures {
                 | Self::NAMED_GROUPS
                 | Self::REFERENCES
                 | Self::LAZY_MODE
+                | Self::ASCII_MODE
                 | Self::RANGES
                 | Self::VARIABLES
                 | Self::LOOKAHEAD
@@ -88,14 +91,15 @@ impl PomskyFeatures {
     pub(crate) const NAMED_GROUPS: u16 = 1 << 2;
     pub(crate) const REFERENCES: u16 = 1 << 3;
     pub(crate) const LAZY_MODE: u16 = 1 << 4;
-    pub(crate) const RANGES: u16 = 1 << 5;
-    pub(crate) const VARIABLES: u16 = 1 << 6;
-    pub(crate) const LOOKAHEAD: u16 = 1 << 7;
-    pub(crate) const LOOKBEHIND: u16 = 1 << 8;
-    pub(crate) const BOUNDARIES: u16 = 1 << 9;
-    pub(crate) const ATOMIC_GROUPS: u16 = 1 << 10;
-    pub(crate) const REGEXES: u16 = 1 << 11;
-    pub(crate) const DOT: u16 = 1 << 12;
+    pub(crate) const ASCII_MODE: u16 = 1 << 5;
+    pub(crate) const RANGES: u16 = 1 << 6;
+    pub(crate) const VARIABLES: u16 = 1 << 7;
+    pub(crate) const LOOKAHEAD: u16 = 1 << 8;
+    pub(crate) const LOOKBEHIND: u16 = 1 << 9;
+    pub(crate) const BOUNDARIES: u16 = 1 << 10;
+    pub(crate) const ATOMIC_GROUPS: u16 = 1 << 11;
+    pub(crate) const REGEXES: u16 = 1 << 12;
+    pub(crate) const DOT: u16 = 1 << 13;
 
     /// Creates an empty set of features. With this set, all optional features
     /// are disabled.
@@ -129,6 +133,7 @@ impl PomskyFeatures {
                 Self::NAMED_GROUPS => UnsupportedError::NamedGroups,
                 Self::REFERENCES => UnsupportedError::References,
                 Self::LAZY_MODE => UnsupportedError::LazyMode,
+                Self::ASCII_MODE => UnsupportedError::AsciiMode,
                 Self::RANGES => UnsupportedError::Ranges,
                 Self::VARIABLES => UnsupportedError::Variables,
                 Self::LOOKAHEAD => UnsupportedError::Lookahead,
@@ -177,6 +182,12 @@ impl PomskyFeatures {
     /// Set support for lazy mode, i.e. `enable lazy;`
     pub fn lazy_mode(&mut self, support: bool) -> Self {
         self.set_bit(Self::LAZY_MODE, support);
+        *self
+    }
+
+    /// Set support for ascii mode, i.e. `disable unicode;`
+    pub fn ascii_mode(&mut self, support: bool) -> Self {
+        self.set_bit(Self::ASCII_MODE, support);
         *self
     }
 
@@ -233,6 +244,7 @@ fn test_toggles() {
         .atomic_groups(true)
         .references(true)
         .lazy_mode(true)
+        .ascii_mode(true)
         .ranges(true)
         .variables(true)
         .lookahead(true)

@@ -19,6 +19,7 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) has_named: bool,
 
     pub(crate) default_quantifier: RegexQuantifier,
+    pub(crate) ascii_only: bool,
     pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
     pub(crate) current_vars: HashSet<usize>,
 
@@ -49,6 +50,7 @@ impl<'c, 'i> CompileState<'c, 'i> {
             has_named,
 
             default_quantifier,
+            ascii_only: false,
             variables,
             current_vars: Default::default(),
 
