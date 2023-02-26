@@ -84,9 +84,8 @@ impl Process {
 
     pub fn reset_count(&self) {
         let mut guard = self.data.lock().unwrap();
-        match &mut *guard {
-            Some((_, _, count)) => *count = 0,
-            _ => {}
+        if let Some((_, _, count)) = &mut *guard {
+            *count = 0
         }
     }
 }

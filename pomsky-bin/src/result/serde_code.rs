@@ -34,10 +34,10 @@ impl<'de> Visitor<'de> for CodeVisitor {
     where
         E: Error,
     {
-        v.trim_start_matches("P")
+        v.trim_start_matches('P')
             .parse::<u16>()
             .map_or_else(|_| Err(()), DiagnosticCode::try_from)
-            .map_err(|_| Error::invalid_value(Unexpected::Str(v.into()), &ExpectedCode))
+            .map_err(|_| Error::invalid_value(Unexpected::Str(v), &ExpectedCode))
     }
 }
 

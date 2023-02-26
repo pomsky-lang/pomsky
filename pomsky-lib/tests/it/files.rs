@@ -1,17 +1,15 @@
 use std::{
     fmt::Write as _,
     path::{Path, PathBuf},
-    sync::Arc,
 };
 
 use pomsky::{
     diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
 };
-use regex_test::r#async::RegexTest;
-use tokio::task::spawn_blocking;
+use regex_test::RegexTest;
 
-use crate::color::Color::*;
+use crate::{args::Args, color::Color::*};
 
 pub(crate) enum TestResult {
     Success,
@@ -136,28 +134,23 @@ impl Outcome {
     }
 }
 
-pub(crate) async fn test_file(
+pub(crate) fn test_file(
     content: String,
     path: PathBuf,
-    include_ignored: bool,
-    bless: bool,
-    proc: Arc<RegexTest>,
+    args: &Args,
+    proc: &RegexTest,
 ) -> TestResult {
     let (input, expected, options) = process_content(&content, &path);
     let input_owned = input.to_string();
 
-    if options.ignore && !include_ignored {
+    if options.ignore && !args.include_ignored {
         return TestResult::Ignored;
     }
 
-    let parsed = spawn_blocking(move || {
-        pomsky::Expr::parse_and_compile(
-            &input_owned,
-            CompileOptions { flavor: options.flavor, ..Default::default() },
-        )
-    })
-    .await
-    .unwrap();
+    let parsed = pomsky::Expr::parse_and_compile(
+        &input_owned,
+        CompileOptions { flavor: options.flavor, ..Default::default() },
+    );
 
     match parsed {
         (Some(regex), warnings) => {
@@ -174,9 +167,9 @@ pub(crate) async fn test_file(
                             RegexFlavor::Rust => proc.test_rust(&regex),
                             RegexFlavor::Pcre => proc.test_pcre(&regex),
                             RegexFlavor::Ruby => proc.test_ruby(&regex),
-                            RegexFlavor::JavaScript => proc.test_js(regex).await,
-                            RegexFlavor::Java => proc.test_java(regex).await,
-                            RegexFlavor::Python => proc.test_python(regex).await,
+                            RegexFlavor::JavaScript => proc.test_js(regex),
+                            RegexFlavor::Java => proc.test_java(regex),
+                            RegexFlavor::Python => proc.test_python(regex),
                             _ => {
                                 eprintln!(
                                     "{}: Flavor {:?} can't be compiled at the moment",
@@ -195,7 +188,7 @@ pub(crate) async fn test_file(
                         TestResult::Success
                     }
                 }
-                _ if bless => {
+                _ if args.bless => {
                     let contents = create_content(
                         input,
                         &got,
@@ -218,7 +211,7 @@ pub(crate) async fn test_file(
 
             match options.expected_outcome {
                 Outcome::Error if expected.is_empty() || expected == err => TestResult::Success,
-                _ if bless => {
+                _ if args.bless => {
                     let contents = create_content(
                         input,
                         &err,

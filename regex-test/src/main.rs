@@ -1,11 +1,11 @@
 use std::{process::exit, str::FromStr};
 
-use regex_test::Outcome;
+use regex_test::{Outcome, RegexTest};
 
 fn main() {
     let args = parse_args();
 
-    let test = regex_test::sync::RegexTest::new();
+    let test = RegexTest::new();
     let result = match args.flavor {
         Flavor::Pcre => test.test_pcre(&args.input),
         Flavor::Rust => test.test_rust(&args.input),
@@ -78,12 +78,12 @@ fn parse_args() -> Args {
                     Some(flavor) => Arg::Flavor(Some(flavor)),
                     None => error(&format!("Unknown flag '--{s}'")),
                 },
-                None => match part.strip_prefix("-") {
+                None => match part.strip_prefix('-') {
                     Some("h") => Arg::Help,
                     Some("f") => Arg::Flavor(None),
-                    Some(s) => match s.strip_prefix("f") {
+                    Some(s) => match s.strip_prefix('f') {
                         Some(flavor) => {
-                            Arg::Flavor(Some(flavor.strip_prefix("=").unwrap_or(flavor)))
+                            Arg::Flavor(Some(flavor.strip_prefix('=').unwrap_or(flavor)))
                         }
                         None => error(&format!("Unknown flag '-{s}'")),
                     },

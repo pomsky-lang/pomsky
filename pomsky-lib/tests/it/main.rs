@@ -1,12 +1,10 @@
 use std::{
     fmt, fs, io,
     path::{Path, PathBuf},
-    sync::Arc,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
-use regex_test::r#async::RegexTest;
-use tokio::runtime::Builder;
+use regex_test::RegexTest;
 
 use crate::{args::Args, color::Color::*, files::TestResult};
 
@@ -17,20 +15,10 @@ mod files;
 mod fuzzer;
 
 pub fn main() {
-    let runtime = Builder::new_multi_thread()
-        .worker_threads(8)
-        .thread_name("pomsky-it-worker")
-        .thread_stack_size(8 * 1024 * 1024)
-        .enable_io()
-        .build()
-        .unwrap();
-
-    runtime.block_on(async { defer_main().await });
-
-    runtime.shutdown_timeout(Duration::from_secs(10));
+    defer_main();
 }
 
-async fn defer_main() {
+fn defer_main() {
     println!("\nrunning integration tests");
 
     let args = Args::parse();
@@ -47,31 +35,17 @@ async fn defer_main() {
     }
 
     let start = Instant::now();
-    let rt = Arc::new(RegexTest::default());
-    rt.init_processes().await;
+    let rt = RegexTest::default();
+    rt.init_processes();
     println!("test setup completed in {:.2?}", start.elapsed());
-
-    let mut results = Vec::new();
 
     println!();
     let start = Instant::now();
 
-    let mut handles = Vec::new();
-    for (path, content) in samples {
-        let rt = rt.clone();
-        let handle =
-            tokio::spawn(files::test_file(content, path, args.include_ignored, args.bless, rt));
-        handles.push(handle);
-    }
-    for handle in handles {
-        match handle.await {
-            Ok(result) => results.push(result),
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        }
-    }
+    let results: Vec<TestResult> = samples
+        .into_iter()
+        .map(|(path, content)| files::test_file(content, path, &args, &rt))
+        .collect();
 
     let elapsed = start.elapsed();
     println!();
@@ -105,9 +79,9 @@ async fn defer_main() {
 
     if args.stats {
         eprintln!("Stats");
-        eprintln!("  Java   was invoked {} times", rt.java.get_count().await);
-        eprintln!("  JS     was invoked {} times", rt.js.get_count().await);
-        eprintln!("  Python was invoked {} times", rt.py.get_count().await);
+        eprintln!("  Java   was invoked {} times", rt.java.get_count());
+        eprintln!("  JS     was invoked {} times", rt.js.get_count());
+        eprintln!("  Python was invoked {} times", rt.py.get_count());
         eprintln!("  Ruby   was invoked {} times", rt.ruby.get_count());
         eprintln!("  Rust   was invoked {} times", rt.rust.get_count());
         eprintln!("  PCRE   was invoked {} times", rt.pcre.get_count());
