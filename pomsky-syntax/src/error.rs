@@ -253,6 +253,8 @@ impl core::fmt::Display for CharClassError {
 pub enum CodePointError {
     /// Code point that is outside the allowed range, e.g. `U+200000`
     Invalid,
+    /// Code point that is not a hexadecimal number
+    NotHexadecimal,
 }
 
 impl std::error::Error for CodePointError {}
@@ -261,6 +263,7 @@ impl core::fmt::Display for CodePointError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let error = match self {
             CodePointError::Invalid => "This code point is outside the allowed range",
+            CodePointError::NotHexadecimal => "Code point contains non-hexadecimal digits",
         };
 
         f.write_str(error)

@@ -2,5 +2,6 @@
 hello = 'hello';
 hello
 -----
-ERROR: There are leftover tokens that couldn't be parsed
-SPAN: 6..7
+ERROR: A variable declaration must start with the `let` keyword
+HELP: Try `let hello = ...`
+SPAN: 0..7

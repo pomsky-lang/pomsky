@@ -45,6 +45,9 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
         }),
         ParseErrorKind::LetBindingExists => Some("Use a different name".into()),
         ParseErrorKind::MissingLetKeyword => Some(format!("Try `let {slice} ...`")),
+        ParseErrorKind::CodePointAfterLet(_) => {
+            Some("Use a variable name that doesn't start with `U_`.".into())
+        }
         ParseErrorKind::Repetition(RepetitionError::QmSuffix) => Some(
             "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
                 If this is intentional, consider adding parentheses around the inner repetition."

@@ -98,8 +98,13 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 
                     if let Some((len, _)) = (
                         'U',
-                        Either('+', Either('_', "")),
-                        Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                        Either(
+                            (
+                                Either('+', '_'),
+                                Many1(CharIs(|c| c.is_alphanumeric() || c == '_')),
+                            ),
+                            Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                        )
                     ).is_start(input) => (len, Token::CodePoint);
 
                     if let Some((len, _)) = (

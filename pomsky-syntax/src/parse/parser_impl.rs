@@ -499,20 +499,21 @@ impl<'i> Parser<'i> {
             let span = self.last_span();
             let hex = cp.trim_start_matches(|c| matches!(c, 'U' | '_' | '+'));
 
+            if hex.chars().any(|c| !c.is_ascii_hexdigit()) {
+                return Err(ParseErrorKind::CodePoint(CodePointError::NotHexadecimal).at(span));
+            }
             if !cp.starts_with("U_") {
                 let warning = DeprecationWarning::Unicode(cp.into());
                 self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
             }
-
             if hex.len() > 6 {
-                Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
-            } else {
-                u32::from_str_radix(hex, 16)
-                    .ok()
-                    .and_then(|n| char::try_from(n).ok())
-                    .map(|c| Some((c, span)))
-                    .ok_or_else(|| ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
+                return Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span));
             }
+            u32::from_str_radix(hex, 16)
+                .ok()
+                .and_then(|n| char::try_from(n).ok())
+                .map(|c| Some((c, span)))
+                .ok_or_else(|| ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
         } else {
             Ok(None)
         }

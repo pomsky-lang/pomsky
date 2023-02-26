@@ -169,7 +169,9 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
             P::CharString(CharStringError::Empty) => Self::CharRangeStringEmpty,
             P::CharString(CharStringError::TooManyCodePoints) => Self::CharRangeTooManyCodePoints,
             P::CharClass(e) => e.into(),
-            P::CodePoint(CodePointError::Invalid) => Self::CodePointInvalid,
+            P::CodePoint(CodePointError::Invalid | CodePointError::NotHexadecimal) => {
+                Self::CodePointInvalid
+            }
             P::Number(_) => Self::InvalidNumber,
             P::Repetition(R::NotAscending) => Self::RepetitionNotAscending,
             P::Repetition(R::Multi | R::QmSuffix) => Self::RepetitionChain,
