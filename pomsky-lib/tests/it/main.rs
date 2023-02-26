@@ -1,6 +1,7 @@
 use std::{
     fmt, fs, io,
     path::{Path, PathBuf},
+    thread,
     time::Instant,
 };
 
@@ -15,7 +16,15 @@ mod files;
 mod fuzzer;
 
 pub fn main() {
-    defer_main();
+    let child = thread::Builder::new()
+        .name("pomsky-it".into())
+        // a large stack is required in debug builds
+        .stack_size(8 * 1024 * 1024)
+        .spawn(defer_main)
+        .unwrap();
+
+    // Wait for thread to join
+    child.join().unwrap();
 }
 
 fn defer_main() {
