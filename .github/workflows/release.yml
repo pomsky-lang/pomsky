@@ -78,6 +78,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Print information
         run: |
           rustup show active-toolchain
