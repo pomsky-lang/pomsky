@@ -2,4 +2,5 @@
 ::0
 -----
 ERROR: Reference to unknown group. There is no group number 0
+HELP: Capturing group numbers start with 1
 SPAN: 0..3

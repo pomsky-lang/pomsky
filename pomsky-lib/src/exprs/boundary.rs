@@ -6,17 +6,25 @@ use pomsky_syntax::exprs::{Boundary, BoundaryKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::CompileError,
+    diagnose::{CompileError, CompileErrorKind},
     features::PomskyFeatures,
-    options::CompileOptions,
+    options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
 
 use super::RuleExt;
 
 impl<'i> RuleExt<'i> for Boundary {
-    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
-        Ok(Regex::Boundary(self.kind))
+    fn compile<'c>(
+        &'c self,
+        options: CompileOptions,
+        state: &mut CompileState<'c, 'i>,
+    ) -> CompileResult<'i> {
+        if options.flavor == RegexFlavor::JavaScript && !state.ascii_only {
+            Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))
+        } else {
+            Ok(Regex::Boundary(self.kind))
+        }
     }
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {

@@ -3,7 +3,10 @@ use pomsky_syntax::{
     Span,
 };
 
-use super::{diagnostic_code::DiagnosticCode, CompileError, CompileErrorKind, DiagnosticKind};
+use super::{
+    diagnostic_code::DiagnosticCode, help::get_compiler_help, CompileError, CompileErrorKind,
+    DiagnosticKind,
+};
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -63,7 +66,7 @@ impl Diagnostic {
         let slice = &source_code[range.clone()];
         let mut span = Span::from(range);
 
-        let help = super::help::get_help(kind, slice, &mut span);
+        let help = super::help::get_parser_help(kind, slice, &mut span);
         let code = Some(DiagnosticCode::from(kind));
 
         Diagnostic {
@@ -77,52 +80,24 @@ impl Diagnostic {
     }
 
     pub(crate) fn from_compile_error(err: &CompileError, source_code: &str) -> Self {
-        let CompileError { kind, span } = err;
+        let CompileError { kind, span: error_span } = err;
+
         match kind {
             CompileErrorKind::ParseError(kind) => {
-                Diagnostic::from_parse_error(*span, kind, source_code)
+                Diagnostic::from_parse_error(*error_span, kind, source_code)
             }
-            #[cfg(feature = "suggestions")]
-            CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
-            | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {
-                let range = span.range().unwrap_or(0..source_code.len());
-                let code = Some(DiagnosticCode::from(kind));
-
-                Diagnostic {
-                    severity: Severity::Error,
-                    code,
-                    msg: kind.to_string(),
-                    help: Some(format!("Perhaps you meant `{similar}`")),
-                    span: Span::from(range),
-                    kind: DiagnosticKind::Resolve,
-                }
-            }
-            CompileErrorKind::EmptyClassNegated { group1, group2 } => {
-                let range = span.range().unwrap_or(0..source_code.len());
-                let code = Some(DiagnosticCode::from(kind));
-
-                Diagnostic {
-                    severity: Severity::Error,
-                    code,
-                    msg: kind.to_string(),
-                    help: Some(format!(
-                        "The group is empty because it contains both \
-                        `{group1:?}` and `{group2:?}`, which together match every code point",
-                    )),
-                    span: Span::from(range),
-                    kind: DiagnosticKind::Resolve,
-                }
-            }
-            kind => {
-                let range = span.range().unwrap_or(0..source_code.len());
+            _ => {
+                let range = error_span.range().unwrap_or(0..source_code.len());
+                let slice = &source_code[range.clone()];
                 let span = Span::from(range);
-                let code = Some(DiagnosticCode::from(kind));
+
+                let help = get_compiler_help(kind, slice, span);
 
                 Diagnostic {
                     severity: Severity::Error,
-                    code,
+                    code: Some(DiagnosticCode::from(kind)),
                     msg: kind.to_string(),
-                    help: None,
+                    help,
                     span,
                     kind: DiagnosticKind::from(kind),
                 }

@@ -80,6 +80,7 @@ pub(crate) enum CompileErrorKind {
     RangeIsTooBig(u8),
     NegativeShorthandInAsciiMode,
     UnicodeInAsciiMode,
+    JsWordBoundaryInUnicodeMode,
 }
 
 impl CompileErrorKind {
@@ -145,6 +146,11 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::UnicodeInAsciiMode => {
                 write!(f, "Unicode properties can't be used when Unicode is disabled")
             }
+            CompileErrorKind::JsWordBoundaryInUnicodeMode => write!(
+                f,
+                "In the JavaScript flavor, word boundaries may only be used \
+                when Unicode is disabled"
+            ),
         }
     }
 }

@@ -5,7 +5,13 @@ use pomsky_syntax::{
     Span,
 };
 
-pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> Option<String> {
+use super::CompileErrorKind;
+
+pub(super) fn get_parser_help(
+    kind: &ParseErrorKind,
+    slice: &str,
+    span: &mut Span,
+) -> Option<String> {
     match kind {
         ParseErrorKind::LexErrorWithMessage(msg) => msg.get_help(slice),
         ParseErrorKind::RangeIsNotIncreasing => {
@@ -33,7 +39,7 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
         {
             Some(
                 "Try a `range` expression instead:\n\
-                    https://pomsky-lang.org/docs/language-tour/ranges/"
+                https://pomsky-lang.org/docs/language-tour/ranges/"
                     .into(),
             )
         }
@@ -69,6 +75,46 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
         ParseErrorKind::Deprecated(DeprecationError::DotInSet) => {
             Some("Use `.` without brackets instead".into())
         }
+        _ => None,
+    }
+}
+
+pub(super) fn get_compiler_help(
+    kind: &CompileErrorKind,
+    slice: &str,
+    _span: Span,
+) -> Option<String> {
+    match kind {
+        #[cfg(feature = "suggestions")]
+        CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
+        | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {
+            Some(format!("Perhaps you meant `{similar}`"))
+        }
+
+        CompileErrorKind::EmptyClassNegated { group1, group2 } => Some(format!(
+            "The group is empty because it contains both `{group1:?}` and `{group2:?}`, \
+            which together match every code point",
+        )),
+
+        CompileErrorKind::NameUsedMultipleTimes(_) => {
+            Some("Give this group a different name".into())
+        }
+
+        CompileErrorKind::UnknownReferenceNumber(0) => {
+            Some("Capturing group numbers start with 1".into())
+        }
+        CompileErrorKind::RelativeRefZero => Some(
+            "Perhaps you meant `::-1` to refer to the previous or surrounding capturing group"
+                .into(),
+        ),
+
+        CompileErrorKind::JsWordBoundaryInUnicodeMode => {
+            Some(format!("Disable Unicode, e.g. `(disable unicode; {slice})`"))
+        }
+        CompileErrorKind::NegativeShorthandInAsciiMode | CompileErrorKind::UnicodeInAsciiMode => {
+            Some(format!("Enable Unicode, e.g. `(enable unicode; {slice})`"))
+        }
+
         _ => None,
     }
 }

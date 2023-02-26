@@ -43,7 +43,8 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::ReferenceInLet
             | K::RecursiveVariable
             | K::NegativeShorthandInAsciiMode
-            | K::UnicodeInAsciiMode => DiagnosticKind::Unsupported,
+            | K::UnicodeInAsciiMode
+            | K::JsWordBoundaryInUnicodeMode => DiagnosticKind::Unsupported,
             K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }
