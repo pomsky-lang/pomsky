@@ -49,6 +49,7 @@ pub enum ParseErrorKind {
     UnallowedMultiNot(usize),
     LonePipe,
     LetBindingExists,
+    MissingLetKeyword,
     InvalidEscapeInStringAt(usize),
     CharString(CharStringError),
     CharClass(CharClassError),
@@ -131,6 +132,9 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::LonePipe => write!(f, "A pipe must be followed by an expression"),
             ParseErrorKind::LetBindingExists => {
                 write!(f, "A variable with the same name already exists in this scope")
+            }
+            ParseErrorKind::MissingLetKeyword => {
+                write!(f, "A variable declaration must start with the `let` keyword")
             }
             ParseErrorKind::InvalidEscapeInStringAt(_) => {
                 write!(f, "Unsupported escape sequence in string")

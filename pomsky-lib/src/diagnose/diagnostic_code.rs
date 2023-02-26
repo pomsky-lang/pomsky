@@ -66,6 +66,7 @@ diagnostic_code! {
         CharClassIllegalNegation = 117,
         CharClassUnallowedCombination = 118,
         NegatedHorizVertSpace = 119,
+        MissingKeyword = 120,
 
         // Currently a parse error, but it should be a compile error
         LetBindingExists = 300,
@@ -173,6 +174,7 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
             P::Repetition(R::NotAscending) => Self::RepetitionNotAscending,
             P::Repetition(R::Multi | R::QmSuffix) => Self::RepetitionChain,
             P::RecursionLimit => Self::RecursionLimit,
+            P::MissingLetKeyword => Self::MissingKeyword,
             _ => panic!("Unhandled parser error message {value:?}"),
         }
     }

@@ -44,6 +44,7 @@ pub(super) fn get_help(kind: &ParseErrorKind, slice: &str, span: &mut Span) -> O
             "The number of exclamation marks is odd, so you can remove all of them but one".into()
         }),
         ParseErrorKind::LetBindingExists => Some("Use a different name".into()),
+        ParseErrorKind::MissingLetKeyword => Some(format!("Try `let {slice} ...`")),
         ParseErrorKind::Repetition(RepetitionError::QmSuffix) => Some(
             "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
                 If this is intentional, consider adding parentheses around the inner repetition."

@@ -293,7 +293,7 @@ impl<'i> Parser<'i> {
             .try_or_else(|| self.parse_code_point_rule())?
             .try_or_else(|| self.parse_range())?
             .try_or_else(|| self.parse_regex())?
-            .or_else(|| self.parse_variable())
+            .try_or_else(|| self.parse_variable())?
             .or_else(|| self.parse_dot()))
     }
 
@@ -653,9 +653,17 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses a variable (usage site).
-    fn parse_variable(&mut self) -> Option<Rule<'i>> {
-        self.consume_as(Token::Identifier)
-            .map(|ident| Rule::Variable(Variable::new(ident, self.last_span())))
+    fn parse_variable(&mut self) -> PResult<Option<Rule<'i>>> {
+        if let Some(ident) = self.consume_as(Token::Identifier) {
+            let span1 = self.last_span();
+            let rule = Rule::Variable(Variable::new(ident, span1));
+            if let Some((Token::Equals, span2)) = self.peek_pair() {
+                return Err(ParseErrorKind::MissingLetKeyword.at(span1.join(span2)));
+            }
+            Ok(Some(rule))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Parses the dot
