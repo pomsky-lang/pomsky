@@ -83,7 +83,7 @@ impl PrettyPrinter {
             self.buf.push(char);
             self.buf.push('\'');
         } else if char < '\u{1F}' {
-            self.buf.push_str("U+");
+            self.buf.push_str("U_");
             let _ = write!(self.buf, "{:X}", char as u32);
         } else {
             let prev_len = self.buf.len();
@@ -92,7 +92,7 @@ impl PrettyPrinter {
 
             if new_len - prev_len > char.len_utf8() + 2 {
                 drop(self.buf.drain(prev_len..));
-                self.buf.push_str("U+");
+                self.buf.push_str("U_");
                 let _ = write!(self.buf, "{:X}", char as u32);
             }
         }

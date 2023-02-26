@@ -251,7 +251,7 @@ impl core::fmt::Display for CharClassError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CodePointError {
-    /// Code point that is outside the allowed range, e.g. `U+200000`
+    /// Code point that is outside the allowed range, e.g. `U_200000`
     Invalid,
     /// Code point that is not a hexadecimal number
     NotHexadecimal,

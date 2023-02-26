@@ -91,10 +91,10 @@ fn get_backslash_help(str: &str) -> Option<String> {
         Some(c @ ('a' | 'e' | 'f' | 'n' | 'r' | 't' | 'h' | 'v' | 'd' | 'w' | 's')) => {
             format!("Replace `\\{c}` with `[{c}]`")
         }
-        Some('0') => "Replace `\\0` with `U+00`".into(),
+        Some('0') => "Replace `\\0` with `U_00`".into(),
         Some(c @ '1'..='7') => format!(
             "If this is a backreference, replace it with `::{c}`.\n\
-            If this is an octal escape, replace it with `U+0{c}`."
+            If this is an octal escape, replace it with `U_0{c}`."
         ),
         Some(c @ '1'..='9') => format!("Replace `\\{c}` with `::{c}`"),
         _ => return None,
@@ -104,19 +104,19 @@ fn get_backslash_help(str: &str) -> Option<String> {
 fn get_backslash_help_u4(str: &str) -> String {
     // \uFFFF
     let hex = &str[2..];
-    format!("Try `U+{hex}` instead")
+    format!("Try `U_{hex}` instead")
 }
 
 fn get_backslash_help_x2(str: &str) -> String {
     // \xFF
     let hex = &str[2..];
-    format!("Try `U+{hex}` instead")
+    format!("Try `U_{hex}` instead")
 }
 
 fn get_backslash_help_unicode(str: &str) -> String {
     // \u{...}, \x{...}
     let hex = str[2..].trim_matches(&['{', '}'][..]);
-    format!("Try `U+{hex}` instead")
+    format!("Try `U_{hex}` instead")
 }
 
 fn get_backslash_gk_help(str: &str) -> String {

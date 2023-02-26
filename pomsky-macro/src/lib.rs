@@ -29,7 +29,7 @@ mod diagnostic;
 /// };
 /// ```
 ///
-/// **NOTE**: Code points (e.g. `U+FFEF`) should be written without the `+`
+/// **NOTE**: Code points (e.g. `U_FFEF`) should be written without the `+`
 /// (i.e., `UFFEF`), because rustfmt surrounds `+` with spaces by default, which
 /// would break parsing.
 ///
