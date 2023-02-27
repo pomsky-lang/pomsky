@@ -97,8 +97,19 @@ impl<'i> Regex<'i> {
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         match self {
             Regex::Literal(l) => {
-                for c in l.chars() {
-                    literal::codegen_char_esc(c, buf, flavor);
+                // normalize line breaks: within string literals, \r, \n and \r\n should be
+                // converted to \n
+                let mut chars = l.chars();
+                while let Some(c) = chars.next() {
+                    if c == '\r' {
+                        literal::codegen_char_esc('\n', buf, flavor);
+                        match chars.next() {
+                            Some('\n') | None => {}
+                            Some(c) => literal::codegen_char_esc(c, buf, flavor),
+                        }
+                    } else {
+                        literal::codegen_char_esc(c, buf, flavor);
+                    }
                 }
             }
             Regex::Unescaped(u) => {

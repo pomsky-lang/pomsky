@@ -1,0 +1,7 @@
+#! flavor=pcre
+# this file uses windows line breaks!
+'hello
+world
+'
+-----
+hello\nworld\n
