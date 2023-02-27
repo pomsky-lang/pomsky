@@ -1,0 +1,6 @@
+#! expect=error
+
+range '15'-'30' base '2'
+-----
+ERROR: Expected number
+SPAN: 22..25

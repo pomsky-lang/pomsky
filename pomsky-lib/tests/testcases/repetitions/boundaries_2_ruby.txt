@@ -1,0 +1,5 @@
+#! expect=error, flavor=Ruby
+%+
+-----
+ERROR: Unsupported feature `single repeated assertion` in the `Ruby` regex flavor
+SPAN: 0..2

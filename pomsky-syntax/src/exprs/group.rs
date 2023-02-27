@@ -19,10 +19,6 @@ impl<'i> Group<'i> {
         Group { parts, kind, span }
     }
 
-    pub fn set_capture(&mut self, capture: Capture<'i>) {
-        self.kind = GroupKind::Capturing(capture);
-    }
-
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
         let use_parens =

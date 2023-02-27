@@ -1,0 +1,6 @@
+#! expect=error
+
+range 15-30 base 16
+-----
+ERROR: Expected string
+SPAN: 7..9
