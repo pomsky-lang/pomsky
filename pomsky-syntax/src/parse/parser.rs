@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
 use crate::{
-    diagnose::ParseDiagnostic,
-    diagnose::{NumberError, ParseError, ParseErrorKind, ParseWarning},
+    diagnose::{NumberError, ParseDiagnostic, ParseError, ParseErrorKind as PEK, ParseWarning},
     exprs::*,
     lexer::{tokenize, Token},
     Span,
@@ -26,27 +25,15 @@ pub fn parse(source: &str, recursion: u32) -> (Option<Rule<'_>>, Vec<ParseDiagno
         }
     }
 
-    match errors.len() {
-        0 => {}
-        1 => {
-            let (span, msg) = errors.pop().unwrap();
-            let error = msg
-                .map_or(ParseErrorKind::UnknownToken, ParseErrorKind::LexErrorWithMessage)
-                .at(span);
-            return (None, vec![error.into()]);
-        }
-        _ => {
-            let errors = errors
-                .into_iter()
-                .map(|(span, msg)| {
-                    msg.map_or(ParseErrorKind::UnknownToken, ParseErrorKind::LexErrorWithMessage)
-                        .at(span)
-                        .into()
-                })
-                .collect::<Vec<_>>();
+    if !errors.is_empty() {
+        let errors = errors
+            .into_iter()
+            .map(|(span, msg)| {
+                msg.map_or(PEK::UnknownToken, PEK::LexErrorWithMessage).at(span).into()
+            })
+            .collect::<Vec<_>>();
 
-            return (None, errors);
-        }
+        return (None, errors);
     }
 
     let mut parser = Parser {
@@ -68,7 +55,7 @@ pub fn parse(source: &str, recursion: u32) -> (Option<Rule<'_>>, Vec<ParseDiagno
     if parser.is_empty() {
         (Some(rule), parser.warnings)
     } else {
-        let mut diagnostics = vec![ParseErrorKind::LeftoverTokens.at(parser.span()).into()];
+        let mut diagnostics = vec![PEK::LeftoverTokens.at(parser.span()).into()];
         diagnostics.extend(parser.warnings);
         (None, diagnostics)
     }
@@ -119,10 +106,8 @@ impl<'i> Parser<'i> {
     }
 
     pub(super) fn recursion_start(&mut self) -> PResult<()> {
-        self.recursion = self
-            .recursion
-            .checked_sub(1)
-            .ok_or_else(|| ParseErrorKind::RecursionLimit.at(self.span()))?;
+        self.recursion =
+            self.recursion.checked_sub(1).ok_or_else(|| PEK::RecursionLimit.at(self.span()))?;
         Ok(())
     }
 
@@ -174,7 +159,7 @@ impl<'i> Parser<'i> {
                 let n = str::parse(self.source_at(span))
                     .ok()
                     .and_then(|n| if n > max { None } else { Some(n) })
-                    .ok_or_else(|| ParseErrorKind::Number(NumberError::TooLarge).at(span))?;
+                    .ok_or_else(|| PEK::Number(NumberError::TooLarge).at(span))?;
                 self.offset += 1;
                 Ok(Some(n))
             }
@@ -188,7 +173,7 @@ impl<'i> Parser<'i> {
                 self.offset += 1;
                 Ok(())
             }
-            _ => Err(ParseErrorKind::ExpectedToken(token).at(self.span())),
+            _ => Err(PEK::ExpectedToken(token).at(self.span())),
         }
     }
 
@@ -198,7 +183,7 @@ impl<'i> Parser<'i> {
                 self.offset += 1;
                 Ok(self.source_at(span))
             }
-            _ => Err(ParseErrorKind::ExpectedToken(token).at(self.span())),
+            _ => Err(PEK::ExpectedToken(token).at(self.span())),
         }
     }
 
@@ -206,11 +191,11 @@ impl<'i> Parser<'i> {
         match self.peek_pair() {
             Some((Token::Number, span)) => {
                 let n = str::parse(self.source_at(span))
-                    .map_err(|_| ParseErrorKind::Number(NumberError::TooLarge).at(span))?;
+                    .map_err(|_| PEK::Number(NumberError::TooLarge).at(span))?;
                 self.offset += 1;
                 Ok(n)
             }
-            _ => Err(ParseErrorKind::ExpectedToken(Token::Number).at(self.span())),
+            _ => Err(PEK::ExpectedToken(Token::Number).at(self.span())),
         }
     }
 }

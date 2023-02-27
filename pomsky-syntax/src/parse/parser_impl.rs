@@ -1,8 +1,11 @@
 use std::collections::HashSet;
 
 use crate::{
-    diagnose::{DeprecationWarning, ParseWarningKind},
-    error::*,
+    diagnose::{
+        CharClassError, CharStringError, CodePointError, DeprecationWarning, NumberError,
+        ParseWarningKind, RepetitionError,
+    },
+    error::{ParseError, ParseErrorKind as PEK},
     exprs::*,
     lexer::Token,
     Span,
@@ -35,7 +38,7 @@ impl<'i> Parser<'i> {
             for (stmt, _) in &stmts {
                 if let Stmt::Let(l) = stmt {
                     if set.contains(l.name()) {
-                        return Err(ParseErrorKind::LetBindingExists.at(l.name_span));
+                        return Err(PEK::LetBindingExists.at(l.name_span));
                     }
                     set.insert(l.name());
                 }
@@ -62,10 +65,11 @@ impl<'i> Parser<'i> {
         let span_start = self.last_span();
         let setting = if self.consume_reserved("lazy") {
             BooleanSetting::Lazy
-        } else if let Some("unicode") = self.consume_as(Token::Identifier) {
+        } else if let Some((Token::Identifier, "unicode")) = self.peek() {
+            self.advance();
             BooleanSetting::Unicode
         } else {
-            return Err(ParseErrorKind::Expected("`lazy` or `unicode`").at(self.span()));
+            return Err(PEK::Expected("`lazy` or `unicode`").at(self.span()));
         };
         self.expect(Token::Semicolon)?;
         let stmt = if mode { Stmt::Enable(setting) } else { Stmt::Disable(setting) };
@@ -80,11 +84,9 @@ impl<'i> Parser<'i> {
             let name_span = self.span();
             let name = self.expect_as(Token::Identifier).map_err(|e| {
                 if self.is(Token::ReservedName) {
-                    ParseErrorKind::KeywordAfterLet(self.source_at(self.span()).to_owned())
-                        .at(e.span)
+                    PEK::KeywordAfterLet(self.source_at(self.span()).to_owned()).at(e.span)
                 } else if self.is(Token::CodePoint) {
-                    ParseErrorKind::CodePointAfterLet(self.source_at(self.span()).to_owned())
-                        .at(e.span)
+                    PEK::CodePointAfterLet(self.source_at(self.span()).to_owned()).at(e.span)
                 } else {
                     e
                 }
@@ -97,7 +99,7 @@ impl<'i> Parser<'i> {
             self.recursion_end();
 
             self.expect(Token::Semicolon)
-                .map_err(|p| ParseErrorKind::Expected("expression or `;`").at(p.span))?;
+                .map_err(|p| PEK::Expected("expression or `;`").at(p.span))?;
             let span_end = self.last_span();
 
             Ok(Some((Stmt::Let(Let::new(name, rule, name_span)), span_start.join(span_end))))
@@ -119,7 +121,7 @@ impl<'i> Parser<'i> {
                     span = span.join(next_alt.span());
                     alts.push(next_alt);
                 } else {
-                    return Err(ParseErrorKind::LonePipe.at(self.last_span()));
+                    return Err(PEK::LonePipe.at(self.last_span()));
                 }
             }
 
@@ -129,7 +131,7 @@ impl<'i> Parser<'i> {
                 Ok(Alternation::new_expr(alts))
             }
         } else if leading_pipe {
-            Err(ParseErrorKind::LonePipe.at(span))
+            Err(PEK::LonePipe.at(span))
         } else {
             Ok(Alternation::new_expr(alts))
         }
@@ -166,14 +168,14 @@ impl<'i> Parser<'i> {
             if nots == 0 {
                return Ok(None);
             } else {
-               return Err(ParseErrorKind::Expected("expression").at(self.span()));
+               return Err(PEK::Expected("expression").at(self.span()));
             }
         };
 
         match nots {
             0 => {}
             1 => rule.negate().map_err(|k| k.at(nots_span))?,
-            _ => return Err(ParseErrorKind::UnallowedMultiNot(nots).at(nots_span)),
+            _ => return Err(PEK::UnallowedMultiNot(nots).at(nots_span)),
         }
 
         Ok(Some(rule))
@@ -240,12 +242,13 @@ impl<'i> Parser<'i> {
 
         let multi_span = self.span();
         if self.consume(Token::Plus) || self.consume(Token::Star) {
-            return Err(ParseErrorKind::Repetition(RepetitionError::Multi).at(multi_span));
+            return Err(PEK::Repetition(RepetitionError::Multi).at(multi_span));
         } else if self.consume(Token::QuestionMark) {
-            return Err(ParseErrorKind::Repetition(RepetitionError::QmSuffix).at(multi_span));
+            return Err(PEK::Repetition(RepetitionError::QmSuffix).at(multi_span));
         } else if self.parse_repetition_braces()?.is_some() {
-            return Err(ParseErrorKind::Repetition(RepetitionError::Multi)
-                .at(multi_span.join(self.last_span())));
+            return Err(
+                PEK::Repetition(RepetitionError::Multi).at(multi_span.join(self.last_span()))
+            );
         }
 
         let end = self.last_span();
@@ -271,15 +274,11 @@ impl<'i> Parser<'i> {
             let kind = match (lower, comma, upper) {
                 (lower, true, upper) => (lower.unwrap_or(0), upper)
                     .try_into()
-                    .map_err(|e| ParseErrorKind::Repetition(e).at(num_span))?,
+                    .map_err(|e| PEK::Repetition(e).at(num_span))?,
 
-                (Some(_), false, Some(_)) => {
-                    return Err(ParseErrorKind::Expected("`}` or `,`").at(num_end))
-                }
+                (Some(_), false, Some(_)) => return Err(PEK::Expected("`}` or `,`").at(num_end)),
                 (Some(rep), false, None) | (None, false, Some(rep)) => RepetitionKind::fixed(rep),
-                (None, false, None) => {
-                    return Err(ParseErrorKind::Expected("number").at(self.span()))
-                }
+                (None, false, None) => return Err(PEK::Expected("number").at(self.span())),
             };
 
             self.expect(Token::CloseBrace)?;
@@ -318,7 +317,7 @@ impl<'i> Parser<'i> {
         self.recursion_end();
 
         self.expect(Token::CloseParen)
-            .map_err(|p| ParseErrorKind::Expected("`)` or an expression").at(p.span))?;
+            .map_err(|p| PEK::Expected("`)` or an expression").at(p.span))?;
         // start_span may be 0..0, so we need to use join_unchecked
         let span = start_span.join_unchecked(self.last_span());
 
@@ -335,7 +334,7 @@ impl<'i> Parser<'i> {
             let span = self.last_span();
 
             if let Some(keyword) = self.consume_as(Token::ReservedName) {
-                return Err(ParseErrorKind::KeywordAfterColon(keyword.into()).at(self.last_span()));
+                return Err(PEK::KeywordAfterColon(keyword.into()).at(self.last_span()));
             }
 
             let name = self.consume_as(Token::Identifier);
@@ -344,12 +343,11 @@ impl<'i> Parser<'i> {
                     let c = name[invalid_index..].chars().next().unwrap();
                     let start = self.last_span().range_unchecked().start + invalid_index;
                     let len = c.len_utf8();
-                    return Err(ParseErrorKind::NonAsciiIdentAfterColon(c)
-                        .at(Span::new(start, start + len)));
+                    return Err(PEK::NonAsciiIdentAfterColon(c).at(Span::new(start, start + len)));
                 }
 
                 if name.len() > 32 {
-                    return Err(ParseErrorKind::GroupNameTooLong(name.len()).at(self.last_span()));
+                    return Err(PEK::GroupNameTooLong(name.len()).at(self.last_span()));
                 }
             }
             Ok((GroupKind::Capturing(Capture::new(name)), span))
@@ -379,23 +377,19 @@ impl<'i> Parser<'i> {
             let start_span = self.last_span();
 
             if self.consume(Token::Caret) {
-                return Err(
-                    ParseErrorKind::CharClass(CharClassError::CaretInGroup).at(self.last_span())
-                );
+                return Err(PEK::CharClass(CharClassError::CaretInGroup).at(self.last_span()));
             }
 
             let inner = self.parse_char_set_inner()?;
 
             self.expect(Token::CloseBracket).map_err(|p| {
-                ParseErrorKind::Expected(
-                    "character class, string, code point, Unicode property or `]`",
-                )
-                .at(p.span)
+                PEK::Expected("character class, string, code point, Unicode property or `]`")
+                    .at(p.span)
             })?;
             let span = start_span.join(self.last_span());
 
             if inner.is_empty() {
-                return Err(ParseErrorKind::CharClass(CharClassError::Empty).at(span));
+                return Err(PEK::CharClass(CharClassError::Empty).at(span));
             }
 
             Ok(Some(Rule::CharClass(CharClass::new(inner, span))))
@@ -419,16 +413,16 @@ impl<'i> Parser<'i> {
 
             let group = if let Some(group) = self.parse_char_group_chars_or_range()? {
                 if nots > 0 {
-                    return Err(ParseErrorKind::UnallowedNot.at(nots_span));
+                    return Err(PEK::UnallowedNot.at(nots_span));
                 }
                 group
             } else if let Some(group) = self.parse_char_group_ident(nots % 2 != 0)? {
                 if nots > 1 {
-                    return Err(ParseErrorKind::UnallowedMultiNot(nots).at(nots_span));
+                    return Err(PEK::UnallowedMultiNot(nots).at(nots_span));
                 }
                 group
             } else if nots > 0 {
-                return Err(ParseErrorKind::ExpectedToken(Token::Identifier).at(self.span()));
+                return Err(PEK::ExpectedToken(Token::Identifier).at(self.span()));
             } else {
                 break;
             };
@@ -448,7 +442,7 @@ impl<'i> Parser<'i> {
 
             Ok(Some(item))
         } else if let Some(name) = self.consume_as(Token::ReservedName) {
-            Err(ParseErrorKind::UnexpectedKeyword(name.to_owned()).at(self.last_span()))
+            Err(PEK::UnexpectedKeyword(name.to_owned()).at(self.last_span()))
         } else {
             Ok(None)
         }
@@ -465,15 +459,14 @@ impl<'i> Parser<'i> {
         if self.consume(Token::Dash) {
             let span2 = self.span();
             let Some(last) = self.parse_string_or_char()? else {
-                return Err(ParseErrorKind::Expected("code point or character").at(self.span()));
+                return Err(PEK::Expected("code point or character").at(self.span()));
             };
 
             let first = first.to_char().map_err(|e| e.at(span1))?;
             let last = last.to_char().map_err(|e| e.at(span2))?;
 
             let group = CharGroup::try_from_range(first, last).ok_or_else(|| {
-                ParseErrorKind::CharClass(CharClassError::DescendingRange(first, last))
-                    .at(span1.join(span2))
+                PEK::CharClass(CharClassError::DescendingRange(first, last)).at(span1.join(span2))
             })?;
             Ok(Some(group))
         } else {
@@ -507,20 +500,20 @@ impl<'i> Parser<'i> {
             let hex = cp.trim_start_matches(|c| matches!(c, 'U' | '_' | '+'));
 
             if hex.chars().any(|c| !c.is_ascii_hexdigit()) {
-                return Err(ParseErrorKind::CodePoint(CodePointError::NotHexadecimal).at(span));
+                return Err(PEK::CodePoint(CodePointError::NotHexadecimal).at(span));
             }
             if !cp.starts_with("U_") {
                 let warning = DeprecationWarning::Unicode(cp.into());
                 self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
             }
             if hex.len() > 6 {
-                return Err(ParseErrorKind::CodePoint(CodePointError::Invalid).at(span));
+                return Err(PEK::CodePoint(CodePointError::Invalid).at(span));
             }
             u32::from_str_radix(hex, 16)
                 .ok()
                 .and_then(|n| char::try_from(n).ok())
                 .map(|c| Some((c, span)))
-                .ok_or_else(|| ParseErrorKind::CodePoint(CodePointError::Invalid).at(span))
+                .ok_or_else(|| PEK::CodePoint(CodePointError::Invalid).at(span))
         } else {
             Ok(None)
         }
@@ -593,7 +586,7 @@ impl<'i> Parser<'i> {
                 // TODO: Better diagnostic for `::let`
                 let name = self
                     .expect_as(Token::Identifier)
-                    .map_err(|p| ParseErrorKind::Expected("number or group name").at(p.span))?;
+                    .map_err(|p| PEK::Expected("number or group name").at(p.span))?;
                 ReferenceTarget::Named(name)
             };
 
@@ -618,9 +611,9 @@ impl<'i> Parser<'i> {
                 let n = self.expect_number()?;
                 let span = self.last_span();
                 if n > 36 {
-                    return Err(ParseErrorKind::Number(NumberError::TooLarge).at(span));
+                    return Err(PEK::Number(NumberError::TooLarge).at(span));
                 } else if n < 2 {
-                    return Err(ParseErrorKind::Number(NumberError::TooSmall).at(span));
+                    return Err(PEK::Number(NumberError::TooSmall).at(span));
                 }
                 n
             } else {
@@ -630,12 +623,12 @@ impl<'i> Parser<'i> {
             let span = span_start.join(self.last_span());
 
             let start = helper::parse_number(helper::strip_first_last(first), radix)
-                .map_err(|k| ParseErrorKind::from(k).at(span_1))?;
+                .map_err(|k| PEK::from(k).at(span_1))?;
             let end = helper::parse_number(helper::strip_first_last(second), radix)
-                .map_err(|k| ParseErrorKind::from(k).at(span_2))?;
+                .map_err(|k| PEK::from(k).at(span_2))?;
 
             if start.len() > end.len() || (start.len() == end.len() && start > end) {
-                return Err(ParseErrorKind::RangeIsNotIncreasing.at(span_1.join(span_2)));
+                return Err(PEK::RangeIsNotIncreasing.at(span_1.join(span_2)));
             }
 
             Ok(Some(Rule::Range(Range::new(start, end, radix, span))))
@@ -666,7 +659,7 @@ impl<'i> Parser<'i> {
             let span1 = self.last_span();
             let rule = Rule::Variable(Variable::new(ident, span1));
             if let Some((Token::Equals, span2)) = self.peek_pair() {
-                return Err(ParseErrorKind::MissingLetKeyword.at(span1.join(span2)));
+                return Err(PEK::MissingLetKeyword.at(span1.join(span2)));
             }
             Ok(Some(rule))
         } else {
@@ -691,8 +684,8 @@ enum StringOrChar<'i> {
 }
 
 impl StringOrChar<'_> {
-    fn to_char(self) -> Result<char, ParseErrorKind> {
-        Err(ParseErrorKind::CharString(match self {
+    fn to_char(self) -> Result<char, PEK> {
+        Err(PEK::CharString(match self {
             StringOrChar::Char(c) => return Ok(c),
             StringOrChar::String(s) => {
                 let s = helper::parse_quoted_text(s)?;
