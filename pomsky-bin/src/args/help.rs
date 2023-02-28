@@ -103,6 +103,7 @@ Currently, the following warnings can be disabled:"]
 
     Long "FEATURES" {
         table Compact {
+            "ascii-mode"      => { ["Allows disabling Unicode mode globally with " g:"disable unicode;"] }
             "atomic-groups"   => { ["Allows atomic groups such as " g:"atomic('if' | 'else')"] }
             "boundaries"      => { ["Allows matching word boundaries and anchors " g:"%" ", " g:"!%" ", " g:"^" ", " g:"$"] }
             "dot"             => { ["Allows matching the dot " g:"."] }

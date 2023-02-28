@@ -18,6 +18,7 @@ pub(super) fn parse_features(value: OsString) -> Result<PomskyFeatures, ParseArg
                 "atomic-groups" => features.atomic_groups(true),
                 "references" => features.references(true),
                 "lazy-mode" => features.lazy_mode(true),
+                "ascii-mode" => features.ascii_mode(true),
                 "ranges" => features.ranges(true),
                 "variables" => features.variables(true),
                 "lookahead" => features.lookahead(true),
