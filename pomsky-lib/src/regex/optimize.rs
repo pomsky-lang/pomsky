@@ -109,8 +109,6 @@ impl<'i> Regex<'i> {
             Regex::Unescaped(_) => Count::Many,
             Regex::Char(_)
             | Regex::CharSet(_)
-            | Regex::Shorthand(_)
-            | Regex::Property { .. }
             | Regex::Grapheme
             | Regex::Dot
             | Regex::Boundary(_)

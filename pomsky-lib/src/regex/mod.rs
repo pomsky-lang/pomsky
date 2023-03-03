@@ -30,10 +30,6 @@ pub(crate) enum Regex<'i> {
     Char(char),
     /// A character class, delimited with square brackets
     CharSet(RegexCharSet),
-    /// A shorthand such as `\w`
-    Shorthand(RegexShorthand),
-    /// A (Unicode) property such as Letter, Greek or Alphabetic
-    Property { value: RegexProperty, negative: bool },
     /// A Unicode grapheme
     Grapheme,
     /// The dot, matching anything except `\n`
@@ -74,6 +70,21 @@ pub(crate) enum RegexShorthand {
     HorizSpace,
 }
 
+impl RegexShorthand {
+    pub(crate) fn negate(&self) -> Option<RegexShorthand> {
+        Some(match self {
+            RegexShorthand::Word => RegexShorthand::NotWord,
+            RegexShorthand::Digit => RegexShorthand::NotDigit,
+            RegexShorthand::Space => RegexShorthand::NotSpace,
+            RegexShorthand::NotWord => RegexShorthand::Word,
+            RegexShorthand::NotDigit => RegexShorthand::Digit,
+            RegexShorthand::NotSpace => RegexShorthand::Space,
+            RegexShorthand::VertSpace => return None,
+            RegexShorthand::HorizSpace => return None,
+        })
+    }
+}
+
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexProperty {
@@ -86,10 +97,6 @@ pub(crate) enum RegexProperty {
 impl RegexProperty {
     pub(crate) fn negative_item(self, negative: bool) -> RegexCharSetItem {
         RegexCharSetItem::Property { negative, value: self }
-    }
-
-    pub(crate) fn negative(self, negative: bool) -> Regex<'static> {
-        Regex::Property { negative, value: self }
     }
 }
 
@@ -119,8 +126,6 @@ impl<'i> Regex<'i> {
                 literal::codegen_char_esc(c, buf, flavor);
             }
             Regex::CharSet(c) => c.codegen(buf, flavor),
-            Regex::Shorthand(s) => s.codegen(buf),
-            Regex::Property { value, negative } => value.codegen(buf, *negative, flavor),
             Regex::Grapheme => buf.push_str("\\X"),
             Regex::Dot => buf.push('.'),
             Regex::Group(g) => g.codegen(buf, flavor),
@@ -145,8 +150,6 @@ impl<'i> Regex<'i> {
             | Regex::Boundary(_)
             | Regex::Lookaround(_)
             | Regex::Reference(_)
-            | Regex::Shorthand(_)
-            | Regex::Property { .. }
             | Regex::Dot => false,
         }
     }
@@ -164,8 +167,6 @@ impl<'i> Regex<'i> {
             | Regex::Char(_)
             | Regex::Grapheme
             | Regex::Reference(_)
-            | Regex::Shorthand(_)
-            | Regex::Property { .. }
             | Regex::Dot => false,
         }
     }
