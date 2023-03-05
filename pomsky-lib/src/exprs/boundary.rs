@@ -20,7 +20,10 @@ impl<'i> RuleExt<'i> for Boundary {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        if options.flavor == RegexFlavor::JavaScript && !state.ascii_only {
+        if options.flavor == RegexFlavor::JavaScript
+            && !state.ascii_only
+            && matches!(self.kind, BoundaryKind::Word | BoundaryKind::NotWord)
+        {
             Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))
         } else {
             Ok(Regex::Boundary(self.kind))
