@@ -8,7 +8,7 @@ use crate::{
     options::CompileOptions,
 };
 
-use super::{dot::Dot, grapheme::Grapheme, RuleExt};
+use super::{codepoint::Codepoint, dot::Dot, grapheme::Grapheme, RuleExt};
 
 impl<'i> RuleExt<'i> for Rule<'i> {
     fn get_capturing_groups(
@@ -20,6 +20,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
         match self {
             Rule::Literal(_)
             | Rule::CharClass(_)
+            | Rule::Codepoint
             | Rule::Grapheme
             | Rule::Dot
             | Rule::Boundary(_)
@@ -50,6 +51,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::CharClass(c) => c.compile(options, state),
             Rule::Group(g) => g.compile(options, state),
             Rule::Grapheme => Grapheme {}.compile(options),
+            Rule::Codepoint => Codepoint {}.compile(options),
             Rule::Dot => Dot {}.compile(options),
             Rule::Alternation(a) => a.compile(options, state),
             Rule::Repetition(r) => r.compile(options, state),
@@ -68,7 +70,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
 
     fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
         match self {
-            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) => Ok(()),
+            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) | Rule::Codepoint => Ok(()),
             Rule::Grapheme => Grapheme {}.validate(options),
             Rule::Dot => Dot {}.validate(options),
             Rule::Group(g) => g.validate(options),

@@ -1,7 +1,7 @@
 use crate::Span;
 
 use super::{
-    micro_regex::{Capture, CharIs, Either, Many0, Many1, MicroRegex},
+    micro_regex::{Capture, CharIs, Either, Many0, Many1, MicroRegex, Not},
     LexErrorMsg, Token,
 };
 
@@ -103,7 +103,10 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                                 Either('+', '_'),
                                 Many1(CharIs(|c| c.is_alphanumeric() || c == '_')),
                             ),
-                            Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                            (
+                                Many1(CharIs(|c| c.is_ascii_hexdigit())),
+                                Not(CharIs(|c| c.is_alphanumeric() || c == '_'))
+                            ),
                         )
                     ).is_start(input) => (len, Token::CodePoint);
 

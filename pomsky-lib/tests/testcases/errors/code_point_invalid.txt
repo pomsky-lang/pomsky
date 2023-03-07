@@ -1,0 +1,5 @@
+#! expect=error
+U123EFG U_123EFG
+-----
+ERROR: Code point contains non-hexadecimal digits
+SPAN: 8..16

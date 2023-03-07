@@ -1,0 +1,9 @@
+[d] (
+    disable unicode; [d]
+    (
+        enable unicode; [d]
+        (disable unicode; [d])
+    )
+)
+-----
+\d[0-9]\d[0-9]

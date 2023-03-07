@@ -1,0 +1,5 @@
+disable unicode;
+
+^ C . [n r f] [d] [w] [s] % !% 'Hello äöüß' $
+-----
+^[\s\S].[\n\r\f][0-9][a-zA-Z0-9_][ \t-\r]\b\BHello äöüß$

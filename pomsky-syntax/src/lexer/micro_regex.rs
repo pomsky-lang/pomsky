@@ -118,6 +118,17 @@ impl<I: MicroRegex> MicroRegex for Many1<I> {
 }
 
 #[derive(Clone, Copy)]
+pub(crate) struct Not<I>(pub(crate) I);
+
+impl<I: MicroRegex> MicroRegex for Not<I> {
+    type Context = ();
+
+    fn is_start(&self, haystack: &str) -> Option<(usize, ())> {
+        self.0.is_start(haystack).is_none().then_some((0, ()))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub(crate) struct Ctx<I, C>(pub(crate) I, pub(crate) C);
 
 impl<C: Clone, I: MicroRegex> MicroRegex for Ctx<I, C> {
