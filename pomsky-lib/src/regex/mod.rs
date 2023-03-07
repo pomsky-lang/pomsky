@@ -218,7 +218,7 @@ impl RegexProperty {
         match self {
             RegexProperty::Category(c) => buf.push_str(c.as_str()),
             RegexProperty::Script(s) => {
-                if flavor == RegexFlavor::JavaScript {
+                if let RegexFlavor::JavaScript | RegexFlavor::Java = flavor {
                     buf.push_str("sc=");
                 }
                 buf.push_str(s.as_str());
