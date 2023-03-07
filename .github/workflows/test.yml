@@ -49,13 +49,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: temurin
       - name: Cache
         uses: Swatinem/rust-cache@v2
-      - name: Set env
-        run: echo JAVA_HOME=$JAVA_HOME_17_X64 >> $GITHUB_ENV
       - name: Build and run tests
         run: cargo test
 
