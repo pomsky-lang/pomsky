@@ -54,8 +54,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache
         uses: Swatinem/rust-cache@v2
+      - name: Set env
+        run: echo JAVA_HOME=$JAVA_HOME_17_X64 >> $GITHUB_ENV
       - name: Build and run tests
-        run: env JAVA_HOME=$JAVA_HOME_17_X64 cargo test
+        run: cargo test
 
   coverage:
     runs-on: ubuntu-latest
