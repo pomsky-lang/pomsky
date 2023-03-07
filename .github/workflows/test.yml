@@ -55,7 +55,7 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
       - name: Build and run tests
-        run: cargo test
+        run: JAVA_HOME=$JAVA_HOME_17_X64 cargo test
 
   coverage:
     runs-on: ubuntu-latest
