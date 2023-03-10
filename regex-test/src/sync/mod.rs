@@ -35,12 +35,22 @@ impl RegexTest {
 
     pub fn test_rust(&self, regex: &str) -> Outcome {
         self.rust.add_one();
-        crate::native::rust(regex)
+        crate::native::rust(regex, &[] as &[&str])
+    }
+
+    pub fn test_rust_with(&self, regex: &str, tests: &[impl AsRef<str>]) -> Outcome {
+        self.rust.add_one();
+        crate::native::rust(regex, tests)
     }
 
     pub fn test_pcre(&self, regex: &str) -> Outcome {
         self.pcre.add_one();
-        crate::native::pcre(regex)
+        crate::native::pcre(regex, &[] as &[&str])
+    }
+
+    pub fn test_pcre_with(&self, regex: &str, tests: &[impl AsRef<str>]) -> Outcome {
+        self.pcre.add_one();
+        crate::native::pcre(regex, tests)
     }
 
     pub fn test_ruby(&self, regex: &str) -> Outcome {

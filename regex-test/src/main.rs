@@ -7,8 +7,11 @@ fn main() {
 
     let test = RegexTest::new();
     let result = match args.flavor {
-        Flavor::Pcre => test.test_pcre(&args.input),
-        Flavor::Rust => test.test_rust(&args.input),
+        Flavor::Rust => test.test_rust_with(&args.input, &args.test),
+        Flavor::Pcre => test.test_pcre_with(&args.input, &args.test),
+        _ if !args.test.is_empty() => {
+            error(&format!("The flavor {:?} doesn't support test cases yet!", args.flavor))
+        }
         Flavor::Ruby => test.test_ruby(&args.input),
         Flavor::Js => test.test_js(&args.input),
         Flavor::Java => test.test_java(&args.input),
@@ -21,6 +24,7 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
 enum Flavor {
     Pcre,
     Rust,
@@ -50,18 +54,21 @@ impl FromStr for Flavor {
 struct Args {
     flavor: Flavor,
     input: String,
+    test: Vec<String>,
 }
 
 fn parse_args() -> Args {
     let mut raw = false;
     let mut input = None;
     let mut flavor = None;
+    let mut test = vec![];
 
     let mut parts = std::env::args().skip(1);
     while let Some(part) = parts.next() {
         enum Arg<'a> {
             Help,
             Flavor(Option<&'a str>),
+            Test(Option<&'a str>),
             Input(String),
         }
 
@@ -74,6 +81,7 @@ fn parse_args() -> Args {
             match part.strip_prefix("--") {
                 Some("help") => Arg::Help,
                 Some("flavor") => Arg::Flavor(None),
+                Some("test") => Arg::Test(None),
                 Some(s) => match s.strip_prefix("flavor=") {
                     Some(flavor) => Arg::Flavor(Some(flavor)),
                     None => error(&format!("Unknown flag '--{s}'")),
@@ -81,11 +89,17 @@ fn parse_args() -> Args {
                 None => match part.strip_prefix('-') {
                     Some("h") => Arg::Help,
                     Some("f") => Arg::Flavor(None),
-                    Some(s) => match s.strip_prefix('f') {
-                        Some(flavor) => {
+                    Some("t") => Arg::Test(None),
+                    Some(s) => match s.as_bytes() {
+                        [b'f', ..] => {
+                            let flavor = &s[1..];
                             Arg::Flavor(Some(flavor.strip_prefix('=').unwrap_or(flavor)))
                         }
-                        None => error(&format!("Unknown flag '-{s}'")),
+                        [b't', ..] => {
+                            let test = &s[1..];
+                            Arg::Test(Some(test.strip_prefix('=').unwrap_or(test)))
+                        }
+                        _ => error(&format!("Unknown flag '-{s}'")),
                     },
                     None => Arg::Input(part),
                 },
@@ -98,16 +112,19 @@ fn parse_args() -> Args {
                 let part = parts.next().unwrap_or_else(|| error("expected regex flavor"));
                 set_flavor(&part, &mut flavor);
             }
-            Arg::Flavor(Some(part)) => {
-                set_flavor(part, &mut flavor);
+            Arg::Flavor(Some(part)) => set_flavor(part, &mut flavor),
+            Arg::Test(None) => {
+                let part = parts.next().unwrap_or_else(|| error("expected test string"));
+                test.push(part);
             }
+            Arg::Test(Some(part)) => test.push(part.into()),
             Arg::Input(part) => set_input(part, &mut input),
         }
     }
 
     let input = input.unwrap_or_else(|| error("no input provided"));
     let flavor = flavor.unwrap_or_else(|| error("No flavor provided"));
-    Args { input, flavor }
+    Args { input, flavor, test }
 }
 
 fn error(msg: &str) -> ! {
