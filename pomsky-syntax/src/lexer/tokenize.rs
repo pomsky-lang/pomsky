@@ -112,7 +112,10 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 
                     if let Some((len, _)) = (
                         Many1(CharIs(|c| c.is_ascii_digit()))
-                    ).is_start(input) => (len, Token::Number);
+                    ).is_start(input) => match (input.as_bytes(), len) {
+                        ([b'0', ..], 2..) => (len, Token::ErrorMsg(LexErrorMsg::LeadingZero)),
+                        _ => (len, Token::Number),
+                    };
 
                     if let Some((len, _)) = (
                         CharIs(|c| c.is_alphabetic() || c == '_'),

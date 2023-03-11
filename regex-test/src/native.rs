@@ -6,7 +6,7 @@ pub(crate) fn rust(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
             for text in test_strings {
                 let text = text.as_ref();
                 if !regex.is_match(text) {
-                    return Outcome::Error(format!("Test string didn't match: ${text}"));
+                    return Outcome::Error(format!("Test string didn't match: {text}"));
                 }
             }
             Outcome::Success
@@ -25,7 +25,7 @@ pub(crate) fn pcre(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
                     Err(e) => return Outcome::Error(e.to_string()),
                 };
                 if !is_match {
-                    return Outcome::Error(format!("Test string didn't match: ${text}"));
+                    return Outcome::Error(format!("Test string didn't match: {text}"));
                 }
             }
             Outcome::Success

@@ -44,6 +44,7 @@ diagnostic_code! {
         RegexBackslashSyntax = 3,
         UnclosedString = 4,
         DeprecatedToken = 5,
+        LeadingZero = 6,
 
         // Parse errors
         UnexpectedToken = 100,
@@ -124,6 +125,7 @@ impl From<LexErrorMsg> for DiagnosticCode {
             | M::BackslashProperty
             | M::BackslashGK => DiagnosticCode::RegexBackslashSyntax,
             M::UnclosedString => DiagnosticCode::UnclosedString,
+            M::LeadingZero => DiagnosticCode::LeadingZero,
             M::DeprStart | M::DeprEnd => DiagnosticCode::DeprecatedToken,
             _ => panic!("Unhandled lexer error message {value:?}"),
         }

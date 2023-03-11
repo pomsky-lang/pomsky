@@ -44,7 +44,8 @@ pub(super) fn get_parse_error_msg_help(msg: LexErrorMsg, slice: &str) -> Option<
         | LexErrorMsg::GroupBranchReset
         | LexErrorMsg::GroupSubroutineCall
         | LexErrorMsg::GroupOther
-        | LexErrorMsg::UnclosedString => return None,
+        | LexErrorMsg::UnclosedString
+        | LexErrorMsg::LeadingZero => return None,
     })
 }
 

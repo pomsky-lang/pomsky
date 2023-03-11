@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::error::CharClassError;
 
 use super::char_group::GroupName;
@@ -654,7 +656,9 @@ impl OtherProperties {
     }
 }
 
-static PARSE_LUT: &[(&str, GroupName)] = &[
+static PARSE_LUT: &[(&str, GroupName)] = PARSE_LUT_CONST;
+
+const PARSE_LUT_CONST: &[(&str, GroupName)] = &[
     ("ASCII_Hex_Digit", GroupName::OtherProperties(OtherProperties::ASCII_Hex_Digit)),
     ("Adlam", GroupName::Script(Script::Adlam)),
     ("Adlm", GroupName::Script(Script::Adlam)),
@@ -1284,3 +1288,45 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
     ("w", (GroupName::Word)),
     ("word", (GroupName::Word)),
 ];
+
+// this is equivalent to `PARSE_LUT.is_sorted()` but works in a const context
+const _: () = {
+    let mut i = 1;
+    while i < PARSE_LUT_CONST.len() {
+        // this is ok because the strings are ASCII
+        let s1 = PARSE_LUT_CONST[i - 1].0.as_bytes();
+        let s2 = PARSE_LUT_CONST[i].0.as_bytes();
+
+        // equivalent to `s1 > s2`, but works in a const context
+        if let Ordering::Greater = compare_slices(s1, s2) {
+            panic!("Lookup table is not ascending, but this is required for binary search");
+        }
+
+        i += 1;
+    }
+
+    const fn compare_slices(s1: &[u8], s2: &[u8]) -> Ordering {
+        let mut i = 0;
+        let len1 = s1.len();
+        let len2 = s2.len();
+        let lower_len = if len1 < len2 { len1 } else { len2 };
+
+        while i < lower_len {
+            if s1[i] < s2[i] {
+                return Ordering::Less;
+            } else if s1[i] > s2[i] {
+                return Ordering::Greater;
+            }
+            i += 1;
+        }
+        // at this point we know that the longer string starts with the shorter one,
+        // e.g. "lemon" and "lemonade"
+        if len1 < len2 {
+            Ordering::Less
+        } else if len1 > len2 {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+};

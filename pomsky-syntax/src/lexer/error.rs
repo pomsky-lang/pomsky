@@ -26,6 +26,7 @@ pub enum LexErrorMsg {
     BackslashGK,
 
     UnclosedString,
+    LeadingZero,
 
     DeprStart,
     DeprEnd,
@@ -67,6 +68,7 @@ impl core::fmt::Display for LexErrorMsg {
             | LexErrorMsg::BackslashGK => "Backslash escapes are not supported",
 
             LexErrorMsg::UnclosedString => "This string literal doesn't have a closing quote",
+            LexErrorMsg::LeadingZero => "Numbers can't have leading zeroes",
 
             LexErrorMsg::DeprStart => "The `<%` literal is deprecated.",
             LexErrorMsg::DeprEnd => "The `%>` literal is deprecated.",

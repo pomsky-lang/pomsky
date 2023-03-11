@@ -143,7 +143,6 @@ impl fmt::Debug for GroupItem {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(u16)]
 pub enum GroupName {
     Word,
     Digit,

@@ -33,11 +33,12 @@ impl Default for CompileOptions {
 
 /// A regex flavor is a regex engine or a set of regex engines that are similar
 /// enough that they can be treated the same for the purpose of writing regexes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[non_exhaustive]
 pub enum RegexFlavor {
     /// PCRE and PCRE2
+    #[default]
     Pcre,
     /// Python's `re` module
     Python,
@@ -51,10 +52,4 @@ pub enum RegexFlavor {
     Ruby,
     /// The Rust `regex` crate
     Rust,
-}
-
-impl Default for RegexFlavor {
-    fn default() -> Self {
-        RegexFlavor::Pcre
-    }
 }
