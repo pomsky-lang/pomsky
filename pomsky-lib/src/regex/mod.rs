@@ -237,7 +237,13 @@ impl RegexProperty {
                     buf.push_str(b.as_str());
                 }
             },
-            RegexProperty::Other(o) => buf.push_str(o.as_str()),
+            RegexProperty::Other(o) => {
+                if flavor == RegexFlavor::Java {
+                    // Currently disabled since only some boolean properties are supported in Java
+                    buf.push_str("Is");
+                }
+                buf.push_str(o.as_str());
+            }
         }
         buf.push('}');
     }

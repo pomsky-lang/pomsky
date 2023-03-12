@@ -14,6 +14,9 @@ pub enum Feature {
     UnicodeBlock,
     /// Unicode properties, e.g. `\p{Whitespace}`
     UnicodeProp,
+    /// A specific Unicode properties is not supported, even though most are,
+    /// e.g. `\p{Bidi_Mirrored}` in Ruby
+    SpecificUnicodeProp,
     /// Backreferences, e.g. `\4`
     Backreference,
     /// Forward references. They're like backreferences, but refer to a group
@@ -52,6 +55,7 @@ impl Feature {
             Feature::Grapheme => "grapheme cluster matcher (\\X)",
             Feature::UnicodeBlock => "Unicode blocks (\\p{InBlock})",
             Feature::UnicodeProp => "Unicode properties (\\p{Property})",
+            Feature::SpecificUnicodeProp => "This particular Unicode property",
             Feature::Backreference => "backreference",
             Feature::ForwardReference => "forward reference",
             Feature::RelativeReference => "relative backreference",

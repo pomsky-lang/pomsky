@@ -314,10 +314,21 @@ fn named_class_to_regex_unicode(
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
         },
         GroupName::OtherProperties(o) => {
-            if flavor != RegexFlavor::JavaScript && flavor != RegexFlavor::Rust {
+            use OtherProperties as OP;
+            use RegexFlavor as RF;
+
+            if let RF::JavaScript | RF::Rust | RF::Pcre | RF::Ruby = flavor {
+                if matches!(o, OP::Join_Control | OP::Bidi_Mirroring_Glyph)
+                    || flavor == RF::Ruby && o == OP::Bidi_Mirrored
+                {
+                    let kind = CompileErrorKind::Unsupported(Feature::SpecificUnicodeProp, flavor);
+                    return Err(kind.at(span));
+                }
+
+                buf.push(RegexProperty::Other(o).negative_item(negative));
+            } else {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             }
-            buf.push(RegexProperty::Other(o).negative_item(negative));
         }
     }
     Ok(())

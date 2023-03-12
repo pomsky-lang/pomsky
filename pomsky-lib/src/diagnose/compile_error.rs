@@ -95,13 +95,17 @@ impl core::fmt::Display for CompileErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {kind}"),
-            CompileErrorKind::Unsupported(feature, flavor) => {
-                write!(
+            CompileErrorKind::Unsupported(feature, flavor) => match feature {
+                Feature::SpecificUnicodeProp => write!(
+                    f,
+                    "This Unicode property is not supported in the `{flavor:?}` regex flavor"
+                ),
+                _ => write!(
                     f,
                     "Unsupported feature `{}` in the `{flavor:?}` regex flavor",
                     feature.name(),
-                )
-            }
+                ),
+            },
             CompileErrorKind::UnsupportedPomskySyntax(inner) => inner.fmt(f),
             CompileErrorKind::HugeReference => {
                 write!(f, "Group references this large aren't supported")

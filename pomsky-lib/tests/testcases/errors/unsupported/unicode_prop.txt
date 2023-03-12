@@ -1,5 +1,5 @@
-#! expect=error, flavor=Pcre
+#! expect=error, flavor=Python
 [White_Space]
 -----
-ERROR: Unsupported feature `Unicode properties (\p{Property})` in the `Pcre` regex flavor
+ERROR: Unsupported feature `Unicode properties (\p{Property})` in the `Python` regex flavor
 SPAN: 0..13

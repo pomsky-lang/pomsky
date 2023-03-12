@@ -91,7 +91,7 @@ Currently, the following warnings can be disabled:"]
 
     Long "FLAVORS" {
         table Compact {
-            "pcre"       => { ["PCRE/PCRE2 regex engines, compatible with Perl, PHP and R"] }
+            "pcre"       => { ["PCRE2 regex engines, compatible with Perl, PHP and R"] }
             "python"     => { ["Python's " c!"re" " module"] }
             "java"       => { ["Java's " c!"Pattern" " class, compatible with Kotlin and Scala"] }
             "javascript" => { ["ECMAScript regular expressions"] }
