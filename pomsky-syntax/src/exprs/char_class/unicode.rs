@@ -403,8 +403,8 @@ data! {
     Deprecated -> "Deprecated";
     Variation_Selector -> "Variation_Selector";
 
-    Uppercase, upper -> "Uppercase";
-    Lowercase, lower -> "Lowercase";
+    Uppercase, Upper -> "Uppercase";
+    Lowercase, Lower -> "Lowercase";
     Soft_Dotted -> "Soft_Dotted";
     Case_Ignorable -> "Case_Ignorable";
     Changes_When_Lowercased -> "Changes_When_Lowercased";
@@ -1033,6 +1033,7 @@ const PARSE_LUT_CONST: &[(&str, GroupName)] = &[
         "Logical_Order_Exception",
         GroupName::OtherProperties(OtherProperties::Logical_Order_Exception),
     ),
+    ("Lower", GroupName::OtherProperties(OtherProperties::Lowercase)),
     ("Lowercase", GroupName::OtherProperties(OtherProperties::Lowercase)),
     ("Lowercase_Letter", GroupName::Category(Category::Lowercase_Letter)),
     ("Lt", GroupName::Category(Category::Titlecase_Letter)),
@@ -1247,6 +1248,7 @@ const PARSE_LUT_CONST: &[(&str, GroupName)] = &[
     ("Ugaritic", GroupName::Script(Script::Ugaritic)),
     ("Unassigned", GroupName::Category(Category::Unassigned)),
     ("Unified_Ideograph", GroupName::OtherProperties(OtherProperties::Unified_Ideograph)),
+    ("Upper", GroupName::OtherProperties(OtherProperties::Uppercase)),
     ("Uppercase", GroupName::OtherProperties(OtherProperties::Uppercase)),
     ("Uppercase_Letter", GroupName::Category(Category::Uppercase_Letter)),
     ("Vai", GroupName::Script(Script::Vai)),
