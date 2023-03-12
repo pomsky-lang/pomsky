@@ -1,0 +1,6 @@
+#! expect=error
+let foo = :foo('foo');
+'bar'
+-----
+ERROR: Capturing groups within `let` statements are currently not supported
+SPAN: 10..21

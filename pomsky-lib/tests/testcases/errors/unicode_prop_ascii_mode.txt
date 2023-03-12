@@ -1,0 +1,7 @@
+#! expect=error
+disable unicode;
+[Latin]
+-----
+ERROR: Unicode properties can't be used when Unicode is disabled
+HELP: Enable Unicode, e.g. `(enable unicode; [Latin])`
+SPAN: 17..24

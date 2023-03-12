@@ -67,6 +67,8 @@ pub(crate) enum CompileErrorKind {
         group1: GroupItem,
         group2: GroupItem,
     },
+    // [!v]
+    // TODO: This should be allowed when there's only one shorthand in the character set
     NegatedHorizVertSpace,
     CaptureInLet,
     ReferenceInLet,

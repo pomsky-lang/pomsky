@@ -1,0 +1,5 @@
+#! expect=error
+::300
+-----
+ERROR: Group references this large aren't supported
+SPAN: 0..5

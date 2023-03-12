@@ -1,0 +1,6 @@
+#! expect=error
+:test1('hello') 'world' :test1('!')
+-----
+ERROR: Group name `test1` used multiple times
+HELP: Give this group a different name
+SPAN: 24..35

@@ -1,0 +1,6 @@
+#! expect=error
+:(::+0)
+-----
+ERROR: Relative references can't be 0
+HELP: Perhaps you meant `::-1` to refer to the previous or surrounding capturing group
+SPAN: 2..6

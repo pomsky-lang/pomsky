@@ -1,0 +1,7 @@
+#! expect=error
+disable unicode;
+[!w d]
+-----
+ERROR: Shorthands currently can't be negated when Unicode is disabled
+HELP: Enable Unicode, e.g. `(enable unicode; [!w d])`
+SPAN: 17..23
