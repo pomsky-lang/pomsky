@@ -359,7 +359,7 @@ impl RegexCharSet {
                     return value.codegen(buf, negative ^ self.negative, flavor);
                 }
                 RegexCharSetItem::Char(c) if !self.negative => {
-                    return literal::compile_char(*c, buf, flavor);
+                    return literal::codegen_char_esc(*c, buf, flavor);
                 }
                 _ => {}
             }
