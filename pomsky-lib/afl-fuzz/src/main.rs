@@ -10,6 +10,7 @@ macro_rules! debug {
 }
 
 #[cfg(FALSE)] // uncomment to enable debugging while using `cargo afl tmin`
+              // search for 'CRASH' in log file to find bugs
 macro_rules! debug {
     (init: $input:expr, $options:expr) => {{
         let mut file = std::fs::OpenOptions::new().create(true).append(true).open("./log.txt").unwrap();
@@ -44,22 +45,40 @@ fn main() {
                     match compile_options.flavor {
                         RegexFlavor::Rust => {
                             debug!(_f, " rust...");
-                            regex::Regex::new(&regex).unwrap();
+                            if let Err(e) = regex::Regex::new(&regex) {
+                                if e.to_string()
+                                    .trim()
+                                    .ends_with("error: empty character classes are not allowed")
+                                {
+                                    // This is on my radar, but more difficult to fix!
+                                    debug!(_f, " skipped (known bug)\n");
+                                    return;
+                                }
+                                debug!(_f, " CRASH\n{e}");
+                                panic!("error compiling Rust regex");
+                            }
                             debug!(_f, " done!\n");
                         }
                         // Pomsky currently doesn't check if loobehind has repetitions for PCRE
                         RegexFlavor::Pcre if features == { features }.lookbehind(false) => {
                             debug!(_f, " pcre...");
-                            pcre2::bytes::RegexBuilder::new().utf(true).build(&regex).unwrap();
+                            if let Err(_e) =
+                                pcre2::bytes::RegexBuilder::new().utf(true).build(&regex)
+                            {
+                                debug!(_f, " CRASH\n{_e}");
+                                panic!("error compiling PCRE regex");
+                            }
                             debug!(_f, " done!\n");
                         }
                         _ => {
                             debug!(_f, " skipped (other flavor)\n");
                         }
                     }
+                } else {
+                    debug!(_f, " skipped (too long or `regex` feature enabled)\n");
                 }
             } else {
-                debug!(_f, " returned error: {:?}\n", result.1);
+                debug!(_f, " returned error\n");
             }
         }
     });

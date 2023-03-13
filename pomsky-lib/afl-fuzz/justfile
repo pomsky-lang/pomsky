@@ -1,0 +1,2 @@
+tmin input:
+    cargo afl tmin -i {{input}} -o out.txt -- ./target/debug/afl-fuzz
