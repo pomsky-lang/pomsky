@@ -210,13 +210,43 @@ impl RegexShorthand {
 
 impl RegexProperty {
     pub(crate) fn codegen(self, buf: &mut String, negative: bool, flavor: RegexFlavor) {
+        let is_single = matches!(
+            (self, flavor),
+            (
+                RegexProperty::Category(
+                    Category::Letter
+                        | Category::Mark
+                        | Category::Number
+                        | Category::Punctuation
+                        | Category::Symbol
+                        | Category::Separator
+                        | Category::Other
+                ),
+                RegexFlavor::DotNet
+                    | RegexFlavor::Java
+                    | RegexFlavor::Pcre
+                    | RegexFlavor::Rust
+                    | RegexFlavor::Ruby,
+            )
+        );
         if negative {
-            buf.push_str("\\P{");
+            buf.push_str("\\P");
         } else {
-            buf.push_str("\\p{");
+            buf.push_str("\\p");
         }
+        if !is_single {
+            buf.push('{');
+        }
+
         match self {
-            RegexProperty::Category(c) => buf.push_str(c.as_str()),
+            RegexProperty::Category(c) => {
+                if let (RegexFlavor::Rust, Category::Cased_Letter | Category::Currency_Symbol) =
+                    (flavor, c)
+                {
+                    buf.push_str("gc=");
+                }
+                buf.push_str(c.as_str());
+            }
             RegexProperty::Script(s) => {
                 if let RegexFlavor::JavaScript | RegexFlavor::Java = flavor {
                     buf.push_str("sc=");
@@ -245,6 +275,9 @@ impl RegexProperty {
                 buf.push_str(o.as_str());
             }
         }
-        buf.push('}');
+
+        if !is_single {
+            buf.push('}');
+        }
     }
 }

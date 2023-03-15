@@ -89,6 +89,10 @@ impl CompileErrorKind {
     pub(crate) fn at(self, span: Span) -> CompileError {
         CompileError { kind: self, span }
     }
+
+    pub(crate) fn unsupported_specific_prop_in(flavor: RegexFlavor) -> CompileErrorKind {
+        CompileErrorKind::Unsupported(Feature::SpecificUnicodeProp, flavor)
+    }
 }
 
 impl std::error::Error for CompileErrorKind {}

@@ -1,5 +1,0 @@
-#! expect=error, flavor=Pcre
-[Bidi_Mirroring_Glyph]
------
-ERROR: This Unicode property is not supported in the `Pcre` regex flavor
-SPAN: 0..22

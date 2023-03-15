@@ -87,7 +87,7 @@ use crate::{
 };
 
 use pomsky_syntax::{
-    exprs::{Category, CharClass, GroupItem, GroupName, OtherProperties},
+    exprs::{Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script},
     Span,
 };
 
@@ -306,10 +306,50 @@ fn named_class_to_regex_unicode(
         _ if flavor == RegexFlavor::Python => {
             return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
         }
-        GroupName::Category(c) => buf.push(RegexProperty::Category(c).negative_item(negative)),
-        GroupName::Script(s) => buf.push(RegexProperty::Script(s).negative_item(negative)),
+        GroupName::Category(c) => {
+            if flavor == RegexFlavor::Rust && c == Category::Surrogate {
+                return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
+            }
+            buf.push(RegexProperty::Category(c).negative_item(negative));
+        }
+        GroupName::Script(s) => {
+            if let (
+                RegexFlavor::Pcre | RegexFlavor::Ruby | RegexFlavor::Java,
+                Script::Kawi | Script::Nag_Mundari,
+            )
+            | (RegexFlavor::Rust, Script::Unknown) = (flavor, s)
+            {
+                return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
+            }
+            buf.push(RegexProperty::Script(s).negative_item(negative));
+        }
         GroupName::CodeBlock(b) => match flavor {
             RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
+                match (flavor, b) {
+                    (
+                        RegexFlavor::Java,
+                        CodeBlock::Arabic_Extended_C
+                        | CodeBlock::CJK_Unified_Ideographs_Extension_H
+                        | CodeBlock::Combining_Diacritical_Marks_For_Symbols
+                        | CodeBlock::Cyrillic_Extended_D
+                        | CodeBlock::Cyrillic_Supplement
+                        | CodeBlock::Devanagari_Extended_A
+                        | CodeBlock::Greek_And_Coptic
+                        | CodeBlock::Kaktovik_Numerals
+                        | CodeBlock::No_Block,
+                    )
+                    | (
+                        RegexFlavor::Ruby,
+                        CodeBlock::Arabic_Extended_C
+                        | CodeBlock::CJK_Unified_Ideographs_Extension_H
+                        | CodeBlock::Cyrillic_Extended_D
+                        | CodeBlock::Devanagari_Extended_A
+                        | CodeBlock::Kaktovik_Numerals,
+                    ) => {
+                        return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
+                    }
+                    _ => {}
+                }
                 buf.push(RegexProperty::Block(b).negative_item(negative));
             }
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
@@ -319,13 +359,15 @@ fn named_class_to_regex_unicode(
             use RegexFlavor as RF;
 
             if let RF::JavaScript | RF::Rust | RF::Pcre | RF::Ruby = flavor {
-                if matches!(o, OP::Join_Control | OP::Bidi_Mirroring_Glyph)
-                    || flavor == RF::Ruby && o == OP::Bidi_Mirrored
-                {
-                    let kind = CompileErrorKind::Unsupported(Feature::SpecificUnicodeProp, flavor);
-                    return Err(kind.at(span));
+                match (flavor, o) {
+                    (RF::JavaScript, _) => {}
+                    (_, OP::Changes_When_NFKC_Casefolded)
+                    | (RF::Pcre, OP::Assigned)
+                    | (RF::Ruby, OP::Bidi_Mirrored) => {
+                        return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
+                    }
+                    _ => {}
                 }
-
                 buf.push(RegexProperty::Other(o).negative_item(negative));
             } else {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));

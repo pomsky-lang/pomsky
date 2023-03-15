@@ -1,4 +1,4 @@
 #! flavor=Java
 [Greek] [Grek] ![Latin] [!Latn]
 -----
-\p{sc=Greek}\p{sc=Greek}\P{sc=Latin}\P{sc=Latin}
+\p{sc=Grek}\p{sc=Grek}\P{sc=Latn}\P{sc=Latn}

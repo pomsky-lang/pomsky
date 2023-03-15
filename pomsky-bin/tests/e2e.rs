@@ -129,6 +129,7 @@ OPTIONS:
         --allowed-features <FEATURE>...  Comma-separated list of allowed features [default: all enabled]
     -f, --flavor <FLAVOR>                Regex flavor [default: `pcre`]
     -h, --help                           Print help information
+        --list shorthands                Show all available character class shorthands
     -n, --no-new-line                    Don't print a new-line after the output
     -p, --path <FILE>                    File containing the pomsky expression to compile
     -V, --version                        Print version information

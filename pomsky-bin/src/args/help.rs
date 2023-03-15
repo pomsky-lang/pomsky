@@ -50,7 +50,7 @@ pub(super) const HELP: Help = Help(sections![
                 ["Print help information"]
                 Long ["Use " c:"-h" " for short descriptions and " c:"--help" " for more details."]
             }
-            "--list shorthands" => {
+            "    --list shorthands" => {
                 ["Show all available character class shorthands"]
             }
             "-n, --no-new-line" => {
