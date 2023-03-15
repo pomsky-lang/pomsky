@@ -97,7 +97,7 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
 ];
 ",
             category_enum = generate_enum("Category", &categories, 0, 1),
-            script_enum = generate_enum("Script", &scripts, 0, 1),
+            script_enum = generate_enum("Script", &scripts, 1, 1),
             block_enum = generate_enum("CodeBlock", &blocks, 1, 1),
             other_enum = generate_enum("OtherProperties", &bools, 1, 1),
             lut = lut.join(",\n    "),
