@@ -15,6 +15,11 @@ pub(super) fn parse_group_name(name: &str) -> Result<GroupName, CharClassError> 
     }
 }
 
+/// Returns the list of all accepted shorthands.
+pub fn list_shorthands() -> impl Iterator<Item = (&'static str, GroupName)> {
+    PARSE_LUT.iter().copied()
+}
+
 // The following macro is used to generate the code below; however,
 // the lookup table must be sorted manually to allow binary search.
 

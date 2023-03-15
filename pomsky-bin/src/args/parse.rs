@@ -8,6 +8,12 @@ pub(super) enum ArgsInner {
     HelpShort,
     HelpLong,
     Version,
+    List(ListKind),
+}
+
+#[derive(PartialEq)]
+pub(super) enum ListKind {
+    Shorthands,
 }
 
 pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, ParseArgsError> {
@@ -19,6 +25,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
     let mut debug = false;
     let mut flavor = None;
     let mut no_new_line = false;
+    let mut list = None;
     let mut allowed_features = None;
     let mut warnings = DiagnosticSet::All;
     let mut json = false;
@@ -39,6 +46,13 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
             Long("allowed-features") => allowed_features
                 .set_arg(super::features::parse_features(parser.value()?)?, "--allowed-features")?,
             Long("json") => json.set_arg(true, "--json")?,
+            Long("list") => {
+                let list_arg = parser.value()?.string()?;
+                if &list_arg != "shorthands" {
+                    return Err(ParseArgsError::UnknownList(list_arg));
+                };
+                list.set_arg(ListKind::Shorthands, "--list")?
+            }
             Value(val) if input_value.is_none() => {
                 input_value = Some(val.into_string().map_err(lexopt::Error::from)?);
             }
@@ -51,6 +65,13 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
 
     if arg_count == 0 && atty::is(Stream::Stdin) && atty::is(Stream::Stdout) {
         return Ok(ArgsInner::HelpShort);
+    }
+
+    if let Some(list) = list {
+        if input_value.is_some() || path.is_some() {
+            return Err(ParseArgsError::InputAndList);
+        }
+        return Ok(ArgsInner::List(list));
     }
 
     let input = match (input_value, path) {

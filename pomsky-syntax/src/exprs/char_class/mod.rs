@@ -85,6 +85,8 @@ mod ascii;
 pub(crate) mod char_group;
 pub(crate) mod unicode;
 
+pub use unicode::list_shorthands;
+
 /// A _character class_. Refer to the [module-level documentation](self) for
 /// details.
 #[derive(Clone, PartialEq, Eq)]

@@ -169,4 +169,18 @@ impl GroupName {
             GroupName::OtherProperties(o) => o.as_str(),
         }
     }
+
+    pub fn kind(self) -> &'static str {
+        match self {
+            GroupName::Word
+            | GroupName::Digit
+            | GroupName::Space
+            | GroupName::HorizSpace
+            | GroupName::VertSpace => "shorthand",
+            GroupName::Category(_) => "category",
+            GroupName::Script(_) => "script",
+            GroupName::CodeBlock(_) => "block",
+            GroupName::OtherProperties(_) => "property",
+        }
+    }
 }

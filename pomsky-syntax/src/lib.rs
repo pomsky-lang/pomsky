@@ -31,3 +31,5 @@ pub use util::find_suggestion;
 
 #[cfg(feature = "dbg")]
 use pretty_print::PrettyPrinter;
+
+pub use exprs::char_class::list_shorthands;

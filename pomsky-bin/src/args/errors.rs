@@ -7,7 +7,9 @@ pub(crate) enum ParseArgsError {
     UnexpectedTwice(&'static str),
     NoInput,
     InputAndPath,
+    InputAndList,
     UnknownFlavor(String),
+    UnknownList(String),
     WarningsNoEquals(String),
     WarningsNoZero(String),
     WarningsNotAllowed(String),
@@ -35,9 +37,17 @@ impl fmt::Display for ParseArgsError {
                 "'{flavor}' isn't a valid flavor\n\
                     possible values: pcre, python, java, javascript, dotnet, ruby, rust"
             ),
+            ParseArgsError::UnknownList(list) => write!(
+                f,
+                "'{list}' isn't a valid list\n\
+                    possible values: shorthands"
+            ),
             ParseArgsError::NoInput => write!(f, "No input provided"),
             ParseArgsError::InputAndPath => {
                 write!(f, "You can only provide an input or a path, but not both")
+            }
+            ParseArgsError::InputAndList => {
+                write!(f, "You can only list something or compile an expression, but not both")
             }
             ParseArgsError::WarningsNoEquals(warning) => write!(
                 f,

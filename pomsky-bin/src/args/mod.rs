@@ -5,7 +5,7 @@ pub(crate) use help::print_short_usage_and_help_err;
 pub(crate) use input::Input;
 pub(crate) use warnings::DiagnosticSet;
 
-use self::parse::ArgsInner;
+use self::parse::{ArgsInner, ListKind};
 
 mod errors;
 mod features;
@@ -47,6 +47,13 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
         }
         ArgsInner::Version => {
             help::print_version();
+            std::process::exit(0)
+        }
+        ArgsInner::List(ListKind::Shorthands) => {
+            let s: String = pomsky::list_shorthands()
+                .map(|(name, group_name)| format!("{name:<50} {}\n", group_name.kind()))
+                .collect();
+            println!("{s}");
             std::process::exit(0)
         }
     }
