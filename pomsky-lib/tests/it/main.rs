@@ -99,6 +99,11 @@ fn defer_main() {
         eprintln!("  .NET   was invoked {} times", rt.dotnet.get_count());
     }
 
+    rt.java.kill().unwrap();
+    rt.js.kill().unwrap();
+    rt.py.kill().unwrap();
+    rt.dotnet.kill().unwrap();
+
     println!(
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
         if failed == 0 { Green("ok") } else { Red("FAILED") },

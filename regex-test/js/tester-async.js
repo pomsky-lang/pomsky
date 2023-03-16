@@ -1,16 +1,15 @@
-const process = require('node:process')
+const readline = require('readline')
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false,
+})
 
 /** @type {RegExp|undefined} */
 let regex
 
-process.stdin.on('data', (data) => {
-  let line = data.toString()
-  if (line.endsWith('\r\n')) {
-    line = line.slice(0, line.length - 2)
-  } else if (line.endsWith('\n')) {
-    line = line.slice(0, line.length - 1)
-  }
-
+rl.on('line', (line) => {
   if (regex === undefined) {
     try {
       regex = new RegExp(line, 'u')
