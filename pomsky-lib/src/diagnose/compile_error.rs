@@ -106,6 +106,11 @@ impl core::fmt::Display for CompileErrorKind {
                     f,
                     "This Unicode property is not supported in the `{flavor:?}` regex flavor"
                 ),
+                Feature::LargeCodePointInCharClass(c) => write!(
+                    f,
+                    "Code point {c:?} is too large. Code points above U+FFFF \
+                    may not appear in character classes in the `{flavor:?}` flavor"
+                ),
                 _ => write!(
                     f,
                     "Unsupported feature `{}` in the `{flavor:?}` regex flavor",

@@ -117,8 +117,13 @@ impl<'i> RuleExt<'i> for CharClass {
             prev_items.insert(*item);
 
             match *item {
-                GroupItem::Char(c) => buf.push(RegexCharSetItem::Char(c)),
+                GroupItem::Char(c) => {
+                    validate_char_in_class(c, options.flavor, self.span)?;
+                    buf.push(RegexCharSetItem::Char(c));
+                }
                 GroupItem::Range { first, last } => {
+                    validate_char_in_class(first, options.flavor, self.span)?;
+                    validate_char_in_class(last, options.flavor, self.span)?;
                     buf.push(RegexCharSetItem::Range { first, last });
                 }
                 GroupItem::Named { name, negative: item_negative } => {
@@ -152,6 +157,15 @@ impl<'i> RuleExt<'i> for CharClass {
         }
 
         Ok(Regex::CharSet(RegexCharSet { negative, items: buf }))
+    }
+}
+
+fn validate_char_in_class(char: char, flavor: RegexFlavor, span: Span) -> Result<(), CompileError> {
+    if flavor == RegexFlavor::DotNet && char > '\u{FFFF}' {
+        Err(CompileErrorKind::Unsupported(Feature::LargeCodePointInCharClass(char), flavor)
+            .at(span))
+    } else {
+        Ok(())
     }
 }
 

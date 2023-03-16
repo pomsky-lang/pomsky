@@ -91,6 +91,13 @@ pub(crate) fn compile_char(c: char, buf: &mut String, flavor: RegexFlavor) {
         _ if matches!(flavor, RegexFlavor::Python) => {
             write!(buf, "\\U{:08X}", c as u32).unwrap();
         }
+        _ if matches!(flavor, RegexFlavor::DotNet) => {
+            let mut code_units = [0, 0];
+            let encoded = c.encode_utf16(&mut code_units);
+            for &mut c in encoded {
+                write!(buf, "\\u{:04X}", c).unwrap();
+            }
+        }
         _ => {
             match flavor {
                 RegexFlavor::Pcre | RegexFlavor::Java | RegexFlavor::Ruby => buf.push_str("\\x"),

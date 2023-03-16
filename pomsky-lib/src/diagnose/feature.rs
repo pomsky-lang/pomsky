@@ -30,6 +30,8 @@ pub enum Feature {
     MixedReferences,
     /// Lookarounds can't be repeated in Ruby, even when wrapped in a group
     RepeatedAssertion,
+    /// Code points above U+FFFF in char classes
+    LargeCodePointInCharClass(char),
 }
 
 impl Feature {
@@ -47,6 +49,7 @@ impl Feature {
             Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
             Feature::MixedReferences => "references to both named and numbered groups",
             Feature::RepeatedAssertion => "single repeated assertion",
+            Feature::LargeCodePointInCharClass(_) => "code points above U+FFFF in char classes",
         }
     }
 }
