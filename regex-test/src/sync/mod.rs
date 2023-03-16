@@ -63,20 +63,37 @@ impl RegexTest {
 
     pub fn test_ruby(&self, regex: &str) -> Outcome {
         self.ruby.add_one();
-        crate::native::ruby(regex)
+        crate::native::ruby(regex, &[] as &[&str])
+    }
+
+    pub fn test_ruby_with(&self, regex: &str, tests: &[impl AsRef<str>]) -> Outcome {
+        self.ruby.add_one();
+        crate::native::ruby(regex, tests)
     }
 
     pub fn test_js(&self, regex: impl Into<String>) -> Outcome {
+        self.test_js_with(regex, &[] as &[&str])
+    }
+
+    pub fn test_js_with(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
         self.js.start("js", "node", &["tester-async.js"]);
-        self.js.test(regex)
+        self.js.test(regex, tests)
     }
 
     pub fn test_python(&self, regex: impl Into<String>) -> Outcome {
+        self.test_python_with(regex, &[] as &[&str])
+    }
+
+    pub fn test_python_with(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
         self.py.start("python", "python", &["tester_async.py"]);
-        self.py.test(regex)
+        self.py.test(regex, tests)
     }
 
     pub fn test_java(&self, regex: impl Into<String>) -> Outcome {
+        self.test_java_with(regex, &[] as &[&str])
+    }
+
+    pub fn test_java_with(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
         self.java.start_with("java", "java", &["TesterAsync"], || {
             let compiled = concat!(env!("CARGO_MANIFEST_DIR"), "/java/TesterAsync.class");
             if !Path::new(compiled).exists() {
@@ -89,11 +106,16 @@ impl RegexTest {
             }
         });
 
-        self.java.test(regex)
+        self.java.test(regex, tests)
     }
 
     #[cfg(target_os = "linux")]
     pub fn test_dotnet(&self, regex: impl Into<String>) -> Outcome {
+        self.test_dotnet_with(regex, &[] as &[&str])
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn test_dotnet_with(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
         self.dotnet.start_with("dotnet", "mono", &["TesterAsync.exe"], || {
             let compiled = concat!(env!("CARGO_MANIFEST_DIR"), "/dotnet/TesterAsync.exe");
             if !Path::new(compiled).exists() {
@@ -106,6 +128,6 @@ impl RegexTest {
             }
         });
 
-        self.dotnet.test(regex)
+        self.dotnet.test(regex, tests)
     }
 }

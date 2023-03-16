@@ -37,9 +37,17 @@ pub(crate) fn pcre(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
     }
 }
 
-pub(crate) fn ruby(regex: &str) -> Outcome {
+pub(crate) fn ruby(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
     match onig::Regex::new(regex) {
-        Ok(_) => Outcome::Success,
+        Ok(regex) => {
+            for text in test_strings {
+                let text = text.as_ref();
+                if !regex.is_match(text) {
+                    return Outcome::Error(format!("Test string didn't match: {text}"));
+                }
+            }
+            Outcome::Success
+        }
         Err(e) => Outcome::Error(e.to_string()),
     }
 }

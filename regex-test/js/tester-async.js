@@ -1,25 +1,39 @@
-const readline = require('readline')
+const process = require('node:process')
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  terminal: false,
-})
+/** @type {RegExp|undefined} */
+let regex
 
-rl.on('line', (line) => {
-  // console.error(line)
-  try {
-    new RegExp(line, 'u')
-  } catch (e) {
-    const message = e.message.replace(/[\n\\]/g, (c) =>
-      c === '\\' ? '\\\\' : '\\n'
-    )
-    console.log(message)
-    return
+process.stdin.on('data', (data) => {
+  let line = data.toString()
+  if (line.endsWith('\r\n')) {
+    line = line.slice(0, line.length - 2)
+  } else if (line.endsWith('\n')) {
+    line = line.slice(0, line.length - 1)
   }
-  console.log('success')
+
+  if (regex === undefined) {
+    try {
+      regex = new RegExp(line, 'u')
+      console.log('success')
+    } catch (e) {
+      console.log(substituteLf(e.message))
+    }
+  } else if (line.startsWith('TEST:')) {
+    const test = line.slice(5)
+
+    if (regex.test(test)) {
+      console.log('test good')
+    } else {
+      console.log(
+        substituteLf(`Regex '${regex.source}' does not match '${test}'`)
+      )
+      regex = undefined
+    }
+  } else {
+    regex = undefined
+  }
 })
 
-rl.on('close', () => {
-  process.exit(0)
-})
+function substituteLf(s = '') {
+  return s.replace(/[\n\\]/g, (c) => (c === '\\' ? '\\\\' : '\\n'))
+}

@@ -3,26 +3,38 @@ use std::{process::exit, str::FromStr};
 use regex_test::{Outcome, RegexTest};
 
 fn main() {
-    let args = parse_args();
-
     let test = RegexTest::new();
+    let res = main_impl(&test);
+
+    test.java.kill().unwrap();
+    test.js.kill().unwrap();
+    test.py.kill().unwrap();
+    test.dotnet.kill().unwrap();
+
+    if let Err(e) = res {
+        println!("error: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn main_impl(test: &RegexTest) -> Result<(), String> {
+    let args = parse_args()?;
     let result = match args.flavor {
         Flavor::Rust => test.test_rust_with(&args.input, &args.test),
         Flavor::Pcre => test.test_pcre_with(&args.input, &args.test),
-        _ if !args.test.is_empty() => {
-            error(&format!("The flavor {:?} doesn't support test cases yet!", args.flavor))
-        }
-        Flavor::Ruby => test.test_ruby(&args.input),
-        Flavor::Js => test.test_js(&args.input),
-        Flavor::Java => test.test_java(&args.input),
-        Flavor::Python => test.test_python(&args.input),
-        Flavor::DotNet => test.test_dotnet(&args.input),
+        Flavor::Ruby => test.test_ruby_with(&args.input, &args.test),
+        Flavor::DotNet => test.test_dotnet_with(&args.input, &args.test),
+        Flavor::Js => test.test_js_with(&args.input, &args.test),
+        Flavor::Java => test.test_java_with(&args.input, &args.test),
+        Flavor::Python => test.test_python_with(&args.input, &args.test),
     };
 
     match result {
         Outcome::Success => eprintln!("success!"),
-        Outcome::Error(e) => error(&e),
+        Outcome::Error(e) => return Err(e),
     }
+
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -60,7 +72,7 @@ struct Args {
     test: Vec<String>,
 }
 
-fn parse_args() -> Args {
+fn parse_args() -> Result<Args, String> {
     let mut raw = false;
     let mut input = None;
     let mut flavor = None;
@@ -87,7 +99,7 @@ fn parse_args() -> Args {
                 Some("test") => Arg::Test(None),
                 Some(s) => match s.strip_prefix("flavor=") {
                     Some(flavor) => Arg::Flavor(Some(flavor)),
-                    None => error(&format!("Unknown flag '--{s}'")),
+                    None => return Err(format!("Unknown flag '--{s}'")),
                 },
                 None => match part.strip_prefix('-') {
                     Some("h") => Arg::Help,
@@ -102,7 +114,7 @@ fn parse_args() -> Args {
                             let test = &s[1..];
                             Arg::Test(Some(test.strip_prefix('=').unwrap_or(test)))
                         }
-                        _ => error(&format!("Unknown flag '-{s}'")),
+                        _ => return Err(format!("Unknown flag '-{s}'")),
                     },
                     None => Arg::Input(part),
                 },
@@ -112,27 +124,30 @@ fn parse_args() -> Args {
         match arg {
             Arg::Help => help(),
             Arg::Flavor(None) => {
-                let part = parts.next().unwrap_or_else(|| error("expected regex flavor"));
-                set_flavor(&part, &mut flavor);
+                let Some(part) = parts.next() else {
+                    return Err("expected regex flavor".to_string());
+                };
+                set_flavor(&part, &mut flavor)?;
             }
-            Arg::Flavor(Some(part)) => set_flavor(part, &mut flavor),
+            Arg::Flavor(Some(part)) => set_flavor(part, &mut flavor)?,
             Arg::Test(None) => {
-                let part = parts.next().unwrap_or_else(|| error("expected test string"));
+                let Some(part) = parts.next() else {
+                    return Err("expected test string".to_string());
+                };
                 test.push(part);
             }
             Arg::Test(Some(part)) => test.push(part.into()),
-            Arg::Input(part) => set_input(part, &mut input),
+            Arg::Input(part) => set_input(part, &mut input)?,
         }
     }
 
-    let input = input.unwrap_or_else(|| error("no input provided"));
-    let flavor = flavor.unwrap_or_else(|| error("No flavor provided"));
-    Args { input, flavor, test }
-}
-
-fn error(msg: &str) -> ! {
-    println!("error: {msg}");
-    exit(1)
+    let Some(input) = input else {
+        return Err("no input provided".to_string());
+    };
+    let Some(flavor) = flavor else {
+        return Err("No flavor provided".to_string());
+    };
+    Ok(Args { input, flavor, test })
 }
 
 fn help() {
@@ -148,16 +163,21 @@ FLAVORS:
     exit(0);
 }
 
-fn set_input(part: String, input: &mut Option<String>) {
+fn set_input(part: String, input: &mut Option<String>) -> Result<(), String> {
     if input.is_some() {
-        error("input provided multiple times");
+        return Err("input provided multiple times".to_string());
     }
     *input = Some(part);
+    Ok(())
 }
 
-fn set_flavor(part: &str, flavor: &mut Option<Flavor>) {
+fn set_flavor(part: &str, flavor: &mut Option<Flavor>) -> Result<(), String> {
     if flavor.is_some() {
-        error("flavor provided multiple times");
+        return Err("flavor provided multiple times".to_string());
     }
-    *flavor = Some(part.parse().unwrap_or_else(|_| error("not a valid regex flavor")));
+    let Ok(parsed) = part.parse() else {
+        return Err("not a valid regex flavor".to_string());
+    };
+    *flavor = Some(parsed);
+    Ok(())
 }
