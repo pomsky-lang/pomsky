@@ -1,4 +1,4 @@
-use std::{path::Path, process::Command, thread};
+use std::{io, path::Path, process::Command, thread};
 
 use crate::Outcome;
 
@@ -39,6 +39,15 @@ impl RegexTest {
 
         #[cfg(target_os = "linux")]
         self.dotnet.reset_count();
+    }
+
+    pub fn kill_processes(&self) -> io::Result<()> {
+        self.js.kill()?;
+        self.py.kill()?;
+        self.java.kill()?;
+        #[cfg(target_os = "linux")]
+        self.dotnet.kill()?;
+        Ok(())
     }
 
     pub fn test_rust(&self, regex: &str) -> Outcome {

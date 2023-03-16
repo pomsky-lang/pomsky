@@ -99,10 +99,7 @@ fn defer_main() {
         eprintln!("  .NET   was invoked {} times", rt.dotnet.get_count());
     }
 
-    rt.java.kill().unwrap();
-    rt.js.kill().unwrap();
-    rt.py.kill().unwrap();
-    rt.dotnet.kill().unwrap();
+    rt.kill_processes().unwrap();
 
     println!(
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
