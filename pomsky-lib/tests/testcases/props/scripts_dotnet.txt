@@ -1,4 +1,5 @@
-#! flavor=DotNet
+#! expect=error, flavor=DotNet
 [Greek] [Grek] ![Latin] [!Latn]
 -----
-\p{Greek}\p{Greek}\P{Latin}\P{Latin}
+ERROR: Unsupported feature `Unicode scripts (\p{Script})` in the `DotNet` regex flavor
+SPAN: 0..7

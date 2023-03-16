@@ -8,6 +8,8 @@ pub enum Feature {
     Lookaround,
     /// A single grapheme cluster, `\X`
     Grapheme,
+    /// Unicode scripts, e.g. `\p{Latin}`
+    UnicodeScript,
     /// Unicode blocks, e.g. `\p{InBasic_Latin}`
     UnicodeBlock,
     /// Unicode properties, e.g. `\p{Whitespace}`
@@ -36,6 +38,7 @@ impl Feature {
             Feature::AtomicGroups => "atomic groups",
             Feature::Lookaround => "lookahead/behind",
             Feature::Grapheme => "grapheme cluster matcher (\\X)",
+            Feature::UnicodeScript => "Unicode scripts (\\p{Script})",
             Feature::UnicodeBlock => "Unicode blocks (\\p{InBlock})",
             Feature::UnicodeProp => "Unicode properties (\\p{Property})",
             Feature::SpecificUnicodeProp => "This particular Unicode property",

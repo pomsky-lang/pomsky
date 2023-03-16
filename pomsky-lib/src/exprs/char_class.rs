@@ -307,12 +307,17 @@ fn named_class_to_regex_unicode(
             return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
         }
         GroupName::Category(c) => {
-            if flavor == RegexFlavor::Rust && c == Category::Surrogate {
+            if let (RegexFlavor::Rust, Category::Surrogate)
+            | (RegexFlavor::DotNet, Category::Cased_Letter) = (flavor, c)
+            {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }
             buf.push(RegexProperty::Category(c).negative_item(negative));
         }
         GroupName::Script(s) => {
+            if flavor == RegexFlavor::DotNet {
+                return Err(CompileErrorKind::Unsupported(Feature::UnicodeScript, flavor).at(span));
+            }
             if let (
                 RegexFlavor::Pcre | RegexFlavor::Ruby | RegexFlavor::Java,
                 Script::Kawi | Script::Nag_Mundari,

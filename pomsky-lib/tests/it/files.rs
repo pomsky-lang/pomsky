@@ -116,6 +116,10 @@ impl Options {
 
 fn can_compile_regex(flavor: RegexFlavor) -> bool {
     use RegexFlavor::*;
+    #[cfg(target_os = "linux")]
+    if flavor == DotNet {
+        return true;
+    }
     matches!(flavor, Rust | Pcre | Ruby | JavaScript | Java | Python)
 }
 
@@ -170,6 +174,8 @@ pub(crate) fn test_file(
                             RegexFlavor::JavaScript => proc.test_js(regex),
                             RegexFlavor::Java => proc.test_java(regex),
                             RegexFlavor::Python => proc.test_python(regex),
+                            #[cfg(target_os = "linux")]
+                            RegexFlavor::DotNet => proc.test_dotnet(regex),
                             _ => {
                                 eprintln!(
                                     "{}: Flavor {:?} can't be compiled at the moment",

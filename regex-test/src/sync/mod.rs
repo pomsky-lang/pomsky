@@ -12,6 +12,8 @@ pub struct RegexTest {
     pub js: Process,
     pub java: Process,
     pub py: Process,
+    #[cfg(target_os = "linux")]
+    pub dotnet: Process,
     pub rust: Count,
     pub pcre: Count,
     pub ruby: Count,
@@ -27,10 +29,16 @@ impl RegexTest {
             scope.spawn(|| self.test_js("x"));
             scope.spawn(|| self.test_java("x"));
             scope.spawn(|| self.test_python("x"));
+
+            #[cfg(target_os = "linux")]
+            scope.spawn(|| self.test_dotnet("x"));
         });
         self.js.reset_count();
         self.java.reset_count();
         self.py.reset_count();
+
+        #[cfg(target_os = "linux")]
+        self.dotnet.reset_count();
     }
 
     pub fn test_rust(&self, regex: &str) -> Outcome {
@@ -82,5 +90,22 @@ impl RegexTest {
         });
 
         self.java.test(regex)
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn test_dotnet(&self, regex: impl Into<String>) -> Outcome {
+        self.dotnet.start_with("dotnet", "mono", &["TesterAsync.exe"], || {
+            let compiled = concat!(env!("CARGO_MANIFEST_DIR"), "/dotnet/TesterAsync.exe");
+            if !Path::new(compiled).exists() {
+                let result = Command::new("mcs")
+                    .current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/dotnet"))
+                    .arg("TesterAsync.cs")
+                    .output()
+                    .unwrap();
+                assert!(result.status.success(), "Could not compile C# file");
+            }
+        });
+
+        self.dotnet.test(regex)
     }
 }

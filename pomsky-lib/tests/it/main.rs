@@ -94,6 +94,9 @@ fn defer_main() {
         eprintln!("  Ruby   was invoked {} times", rt.ruby.get_count());
         eprintln!("  Rust   was invoked {} times", rt.rust.get_count());
         eprintln!("  PCRE   was invoked {} times", rt.pcre.get_count());
+
+        #[cfg(target_os = "linux")]
+        eprintln!("  .NET   was invoked {} times", rt.dotnet.get_count());
     }
 
     println!(
