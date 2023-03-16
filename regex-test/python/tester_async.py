@@ -26,7 +26,7 @@ try:
             if regex.match(test) != None:
                 print("test good")
             else:
-                print(substituteLf(f"Regex '{regex.pattern}' does not match '{test}'"))
+                print(substituteLf("Regex '" + regex.pattern + "' does not match '" + test + "'"))
                 regex = None
             sys.stdout.flush()
         else:
