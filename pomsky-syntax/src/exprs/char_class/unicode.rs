@@ -14,6 +14,10 @@ pub(super) fn parse_group_name(name: &str) -> Result<GroupName, CharClassError> 
     }
 }
 
+pub fn blocks_supported_in_dotnet() -> &'static [&'static str] {
+    DOTNET_SUPPORTED
+}
+
 /// Returns the list of all accepted shorthands.
 pub fn list_shorthands() -> impl Iterator<Item = (&'static str, GroupName)> {
     PARSE_LUT.iter().copied()

@@ -353,8 +353,20 @@ fn named_class_to_regex_unicode(
                     ) => {
                         return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
                     }
+                    (RegexFlavor::DotNet, _) => {
+                        let dotnet_name = b.as_str().replace("_And_", "_and_").replace('_', "");
+                        if pomsky_syntax::blocks_supported_in_dotnet()
+                            .binary_search(&dotnet_name.as_str())
+                            .is_err()
+                        {
+                            return Err(
+                                CompileErrorKind::unsupported_specific_prop_in(flavor).at(span)
+                            );
+                        }
+                    }
                     _ => {}
                 }
+
                 buf.push(RegexProperty::Block(b).negative_item(negative));
             }
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),

@@ -16,6 +16,7 @@ fn main() {
         Flavor::Js => test.test_js(&args.input),
         Flavor::Java => test.test_java(&args.input),
         Flavor::Python => test.test_python(&args.input),
+        Flavor::DotNet => test.test_dotnet(&args.input),
     };
 
     match result {
@@ -32,6 +33,7 @@ enum Flavor {
     Js,
     Java,
     Python,
+    DotNet,
 }
 
 impl FromStr for Flavor {
@@ -46,6 +48,7 @@ impl FromStr for Flavor {
             "js" | "javascript" => Flavor::Js,
             "java" => Flavor::Java,
             "py" | "python" => Flavor::Python,
+            ".net" | "dotnet" => Flavor::DotNet,
             _ => return Err(()),
         })
     }

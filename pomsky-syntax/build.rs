@@ -4,6 +4,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=PropertyValueAliases.txt");
     println!("cargo:rerun-if-changed=SupportedBooleanProps.txt");
+    println!("cargo:rerun-if-changed=DotNetSupportedBlocks.txt");
     generate_unicode_data();
 }
 
@@ -15,6 +16,8 @@ fn generate_unicode_data() {
     let supported_boolean_props = std::fs::read_to_string("SupportedBooleanProps.txt").unwrap();
     let aliases = property_value_aliases + "\n" + &supported_boolean_props;
     let [categories, scripts, blocks, bools] = parse_aliases(&aliases, &blocks);
+
+    let dotnet_blocks = std::fs::read_to_string("DotNetSupportedBlocks.txt").unwrap();
 
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let path = std::path::Path::new(&out_dir).join("unicode_data.rs");
@@ -32,49 +35,51 @@ fn generate_unicode_data() {
         "(\"vert_space\", GroupName::VertSpace)".to_string(),
     ];
 
+    // tuples: (name, is_block)
     let mut distinct_cache =
         ["w", "d", "s", "h", "v", "word", "digit", "space", "horiz_space", "vert_space"]
             .into_iter()
+            .map(|name| (name, false))
             .collect::<HashSet<_>>();
 
     for category in &categories {
         let canonical = category[1];
         for &name in category {
-            if !distinct_cache.contains(&name) {
+            if !distinct_cache.contains(&(name, false)) {
                 lut.push(format!("(\"{name}\", GroupName::Category(Category::{canonical}))"));
-                distinct_cache.insert(name);
+                distinct_cache.insert((name, false));
             }
         }
     }
     for script in &scripts {
         let canonical = script[1];
         for &name in script {
-            if !distinct_cache.contains(&name) {
+            if !distinct_cache.contains(&(name, false)) {
                 lut.push(format!("(\"{name}\", GroupName::Script(Script::{canonical}))"));
-                distinct_cache.insert(name);
+                distinct_cache.insert((name, false));
             }
         }
     }
     for block in &blocks {
         let canonical = block[1].replace('-', "_");
         for &name in block {
-            if !distinct_cache.contains(&name) {
+            if !distinct_cache.contains(&(name, true)) {
                 lut.push(format!(
                     "(\"In{name}\", GroupName::CodeBlock(CodeBlock::{canonical}))",
                     name = name.replace('-', "_")
                 ));
-                distinct_cache.insert(name);
+                distinct_cache.insert((name, true));
             }
         }
     }
     for bool in &bools {
         let canonical = bool[1];
         for &name in bool {
-            if !distinct_cache.contains(&name) {
+            if !distinct_cache.contains(&(name, false)) {
                 lut.push(format!(
                     "(\"{name}\", GroupName::OtherProperties(OtherProperties::{canonical}))"
                 ));
-                distinct_cache.insert(name);
+                distinct_cache.insert((name, false));
             }
         }
     }
@@ -95,12 +100,17 @@ fn generate_unicode_data() {
 static PARSE_LUT: &[(&str, GroupName)] = &[
     {lut}
 ];
+
+static DOTNET_SUPPORTED: &[&str] = &[
+{dotnet_supported}];
 ",
             category_enum = generate_enum("Category", &categories, 0, 1),
             script_enum = generate_enum("Script", &scripts, 1, 1),
             block_enum = generate_enum("CodeBlock", &blocks, 1, 1),
             other_enum = generate_enum("OtherProperties", &bools, 1, 1),
             lut = lut.join(",\n    "),
+            dotnet_supported =
+                dotnet_blocks.lines().map(|line| format!("    {line:?},\n")).collect::<String>()
         ),
     )
     .unwrap();

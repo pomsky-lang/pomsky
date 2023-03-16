@@ -32,4 +32,5 @@ pub use util::find_suggestion;
 #[cfg(feature = "dbg")]
 use pretty_print::PrettyPrinter;
 
-pub use exprs::char_class::list_shorthands;
+#[doc(hidden)]
+pub use exprs::char_class::{blocks_supported_in_dotnet, list_shorthands};

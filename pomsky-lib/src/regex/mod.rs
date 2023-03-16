@@ -222,11 +222,7 @@ impl RegexProperty {
                         | Category::Separator
                         | Category::Other
                 ),
-                RegexFlavor::DotNet
-                    | RegexFlavor::Java
-                    | RegexFlavor::Pcre
-                    | RegexFlavor::Rust
-                    | RegexFlavor::Ruby,
+                RegexFlavor::Java | RegexFlavor::Pcre | RegexFlavor::Rust | RegexFlavor::Ruby,
             )
         );
         if negative {
@@ -256,7 +252,7 @@ impl RegexProperty {
             RegexProperty::Block(b) => match flavor {
                 RegexFlavor::DotNet => {
                     buf.push_str("Is");
-                    buf.push_str(&b.as_str().replace('_', ""));
+                    buf.push_str(&b.as_str().replace("_And_", "_and_").replace('_', ""));
                 }
                 RegexFlavor::Java => {
                     buf.push_str("In");

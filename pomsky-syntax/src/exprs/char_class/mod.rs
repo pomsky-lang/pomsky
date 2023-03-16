@@ -85,7 +85,7 @@ mod ascii;
 pub(crate) mod char_group;
 pub(crate) mod unicode;
 
-pub use unicode::list_shorthands;
+pub use unicode::{blocks_supported_in_dotnet, list_shorthands};
 
 /// A _character class_. Refer to the [module-level documentation](self) for
 /// details.
