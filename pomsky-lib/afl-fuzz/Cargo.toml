@@ -10,8 +10,8 @@ edition = "2021"
 [dependencies]
 afl = "0.12.15"
 arbitrary = "1.1.3"
-regex = "1.7.0"
-pcre2 = "0.2.3"
+regex-test = { path = "../../regex-test" }
+once_cell = "1.17.0"
 
 [dependencies.pomsky]
 path = ".."

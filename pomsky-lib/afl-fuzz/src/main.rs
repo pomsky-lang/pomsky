@@ -1,17 +1,27 @@
 use arbitrary::{Arbitrary, Unstructured};
-use pomsky::{options::RegexFlavor, Expr};
+use once_cell::sync::OnceCell;
+use pomsky::{features::PomskyFeatures, options::RegexFlavor, Expr};
+use regex_test::{Outcome, RegexTest};
+
+fn get_test() -> &'static RegexTest {
+    static TEST: OnceCell<RegexTest> = OnceCell::new();
+    TEST.get_or_init(RegexTest::new)
+}
 
 #[allow(unused)]
 macro_rules! debug {
+    (type) => {
+        ()
+    };
     (init: $input:expr, $options:expr) => {
         ()
     };
     ($file:expr $(, $s:expr)* $(,)?) => {};
 }
 
-#[cfg(FALSE)] // uncomment to enable debugging while using `cargo afl tmin`
-              // search for 'CRASH' in log file to find bugs
+#[cfg(FALSE)] // comment this attribute to enable debugging while using `cargo afl tmin`
 macro_rules! debug {
+    (type) => { std::fs::File };
     (init: $input:expr, $options:expr) => {{
         let mut file = std::fs::OpenOptions::new().create(true).append(true).open("./log.txt").unwrap();
         use std::io::Write as _;
@@ -23,6 +33,8 @@ macro_rules! debug {
         write!($file $(, $s)*).unwrap();
     }};
 }
+
+type DebugFile = debug!(type);
 
 fn main() {
     afl::fuzz!(|data: &[u8]| {
@@ -38,42 +50,15 @@ fn main() {
                 let features = compile_options.allowed_features;
 
                 // the first check is just to make it less likely to run into regex's nesting
-                // limit; the second check is to ignore compile errors produced by raw
-                // regexes, which pomsky doesn't validate
-                if regex.len() < 2048 && features == { features }.regexes(false) {
+                // limit; the second check is because regex-test doesn't work with empty inputs;
+                // the third check is to ignore compile errors produced by raw regexes, which
+                // pomsky doesn't validate
+                if regex.len() < 2048
+                    && !regex.is_empty()
+                    && features == { features }.regexes(false)
+                {
                     debug!(_f, " check");
-                    match compile_options.flavor {
-                        RegexFlavor::Rust => {
-                            debug!(_f, " rust...");
-                            if let Err(e) = regex::Regex::new(&regex) {
-                                if e.to_string()
-                                    .trim()
-                                    .ends_with("error: empty character classes are not allowed")
-                                {
-                                    // This is on my radar, but more difficult to fix!
-                                    debug!(_f, " skipped (known bug)\n");
-                                    return;
-                                }
-                                debug!(_f, " CRASH\n{e}");
-                                panic!("error compiling Rust regex");
-                            }
-                            debug!(_f, " done!\n");
-                        }
-                        // Pomsky currently doesn't check if loobehind has repetitions for PCRE
-                        RegexFlavor::Pcre if features == { features }.lookbehind(false) => {
-                            debug!(_f, " pcre...");
-                            if let Err(_e) =
-                                pcre2::bytes::RegexBuilder::new().utf(true).build(&regex)
-                            {
-                                debug!(_f, " CRASH\n{_e}");
-                                panic!("error compiling PCRE regex");
-                            }
-                            debug!(_f, " done!\n");
-                        }
-                        _ => {
-                            debug!(_f, " skipped (other flavor)\n");
-                        }
-                    }
+                    check(&regex, features, compile_options.flavor, _f);
                 } else {
                     debug!(_f, " skipped (too long or `regex` feature enabled)\n");
                 }
@@ -82,4 +67,32 @@ fn main() {
             }
         }
     });
+}
+
+fn check(regex: &str, features: PomskyFeatures, flavor: RegexFlavor, mut _f: DebugFile) {
+    let test = get_test();
+    let outcome = match flavor {
+        // Pomsky currently doesn't check if loobehind has repetitions, so we don't check some
+        // regexes
+        RegexFlavor::Java if features == { features }.lookbehind(false) => test.test_java(regex),
+        RegexFlavor::JavaScript => test.test_js(regex),
+        RegexFlavor::Ruby => test.test_ruby(regex),
+        RegexFlavor::Rust => test.test_rust(regex),
+        RegexFlavor::Python if features == { features }.lookbehind(false) => {
+            test.test_python(regex)
+        }
+        RegexFlavor::Pcre if features == { features }.lookbehind(false) => test.test_pcre(&regex),
+        RegexFlavor::DotNet => test.test_dotnet(regex),
+        _ => Outcome::Success,
+    };
+    if let Outcome::Error(e) = outcome {
+        if flavor == RegexFlavor::Rust
+            && e.trim().ends_with("error: empty character classes are not allowed")
+        {
+            // This is on my radar, but more difficult to fix!
+            return;
+        }
+        debug!(_f, " {regex:?} ({flavor:?}) failed:\n{e}");
+        panic!("Regex {regex:?} is invalid in the {flavor:?} flavor:\n{e}");
+    }
 }

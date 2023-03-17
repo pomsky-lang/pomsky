@@ -176,6 +176,7 @@ impl<'i> Regex<'i> {
             Regex::Literal(l) => l.is_empty(),
             Regex::Group(g) => g.parts.iter().all(Regex::result_is_empty),
             Regex::Unescaped(r) => r.is_empty(),
+            Regex::Repetition(r) => r.content.result_is_empty(),
             _ => false,
         }
     }
