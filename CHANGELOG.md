@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### New
+
+- Brand new tooling arrived!
+
+  - [VSCode extension](https://marketplace.visualstudio.com/items?itemName=pomsky-lang.pomsky-vscode)
+  - [JavaScript plugin for Vite/Webpack/Rollup/ESBuild/ESM](https://github.com/pomsky-lang/unplugin-pomsky/)
+  - [Shell completions](https://github.com/pomsky-lang/pomsky/tree/main/completions)
+
+- You can now opt out of Unicode support with `disable unicode;` to produce smaller and more efficient regexes when you know that the input is ASCII. In addition, `%` in JavaScript now requires opting out of Unicode to reflect that word boundaries in JS aren't Unicode aware.
+
+- The [set of Unicode properties](https://pomsky-lang.org/docs/reference/unicode-properties/) was extended to support all general categories, scripts, blocks and boolean properties as of Unicode 15.0. When a property isn't supported by the regex flavor, an error is reported.
+
+- Add `--list shorthands` CLI flag to list all supported Unicode properties and shorthands
+
+### Changed
+
+- Line breaks within string literals are now normalized to `\n`. To match a Windows line break (`\r\n`), use `[r][n]`.
+
+- Code points (e.g. `U+01FF`) can now contain white space before and after the `+`.
+
+- Two keywords were reserved, `U` and `test`. Note that keywords are not available as variable names. `U` is used for code points, `test` is not yet in use.
+
+- Warn when using lookbehind in JavaScript, since it isn't universally supported. You can silence this warning in the CLI with `-W compat=0`.
+
+### Removed
+
+- Leading zeroes in numbers are no longer allowed. Instead of `C{0123}` you now need to write `C{123}`. Some other languages treat numbers with a leading zero as octal, but Pomsky did not, which could cause confusion.
+
+- `[.]` now produces a hard error rather than a warning. It was already deprecated in Pomsky 0.6. Use `.` without the brackets instead.
+
+- Previously, the `+` in code points was optional, so `U+FF` could be written as `UFF`. This was not documented and was ambiguous with variable names, so it was removed.
+
+### Bugfixes
+
+- Fix a bug where parentheses were sometimes omitted in a lookaround assertion
+- Fix lexing of numbers and code points containing non-digit/non-hexadecimal code points
+- Fix codegen for Unicode scripts in Java
+- Fix character classes with a single code point not getting escaped
+- Polyfill code points above U+FFFF in .NET, show error when a code point above U+FFFF appears in a character class
+
 ## [0.9.0] - 2023-01-14
 
 Join our [Discord](https://discord.gg/uwap2uxMFp) to get help or meet other users and contributors!
@@ -418,7 +458,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.8...HEAD
+[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.10...HEAD
+[0.9.0]: https://github.com/pomsky-lang/pomsky/compare/v0.8...v0.9
 [0.8.0]: https://github.com/pomsky-lang/pomsky/compare/v0.7...v0.8
 [0.7.0]: https://github.com/pomsky-lang/pomsky/compare/v0.6...v0.7
 [0.6.0]: https://github.com/pomsky-lang/pomsky/compare/v0.5...v0.6
