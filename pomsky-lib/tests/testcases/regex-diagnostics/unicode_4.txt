@@ -2,5 +2,5 @@
 \u3033
 -----
 ERROR: Backslash escapes are not supported
-HELP: Try `U_3033` instead
+HELP: Try `U+3033` instead
 SPAN: 0..6

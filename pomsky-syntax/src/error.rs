@@ -33,7 +33,6 @@ pub enum ParseErrorKind {
     UnknownToken,
     LexErrorWithMessage(LexErrorMsg),
     KeywordAfterLet(String),
-    CodePointAfterLet(String),
     KeywordAfterColon(String),
     NonAsciiIdentAfterColon(char),
     GroupNameTooLong(usize),
@@ -53,7 +52,7 @@ pub enum ParseErrorKind {
     InvalidEscapeInStringAt(usize),
     CharString(CharStringError),
     CharClass(CharClassError),
-    CodePoint(CodePointError),
+    InvalidCodePoint,
     Number(NumberError),
     Repetition(RepetitionError),
 
@@ -104,9 +103,6 @@ impl core::fmt::Display for ParseErrorKind {
             | ParseErrorKind::KeywordAfterColon(keyword) => {
                 write!(f, "Unexpected keyword `{keyword}`")
             }
-            ParseErrorKind::CodePointAfterLet(cp) => {
-                write!(f, "Expected identifier, got codepoint {cp}")
-            }
             &ParseErrorKind::NonAsciiIdentAfterColon(char) => {
                 let num = char as u32;
                 write!(f, "Group name contains illegal code point `{char}` (U+{num:04X}). Group names must be ASCII only.")
@@ -139,9 +135,11 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::InvalidEscapeInStringAt(_) => {
                 write!(f, "Unsupported escape sequence in string")
             }
+            ParseErrorKind::InvalidCodePoint => {
+                write!(f, "This code point is outside the allowed range")
+            }
             ParseErrorKind::CharString(error) => error.fmt(f),
             ParseErrorKind::CharClass(error) => error.fmt(f),
-            ParseErrorKind::CodePoint(error) => error.fmt(f),
             ParseErrorKind::Number(error) => error.fmt(f),
             ParseErrorKind::Repetition(error) => error.fmt(f),
 
@@ -244,29 +242,6 @@ impl core::fmt::Display for CharClassError {
             }
             CharClassError::Negative => write!(f, "This character class can't be negated"),
         }
-    }
-}
-
-/// An error that relates to a Unicode code point
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum CodePointError {
-    /// Code point that is outside the allowed range, e.g. `U_200000`
-    Invalid,
-    /// Code point that is not a hexadecimal number
-    NotHexadecimal,
-}
-
-impl std::error::Error for CodePointError {}
-
-impl core::fmt::Display for CodePointError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let error = match self {
-            CodePointError::Invalid => "This code point is outside the allowed range",
-            CodePointError::NotHexadecimal => "Code point contains non-hexadecimal digits",
-        };
-
-        f.write_str(error)
     }
 }
 

@@ -1,10 +1,13 @@
 #! expect=error
 # this mustn't panic when tokenizing
 
-C ؾ\ ؾ \u{ؾ} U_ؾ Uؾ' ؾ'
+C ؾ\ ؾ \u{ؾ} U+ؾ Uؾ' ؾ'
 -----
 ERROR: Backslash escapes are not supported
 SPAN: 42..44
 
 ERROR: Backslash escapes are not supported
 SPAN: 47..49
+
+ERROR: Code point contains non-hexadecimal digit
+SPAN: 54..58

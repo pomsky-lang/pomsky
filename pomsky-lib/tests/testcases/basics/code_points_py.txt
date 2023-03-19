@@ -1,6 +1,6 @@
 #! flavor=Python
 # code points
 
-U_6 U_60 U_600 U_6000 U_F0000
+U+6 U+60 U+600 U+6000 U+F0000
 -----
 \x06`\u0600怀\U000F0000

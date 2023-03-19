@@ -1,8 +1,7 @@
 use std::fmt::{self, Write};
 
 use pomsky_syntax::diagnose::{
-    CharClassError, CharStringError, CodePointError, LexErrorMsg, ParseErrorKind, ParseWarningKind,
-    RepetitionError,
+    CharClassError, CharStringError, LexErrorMsg, ParseErrorKind, ParseWarningKind, RepetitionError,
 };
 
 use super::CompileErrorKind;
@@ -126,6 +125,7 @@ impl From<LexErrorMsg> for DiagnosticCode {
             | M::BackslashGK => DiagnosticCode::RegexBackslashSyntax,
             M::UnclosedString => DiagnosticCode::UnclosedString,
             M::LeadingZero => DiagnosticCode::LeadingZero,
+            M::InvalidCodePoint => DiagnosticCode::CodePointInvalid,
             M::DeprStart | M::DeprEnd => DiagnosticCode::DeprecatedToken,
             _ => panic!("Unhandled lexer error message {value:?}"),
         }
@@ -160,11 +160,9 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
             P::NonAsciiIdentAfterColon(_) => Self::NonAsciiIdentAfterColon,
             P::GroupNameTooLong(_) => Self::IdentTooLong,
             P::Deprecated(_) => Self::DeprecatedSyntax,
-            P::Expected(_)
-            | P::LeftoverTokens
-            | P::ExpectedToken(_)
-            | P::LonePipe
-            | P::CodePointAfterLet(_) => Self::UnexpectedToken,
+            P::Expected(_) | P::LeftoverTokens | P::ExpectedToken(_) | P::LonePipe => {
+                Self::UnexpectedToken
+            }
             P::RangeIsNotIncreasing => Self::RangeIsNotIncreasing,
             P::UnallowedNot => Self::UnallowedNot,
             P::UnallowedMultiNot(_) => Self::UnallowedMultiNot,
@@ -173,9 +171,7 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
             P::CharString(CharStringError::Empty) => Self::CharRangeStringEmpty,
             P::CharString(CharStringError::TooManyCodePoints) => Self::CharRangeTooManyCodePoints,
             P::CharClass(e) => e.into(),
-            P::CodePoint(CodePointError::Invalid | CodePointError::NotHexadecimal) => {
-                Self::CodePointInvalid
-            }
+            P::InvalidCodePoint => Self::CodePointInvalid,
             P::Number(_) => Self::InvalidNumber,
             P::Repetition(R::NotAscending) => Self::RepetitionNotAscending,
             P::Repetition(R::Multi | R::QmSuffix) => Self::RepetitionChain,

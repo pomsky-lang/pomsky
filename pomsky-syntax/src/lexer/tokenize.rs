@@ -1,7 +1,7 @@
 use crate::Span;
 
 use super::{
-    micro_regex::{Capture, CharIs, Either, Many0, Many1, MicroRegex, Not},
+    micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
     LexErrorMsg, Token,
 };
 
@@ -37,7 +37,7 @@ macro_rules! consume_chain {
 
 macro_rules! reserved_word_pattern {
     {} => (
-        "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable" |
+        "U" | "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable" |
         "if" | "else" | "recursion" | "regex" | "test"
     );
 }
@@ -98,17 +98,18 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
 
                     if let Some((len, _)) = (
                         'U',
-                        Either(
-                            (
-                                Either('+', '_'),
-                                Many1(CharIs(|c| c.is_alphanumeric() || c == '_')),
-                            ),
-                            (
-                                Many1(CharIs(|c| c.is_ascii_hexdigit())),
-                                Not(CharIs(|c| c.is_alphanumeric() || c == '_'))
-                            ),
-                        )
-                    ).is_start(input) => (len, Token::CodePoint);
+                        Many0(CharIs(char::is_whitespace)),
+                        '+',
+                        Many0(CharIs(char::is_whitespace)),
+                        Many1(CharIs(|c| c.is_alphanumeric() || c == '_')),
+                    ).is_start(input) => {
+                        if input[1..len].trim_start_matches(|c: char| c == '+' || c.is_whitespace())
+                            .contains(|c: char| !c.is_ascii_hexdigit()) {
+                            (len, Token::ErrorMsg(LexErrorMsg::InvalidCodePoint))
+                        } else {
+                            (len, Token::CodePoint)
+                        }
+                    };
 
                     if let Some((len, _)) = (
                         Many1(CharIs(|c| c.is_ascii_digit()))

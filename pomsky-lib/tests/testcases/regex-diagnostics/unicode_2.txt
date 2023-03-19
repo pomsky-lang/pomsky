@@ -2,5 +2,5 @@
 \x17
 -----
 ERROR: Backslash escapes are not supported
-HELP: Try `U_17` instead
+HELP: Try `U+17` instead
 SPAN: 0..4

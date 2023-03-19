@@ -14,13 +14,13 @@
 //!
 //! A character class can contain multiple _items_, which can be
 //!
-//! - A __code point__, e.g. `['a']` or `[U_107]`
+//! - A __code point__, e.g. `['a']` or `[U+107]`
 //!
 //!   - This includes [non-printable characters](https://www.regular-expressions.info/nonprint.html).\
 //!     Supported are `[n]`, `[r]`, `[t]`, `[a]`, `[e]` and `[f]`.
 //!
-//! - A __range of code points__. For example, `[U_10 - U_200]` matches any code
-//!   point P where `U_10 ≤ P ≤ U_200`
+//! - A __range of code points__. For example, `[U+10 - U+200]` matches any code
+//!   point P where `U+10 ≤ P ≤ U+200`
 //!
 //! - A __named character class__, which can be one of
 //!

@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use crate::{
     diagnose::{
-        CharClassError, CharStringError, CodePointError, DeprecationWarning, NumberError,
-        ParseWarningKind, RepetitionError,
+        CharClassError, CharStringError, DeprecationWarning, NumberError, ParseWarningKind,
+        RepetitionError,
     },
     error::{ParseError, ParseErrorKind as PEK},
     exprs::*,
@@ -85,8 +85,6 @@ impl<'i> Parser<'i> {
             let name = self.expect_as(Token::Identifier).map_err(|e| {
                 if self.is(Token::ReservedName) {
                     PEK::KeywordAfterLet(self.source_at(self.span()).to_owned()).at(e.span)
-                } else if self.is(Token::CodePoint) {
-                    PEK::CodePointAfterLet(self.source_at(self.span()).to_owned()).at(e.span)
                 } else {
                     e
                 }
@@ -497,23 +495,21 @@ impl<'i> Parser<'i> {
     fn parse_code_point(&mut self) -> PResult<Option<(char, Span)>> {
         if let Some(cp) = self.consume_as(Token::CodePoint) {
             let span = self.last_span();
-            let hex = cp.trim_start_matches(|c| matches!(c, 'U' | '_' | '+'));
-
-            if hex.chars().any(|c| !c.is_ascii_hexdigit()) {
-                return Err(PEK::CodePoint(CodePointError::NotHexadecimal).at(span));
-            }
-            if !cp.starts_with("U_") {
+            let trimmed_u = cp[1..].trim_start();
+            if !trimmed_u.starts_with('+') {
                 let warning = DeprecationWarning::Unicode(cp.into());
                 self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
             }
+
+            let hex = trimmed_u.trim_start_matches(|c: char| c == '+' || c.is_whitespace());
             if hex.len() > 6 {
-                return Err(PEK::CodePoint(CodePointError::Invalid).at(span));
+                return Err(PEK::InvalidCodePoint.at(span));
             }
             u32::from_str_radix(hex, 16)
                 .ok()
                 .and_then(|n| char::try_from(n).ok())
                 .map(|c| Some((c, span)))
-                .ok_or_else(|| PEK::CodePoint(CodePointError::Invalid).at(span))
+                .ok_or_else(|| PEK::InvalidCodePoint.at(span))
         } else {
             Ok(None)
         }

@@ -3,5 +3,5 @@
 -----
 ERROR: Backslash escapes are not supported
 HELP: If this is a backreference, replace it with `::1`.
-If this is an octal escape, replace it with `U_01`.
+If this is an octal escape, replace it with `U+01`.
 SPAN: 0..2

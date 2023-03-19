@@ -1,5 +1,5 @@
 #! expect=error, flavor=Pcre
-U_2{01}
+U+2{01}
 -----
 ERROR: Numbers can't have leading zeroes
 SPAN: 4..6

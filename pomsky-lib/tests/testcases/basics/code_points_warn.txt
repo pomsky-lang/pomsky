@@ -1,13 +1,8 @@
+#! expect=error
 # code points
 
-U_7 U7 U+7 UFF U+FF U_FF
+U+7 U+FF U7 UFF
 -----
-\x07\x07\x07ÿÿÿ
-WARNING: This syntax is deprecated. Use `U_7` instead.
-  at 19..21
-WARNING: This syntax is deprecated. Use `U_7` instead.
-  at 22..25
-WARNING: This syntax is deprecated. Use `U_FF` instead.
-  at 26..29
-WARNING: This syntax is deprecated. Use `U_FF` instead.
-  at 30..34
+ERROR: Variable `U7` doesn't exist
+HELP: Perhaps you meant a code point: `U+7`
+SPAN: 24..26

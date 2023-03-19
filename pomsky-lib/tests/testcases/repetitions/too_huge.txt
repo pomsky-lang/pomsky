@@ -1,5 +1,5 @@
 #! expect=error, flavor=Pcre
-U_2{,65536}
+U+2{,65536}
 -----
 ERROR: number too large
 SPAN: 5..10

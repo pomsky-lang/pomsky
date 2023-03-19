@@ -51,9 +51,6 @@ pub(super) fn get_parser_help(
         }),
         ParseErrorKind::LetBindingExists => Some("Use a different name".into()),
         ParseErrorKind::MissingLetKeyword => Some(format!("Try `let {slice} ...`")),
-        ParseErrorKind::CodePointAfterLet(_) => {
-            Some("Use a variable name that doesn't start with `U_`.".into())
-        }
         ParseErrorKind::Repetition(RepetitionError::QmSuffix) => Some(
             "If you meant to make the repetition lazy, append the `lazy` keyword instead.\n\
                 If this is intentional, consider adding parentheses around the inner repetition."
@@ -85,6 +82,12 @@ pub(super) fn get_compiler_help(
     _span: Span,
 ) -> Option<String> {
     match kind {
+        CompileErrorKind::UnknownVariable { found, .. }
+            if found.starts_with('U') && found[1..].chars().all(|c| c.is_ascii_hexdigit()) =>
+        {
+            Some(format!("Perhaps you meant a code point: `U+{cp}`", cp = &found[1..]))
+        }
+
         #[cfg(feature = "suggestions")]
         CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
         | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {

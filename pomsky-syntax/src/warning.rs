@@ -56,7 +56,7 @@ impl fmt::Display for DeprecationWarning {
         match self {
             DeprecationWarning::Unicode(u) => {
                 let rest = u.trim_start_matches(|c| matches!(c, 'U' | '+'));
-                write!(f, "This syntax is deprecated. Use `U_{rest}` instead.")
+                write!(f, "This syntax is deprecated. Use `U+{rest}` instead.")
             }
         }
     }

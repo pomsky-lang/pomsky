@@ -63,7 +63,7 @@ impl CharGroup {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupItem {
     /// A Unicode code point. It can be denoted in quotes (e.g. `'a'`) or in
-    /// hexadecimal notation (`U_201`).
+    /// hexadecimal notation (`U+201`).
     ///
     /// Some non-printable ASCII characters are also parsed to a
     /// [`GroupItem::Char`]: `[n]`, `[t]`, `[r]`, `[a]`, `[e]` and `[f]`.
