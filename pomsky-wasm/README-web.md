@@ -1,11 +1,11 @@
-# pomsky-wasm
+# Pomsky WASM module for web
 
-Node.js/WASM module of [pomsky](..).
+WASM module of [Pomsky](https://pomsky-lang.org).
 
 ## Usage
 
 ```js
-import { compile } from 'pomsky-wasm'
+import { compile } from '@pomsky-lang/compiler-web'
 
 const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
 ```

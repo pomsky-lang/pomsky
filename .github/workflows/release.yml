@@ -103,5 +103,5 @@ jobs:
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_name: pomsky_${{ matrix.platform }}_${{ steps.vars.outputs.tag }}${{ matrix.file_ending }}
-          asset_path: target/release/pomsky${{ matrix.file_ending }}
+          asset_path: target/dist/pomsky${{ matrix.file_ending }}
           asset_content_type: application/octet-stream
