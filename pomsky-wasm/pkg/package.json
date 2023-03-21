@@ -1,27 +1,25 @@
 {
-  "name": "pomsky-wasm",
+  "name": "@pomsky-lang/compiler-web",
   "collaborators": [
     "Ludwig Stecher <ludwig.stecher@gmx.de>"
   ],
   "description": "A portable, modern regular expression language",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rulex-rs/pomsky"
+    "url": "https://github.com/pomsky-lang/pomsky"
   },
   "files": [
     "snippets",
-    "pomsky_wasm_bg.wasm",
-    "pomsky_wasm.js",
-    "pomsky_wasm.d.ts",
+    "compiler_web_bg.wasm",
+    "compiler_web.js",
+    "compiler_web.d.ts",
     "LICENSE_MIT",
     "LICENSE_APACHE"
   ],
-  "main": "pomsky_wasm.js",
-  "type": "module",
-  "module": "pomsky_wasm.js",
+  "module": "compiler_web.js",
   "homepage": "https://pomsky-lang.org",
-  "types": "pomsky_wasm.d.ts",
+  "types": "compiler_web.d.ts",
   "sideEffects": false
 }

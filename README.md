@@ -4,7 +4,7 @@
 
 # Pomsky
 
-A portable, modern regular expression language
+A portable<sup><a href="#portability">1</a></sup>, modern regular expression language
 
 **[documentation](https://pomsky-lang.org/docs/get-started/introduction/) · [website](https://pomsky-lang.org) · [Discord server](https://discord.gg/uwap2uxMFp)**
 
@@ -124,6 +124,22 @@ desired on the targeted regex engine.
 
 **Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
 This is [explained here][enable-unicode].
+
+## Portability
+
+Pomsky aims to be as portable as possible, polyfilling Unicode and unsupported features where feasible. That said, there are some cases where portability is not possible:
+
+- Some features (e.g. lookaround, backreferences, Unicode properties) aren't supported in every flavor. Pomsky fails to compile when you're using an unsupported feature.
+
+- `\b` (word boundaries) are not Unicode aware in JavaScript. Pomsky therefore only allows word boundaries when Unicode is disabled.
+
+- `\w` in .NET handles Unicode incorrectly, with no way to polyfill it properly. This means that in .NET, `[word]` only matches the `L`, `Mn`, `Nd`, and `Pc` general categories, instead of `Alphabetic`, `M`, `Nd`, `Pc` and `Join_Control`.
+
+- In .NET, `.`, `Codepoint` and character classes (e.g. `[Latin]`) only match a single UTF-16 code unit rather than a codepoint.
+
+- `[space]` matches slightly different code points in JavaScript than in Java. This will be fixed.
+
+- Backreferences behave differently in JavaScript and Python when the referenced group has no captured text. There is nothing we can do about it, but we could add a warning for this in the future.
 
 ## Security
 

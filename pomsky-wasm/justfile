@@ -1,0 +1,11 @@
+set export
+
+just_msg := "\nDone. Make sure to add 'snippets' to the 'files' array in package.json!\nCheck if you set to package name correctly!\nDon't forget to publish with  --access=public!\n"
+
+build-web:
+    wasm-pack build --target=web --scope=pomsky-lang -- --features suggestions
+    echo "$just_msg"
+
+build-node:
+    wasm-pack build --scope=pomsky-lang -- --features suggestions
+    echo "$just_msg"
