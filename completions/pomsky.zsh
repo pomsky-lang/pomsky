@@ -4,6 +4,13 @@ _pomsky_complete_features() {
   _values -s , 'features' ascii-mode atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges references regexes variables
 }
 
+_pomsky_complete_lists() {
+  lists=(
+    'shorthands:Unicode properties and shorthands'
+  )
+  _describe -t lists 'lists' lists
+}
+
 _pomsky_complete_flavor() {
   flavors=(
     'pcre:PCRE flavor'
@@ -33,6 +40,7 @@ _pomsky() {
     '(--allowed-features)--allowed-features=[Allowed features, comma-separated]: :->features' \
     '(-f --flavor)'{-f+,--flavor=}'[Regex flavor]: :->flavor' \
     '(-h --help)'{-h+,--help=}'[Show help information]' \
+    '(--list)--list=[List shorthands]: :->lists' \
     '(-n --no-new-line)'{-n,--no-new-line}"[Don't print line break after the output]" \
     '(-p --path)'{-p+,--path=}'[File to compile]: :->path' \
     '(-V --version)'{-V,--version}'[Print version information]' \
@@ -46,6 +54,7 @@ _pomsky() {
     (flavor) _pomsky_complete_flavor ;;
     (path) _pomsky_complete_path ;;
     (warnings) _pomsky_complete_warnings ;;
+    (lists) _pomsky_complete_lists ;;
     (*) ;;
   esac
 }

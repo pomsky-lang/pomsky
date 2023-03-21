@@ -16,6 +16,7 @@ deprecated=0	Disable deprecation warnings'
 complete -c pomsky      -l allowed-features -d 'Allowed features, comma-separated' -xa "(__fish_append , $features)"
 complete -c pomsky -s f -l flavor           -d 'Regex flavor' -xa "(echo \"$flavors\")"
 complete -c pomsky -s h -l help             -d 'Show help information'
+complete -c pomsky      -l list             -d 'List shorthands' -xa "shorthands"
 complete -c pomsky -s n -l no-new-line      -d "Don't print line break after the output"
 complete -c pomsky -s p -l path             -d 'File to compile' -kxa "(__fish_complete_suffix .pom)"
 complete -c pomsky -s V -l version          -d 'Print version information'
