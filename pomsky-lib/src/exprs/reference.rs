@@ -16,6 +16,15 @@ enum ReferenceDirection {
     Forwards,
 }
 
+impl From<ReferenceDirection> for Feature {
+    fn from(direction: ReferenceDirection) -> Self {
+        match direction {
+            ReferenceDirection::Backwards => Feature::Backreference,
+            ReferenceDirection::Forwards => Feature::ForwardReference,
+        }
+    }
+}
+
 impl<'i> RuleExt<'i> for Reference<'i> {
     fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult<'i> {
         let (direction, number) = match self.target {
@@ -77,15 +86,9 @@ impl<'i> RuleExt<'i> for Reference<'i> {
         };
 
         match options.flavor {
-            RegexFlavor::Rust => Err(CompileErrorKind::Unsupported(
-                if direction == ReferenceDirection::Backwards {
-                    Feature::Backreference
-                } else {
-                    Feature::ForwardReference
-                },
-                options.flavor,
-            )
-            .at(self.span)),
+            RegexFlavor::Rust => {
+                Err(CompileErrorKind::Unsupported(direction.into(), options.flavor).at(self.span))
+            }
 
             RegexFlavor::JavaScript | RegexFlavor::Python
                 if direction == ReferenceDirection::Forwards =>
