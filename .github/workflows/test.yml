@@ -99,7 +99,6 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           dotnet-version: '7.x.x'
 
