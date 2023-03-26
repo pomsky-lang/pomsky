@@ -10,8 +10,10 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust toolchain
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -23,8 +25,10 @@ jobs:
     needs: rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust toolchain
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -52,7 +56,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install Rust toolchain
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Java
@@ -74,17 +78,37 @@ jobs:
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
+
       - name: Build and run tests
         run: cargo test
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust toolchain
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Install grcov
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        with:
+          dotnet-version: '7.x.x'
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Setup grcov
         env:
           TAG: v0.8.13
         run: |
@@ -99,7 +123,7 @@ jobs:
           RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
           CARGO_INCREMENTAL: 0
         run: |
-          cargo test -Zsparse-registry
+          cargo test
           zip -0 cov.zip $(find . -name "$PROJECT_NAME*.gc*" -print)
           grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info
 
