@@ -5,7 +5,7 @@ WASM module of [Pomsky](https://pomsky-lang.org).
 ## Usage
 
 ```js
-import { compile } from '@pomsky-lang/compiler-web'
+import { compile } from '@pomsky-lang/compiler-node'
 
 const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
 ```

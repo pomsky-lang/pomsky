@@ -67,6 +67,11 @@ jobs:
         with:
           dotnet-version: '7.x.x'
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
       - name: Cache
         uses: Swatinem/rust-cache@v2
       - name: Build and run tests

@@ -85,7 +85,7 @@ impl RegexTest {
     }
 
     pub fn test_js_with(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
-        self.js.start("js", "node", &["tester-async.js"]);
+        self.js.start("js", "deno", &["run", "tester-deno-async.js"]);
         self.js.test(regex, tests)
     }
 

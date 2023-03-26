@@ -13,7 +13,7 @@ const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
 If this doesn't work with your bundler, try initializing the module explicitly:
 
 ```js
-import init, { compile } from 'pomsky-wasm'
+import init, { compile } from '@pomsky-lang/compiler-web'
 
 await init()
 const { output, diagnostics } = compile(`^ C* '.' C* $`, 'js')
@@ -30,7 +30,7 @@ If you're using vite, you also need to update your vite config like this:
 
   export default defineConfig(({ mode }) => ({
 +   optimizeDeps: {
-+     exclude: mode === 'production' ? [] : ['pomsky-wasm'],
++     exclude: mode === 'production' ? [] : ['@pomsky-lang/compiler-web'],
 +   },
   }))
 ```
