@@ -182,7 +182,7 @@ impl<'a> Segment<'a> {
         }
 
         let mut is_first_line = true;
-        for line in self.text.lines() {
+        for line in self.text.split('\n') {
             if !is_first_line {
                 buf.write_all(
                     &b"\n                                                  "[..indent + 1],

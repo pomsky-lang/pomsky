@@ -208,8 +208,8 @@ impl Diagnostic {
         let severity: &str = value.severity.into();
 
         let visual = match value.code {
-            Some(code) => format!("{severity} {code}{kind}: {display}"),
-            None => format!("{severity}{kind}: {display}"),
+            Some(code) => format!("{severity} {code}{kind}:\n{display}"),
+            None => format!("{severity}{kind}:\n{display}"),
         };
         drop(display);
 

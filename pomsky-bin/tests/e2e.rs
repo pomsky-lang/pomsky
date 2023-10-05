@@ -69,8 +69,8 @@ const RED: &str = "\u{1b}[31m";
 // const RED_BOLD: &str = "\u{1b}[31;1m";
 const RESET: &str = "\u{1b}[0m";
 
-const ERROR: &str = "error: \n  × ";
-const ERROR_COLOR: &str = "\u{1b}[31;1merror\u{1b}[0m: \n  \u{1b}[31m×\u{1b}[0m ";
+const ERROR: &str = "error:\n  × ";
+const ERROR_COLOR: &str = "\u{1b}[31;1merror\u{1b}[0m:\n  \u{1b}[31m×\u{1b}[0m ";
 const USAGE: &str = r#"
 USAGE:
     pomsky [OPTIONS] <INPUT>
@@ -324,7 +324,7 @@ fn disable_warnings() {
 
     let mut cmd = command(&["<< 'test'", "-Wdeprecated=0", "-fJS"]);
     cmd.assert().success().stdout("(?<=test)\n").stderr(
-        r#"warning P0400(compat): 
+        r#"warning P0400(compat):
   ⚠ Lookbehind is not supported in all browsers, e.g. Safari
    ╭────
  1 │ << 'test'
@@ -355,7 +355,7 @@ fn specify_features() {
         "variables,boundaries,dot,atomic-groups,lazy-mode,named-groups",
     ]);
     cmd.assert().failure().stderr(
-        r#"error P0302(syntax): 
+        r#"error P0302(syntax):
   × Numbered capturing groups aren't supported
    ╭────
  1 │ :(.)
@@ -440,7 +440,7 @@ fn json_output_errors() {
                     help: vec!["Use `.` without brackets instead".into()],
                     fixes: vec![],
                     visual: String::from(
-                        "error P0105(deprecated): 
+                        "error P0105(deprecated):
   × `[.]` is deprecated
    ╭────
  1 │ [.][^test]

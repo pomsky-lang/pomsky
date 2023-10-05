@@ -50,9 +50,11 @@ pub(super) fn parse_args() -> Result<Args, ParseArgsError> {
             std::process::exit(0)
         }
         ArgsInner::List(ListKind::Shorthands) => {
-            let s: String = pomsky::list_shorthands()
-                .map(|(name, group_name)| format!("{name:<50} {}\n", group_name.kind()))
-                .collect();
+            let s = pomsky::list_shorthands().fold(String::new(), |mut acc, (name, group_name)| {
+                use std::fmt::Write;
+                let _ = writeln!(acc, "{name:<50} {}", group_name.kind());
+                acc
+            });
             println!("{s}");
             std::process::exit(0)
         }

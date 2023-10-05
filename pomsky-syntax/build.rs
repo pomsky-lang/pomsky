@@ -8,6 +8,7 @@ fn main() {
     generate_unicode_data();
 }
 
+#[allow(clippy::format_collect)]
 fn generate_unicode_data() {
     let blocks = std::fs::read_to_string("Blocks.txt").unwrap();
     let blocks = parse_blocks(&blocks);
@@ -116,6 +117,7 @@ static DOTNET_SUPPORTED: &[&str] = &[
     .unwrap();
 }
 
+#[allow(clippy::format_collect)]
 fn generate_enum(
     name: &str,
     variants: &[Vec<impl AsRef<str>>],

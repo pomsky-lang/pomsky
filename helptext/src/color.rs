@@ -38,17 +38,17 @@ impl Color {
     pub const R: Color = Color::RedBold;
     pub const Y: Color = Color::YellowBold;
 
-    pub(crate) const ANSI_RESET: &str = "\x1b[0m";
-    pub(crate) const ANSI_C: &str = "\x1b[36m";
-    pub(crate) const ANSI_G: &str = "\x1b[32m";
-    pub(crate) const ANSI_M: &str = "\x1b[35m";
-    pub(crate) const ANSI_R: &str = "\x1b[31m";
-    pub(crate) const ANSI_Y: &str = "\x1b[33m";
-    pub(crate) const ANSI_CB: &str = "\x1b[36;1m";
-    pub(crate) const ANSI_GB: &str = "\x1b[32;1m";
-    pub(crate) const ANSI_MB: &str = "\x1b[35;1m";
-    pub(crate) const ANSI_RB: &str = "\x1b[31;1m";
-    pub(crate) const ANSI_YB: &str = "\x1b[33;1m";
+    pub(crate) const ANSI_RESET: &'static str = "\x1b[0m";
+    pub(crate) const ANSI_C: &'static str = "\x1b[36m";
+    pub(crate) const ANSI_G: &'static str = "\x1b[32m";
+    pub(crate) const ANSI_M: &'static str = "\x1b[35m";
+    pub(crate) const ANSI_R: &'static str = "\x1b[31m";
+    pub(crate) const ANSI_Y: &'static str = "\x1b[33m";
+    pub(crate) const ANSI_CB: &'static str = "\x1b[36;1m";
+    pub(crate) const ANSI_GB: &'static str = "\x1b[32;1m";
+    pub(crate) const ANSI_MB: &'static str = "\x1b[35;1m";
+    pub(crate) const ANSI_RB: &'static str = "\x1b[31;1m";
+    pub(crate) const ANSI_YB: &'static str = "\x1b[33;1m";
 }
 
 impl Color {

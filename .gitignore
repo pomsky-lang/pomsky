@@ -1,4 +1,5 @@
 /target
+/vendor
 core.*
 
 # coverage info

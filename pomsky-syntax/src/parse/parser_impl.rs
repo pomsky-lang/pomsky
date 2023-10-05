@@ -687,7 +687,7 @@ impl StringOrChar<'_> {
                 let s = helper::parse_quoted_text(s)?;
                 let mut iter = s.chars();
                 match iter.next() {
-                    Some(c) if matches!(iter.next(), None) => return Ok(c),
+                    Some(c) if iter.next().is_none() => return Ok(c),
                     Some(_) => CharStringError::TooManyCodePoints,
                     _ => CharStringError::Empty,
                 }

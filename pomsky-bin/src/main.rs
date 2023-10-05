@@ -27,6 +27,10 @@ pub fn main() {
         }
     };
 
+    if args.json && std::env::var_os("NO_COLOR").is_none() {
+        std::env::set_var("NO_COLOR", "1");
+    }
+
     match &args.input {
         Input::Value(input) => compile(input, &args),
         Input::File(path) => match std::fs::read_to_string(path) {
@@ -184,13 +188,13 @@ fn print_diagnostic(diagnostic: &Diagnostic, source_code: Option<&str>) {
     if let Some(code) = diagnostic.code {
         let code = code.to_string();
         match diagnostic.severity {
-            Severity::Error => efprintln!(R!"error " R!{&code} {&kind} ": " {&display}),
-            Severity::Warning => efprintln!(Y!"warning " Y!{&code} {&kind} ": " {&display}),
+            Severity::Error => efprint!(R!"error " R!{&code} {&kind} ":\n" {&display}),
+            Severity::Warning => efprint!(Y!"warning " Y!{&code} {&kind} ":\n" {&display}),
         }
     } else {
         match diagnostic.severity {
-            Severity::Error => efprintln!(R!"error" {&kind} ": " {&display}),
-            Severity::Warning => efprintln!(Y!"warning" {&kind} ": " {&display}),
+            Severity::Error => efprint!(R!"error" {&kind} ":\n" {&display}),
+            Severity::Warning => efprint!(Y!"warning" {&kind} ":\n" {&display}),
         }
     }
 }
