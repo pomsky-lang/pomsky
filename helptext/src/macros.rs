@@ -146,8 +146,8 @@ macro_rules! text {
 ///
 /// There are three kinds of sections:
 ///
-/// 1. Normal sections, wrapped in square brackets. Refer to the
-///    [`text` macro][text] for the syntax. Example:
+/// 1. Normal sections, wrapped in square brackets. Refer to the [`text`
+///    macro][text] for the syntax. Example:
 ///
 ///    ```
 ///    # helptext::sections!(

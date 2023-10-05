@@ -164,9 +164,9 @@ impl<'i> Parser<'i> {
 
         let Some(mut rule) = self.parse_lookaround()?.try_or_else(|| self.parse_repeated())? else {
             if nots == 0 {
-               return Ok(None);
+                return Ok(None);
             } else {
-               return Err(PEK::Expected("expression").at(self.span()));
+                return Err(PEK::Expected("expression").at(self.span()));
             }
         };
 

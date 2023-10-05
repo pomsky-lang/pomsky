@@ -49,8 +49,8 @@ impl DiagnosticSet {
                 })?;
 
                 let (DiagnosticKind::Compat | DiagnosticKind::Deprecated) = kind else {
-                return Err(ParseArgsError::WarningsNotAllowed(kind_str.to_string()))
-            };
+                    return Err(ParseArgsError::WarningsNotAllowed(kind_str.to_string()));
+                };
 
                 warning_list.push(kind);
             }
