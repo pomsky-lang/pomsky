@@ -55,6 +55,7 @@ pub enum ParseErrorKind {
     InvalidCodePoint,
     Number(NumberError),
     Repetition(RepetitionError),
+    MultipleStringsInTestCase,
 
     RecursionLimit,
 }
@@ -137,6 +138,9 @@ impl core::fmt::Display for ParseErrorKind {
             }
             ParseErrorKind::InvalidCodePoint => {
                 write!(f, "This code point is outside the allowed range")
+            }
+            ParseErrorKind::MultipleStringsInTestCase => {
+                write!(f, "Test cases can't have multiple strings")
             }
             ParseErrorKind::CharString(error) => error.fmt(f),
             ParseErrorKind::CharClass(error) => error.fmt(f),

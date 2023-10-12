@@ -64,6 +64,9 @@ pub(super) fn get_parser_help(
             *span = Span::new(span_start + offset - 1, span_start + offset + 1);
             None
         }
+        ParseErrorKind::MultipleStringsInTestCase => {
+            Some(r#"Use `in "some string"` to match substrings in a haystack"#.into())
+        }
         ParseErrorKind::RecursionLimit => Some(
             "Try a less nested expression. It helps to refactor it using variables:\n\
                 https://pomsky-lang.org/docs/language-tour/variables/"

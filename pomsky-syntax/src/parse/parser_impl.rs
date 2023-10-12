@@ -6,7 +6,13 @@ use crate::{
         RepetitionError,
     },
     error::{ParseError, ParseErrorKind as PEK},
-    exprs::*,
+    exprs::{
+        stmt::{
+            CaptureIdent, Test, TestCapture, TestCase, TestCaseMatch, TestCaseMatchAll,
+            TestCaseReject,
+        },
+        *,
+    },
     lexer::Token,
     Span,
 };
@@ -22,7 +28,11 @@ impl<'i> Parser<'i> {
         let mut stmts = Vec::new();
 
         loop {
-            let Some(stmt) = self.parse_mode_modifier()?.try_or_else(|| self.parse_let())? else {
+            let Some(stmt) = self
+                .parse_mode_modifier()?
+                .try_or_else(|| self.parse_let())?
+                .try_or_else(|| self.parse_test())?
+            else {
                 break;
             };
             stmts.push(stmt);
@@ -104,6 +114,117 @@ impl<'i> Parser<'i> {
         } else {
             Ok(None)
         }
+    }
+
+    fn parse_test(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
+        if self.consume_reserved("test") {
+            let span_start = self.last_span();
+            self.expect(Token::OpenBrace)?;
+
+            let mut cases = Vec::new();
+            while let Some(case) = self.parse_test_cases()? {
+                cases.push(case);
+            }
+
+            self.expect(Token::CloseBrace)?;
+            let span_end = self.last_span();
+
+            Ok(Some((Stmt::Test(Test { cases }), span_start.join(span_end))))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_test_cases(&mut self) -> PResult<Option<TestCase<'i>>> {
+        if self.consume_contextual_keyword("match") {
+            let mut matches = Vec::new();
+            let mut literal = None;
+
+            if let Some((Token::Identifier, "in")) = self.peek() {
+            } else {
+                matches.push(self.parse_test_match()?);
+                while self.consume(Token::Comma) {
+                    matches.push(self.parse_test_match()?);
+                }
+            }
+
+            if self.consume_contextual_keyword("in") {
+                literal = self.parse_literal()?;
+                if literal.is_none() {
+                    return Err(PEK::ExpectedToken(Token::String).at(self.span()));
+                };
+            }
+            self.expect(Token::Semicolon)?;
+
+            if let Some(literal) = literal {
+                Ok(Some(TestCase::MatchAll(TestCaseMatchAll { literal, matches })))
+            } else if matches.len() > 1 {
+                let span = matches[0].span.join(matches.last().unwrap().span);
+                Err(PEK::MultipleStringsInTestCase.at(span))
+            } else {
+                let match_ = matches.pop().unwrap();
+                Ok(Some(TestCase::Match(match_)))
+            }
+        } else if self.consume_contextual_keyword("reject") {
+            let as_substring = self.consume_contextual_keyword("in");
+
+            let Some(literal) = self.parse_literal()? else {
+                return Err(PEK::ExpectedToken(Token::String).at(self.span()));
+            };
+
+            self.expect(Token::Semicolon)?;
+
+            Ok(Some(TestCase::Reject(TestCaseReject { literal, as_substring })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn parse_test_match(&mut self) -> PResult<TestCaseMatch<'i>> {
+        let Some(literal) = self.parse_literal()? else {
+            return Err(PEK::ExpectedToken(Token::String).at(self.span()));
+        };
+        let span_start = self.last_span();
+
+        let mut captures = Vec::new();
+
+        if self.consume_contextual_keyword("as") {
+            self.expect(Token::OpenBrace)?;
+
+            let mut is_first = true;
+            loop {
+                if !is_first && !self.consume(Token::Comma) {
+                    break;
+                }
+                let Some(capture) = self.parse_test_capture()? else {
+                    break;
+                };
+                captures.push(capture);
+                is_first = false;
+            }
+
+            self.expect(Token::CloseBrace)?;
+        }
+
+        let span_end = self.last_span();
+        Ok(TestCaseMatch { literal, captures, span: span_start.join(span_end) })
+    }
+
+    fn parse_test_capture(&mut self) -> PResult<Option<TestCapture<'i>>> {
+        let ident = if let Some(n) = self.consume_number(u16::MAX)? {
+            CaptureIdent::Index(n)
+        } else if let Some(name) = self.consume_as(Token::Identifier) {
+            CaptureIdent::Name(name)
+        } else {
+            return Ok(None);
+        };
+        let ident_span = self.last_span();
+
+        self.expect(Token::Colon)?;
+        let Some(literal) = self.parse_literal()? else {
+            return Err(PEK::ExpectedToken(Token::String).at(self.span()));
+        };
+        Ok(Some(TestCapture { ident, ident_span, literal }))
     }
 
     fn parse_or(&mut self) -> PResult<Rule<'i>> {
@@ -356,10 +477,14 @@ impl<'i> Parser<'i> {
 
     /// Parses a string literal.
     fn parse_string(&mut self) -> PResult<Option<Rule<'i>>> {
+        Ok(self.parse_literal()?.map(Rule::Literal))
+    }
+
+    fn parse_literal(&mut self) -> PResult<Option<Literal<'i>>> {
         if let Some(s) = self.consume_as(Token::String) {
             let span = self.last_span();
             let content = helper::parse_quoted_text(s).map_err(|k| k.at(span))?;
-            Ok(Some(Rule::Literal(Literal::new(content, span))))
+            Ok(Some(Literal::new(content, span)))
         } else {
             Ok(None)
         }

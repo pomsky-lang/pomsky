@@ -16,7 +16,7 @@ pub(crate) fn rust(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
 }
 
 pub(crate) fn pcre(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
-    match pcre2::bytes::RegexBuilder::new().utf(true).build(regex) {
+    match pcre2::bytes::RegexBuilder::new().utf(true).ucp(true).build(regex) {
         Ok(regex) => {
             for text in test_strings {
                 let text = text.as_ref();

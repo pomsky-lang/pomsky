@@ -153,6 +153,16 @@ impl<'i> Parser<'i> {
         }
     }
 
+    pub(super) fn consume_contextual_keyword(&mut self, keyword: &str) -> bool {
+        match self.peek_pair() {
+            Some((Token::Identifier, s)) if self.source_at(s) == keyword => {
+                self.offset += 1;
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub(super) fn consume_number<T: FromStr + PartialOrd>(&mut self, max: T) -> PResult<Option<T>> {
         match self.peek_pair() {
             Some((Token::Number, span)) => {

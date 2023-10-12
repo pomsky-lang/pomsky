@@ -7,6 +7,7 @@ use crate::{
     diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
+    regex::Regex,
 };
 
 use super::{repetition::RegexQuantifier, RuleExt};
@@ -46,7 +47,7 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
                     Stmt::Disable(BooleanSetting::Unicode) => {
                         state.ascii_only = true;
                     }
-                    Stmt::Let(_) => unreachable!(),
+                    Stmt::Let(_) | Stmt::Test(_) => unreachable!(),
                 }
                 let res = self.rule.compile(options, state)?;
                 state.default_quantifier = prev_quantifier;
@@ -59,6 +60,7 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
                 state.variables.pop();
                 Ok(res)
             }
+            Stmt::Test(_) => Ok(Regex::Literal("".into())),
         }
     }
 
@@ -70,7 +72,7 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
             Stmt::Disable(BooleanSetting::Unicode) => {
                 options.allowed_features.require(PomskyFeatures::ASCII_MODE, self.span)?;
             }
-            Stmt::Enable(_) | Stmt::Disable(_) => {}
+            Stmt::Enable(_) | Stmt::Disable(_) | Stmt::Test(_) => {}
             Stmt::Let(l) => {
                 options.allowed_features.require(PomskyFeatures::VARIABLES, l.name_span)?;
                 l.rule.validate(options)?;
