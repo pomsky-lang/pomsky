@@ -852,10 +852,8 @@ name = "pomsky"
 version = "0.10.0"
 dependencies = [
  "arbitrary",
- "atty",
  "lexopt",
  "miette",
- "once_cell",
  "pomsky-syntax",
  "regex",
  "regex-test",
@@ -867,7 +865,6 @@ version = "0.10.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
- "atty",
  "helptext",
  "lexopt",
  "miette",

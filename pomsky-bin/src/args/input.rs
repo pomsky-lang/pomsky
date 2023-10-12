@@ -1,6 +1,7 @@
-use std::{io::Read, path::PathBuf};
-
-use atty::Stream;
+use std::{
+    io::{IsTerminal, Read},
+    path::PathBuf,
+};
 
 use super::ParseArgsError;
 
@@ -13,9 +14,10 @@ pub(crate) enum Input {
 
 impl Input {
     pub(crate) fn read_stdin() -> Result<Self, ParseArgsError> {
-        if atty::isnt(Stream::Stdin) {
+        let mut stdin = std::io::stdin();
+        if !stdin.is_terminal() {
             let mut buf = Vec::new();
-            std::io::stdin().read_to_end(&mut buf).unwrap();
+            stdin.read_to_end(&mut buf).unwrap();
 
             match String::from_utf8(buf) {
                 Ok(input) => Ok(Input::Value(input)),

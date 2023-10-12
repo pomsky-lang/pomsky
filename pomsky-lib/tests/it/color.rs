@@ -1,6 +1,4 @@
-use std::fmt;
-
-use once_cell::sync::OnceCell;
+use std::{fmt, io::IsTerminal, sync::OnceLock};
 
 pub(crate) enum Color<T> {
     Red(T),
@@ -71,13 +69,15 @@ macro_rules! color {
     };
 }
 
-static ATTY: OnceCell<bool> = OnceCell::new();
+fn stdout_is_terminal() -> bool {
+    static IS_TERMINAL: OnceLock<bool> = OnceLock::new();
+
+    *IS_TERMINAL.get_or_init(|| std::io::stdout().is_terminal())
+}
 
 impl<T: fmt::Display> fmt::Display for Color<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let &atty = ATTY.get_or_init(|| atty::is(atty::Stream::Stdout));
-
-        if atty {
+        if stdout_is_terminal() {
             let (m1, m2) = self.get_markers();
             write!(f, "{m1}{}{m2}", self.inner())
         } else {
@@ -88,10 +88,7 @@ impl<T: fmt::Display> fmt::Display for Color<T> {
 
 impl<T: fmt::Debug> fmt::Debug for Color<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let &atty =
-            ATTY.get_or_init(|| atty::is(atty::Stream::Stderr) && atty::is(atty::Stream::Stdout));
-
-        if atty {
+        if stdout_is_terminal() {
             let (m1, m2) = self.get_markers();
             write!(f, "{m1}{:?}{m2}", self.inner())
         } else {

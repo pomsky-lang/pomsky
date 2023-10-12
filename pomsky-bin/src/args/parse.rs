@@ -1,4 +1,4 @@
-use atty::Stream;
+use std::io::{stdin, stdout, IsTerminal};
 
 use super::{Args, DiagnosticSet, Input, ParseArgsError};
 
@@ -63,7 +63,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
         }
     }
 
-    if arg_count == 0 && atty::is(Stream::Stdin) && atty::is(Stream::Stdout) {
+    if arg_count == 0 && stdin().is_terminal() && stdout().is_terminal() {
         return Ok(ArgsInner::HelpShort);
     }
 
