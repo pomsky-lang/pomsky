@@ -2,3 +2,5 @@ test {
   match 'hello world' as { 1: 'hello', foo: 'world' };
 }
 -----
+
+MATCH: "hello world" as { 1: "hello", foo: "world", }

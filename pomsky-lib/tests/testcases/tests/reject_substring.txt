@@ -5,3 +5,4 @@ test {
 'hello world'
 -----
 hello world
+REJECT: in "hello world"

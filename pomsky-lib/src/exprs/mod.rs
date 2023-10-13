@@ -113,11 +113,24 @@ impl<'i> Expr<'i> {
         (Some(buf), state.diagnostics)
     }
 
+    /// Extracts top-level all unit tests from the Pomsky expression
+    pub fn extract_tests(self) -> Vec<Test<'i>> {
+        let mut rule = self.0;
+        let mut tests = Vec::new();
+        while let Rule::StmtExpr(expr) = rule {
+            if let Stmt::Test(test) = expr.stmt {
+                tests.push(test);
+            }
+            rule = expr.rule;
+        }
+        tests
+    }
+
     /// Parse a string to a `Expr` and compile it to a regex.
     pub fn parse_and_compile(
         input: &'i str,
         options: CompileOptions,
-    ) -> (Option<String>, Vec<Diagnostic>) {
+    ) -> (Option<String>, Vec<Diagnostic>, Vec<Test<'i>>) {
         match Self::parse(input) {
             (Some(parsed), warnings1) => match parsed.compile(input, options) {
                 (Some(compiled), warnings2) => {
@@ -125,17 +138,17 @@ impl<'i> Expr<'i> {
                         Vec::with_capacity(warnings1.size_hint().0 + warnings2.len());
                     diagnostics.extend(warnings1);
                     diagnostics.extend(warnings2);
-                    (Some(compiled), diagnostics)
+                    (Some(compiled), diagnostics, parsed.extract_tests())
                 }
                 (None, errors) => {
                     let mut diagnostics =
                         Vec::with_capacity(warnings1.size_hint().0 + errors.len());
                     diagnostics.extend(errors);
                     diagnostics.extend(warnings1);
-                    (None, diagnostics)
+                    (None, diagnostics, parsed.extract_tests())
                 }
             },
-            (None, diagnostics) => (None, diagnostics.collect()),
+            (None, diagnostics) => (None, diagnostics.collect(), vec![]),
         }
     }
 }

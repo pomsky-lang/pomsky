@@ -28,6 +28,6 @@ pub use self::{
     regex::Regex,
     repetition::{Quantifier, Repetition, RepetitionKind},
     rule::Rule,
-    stmt::{BooleanSetting, Let, Stmt, StmtExpr},
+    stmt::*,
     var::Variable,
 };

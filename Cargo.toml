@@ -24,5 +24,6 @@ codegen-units = 1
 strip = true
 incremental = false
 
-[patch.crates-io]
-onig_sys = { git = "https://github.com/rust-onig/rust-onig", revision = "fa90c0e97e90a056af89f183b23cd417b59ee6a2" }
+[patch.crates-io.onig_sys]
+git = "https://github.com/rust-onig/rust-onig"
+revision = "fa90c0e97e90a056af89f183b23cd417b59ee6a2"

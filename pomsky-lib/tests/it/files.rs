@@ -7,6 +7,7 @@ use pomsky::{
     diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
 };
+use pomsky_syntax::exprs::{CaptureIdent, TestCapture, TestCase};
 use regex_test::RegexTest;
 
 use crate::{args::Args, color::Color::*};
@@ -157,11 +158,62 @@ pub(crate) fn test_file(
     );
 
     match parsed {
-        (Some(regex), warnings) => {
+        (Some(regex), warnings, tests) => {
             let mut got = regex.clone();
             for warning in warnings {
                 got.push_str("\nWARNING: ");
-                got.write_fmt(format_args!("{warning}\n  at {}", warning.span)).unwrap();
+                let _ = got.write_fmt(format_args!("{warning}\n  at {}", warning.span));
+            }
+            for test in tests {
+                for case in test.cases {
+                    match case {
+                        TestCase::Match(m) => {
+                            got.push_str("\nMATCH: ");
+                            let _ = got.write_fmt(format_args!(
+                                "{:?} as {}",
+                                m.literal.content,
+                                DisplayMatchCaptures(&m.captures)
+                            ));
+                        }
+                        TestCase::MatchAll(m) => {
+                            got.push_str("\nMATCH_ALL: ");
+                            for (i, mat) in m.matches.iter().enumerate() {
+                                if i > 0 {
+                                    got.push_str(", ");
+                                }
+                                let _ = got.write_fmt(format_args!(
+                                    "{:?} as {}",
+                                    mat.literal.content,
+                                    DisplayMatchCaptures(&mat.captures)
+                                ));
+                            }
+                            got.push_str(" in ");
+                            let _ = got.write_fmt(format_args!("{:?}", m.literal.content));
+                        }
+                        TestCase::Reject(r) => {
+                            got.push_str("\nREJECT: ");
+                            if r.as_substring {
+                                got.push_str("in ");
+                            }
+                            let _ = got.write_fmt(format_args!("{:?}", r.literal.content));
+                        }
+                    }
+                }
+            }
+
+            struct DisplayMatchCaptures<'i>(&'i Vec<TestCapture<'i>>);
+            impl std::fmt::Display for DisplayMatchCaptures<'_> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let _ = write!(f, "{{ ");
+                    for capture in self.0.iter() {
+                        let _ = match capture.ident {
+                            CaptureIdent::Name(n) => write!(f, "{n}: "),
+                            CaptureIdent::Index(i) => write!(f, "{i}: "),
+                        };
+                        let _ = write!(f, "{:?}, ", capture.literal.content);
+                    }
+                    write!(f, "}}")
+                }
             }
 
             match options.expected_outcome {
@@ -212,7 +264,7 @@ pub(crate) fn test_file(
                 },
             }
         }
-        (None, err) => {
+        (None, err, _) => {
             let err = errors_to_string(err);
 
             match options.expected_outcome {
