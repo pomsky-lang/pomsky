@@ -7,7 +7,6 @@ use crate::{
     diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
-    regex::Regex,
 };
 
 use super::{repetition::RegexQuantifier, RuleExt};
@@ -60,7 +59,7 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
                 state.variables.pop();
                 Ok(res)
             }
-            Stmt::Test(_) => Ok(Regex::Literal("".into())),
+            Stmt::Test(_) => self.rule.compile(options, state),
         }
     }
 

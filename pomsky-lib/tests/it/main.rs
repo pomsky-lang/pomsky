@@ -24,7 +24,9 @@ pub fn main() {
         .unwrap();
 
     // Wait for thread to join
-    child.join().unwrap();
+    let Ok(()) = child.join() else {
+        std::process::exit(1);
+    };
 }
 
 fn defer_main() {

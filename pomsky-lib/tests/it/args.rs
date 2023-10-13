@@ -54,7 +54,10 @@ impl Args {
                 Long("fuzz-start") => fuzz_start = parser.value().unwrap().parse().unwrap(),
                 Long("fuzz-step") => fuzz_step = parser.value().unwrap().parse().unwrap(),
                 Value(arg) => filter = arg.to_string_lossy().to_string(),
-                _ => Err(arg.unexpected()).unwrap(),
+                _ => {
+                    eprintln!("error: {}", arg.unexpected());
+                    std::process::exit(1);
+                }
             }
         }
         Args {

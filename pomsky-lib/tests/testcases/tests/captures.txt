@@ -1,0 +1,4 @@
+test {
+  match 'hello world' as { 1: 'hello', foo: 'world' };
+}
+-----

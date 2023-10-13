@@ -1,0 +1,7 @@
+test {
+  match 'hello world';
+}
+
+'hello world'
+-----
+hello world

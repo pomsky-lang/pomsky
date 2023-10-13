@@ -1,0 +1,7 @@
+test {
+  match 'a' as {},
+        'b',
+        'c' as { 0: 'c' }
+     in 'abc';
+}
+-----

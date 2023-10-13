@@ -110,6 +110,7 @@ impl<'i> StmtExpr<'i> {
                 });
                 setting.pretty_print(buf);
                 buf.write(";\n");
+                self.rule.pretty_print(buf, false);
             }
             Stmt::Let(r#let) => {
                 buf.push_str("let ");
@@ -131,6 +132,8 @@ impl<'i> StmtExpr<'i> {
                     }
                 }
                 buf.end_indentation("}");
+                buf.write("\n");
+                self.rule.pretty_print(buf, false);
             }
         }
     }

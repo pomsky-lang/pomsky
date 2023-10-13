@@ -1,0 +1,7 @@
+#! expect=error
+test {
+  match 'hello world' as { foo: '' bar: '' };
+}
+-----
+ERROR: Expected `}`
+SPAN: 42..45

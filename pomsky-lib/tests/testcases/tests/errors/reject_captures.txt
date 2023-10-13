@@ -1,0 +1,7 @@
+#! expect=error
+test {
+  reject 'hello' in 'hello world';
+}
+-----
+ERROR: Expected `;`
+SPAN: 24..26

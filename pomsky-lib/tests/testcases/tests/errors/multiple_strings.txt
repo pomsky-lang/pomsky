@@ -1,0 +1,8 @@
+#! expect=error
+test {
+  match 'hello', 'world';
+}
+-----
+ERROR: Test cases can't have multiple strings
+HELP: Use `in "some string"` to match substrings in a haystack
+SPAN: 15..31

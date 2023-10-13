@@ -1,0 +1,8 @@
+#! expect=error
+test {
+  match 'hello' 'world'
+     in 'hello world';
+}
+-----
+ERROR: Expected `;`
+SPAN: 23..30

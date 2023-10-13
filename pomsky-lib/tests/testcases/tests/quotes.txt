@@ -1,0 +1,5 @@
+test {
+  match "hello\"world",
+        'foo' as { 0: "bar" }
+     in "hello\"world foo bar";
+}
