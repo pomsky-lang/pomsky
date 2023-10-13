@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use pomsky_syntax::exprs::{Capture, Group, GroupKind};
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, CompileErrorKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
@@ -75,7 +75,11 @@ impl<'i> RuleExt<'i> for Group<'i> {
         }))
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         if let GroupKind::Atomic = self.kind {
             options.allowed_features.require(PomskyFeatures::ATOMIC_GROUPS, self.span)?;
 
@@ -96,8 +100,9 @@ impl<'i> RuleExt<'i> for Group<'i> {
             options.allowed_features.require(feature, self.span)?;
         }
 
+        let mut new_state = state.layer_down();
         for rule in &self.parts {
-            rule.validate(options)?;
+            rule.validate(options, &mut new_state)?;
         }
         Ok(())
     }

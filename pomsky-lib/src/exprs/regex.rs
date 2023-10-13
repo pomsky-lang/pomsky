@@ -1,7 +1,7 @@
 use pomsky_syntax::exprs::Regex as RegexLiteral;
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::CompileError,
     features::PomskyFeatures,
     options::CompileOptions,
@@ -15,7 +15,11 @@ impl<'i> RuleExt<'i> for RegexLiteral<'i> {
         Ok(Regex::Unescaped(self.content.clone()))
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        _: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         options.allowed_features.require(PomskyFeatures::REGEXES, self.span)
     }
 }

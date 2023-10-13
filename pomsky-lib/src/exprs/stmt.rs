@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use pomsky_syntax::exprs::{BooleanSetting, Stmt, StmtExpr};
 
 use crate::{
-    compile::{CompileResult, CompileState},
-    diagnose::CompileError,
+    compile::{CompileResult, CompileState, ValidationState},
+    diagnose::{CompileError, CompileErrorKind},
     features::PomskyFeatures,
     options::CompileOptions,
 };
@@ -30,20 +30,20 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         match &self.stmt {
-            Stmt::Enable(_) | Stmt::Disable(_) => {
+            Stmt::Enable(..) | Stmt::Disable(..) => {
                 let prev_quantifier = state.default_quantifier;
                 let prev_ascii = state.ascii_only;
                 match &self.stmt {
-                    Stmt::Enable(BooleanSetting::Lazy) => {
+                    Stmt::Enable(BooleanSetting::Lazy, _) => {
                         state.default_quantifier = RegexQuantifier::Lazy;
                     }
-                    Stmt::Disable(BooleanSetting::Lazy) => {
+                    Stmt::Disable(BooleanSetting::Lazy, _) => {
                         state.default_quantifier = RegexQuantifier::Greedy;
                     }
-                    Stmt::Enable(BooleanSetting::Unicode) => {
+                    Stmt::Enable(BooleanSetting::Unicode, _) => {
                         state.ascii_only = false;
                     }
-                    Stmt::Disable(BooleanSetting::Unicode) => {
+                    Stmt::Disable(BooleanSetting::Unicode, _) => {
                         state.ascii_only = true;
                     }
                     Stmt::Let(_) | Stmt::Test(_) => unreachable!(),
@@ -63,21 +63,30 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
         }
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         match &self.stmt {
-            Stmt::Enable(BooleanSetting::Lazy) => {
-                options.allowed_features.require(PomskyFeatures::LAZY_MODE, self.span)?;
+            Stmt::Enable(BooleanSetting::Lazy, span) => {
+                options.allowed_features.require(PomskyFeatures::LAZY_MODE, *span)?;
             }
-            Stmt::Disable(BooleanSetting::Unicode) => {
-                options.allowed_features.require(PomskyFeatures::ASCII_MODE, self.span)?;
+            Stmt::Disable(BooleanSetting::Unicode, span) => {
+                options.allowed_features.require(PomskyFeatures::ASCII_MODE, *span)?;
             }
-            Stmt::Enable(_) | Stmt::Disable(_) | Stmt::Test(_) => {}
+            Stmt::Enable(..) | Stmt::Disable(..) => {}
             Stmt::Let(l) => {
                 options.allowed_features.require(PomskyFeatures::VARIABLES, l.name_span)?;
-                l.rule.validate(options)?;
+                l.rule.validate(options, &mut state.layer_down())?;
+            }
+            Stmt::Test(t) => {
+                if !state.is_top_layer {
+                    return Err(CompileErrorKind::NestedTest.at(t.span));
+                }
             }
         }
 
-        self.rule.validate(options)
+        self.rule.validate(options, state)
     }
 }

@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap};
 use pomsky_syntax::exprs::{Quantifier, Repetition, RepetitionKind};
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
@@ -42,8 +42,12 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         Ok(Regex::Repetition(Box::new(RegexRepetition { content, kind: self.kind, quantifier })))
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
-        self.rule.validate(options)
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
+        self.rule.validate(options, state)
     }
 }
 

@@ -3,7 +3,7 @@ use std::{borrow::Cow, cmp::Ordering};
 use pomsky_syntax::exprs::{Range, RepetitionKind};
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, CompileErrorKind},
     features::PomskyFeatures,
     options::CompileOptions,
@@ -23,7 +23,11 @@ impl<'i> RuleExt<'i> for Range {
         Ok(range(&self.start, &self.end, true, self.radix).to_regex())
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        _: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         if self.end.len() > options.max_range_size as usize {
             return Err(CompileErrorKind::RangeIsTooBig(options.max_range_size).at(self.span));
         }

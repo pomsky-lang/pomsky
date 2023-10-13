@@ -11,8 +11,8 @@ pub struct StmtExpr<'i> {
 
 #[derive(Clone)]
 pub enum Stmt<'i> {
-    Enable(BooleanSetting),
-    Disable(BooleanSetting),
+    Enable(BooleanSetting, Span),
+    Disable(BooleanSetting, Span),
     Let(Let<'i>),
     Test(Test<'i>),
 }
@@ -53,6 +53,7 @@ impl<'i> Let<'i> {
 #[derive(Clone)]
 pub struct Test<'i> {
     pub cases: Vec<TestCase<'i>>,
+    pub span: Span,
 }
 
 #[derive(Clone)]
@@ -102,8 +103,8 @@ impl<'i> StmtExpr<'i> {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match &self.stmt {
-            Stmt::Enable(setting) | Stmt::Disable(setting) => {
-                buf.write(if matches!(&self.stmt, Stmt::Enable(_)) {
+            Stmt::Enable(setting, _) | Stmt::Disable(setting, _) => {
+                buf.write(if matches!(&self.stmt, Stmt::Enable(..)) {
                     "enable "
                 } else {
                     "disable "

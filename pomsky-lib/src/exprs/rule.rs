@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use pomsky_syntax::exprs::Rule;
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, CompileErrorKind},
     options::CompileOptions,
 };
@@ -68,20 +68,24 @@ impl<'i> RuleExt<'i> for Rule<'i> {
         }
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         match self {
             Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) | Rule::Codepoint => Ok(()),
             Rule::Grapheme => Grapheme {}.validate(options),
             Rule::Dot => Dot {}.validate(options),
-            Rule::Group(g) => g.validate(options),
-            Rule::Alternation(a) => a.validate(options),
-            Rule::Repetition(r) => r.validate(options),
-            Rule::Boundary(b) => b.validate(options),
-            Rule::Lookaround(l) => l.validate(options),
-            Rule::Reference(r) => r.validate(options),
-            Rule::Range(r) => r.validate(options),
-            Rule::Regex(r) => r.validate(options),
-            Rule::StmtExpr(s) => s.validate(options),
+            Rule::Group(g) => g.validate(options, state),
+            Rule::Alternation(a) => a.validate(options, state),
+            Rule::Repetition(r) => r.validate(options, state),
+            Rule::Boundary(b) => b.validate(options, state),
+            Rule::Lookaround(l) => l.validate(options, state),
+            Rule::Reference(r) => r.validate(options, state),
+            Rule::Range(r) => r.validate(options, state),
+            Rule::Regex(r) => r.validate(options, state),
+            Rule::StmtExpr(s) => s.validate(options, state),
         }
     }
 }

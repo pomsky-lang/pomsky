@@ -58,3 +58,20 @@ impl<'c, 'i> CompileState<'c, 'i> {
         }
     }
 }
+
+#[derive(Clone)]
+pub(crate) struct ValidationState {
+    pub(crate) is_top_layer: bool,
+}
+
+impl ValidationState {
+    pub(crate) fn new() -> Self {
+        ValidationState { is_top_layer: true }
+    }
+
+    pub(crate) fn layer_down(&mut self) -> Self {
+        let mut new = self.clone();
+        new.is_top_layer = false;
+        new
+    }
+}

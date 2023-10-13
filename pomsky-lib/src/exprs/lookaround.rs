@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use pomsky_syntax::exprs::{Lookaround, LookaroundKind};
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompatWarning, CompileError, CompileErrorKind, CompileWarningKind, Feature},
     features::PomskyFeatures,
     options::{CompileOptions, RegexFlavor},
@@ -50,12 +50,17 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
         })))
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         let feature = match self.kind {
             LookaroundKind::Ahead | LookaroundKind::AheadNegative => PomskyFeatures::LOOKAHEAD,
             LookaroundKind::Behind | LookaroundKind::BehindNegative => PomskyFeatures::LOOKBEHIND,
         };
-        options.allowed_features.require(feature, self.span)
+        options.allowed_features.require(feature, self.span)?;
+        self.rule.validate(options, &mut state.layer_down())
     }
 }
 

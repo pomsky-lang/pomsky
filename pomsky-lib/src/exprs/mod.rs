@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, Diagnostic},
     options::CompileOptions,
     regex::Count,
@@ -28,7 +28,11 @@ use pomsky_syntax::{exprs::*, Span};
 use repetition::RegexQuantifier;
 
 pub(crate) trait RuleExt<'i> {
-    fn validate(&self, _options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        _options: &CompileOptions,
+        _state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         Ok(())
     }
 
@@ -68,7 +72,7 @@ impl<'i> Expr<'i> {
         input: &'i str,
         options: CompileOptions,
     ) -> (Option<String>, Vec<Diagnostic>) {
-        if let Err(e) = self.0.validate(&options) {
+        if let Err(e) = self.0.validate(&options, &mut ValidationState::new()) {
             return (None, vec![e.diagnostic(input)]);
         }
 

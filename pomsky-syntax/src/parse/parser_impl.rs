@@ -82,10 +82,12 @@ impl<'i> Parser<'i> {
             return Err(PEK::Expected("`lazy` or `unicode`").at(self.span()));
         };
         self.expect(Token::Semicolon)?;
-        let stmt = if mode { Stmt::Enable(setting) } else { Stmt::Disable(setting) };
-
         let span_end = self.last_span();
-        Ok(Some((stmt, span_start.join(span_end))))
+        let span = span_start.join(span_end);
+
+        let stmt = if mode { Stmt::Enable(setting, span) } else { Stmt::Disable(setting, span) };
+
+        Ok(Some((stmt, span)))
     }
 
     fn parse_let(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
@@ -128,8 +130,9 @@ impl<'i> Parser<'i> {
 
             self.expect(Token::CloseBrace)?;
             let span_end = self.last_span();
+            let span = span_start.join(span_end);
 
-            Ok(Some((Stmt::Test(Test { cases }), span_start.join(span_end))))
+            Ok(Some((Stmt::Test(Test { cases, span }), span)))
         } else {
             Ok(None)
         }

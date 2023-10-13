@@ -1,0 +1,8 @@
+#! expect=error
+(
+  test {}
+  "hello world"
+)
+-----
+ERROR: Unit tests may only appear at the top level of the expression
+SPAN: 4..11

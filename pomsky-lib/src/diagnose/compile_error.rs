@@ -83,6 +83,7 @@ pub(crate) enum CompileErrorKind {
     NegativeShorthandInAsciiMode,
     UnicodeInAsciiMode,
     JsWordBoundaryInUnicodeMode,
+    NestedTest,
 }
 
 impl CompileErrorKind {
@@ -166,6 +167,9 @@ impl core::fmt::Display for CompileErrorKind {
                 "In the JavaScript flavor, word boundaries may only be used \
                 when Unicode is disabled"
             ),
+            CompileErrorKind::NestedTest => {
+                write!(f, "Unit tests may only appear at the top level of the expression")
+            }
         }
     }
 }

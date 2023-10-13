@@ -88,6 +88,7 @@ diagnostic_code! {
         RecursionLimit = 313,
         UnsupportedInAsciiMode = 314,
         UnsupportedInUnicodeMode = 315,
+        NestedTest = 316,
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
@@ -206,6 +207,7 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::NegativeShorthandInAsciiMode => Self::UnsupportedInAsciiMode,
             C::UnicodeInAsciiMode => Self::UnsupportedInAsciiMode,
             C::JsWordBoundaryInUnicodeMode => Self::UnsupportedInUnicodeMode,
+            C::NestedTest => Self::NestedTest,
         }
     }
 }

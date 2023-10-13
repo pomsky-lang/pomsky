@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    compile::{CompileResult, CompileState},
+    compile::{CompileResult, CompileState, ValidationState},
     diagnose::CompileError,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
@@ -39,9 +39,13 @@ impl<'i> RuleExt<'i> for Alternation<'i> {
         }))
     }
 
-    fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
+    fn validate(
+        &self,
+        options: &CompileOptions,
+        state: &mut ValidationState,
+    ) -> Result<(), CompileError> {
         for rule in &self.rules {
-            rule.validate(options)?;
+            rule.validate(options, state)?;
         }
         Ok(())
     }
