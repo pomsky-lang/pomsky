@@ -14,8 +14,8 @@
 //!
 //! let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
 //! let regex = match Expr::parse_and_compile("'test'", options) {
-//!     (Some(regex), _warnings) => regex,
-//!     (None, diagnostics) => {
+//!     (Some(regex), _warnings, _tests) => regex,
+//!     (None, diagnostics, _tests) => {
 //!         eprintln!("The input is not a valid pomsky expression");
 //!         return;
 //!     }
@@ -33,8 +33,8 @@
 //! pub fn compile(input: &str) -> miette::Result<String> {
 //!     let options = CompileOptions { flavor: RegexFlavor::Java, ..Default::default() };
 //!     let compiled = match Expr::parse_and_compile(input, options) {
-//!         (Some(regex), _warnings) => regex,
-//!         (None, diagnostics) => {
+//!         (Some(regex), _warnings, _tests) => regex,
+//!         (None, diagnostics, _tests) => {
 //!             for diagnostic in diagnostics {
 //!                 eprintln!("{diagnostic}");
 //!             }

@@ -37,6 +37,7 @@ impl predicates::Predicate<[u8]> for Output {
         match serde_json::from_slice::<CompilationResult>(variable) {
             Ok(mut res) => {
                 res.timings.all = 0;
+                res.timings.tests = 0;
                 if self.ignore_visual {
                     for d in &mut res.diagnostics {
                         d.visual = String::new();
@@ -376,7 +377,7 @@ fn json_output() {
             success: true,
             output: Some("..\\w".into()),
             diagnostics: vec![],
-            timings: Timings { all: 0 },
+            timings: Timings { all: 0, tests: 0 },
         }))
         .stderr("");
 }
@@ -416,7 +417,7 @@ fn json_output_warnings() {
                     visual: String::new(),
                 },
             ],
-            timings: Timings { all: 0 },
+            timings: Timings { all: 0, tests: 0 },
         }))
         .stderr("");
 }
@@ -451,7 +452,7 @@ fn json_output_errors() {
 ",
                     ),
                 }],
-                timings: Timings { all: 0 },
+                timings: Timings { all: 0, tests: 0 },
             })
             .ignore_visual(false),
         )
