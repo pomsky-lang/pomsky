@@ -92,6 +92,15 @@ diagnostic_code! {
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
+
+        // Diagnostics pertaining tests
+        TestNoExactMatch = 500,
+        TestMissingSubstringMatch = 501,
+        TestUnexpectedSubstringMatch = 502,
+        TestWrongSubstringMatch = 503,
+        TestUnexpectedExactMatch = 504,
+        TestMissingCaptureGroup = 505,
+        TestWrongCaptureGroup = 506,
     }
 }
 

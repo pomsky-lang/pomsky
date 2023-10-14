@@ -6,13 +6,7 @@ use crate::{
         RepetitionError,
     },
     error::{ParseError, ParseErrorKind as PEK},
-    exprs::{
-        stmt::{
-            CaptureIdent, Test, TestCapture, TestCase, TestCaseMatch, TestCaseMatchAll,
-            TestCaseReject,
-        },
-        *,
-    },
+    exprs::{test::*, *},
     lexer::Token,
     Span,
 };

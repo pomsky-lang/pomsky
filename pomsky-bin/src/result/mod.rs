@@ -29,23 +29,23 @@ pub enum Version {
 }
 
 impl CompilationResult {
-    pub fn success(output: String, time_micros: u128) -> Self {
+    pub fn success(output: String, time_all_micros: u128, time_test_micros: u128) -> Self {
         Self {
             version: Version::V1,
             success: true,
             output: Some(output),
             diagnostics: vec![],
-            timings: Timings::from_micros(time_micros),
+            timings: Timings::from_micros(time_all_micros, time_test_micros),
         }
     }
 
-    pub fn error(time_micros: u128) -> Self {
+    pub fn error(time_all_micros: u128, time_test_micros: u128) -> Self {
         Self {
             version: Version::V1,
             success: false,
             output: None,
             diagnostics: vec![],
-            timings: Timings::from_micros(time_micros),
+            timings: Timings::from_micros(time_all_micros, time_test_micros),
         }
     }
 
@@ -143,11 +143,12 @@ impl From<DiagnosticKind> for Kind {
 pub struct Timings {
     /// time of all performed compilation steps in microseconds
     pub all: u128,
+    pub tests: u128,
 }
 
 impl Timings {
-    pub fn from_micros(micros: u128) -> Self {
-        Timings { all: micros }
+    pub fn from_micros(all: u128, tests: u128) -> Self {
+        Timings { all, tests }
     }
 }
 

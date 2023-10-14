@@ -868,6 +868,7 @@ dependencies = [
  "helptext",
  "lexopt",
  "miette",
+ "pcre2",
  "pomsky",
  "predicates 2.1.5",
  "serde",

@@ -32,6 +32,15 @@ pub(crate) struct Args {
     pub(crate) allowed_features: PomskyFeatures,
     /// Set of warnings that should be emitted
     pub(crate) warnings: DiagnosticSet,
+    /// Whether to execute tests after compilation
+    pub(crate) test: TestSettings,
+}
+
+#[derive(Default, PartialEq)]
+pub(crate) enum TestSettings {
+    #[default]
+    None,
+    Pcre2,
 }
 
 pub(super) fn parse_args() -> Result<Args, ParseArgsError> {

@@ -1,5 +1,7 @@
 use std::io::{stdin, stdout, IsTerminal};
 
+use crate::args::TestSettings;
+
 use super::{Args, DiagnosticSet, Input, ParseArgsError};
 
 #[derive(PartialEq)]
@@ -29,6 +31,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
     let mut allowed_features = None;
     let mut warnings = DiagnosticSet::All;
     let mut json = false;
+    let mut test = false;
 
     while let Some(arg) = parser.next()? {
         arg_count += 1;
@@ -59,6 +62,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
             Short('h') => return Ok(ArgsInner::HelpShort),
             Long("help") => return Ok(ArgsInner::HelpLong),
             Short('V') | Long("version") => return Ok(ArgsInner::Version),
+            Short('t') | Long("test") => test.set_arg(true, "--test")?,
             _ => Err(arg.unexpected())?,
         }
     }
@@ -89,6 +93,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
         no_new_line,
         allowed_features: allowed_features.unwrap_or_default(),
         warnings,
+        test: if test { TestSettings::Pcre2 } else { TestSettings::None },
     }))
 }
 

@@ -6,8 +6,8 @@ use std::{
 use pomsky::{
     diagnose::{Diagnostic, Severity},
     options::{CompileOptions, RegexFlavor},
+    test::{CaptureIdent, TestCapture, TestCase},
 };
-use pomsky_syntax::exprs::{CaptureIdent, TestCapture, TestCase};
 use regex_test::RegexTest;
 
 use crate::{args::Args, color::Color::*};

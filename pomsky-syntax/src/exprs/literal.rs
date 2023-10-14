@@ -5,7 +5,7 @@ use crate::Span;
 #[derive(Clone, PartialEq, Eq)]
 pub struct Literal<'i> {
     pub content: Cow<'i, str>,
-    pub(crate) span: Span,
+    pub span: Span,
 }
 
 impl<'i> Literal<'i> {
@@ -16,5 +16,11 @@ impl<'i> Literal<'i> {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         buf.write_debug(&self.content);
+    }
+}
+
+impl std::fmt::Debug for Literal<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} at {}", self.content, self.span)
     }
 }

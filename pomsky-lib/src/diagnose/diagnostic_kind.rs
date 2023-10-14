@@ -20,6 +20,8 @@ pub enum DiagnosticKind {
     Deprecated,
     /// A limitation that was deliberately enforced
     Limits,
+    /// Unit test failure
+    Test,
     /// Other unspecified error
     Other,
 }
@@ -79,6 +81,7 @@ impl Display for DiagnosticKind {
             DiagnosticKind::Unsupported => "(unsupported)",
             DiagnosticKind::Deprecated => "(deprecated)",
             DiagnosticKind::Limits => "(limits)",
+            DiagnosticKind::Test => "(test)",
             DiagnosticKind::Other => "",
         })
     }
@@ -93,6 +96,7 @@ impl From<DiagnosticKind> for &'static str {
             DiagnosticKind::Unsupported => "unsupported",
             DiagnosticKind::Deprecated => "deprecated",
             DiagnosticKind::Limits => "limits",
+            DiagnosticKind::Test => "test",
             DiagnosticKind::Other => "other",
         }
     }

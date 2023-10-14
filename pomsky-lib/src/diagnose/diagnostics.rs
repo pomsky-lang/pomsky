@@ -127,6 +127,48 @@ impl Diagnostic {
         }
     }
 
+    /// Create a test failure diagnostic
+    #[must_use]
+    pub fn test_failure(span: Span, code: DiagnosticCode, actual_value: Option<&str>) -> Self {
+        let (msg, help) = match code {
+            DiagnosticCode::TestNoExactMatch => {
+                ("The regex does not exactly match the test string".into(), None)
+            }
+            DiagnosticCode::TestMissingSubstringMatch => {
+                ("The regex did not find this match within the test string".into(), None)
+            }
+            DiagnosticCode::TestUnexpectedSubstringMatch => (
+                "The regex found an unexpected match within the test string".into(),
+                Some(format!("The regex matched the substring {:?}", actual_value.unwrap())),
+            ),
+            DiagnosticCode::TestWrongSubstringMatch => (
+                "The regex found a different match in the test string".into(),
+                Some(format!("The actual match is {:?}", actual_value.unwrap())),
+            ),
+            DiagnosticCode::TestUnexpectedExactMatch => (
+                "The regex exactly matches the test string, but no match was expected".into(),
+                None,
+            ),
+            DiagnosticCode::TestMissingCaptureGroup => {
+                ("The regex match does not have the expected capture group".into(), None)
+            }
+            DiagnosticCode::TestWrongCaptureGroup => (
+                "The capture group does not have the expected content".into(),
+                Some(format!("The actual content is {:?}", actual_value.unwrap())),
+            ),
+            _ => unreachable!("An unexpected diagnostic code was passed to `test_failure`"),
+        };
+
+        Diagnostic {
+            severity: Severity::Error,
+            code: Some(code),
+            msg,
+            help,
+            span,
+            kind: DiagnosticKind::Test,
+        }
+    }
+
     /// Create an ad-hoc diagnostic without a source code snippet
     #[must_use]
     pub fn ad_hoc(

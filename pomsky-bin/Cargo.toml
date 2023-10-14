@@ -18,12 +18,17 @@ path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["test"]
+test = ["dep:pcre2"]
+
 [dependencies]
 lexopt = "0.3.0"
 supports-color = "2.0.0"
 helptext = { version = "0.1.0", path = "../helptext" }
 serde_json = "1.0.91"
 serde = { version = "1.0.152", features = ["derive"] }
+pcre2 = { version = "0.2.5", optional = true }
 
 [dependencies.miette]
 version = "5.6.0"

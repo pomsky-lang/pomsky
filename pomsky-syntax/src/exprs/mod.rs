@@ -12,6 +12,7 @@ pub(crate) mod regex;
 pub(crate) mod repetition;
 pub(crate) mod rule;
 pub(crate) mod stmt;
+pub mod test;
 pub(crate) mod var;
 
 pub use self::{

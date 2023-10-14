@@ -24,7 +24,8 @@ pub(crate) mod rule;
 pub(crate) mod stmt;
 pub(crate) mod var;
 
-use pomsky_syntax::{exprs::*, Span};
+use pomsky_syntax::exprs::{test::Test, *};
+use pomsky_syntax::Span;
 use repetition::RegexQuantifier;
 
 pub(crate) trait RuleExt<'i> {

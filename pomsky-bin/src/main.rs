@@ -10,8 +10,10 @@ use pomsky::{
 mod format;
 mod args;
 mod result;
+#[cfg(feature = "test")]
+mod test;
 
-use args::{Args, DiagnosticSet, Input};
+use args::{Args, DiagnosticSet, Input, TestSettings};
 use result::CompilationResult;
 
 pub fn main() {
@@ -26,6 +28,22 @@ pub fn main() {
             exit(2)
         }
     };
+
+    #[cfg(not(feature = "test"))]
+    if args.test != TestSettings::None {
+        print_diagnostic(
+            &Diagnostic::ad_hoc(
+                Severity::Error,
+                None,
+                "Testing is not supported, because this pomsky binary \
+                was compiled with the `test` feature disabled!"
+                    .into(),
+                None,
+            ),
+            None,
+        );
+        exit(4);
+    }
 
     if args.json && std::env::var_os("NO_COLOR").is_none() {
         std::env::set_var("NO_COLOR", "1");
@@ -58,7 +76,7 @@ fn compile(input: &str, args: &Args) {
     let (parsed, warnings) = match Expr::parse(input) {
         (Some(res), warnings) => (res, warnings),
         (None, err) => {
-            print_parse_errors(err, Some(input), start.elapsed().as_micros(), args.json);
+            print_parse_errors(err, Some(input), start.elapsed().as_micros(), 0, args.json);
             exit(1);
         }
     };
@@ -73,19 +91,53 @@ fn compile(input: &str, args: &Args) {
         print_warnings(&warnings, args, Some(input));
     }
 
+    #[allow(unused_mut)] // the `mut` is only needed when cfg(feature = "test")
+    let (mut test_errors, mut time_test) = (Vec::new(), 0);
+
     let compiled = match parsed.compile(input, options) {
         (Some(res), compile_warnings) => {
+            #[cfg(feature = "test")]
+            if args.test == TestSettings::Pcre2 {
+                let start = Instant::now();
+                test::run_tests(parsed, input, options, &mut test_errors);
+                time_test = start.elapsed().as_micros();
+            }
+
             if args.json {
-                warnings.extend(compile_warnings);
+                if test_errors.is_empty() {
+                    warnings.extend(compile_warnings);
+                } else {
+                    CompilationResult::error(start.elapsed().as_micros(), time_test)
+                        .with_diagnostics(test_errors, Some(input))
+                        .with_diagnostics(
+                            warnings.into_iter().filter_map(|w| {
+                                if args.warnings.is_enabled(w.kind) {
+                                    Some(w)
+                                } else {
+                                    None
+                                }
+                            }),
+                            Some(input),
+                        )
+                        .output_json();
+                    std::process::exit(1);
+                }
             } else {
-                print_warnings(&compile_warnings, args, Some(input));
+                for error in &test_errors {
+                    print_diagnostic(error, if error.span.is_empty() { None } else { Some(input) });
+                }
+                if test_errors.is_empty() {
+                    print_warnings(&compile_warnings, args, Some(input));
+                } else {
+                    std::process::exit(1);
+                }
             }
 
             res
         }
         (None, errors) => {
             if args.json {
-                CompilationResult::error(start.elapsed().as_micros())
+                CompilationResult::error(start.elapsed().as_micros(), time_test)
                     .with_diagnostics(errors, Some(input))
                     .with_diagnostics(
                         warnings.into_iter().filter_map(|w| {
@@ -108,7 +160,7 @@ fn compile(input: &str, args: &Args) {
     };
 
     if args.json {
-        CompilationResult::success(compiled, start.elapsed().as_micros())
+        CompilationResult::success(compiled, start.elapsed().as_micros(), time_test)
             .with_diagnostics(
                 warnings.into_iter().filter_map(|w| {
                     if args.warnings.is_enabled(w.kind) {
@@ -131,11 +183,14 @@ fn compile(input: &str, args: &Args) {
 fn print_parse_errors(
     mut diagnostics: impl Iterator<Item = Diagnostic>,
     source_code: Option<&str>,
-    time: u128,
+    time_all: u128,
+    time_test: u128,
     json: bool,
 ) {
     if json {
-        CompilationResult::error(time).with_diagnostics(diagnostics, source_code).output_json();
+        CompilationResult::error(time_all, time_test)
+            .with_diagnostics(diagnostics, source_code)
+            .output_json();
     } else {
         let mut len = 0;
         for d in (&mut diagnostics).take(8) {

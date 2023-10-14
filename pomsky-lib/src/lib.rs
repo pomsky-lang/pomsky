@@ -60,6 +60,11 @@ mod compile;
 mod exprs;
 mod regex;
 
+/// Re-exports syntax node types related to tests
+pub mod test {
+    pub use pomsky_syntax::exprs::test::*;
+}
+
 pub use exprs::Expr;
 pub use pomsky_syntax::diagnose::{ParseError, ParseWarning as Warning};
 
