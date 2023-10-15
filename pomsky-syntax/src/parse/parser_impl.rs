@@ -664,8 +664,8 @@ impl<'i> Parser<'i> {
         }
     }
 
-    /// Parses a boundary. For start and end, there are two syntaxes: `^`, `$`
-    /// (new) and `<%`, `%>` (deprecated). Word boundaries are `%`.
+    /// Parses a boundary. For start and end, there are two syntaxes: `^` and `$`.
+    /// Word boundaries are `%`.
     ///
     /// The deprecated syntax issues a warning.
     ///
@@ -680,6 +680,10 @@ impl<'i> Parser<'i> {
             BoundaryKind::End
         } else if self.consume(Token::BWord) {
             BoundaryKind::Word
+        } else if self.consume(Token::AngleLeft) {
+            BoundaryKind::WordStart
+        } else if self.consume(Token::AngleRight) {
+            BoundaryKind::WordEnd
         } else {
             return None;
         };

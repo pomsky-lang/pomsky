@@ -134,7 +134,7 @@ impl<'i> Regex<'i> {
             Regex::Group(g) => g.codegen(buf, flavor),
             Regex::Alternation(a) => a.codegen(buf, flavor),
             Regex::Repetition(r) => r.codegen(buf, flavor),
-            Regex::Boundary(b) => boundary_kind_codegen(*b, buf),
+            Regex::Boundary(b) => boundary_kind_codegen(*b, buf, flavor),
             Regex::Lookaround(l) => l.codegen(buf, flavor),
             Regex::Reference(r) => r.codegen(buf),
             Regex::Recursion => recursion::codegen(buf, flavor),

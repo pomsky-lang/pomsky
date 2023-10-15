@@ -1,0 +1,5 @@
+#! flavor=JavaScript
+disable unicode;
+< 'foo' >
+-----
+(?<!\w)(?=\w)foo(?<=\w)(?!\w)

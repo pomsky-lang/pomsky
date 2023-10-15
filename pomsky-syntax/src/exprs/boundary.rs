@@ -27,7 +27,10 @@ impl Boundary {
 
     pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
         match self.kind {
-            BoundaryKind::Start | BoundaryKind::End => Err(ParseErrorKind::UnallowedNot),
+            BoundaryKind::Start
+            | BoundaryKind::End
+            | BoundaryKind::WordStart
+            | BoundaryKind::WordEnd => Err(ParseErrorKind::UnallowedNot),
             BoundaryKind::NotWord => Err(ParseErrorKind::UnallowedMultiNot(2)),
             BoundaryKind::Word => {
                 self.kind = BoundaryKind::NotWord;
@@ -40,9 +43,11 @@ impl Boundary {
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match self.kind {
             BoundaryKind::Start => buf.push('^'),
+            BoundaryKind::End => buf.push('$'),
             BoundaryKind::Word => buf.push('%'),
             BoundaryKind::NotWord => buf.push_str("!%"),
-            BoundaryKind::End => buf.push('$'),
+            BoundaryKind::WordStart => buf.push_str("<"),
+            BoundaryKind::WordEnd => buf.push_str(">"),
         }
     }
 }
@@ -52,10 +57,14 @@ impl Boundary {
 pub enum BoundaryKind {
     /// `Start`, the start of the string (or start of line in single-line mode)
     Start,
+    /// `End`, the end of the string (or end of line in single-line mode)
+    End,
     /// `%`, a word boundary
     Word,
     /// `!%`, not a word boundary
     NotWord,
-    /// `End`, the end of the string (or end of line in single-line mode)
-    End,
+    /// `<` the beginning of a word
+    WordStart,
+    /// `>` the end of a word
+    WordEnd,
 }

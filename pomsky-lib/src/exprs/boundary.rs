@@ -20,9 +20,11 @@ impl<'i> RuleExt<'i> for Boundary {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
+        use BoundaryKind::*;
+
         if options.flavor == RegexFlavor::JavaScript
             && !state.ascii_only
-            && matches!(self.kind, BoundaryKind::Word | BoundaryKind::NotWord)
+            && matches!(self.kind, Word | NotWord | WordStart | WordEnd)
         {
             Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))
         } else {
@@ -39,11 +41,23 @@ impl<'i> RuleExt<'i> for Boundary {
     }
 }
 
-pub(crate) fn boundary_kind_codegen(bk: BoundaryKind, buf: &mut String) {
+pub(crate) fn boundary_kind_codegen(bk: BoundaryKind, buf: &mut String, flavor: RegexFlavor) {
     match bk {
         BoundaryKind::Start => buf.push('^'),
-        BoundaryKind::Word => buf.push_str("\\b"),
-        BoundaryKind::NotWord => buf.push_str("\\B"),
         BoundaryKind::End => buf.push('$'),
+
+        BoundaryKind::Word => buf.push_str(r"\b"),
+        BoundaryKind::NotWord => buf.push_str(r"\B"),
+
+        BoundaryKind::WordStart => buf.push_str(match flavor {
+            RegexFlavor::Pcre => "[[:<:]]",
+            RegexFlavor::Rust => r"\<",
+            _ => r"(?<!\w)(?=\w)",
+        }),
+        BoundaryKind::WordEnd => buf.push_str(match flavor {
+            RegexFlavor::Pcre => "[[:>:]]",
+            RegexFlavor::Rust => r"\>",
+            _ => r"(?<=\w)(?!\w)",
+        }),
     }
 }
