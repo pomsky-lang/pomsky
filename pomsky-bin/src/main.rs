@@ -13,7 +13,7 @@ mod result;
 #[cfg(feature = "test")]
 mod test;
 
-use args::{Args, DiagnosticSet, Input, TestSettings};
+use args::{Args, DiagnosticSet, Input};
 use result::CompilationResult;
 
 pub fn main() {
@@ -97,7 +97,7 @@ fn compile(input: &str, args: &Args) {
     let compiled = match parsed.compile(input, options) {
         (Some(res), compile_warnings) => {
             #[cfg(feature = "test")]
-            if args.test == TestSettings::Pcre2 {
+            if args.test.is_some() {
                 let start = Instant::now();
                 test::run_tests(parsed, input, options, &mut test_errors);
                 time_test = start.elapsed().as_micros();

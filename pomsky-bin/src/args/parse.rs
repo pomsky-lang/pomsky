@@ -31,7 +31,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
     let mut allowed_features = None;
     let mut warnings = DiagnosticSet::All;
     let mut json = false;
-    let mut test = false;
+    let mut test = None;
 
     while let Some(arg) = parser.next()? {
         arg_count += 1;
@@ -41,6 +41,9 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
             Short('d') | Long("debug") => debug.set_arg(true, "--debug")?,
             Short('f') | Long("flavor") => {
                 flavor.set_arg(super::flavors::parse_flavor(parser.value()?)?, "--flavor")?;
+            }
+            Short('t') | Long("test") => {
+                test.set_arg(TestSettings::parse(parser.value()?)?, "--test")?;
             }
             Short('n') | Long("no-new-line") => no_new_line.set_arg(true, "--no-new-line")?,
             Short('W') | Long("warnings") => {
@@ -62,7 +65,6 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
             Short('h') => return Ok(ArgsInner::HelpShort),
             Long("help") => return Ok(ArgsInner::HelpLong),
             Short('V') | Long("version") => return Ok(ArgsInner::Version),
-            Short('t') | Long("test") => test.set_arg(true, "--test")?,
             _ => Err(arg.unexpected())?,
         }
     }
@@ -93,7 +95,7 @@ pub(super) fn parse_args_inner(mut parser: lexopt::Parser) -> Result<ArgsInner, 
         no_new_line,
         allowed_features: allowed_features.unwrap_or_default(),
         warnings,
-        test: if test { TestSettings::Pcre2 } else { TestSettings::None },
+        test,
     }))
 }
 

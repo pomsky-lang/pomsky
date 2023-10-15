@@ -121,6 +121,7 @@ pub enum Kind {
     Unsupported,
     Deprecated,
     Limits,
+    Test,
     Other,
 }
 
@@ -133,6 +134,7 @@ impl From<DiagnosticKind> for Kind {
             DiagnosticKind::Unsupported => Kind::Unsupported,
             DiagnosticKind::Deprecated => Kind::Deprecated,
             DiagnosticKind::Limits => Kind::Limits,
+            DiagnosticKind::Test => Kind::Test,
             DiagnosticKind::Other => Kind::Other,
             _ => panic!("unknown diagnostic kind"),
         }

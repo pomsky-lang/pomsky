@@ -3,6 +3,7 @@ use pomsky::{features::PomskyFeatures, options::RegexFlavor};
 pub(crate) use errors::ParseArgsError;
 pub(crate) use help::print_short_usage_and_help_err;
 pub(crate) use input::Input;
+pub(crate) use test::TestSettings;
 pub(crate) use warnings::DiagnosticSet;
 
 use self::parse::{ArgsInner, ListKind};
@@ -13,6 +14,7 @@ mod flavors;
 mod help;
 mod input;
 mod parse;
+mod test;
 mod warnings;
 
 /// Compile a Pomsky expression to a regex
@@ -33,14 +35,7 @@ pub(crate) struct Args {
     /// Set of warnings that should be emitted
     pub(crate) warnings: DiagnosticSet,
     /// Whether to execute tests after compilation
-    pub(crate) test: TestSettings,
-}
-
-#[derive(Default, PartialEq)]
-pub(crate) enum TestSettings {
-    #[default]
-    None,
-    Pcre2,
+    pub(crate) test: Option<TestSettings>,
 }
 
 pub(super) fn parse_args() -> Result<Args, ParseArgsError> {

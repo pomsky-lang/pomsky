@@ -91,7 +91,7 @@ pub fn competition(c: &mut Criterion) {
     group.throughput(Throughput::Bytes(VERSION_POMSKY.len() as u64));
     group.bench_function("rulex", |b| {
         b.iter(|| {
-            let (expr, _warnings) =
+            let (expr, _warnings, _tests) =
                 Expr::parse_and_compile(black_box(VERSION_POMSKY), Default::default());
             expr.unwrap()
         })

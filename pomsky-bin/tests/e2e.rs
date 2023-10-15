@@ -368,6 +368,66 @@ fn specify_features() {
 }
 
 #[test]
+fn test_output() {
+    let mut cmd = command(&[
+        r#"test {
+    match "test";
+    match in "testicles";
+    match "test" in "testicles";
+    reject in "fastest";
+    match "fanta" in "fantastic"; # wrong
+    match "test" as { 1: "" } in "testament";
+    match "test" as { 1: "?" } in "test!"; # wrong
+    match "test" as { foo: "!" } in "test!"; # wrong
+}
+
+% 'test' :('!')?"#,
+        "--test=pcre2",
+    ]);
+    cmd.assert().failure().stderr(
+        r#"error P0501(test):
+  × The regex did not find this match within the test string
+   ╭─[5:1]
+ 5 │     reject in "fastest";
+ 6 │     match "fanta" in "fantastic"; # wrong
+   ·           ───┬───
+   ·              ╰── error occurred here
+ 7 │     match "test" as { 1: "" } in "testament";
+   ╰────
+error P0505(test):
+  × The regex match does not have the expected capture group
+   ╭─[6:1]
+ 6 │     match "fanta" in "fantastic"; # wrong
+ 7 │     match "test" as { 1: "" } in "testament";
+   ·                       ┬
+   ·                       ╰── error occurred here
+ 8 │     match "test" as { 1: "?" } in "test!"; # wrong
+   ╰────
+error P0503(test):
+  × The regex found a different match in the test string
+   ╭─[7:1]
+ 7 │     match "test" as { 1: "" } in "testament";
+ 8 │     match "test" as { 1: "?" } in "test!"; # wrong
+   ·           ───┬──
+   ·              ╰── error occurred here
+ 9 │     match "test" as { foo: "!" } in "test!"; # wrong
+   ╰────
+  help: The actual match is "test!"
+error P0503(test):
+  × The regex found a different match in the test string
+    ╭─[8:1]
+  8 │     match "test" as { 1: "?" } in "test!"; # wrong
+  9 │     match "test" as { foo: "!" } in "test!"; # wrong
+    ·           ───┬──
+    ·              ╰── error occurred here
+ 10 │ }
+    ╰────
+  help: The actual match is "test!"
+"#,
+    );
+}
+
+#[test]
 fn json_output() {
     let mut cmd = command(&["..[word]", "--json"]);
     cmd.assert()

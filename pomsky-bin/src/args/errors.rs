@@ -9,6 +9,7 @@ pub(crate) enum ParseArgsError {
     InputAndPath,
     InputAndList,
     UnknownFlavor(String),
+    UnknownTestEngine(String),
     UnknownList(String),
     WarningsNoEquals(String),
     WarningsNoZero(String),
@@ -37,11 +38,12 @@ impl fmt::Display for ParseArgsError {
                 "'{flavor}' isn't a valid flavor\n\
                     possible values: pcre, python, java, javascript, dotnet, ruby, rust"
             ),
-            ParseArgsError::UnknownList(list) => write!(
-                f,
-                "'{list}' isn't a valid list\n\
-                    possible values: shorthands"
-            ),
+            ParseArgsError::UnknownTestEngine(engine) => {
+                write!(f, "'{engine}' isn't a valid regex engine\npossible values: pcre2")
+            }
+            ParseArgsError::UnknownList(list) => {
+                write!(f, "'{list}' isn't a valid list\npossible values: shorthands")
+            }
             ParseArgsError::NoInput => write!(f, "No input provided"),
             ParseArgsError::InputAndPath => {
                 write!(f, "You can only provide an input or a path, but not both")
