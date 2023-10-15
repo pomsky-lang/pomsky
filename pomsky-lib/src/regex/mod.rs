@@ -10,6 +10,7 @@ use crate::{
         group::{RegexGroup, RegexGroupKind},
         literal,
         lookaround::RegexLookaround,
+        recursion,
         reference::RegexReference,
         repetition::RegexRepetition,
     },
@@ -49,6 +50,8 @@ pub(crate) enum Regex<'i> {
     Lookaround(Box<RegexLookaround<'i>>),
     /// A backreference or forward reference.
     Reference(RegexReference),
+    /// Recursively matches the entire regex.
+    Recursion,
 }
 
 impl Default for Regex<'_> {
@@ -133,7 +136,8 @@ impl<'i> Regex<'i> {
             Regex::Repetition(r) => r.codegen(buf, flavor),
             Regex::Boundary(b) => boundary_kind_codegen(*b, buf),
             Regex::Lookaround(l) => l.codegen(buf, flavor),
-            Regex::Reference(r) => r.codegen(buf, flavor),
+            Regex::Reference(r) => r.codegen(buf),
+            Regex::Recursion => recursion::codegen(buf, flavor),
         }
     }
 
@@ -150,7 +154,8 @@ impl<'i> Regex<'i> {
             | Regex::Boundary(_)
             | Regex::Lookaround(_)
             | Regex::Reference(_)
-            | Regex::Dot => false,
+            | Regex::Dot
+            | Regex::Recursion => false,
         }
     }
 
@@ -167,7 +172,8 @@ impl<'i> Regex<'i> {
             | Regex::Char(_)
             | Regex::Grapheme
             | Regex::Reference(_)
-            | Regex::Dot => false,
+            | Regex::Dot
+            | Regex::Recursion => false,
         }
     }
 

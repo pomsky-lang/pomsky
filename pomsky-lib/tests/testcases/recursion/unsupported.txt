@@ -1,0 +1,5 @@
+#! expect=error
+recursion
+-----
+ERROR: Unsupported feature `recursion` in the `Rust` regex flavor
+SPAN: 0..9

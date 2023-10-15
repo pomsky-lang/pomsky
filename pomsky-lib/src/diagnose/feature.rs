@@ -32,6 +32,8 @@ pub enum Feature {
     RepeatedAssertion,
     /// Code points above U+FFFF in char classes
     LargeCodePointInCharClass(char),
+    /// Recursion is only supported in PCRE and Ruby at the moment
+    Recursion,
 }
 
 impl Feature {
@@ -50,6 +52,7 @@ impl Feature {
             Feature::MixedReferences => "references to both named and numbered groups",
             Feature::RepeatedAssertion => "single repeated assertion",
             Feature::LargeCodePointInCharClass(_) => "code points above U+FFFF in char classes",
+            Feature::Recursion => "recursion",
         }
     }
 }

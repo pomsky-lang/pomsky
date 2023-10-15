@@ -56,6 +56,12 @@ pub enum Token {
     /// `<<` (positive lookbehind)
     LookBehind,
 
+    /// `<` (word start)
+    AngleLeft,
+
+    /// `>` (word end)
+    AngleRight,
+
     /// `::` (back reference)
     DoubleColon,
 
@@ -105,6 +111,8 @@ impl core::fmt::Display for Token {
             Token::Comma => "`,`",
             Token::LookAhead => "`>>`",
             Token::LookBehind => "`<<`",
+            Token::AngleLeft => "`<`",
+            Token::AngleRight => "`>`",
             Token::DoubleColon => "`::`",
             Token::Not => "`!`",
             Token::OpenBracket => "`[`",

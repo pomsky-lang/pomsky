@@ -416,7 +416,8 @@ impl<'i> Parser<'i> {
             .try_or_else(|| self.parse_range())?
             .try_or_else(|| self.parse_regex())?
             .try_or_else(|| self.parse_variable())?
-            .or_else(|| self.parse_dot()))
+            .or_else(|| self.parse_dot())
+            .or_else(|| self.parse_recursion()))
     }
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
@@ -789,6 +790,15 @@ impl<'i> Parser<'i> {
     fn parse_dot(&mut self) -> Option<Rule<'i>> {
         if self.consume(Token::Dot) {
             Some(Rule::Dot)
+        } else {
+            None
+        }
+    }
+
+    /// Parses the `recursion` keyword
+    fn parse_recursion(&mut self) -> Option<Rule<'i>> {
+        if self.consume_reserved("recursion") {
+            Some(Rule::Recursion(Recursion { span: self.last_span() }))
         } else {
             None
         }

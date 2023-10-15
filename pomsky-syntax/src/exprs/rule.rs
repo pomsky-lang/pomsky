@@ -1,8 +1,8 @@
 use crate::{error::ParseErrorKind, Span};
 
 use super::{
-    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Reference, Regex,
-    Repetition, StmtExpr, Variable,
+    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Recursion, Reference,
+    Regex, Repetition, StmtExpr, Variable,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
@@ -35,6 +35,8 @@ pub enum Rule<'i> {
     StmtExpr(Box<StmtExpr<'i>>),
     /// A regex string, which is not escaped
     Regex(Regex<'i>),
+    /// A regex string, which is not escaped
+    Recursion(Recursion),
 
     /// A Unicode grapheme
     Grapheme,
@@ -60,6 +62,7 @@ impl<'i> Rule<'i> {
             Rule::Range(r) => r.span,
             Rule::StmtExpr(m) => m.span,
             Rule::Regex(r) => r.span,
+            Rule::Recursion(r) => r.span,
             Rule::Grapheme | Rule::Codepoint | Rule::Dot => Span::empty(),
         }
     }
@@ -74,6 +77,7 @@ impl<'i> Rule<'i> {
             | Rule::Range(_)
             | Rule::StmtExpr(_)
             | Rule::Regex(_)
+            | Rule::Recursion(_)
             | Rule::Grapheme
             | Rule::Codepoint
             | Rule::Dot => Err(ParseErrorKind::UnallowedNot),
@@ -100,6 +104,7 @@ impl<'i> Rule<'i> {
             Rule::Range(r) => r.pretty_print(buf),
             Rule::StmtExpr(s) => s.pretty_print(buf),
             Rule::Regex(r) => r.pretty_print(buf),
+            Rule::Recursion(_) => buf.push_str("recursion"),
             Rule::Grapheme => buf.push_str("Grapheme"),
             Rule::Codepoint => buf.push_str("Codepoint"),
             Rule::Dot => buf.push_str("."),

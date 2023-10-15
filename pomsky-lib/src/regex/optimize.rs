@@ -112,7 +112,8 @@ impl<'i> Regex<'i> {
             | Regex::Grapheme
             | Regex::Dot
             | Regex::Boundary(_)
-            | Regex::Reference(_) => Count::One,
+            | Regex::Reference(_)
+            | Regex::Recursion => Count::One,
         }
     }
 }

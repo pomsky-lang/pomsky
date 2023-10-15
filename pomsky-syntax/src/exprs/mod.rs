@@ -7,6 +7,7 @@ pub(crate) mod group;
 pub(crate) mod literal;
 pub(crate) mod lookaround;
 pub(crate) mod range;
+pub(crate) mod recursion;
 pub(crate) mod reference;
 pub(crate) mod regex;
 pub(crate) mod repetition;
@@ -25,6 +26,7 @@ pub use self::{
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
     range::Range,
+    recursion::Recursion,
     reference::{Reference, ReferenceTarget},
     regex::Regex,
     repetition::{Quantifier, Repetition, RepetitionKind},

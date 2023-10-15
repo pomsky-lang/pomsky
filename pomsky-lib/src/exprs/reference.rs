@@ -132,7 +132,7 @@ pub(crate) enum RegexReference {
 }
 
 impl RegexReference {
-    pub(crate) fn codegen(&self, buf: &mut String, _: RegexFlavor) {
+    pub(crate) fn codegen(&self, buf: &mut String) {
         use std::fmt::Write;
 
         match self {

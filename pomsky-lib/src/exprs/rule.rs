@@ -26,7 +26,8 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             | Rule::Boundary(_)
             | Rule::Variable(_)
             | Rule::Regex(_)
-            | Rule::Range(_) => {}
+            | Rule::Range(_)
+            | Rule::Recursion(_) => {}
             Rule::Group(g) => g.get_capturing_groups(count, map, within_variable)?,
             Rule::Alternation(a) => a.get_capturing_groups(count, map, within_variable)?,
             Rule::Repetition(r) => r.get_capturing_groups(count, map, within_variable)?,
@@ -65,6 +66,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Range(r) => r.compile(options, state),
             Rule::Regex(r) => r.compile(options, state),
             Rule::StmtExpr(m) => m.compile(options, state),
+            Rule::Recursion(r) => r.compile(options, state),
         }
     }
 
@@ -85,6 +87,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Reference(r) => r.validate(options, state),
             Rule::Range(r) => r.validate(options, state),
             Rule::Regex(r) => r.validate(options, state),
+            Rule::Recursion(r) => r.validate(options, state),
             Rule::StmtExpr(s) => s.validate(options, state),
         }
     }

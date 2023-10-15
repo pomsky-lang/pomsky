@@ -1,0 +1,38 @@
+#! flavor=Pcre
+test {
+  match '3';
+  match '-2+4';
+  match '(2+4)';
+  match '1+(2+4)+5';
+  match '(3+(-4)+-(5/4))*2';
+
+  reject '';
+  reject '()';
+  reject '+4';
+  reject '1-';
+  reject '(2+3';
+  reject '2+3)';
+  reject 'e';
+  reject '3 + 4';
+}
+
+let number = [ascii_digit]+;
+let sign = '-';
+let op = ['+-*/'];
+
+sign? ('(' recursion ')' | number) (op recursion)*
+-----
+-?(?:\((?R)\)|[0-9]+)(?:[+\-*/](?R))*
+MATCH: "3" as { }
+MATCH: "-2+4" as { }
+MATCH: "(2+4)" as { }
+MATCH: "1+(2+4)+5" as { }
+MATCH: "(3+(-4)+-(5/4))*2" as { }
+REJECT: ""
+REJECT: "()"
+REJECT: "+4"
+REJECT: "1-"
+REJECT: "(2+3"
+REJECT: "2+3)"
+REJECT: "e"
+REJECT: "3 + 4"

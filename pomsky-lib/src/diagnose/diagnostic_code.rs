@@ -42,7 +42,7 @@ diagnostic_code! {
         RegexGroupSyntax = 2,
         RegexBackslashSyntax = 3,
         UnclosedString = 4,
-        DeprecatedToken = 5,
+        // DeprecatedToken = 5, // unused
         LeadingZero = 6,
 
         // Parse errors
@@ -137,7 +137,6 @@ impl From<LexErrorMsg> for DiagnosticCode {
             M::UnclosedString => DiagnosticCode::UnclosedString,
             M::LeadingZero => DiagnosticCode::LeadingZero,
             M::InvalidCodePoint => DiagnosticCode::CodePointInvalid,
-            M::DeprStart | M::DeprEnd => DiagnosticCode::DeprecatedToken,
             _ => panic!("Unhandled lexer error message {value:?}"),
         }
     }

@@ -38,6 +38,7 @@ impl fmt::Debug for PomskyFeatures {
             .field("boundaries", &self.supports(Self::BOUNDARIES))
             .field("regexes", &self.supports(Self::REGEXES))
             .field("dot", &self.supports(Self::DOT))
+            .field("recursion", &self.supports(Self::RECURSION))
             .finish()
     }
 }
@@ -60,6 +61,7 @@ impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
         feat.boundaries(bool::arbitrary(u)?);
         feat.regexes(bool::arbitrary(u)?);
         feat.dot(bool::arbitrary(u)?);
+        feat.recursion(bool::arbitrary(u)?);
         Ok(feat)
     }
 }
@@ -80,7 +82,8 @@ impl Default for PomskyFeatures {
                 | Self::BOUNDARIES
                 | Self::ATOMIC_GROUPS
                 | Self::REGEXES
-                | Self::DOT,
+                | Self::DOT
+                | Self::RECURSION,
         }
     }
 }
@@ -100,6 +103,7 @@ impl PomskyFeatures {
     pub(crate) const ATOMIC_GROUPS: u16 = 1 << 11;
     pub(crate) const REGEXES: u16 = 1 << 12;
     pub(crate) const DOT: u16 = 1 << 13;
+    pub(crate) const RECURSION: u16 = 1 << 14;
 
     /// Creates an empty set of features. With this set, all optional features
     /// are disabled.
@@ -142,6 +146,7 @@ impl PomskyFeatures {
                 Self::ATOMIC_GROUPS => UnsupportedError::AtomicGroups,
                 Self::REGEXES => UnsupportedError::Regexes,
                 Self::DOT => UnsupportedError::Dot,
+                Self::RECURSION => UnsupportedError::Recursion,
                 _ => panic!("Unknown feature `0x{feature:0x}`"),
             })
             .at(span))
@@ -233,6 +238,12 @@ impl PomskyFeatures {
         self.set_bit(Self::DOT, support);
         *self
     }
+
+    /// Set support for recursion
+    pub fn recursion(&mut self, support: bool) -> Self {
+        self.set_bit(Self::RECURSION, support);
+        *self
+    }
 }
 
 #[test]
@@ -251,7 +262,8 @@ fn test_toggles() {
         .lookbehind(true)
         .boundaries(true)
         .regexes(true)
-        .dot(true);
+        .dot(true)
+        .recursion(true);
 
     assert_eq!(features.bits, PomskyFeatures::default().bits);
 }

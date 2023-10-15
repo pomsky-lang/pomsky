@@ -28,9 +28,6 @@ pub enum LexErrorMsg {
     UnclosedString,
     LeadingZero,
     InvalidCodePoint,
-
-    DeprStart,
-    DeprEnd,
 }
 
 impl LexErrorMsg {
@@ -71,9 +68,6 @@ impl core::fmt::Display for LexErrorMsg {
             LexErrorMsg::UnclosedString => "This string literal doesn't have a closing quote",
             LexErrorMsg::LeadingZero => "Numbers can't have leading zeroes",
             LexErrorMsg::InvalidCodePoint => "Code point contains non-hexadecimal digit",
-
-            LexErrorMsg::DeprStart => "The `<%` literal is deprecated.",
-            LexErrorMsg::DeprEnd => "The `%>` literal is deprecated.",
         };
 
         f.write_str(error)
