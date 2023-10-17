@@ -8,7 +8,7 @@ publish = false
 
 [dependencies]
 pomsky = { version = "0.10.0", path = "../pomsky-lib" }
-criterion = { git = "https://github.com/bheisler/criterion.rs", branch = "version-0.4" }
+criterion = "0.5.1"
 melody_compiler = "0.18.1"
 
 [[bench]]
