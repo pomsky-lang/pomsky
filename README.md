@@ -31,6 +31,10 @@ A portable<sup><a href="#portability">1</a></sup>, modern regular expression lan
 
 To begin, check out [the website][web-link].
 
+## What's New
+
+Read the [blog](https://pomsky-lang.org/blog/) or the [changelog](./CHANGELOG.md) to learn about new features.
+
 ## Installation
 
 Pre-built binaries can be found on the [releases page](https://github.com/pomsky-lang/pomsky/releases).
