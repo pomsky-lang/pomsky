@@ -6,13 +6,13 @@
 
 A portable<sup><a href="#portability">1</a></sup>, modern regular expression language
 
-[![Website][web-badge]][web-link] [![Documentation][doc-badge]][doc-link] [![Playground][playground-badge]][playground-link] [![VS Code plugin][vscode-badge]][vscode-link] [![Discord][discord-badge]][discord-link] [![Crates.io][crates-badge]][crates-link]
+[![Website][web-badge]][web-link] [![Docs][doc-badge]][doc-link] [![Playground][playground-badge]][playground-link] [![VS Code plugin][vscode-badge]][vscode-link] [![Discord][discord-badge]][discord-link] [![Crates.io][crates-badge]][crates-link]
 
 </div>
 
 [web-badge]: https://img.shields.io/badge/website-%23e70?style=for-the-badge&logo=esri
 [web-link]: https://pomsky-lang.org
-[doc-badge]: https://img.shields.io/badge/documentation-%23b90?style=for-the-badge&logo=read.cv
+[doc-badge]: https://img.shields.io/badge/docs-%23b90?style=for-the-badge&logo=read.cv
 [doc-link]: https://pomsky-lang.org/docs/get-started/introduction/
 [playground-badge]: https://img.shields.io/badge/Playground-%232a2?style=for-the-badge&logo=asciinema
 [playground-link]: https://playground.pomsky-lang.org

@@ -6,9 +6,12 @@ use crate::{
     compile::{CompileResult, CompileState, ValidationState},
     diagnose::{CompileError, CompileErrorKind},
     options::CompileOptions,
+    regex::Regex,
 };
 
-use super::{codepoint::Codepoint, dot::Dot, grapheme::Grapheme, RuleExt};
+use super::{
+    char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme, RuleExt,
+};
 
 impl<'i> RuleExt<'i> for Rule<'i> {
     fn get_capturing_groups(
@@ -38,6 +41,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
                 }
             }
             Rule::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
+            Rule::Negation(n) => n.rule.get_capturing_groups(count, map, within_variable)?,
         }
         Ok(())
     }
@@ -67,6 +71,14 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Regex(r) => r.compile(options, state),
             Rule::StmtExpr(m) => m.compile(options, state),
             Rule::Recursion(r) => r.compile(options, state),
+            Rule::Negation(n) => {
+                let span = n.rule.span();
+                let regex = n.rule.compile(options, state).and_then(|r| r.negate(n.not_span))?;
+                if let Regex::CharSet(char_set) = &regex {
+                    check_char_class_empty(char_set, span)?;
+                }
+                Ok(regex)
+            }
         }
     }
 
@@ -89,6 +101,7 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Regex(r) => r.validate(options, state),
             Rule::Recursion(r) => r.validate(options, state),
             Rule::StmtExpr(s) => s.validate(options, state),
+            Rule::Negation(_n) => Ok(()),
         }
     }
 }

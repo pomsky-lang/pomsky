@@ -77,6 +77,7 @@
 //! `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use std::collections::HashSet;
+use std::fmt;
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -104,10 +105,9 @@ impl<'i> RuleExt<'i> for CharClass {
             return Err(CompileErrorKind::EmptyClass.at(self.span));
         }
 
-        let mut prev_group_items: Vec<GroupItem> = vec![];
         let mut prev_items: HashSet<GroupItem> = HashSet::new();
 
-        let mut negative = self.negative;
+        let mut negative = false;
         let is_single = self.inner.len() == 1;
         let mut buf = Vec::new();
         for item in &self.inner {
@@ -127,12 +127,6 @@ impl<'i> RuleExt<'i> for CharClass {
                     buf.push(RegexCharSetItem::Range { first, last });
                 }
                 GroupItem::Named { name, negative: item_negative } => {
-                    if self.negative {
-                        check_char_class_empty(*item, &prev_group_items)
-                            .map_err(|kind| kind.at(self.span))?;
-
-                        prev_group_items.push(*item);
-                    }
                     if state.ascii_only {
                         named_class_to_regex_ascii(
                             name,
@@ -169,24 +163,35 @@ fn validate_char_in_class(char: char, flavor: RegexFlavor, span: Span) -> Result
     }
 }
 
-/// Check if the character set is empty, i.e. matches nothing, e.g. `![w !w]`
-fn check_char_class_empty(
-    item: GroupItem,
-    prev_group_items: &[GroupItem],
-) -> Result<(), CompileErrorKind> {
-    if let GroupItem::Named { mut name, negative } = item {
-        if name == GroupName::Category(Category::Separator) {
-            name = GroupName::Space;
-        }
+pub(crate) fn check_char_class_empty(
+    char_set: &RegexCharSet,
+    span: Span,
+) -> Result<(), CompileError> {
+    if char_set.negative {
+        let mut prev_items = vec![];
 
-        // if the class is negative, it can't contain both `w` and
-        // `!w`, where `w` is any group name that can be negated
-        let negated = GroupItem::Named { name, negative: !negative };
-        if prev_group_items.contains(&negated) {
-            return Err(CompileErrorKind::EmptyClassNegated { group1: negated, group2: item });
+        for mut item in char_set.items.iter().copied() {
+            use RegexCharSetItem as RCSI;
+            use RegexProperty as RP;
+            use RegexShorthand as RS;
+
+            if let RCSI::Property { negative, value: RP::Category(Category::Separator) } = item {
+                item = RCSI::Shorthand(if negative { RS::NotSpace } else { RS::Space });
+            }
+
+            if let Some(negated) = item.negate() {
+                if prev_items.contains(&negated) {
+                    return Err(CompileErrorKind::EmptyClassNegated {
+                        group1: negated,
+                        group2: item,
+                    }
+                    .at(span));
+                }
+            }
+
+            prev_items.push(item);
         }
     }
-
     Ok(())
 }
 
@@ -419,6 +424,11 @@ impl RegexCharSet {
         Self { negative: false, items }
     }
 
+    pub(crate) fn negate(mut self) -> Self {
+        self.negative = !self.negative;
+        self
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         if self.items.len() == 1 {
             match self.items.first().unwrap() {
@@ -467,8 +477,7 @@ impl RegexCharSet {
     }
 }
 
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RegexCharSetItem {
     Char(char),
     Range { first: char, last: char },
@@ -479,5 +488,32 @@ pub(crate) enum RegexCharSetItem {
 impl RegexCharSetItem {
     pub(crate) fn range_unchecked(first: char, last: char) -> Self {
         Self::Range { first, last }
+    }
+
+    pub(crate) fn negate(self) -> Option<Self> {
+        match self {
+            RegexCharSetItem::Char(_) => None,
+            RegexCharSetItem::Range { .. } => None,
+            RegexCharSetItem::Shorthand(s) => s.negate().map(RegexCharSetItem::Shorthand),
+            RegexCharSetItem::Property { negative, value } => {
+                Some(RegexCharSetItem::Property { negative: !negative, value })
+            }
+        }
+    }
+}
+
+impl fmt::Debug for RegexCharSetItem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Char(c) => c.fmt(f),
+            Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
+            Self::Shorthand(s) => f.write_str(s.to_str()),
+            &Self::Property { value, negative } => {
+                if negative {
+                    f.write_str("!")?;
+                }
+                f.write_str(value.as_str())
+            }
+        }
     }
 }

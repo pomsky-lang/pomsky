@@ -6,6 +6,7 @@ pub(crate) mod char_class;
 pub(crate) mod group;
 pub(crate) mod literal;
 pub(crate) mod lookaround;
+pub(crate) mod negation;
 pub(crate) mod range;
 pub(crate) mod recursion;
 pub(crate) mod reference;

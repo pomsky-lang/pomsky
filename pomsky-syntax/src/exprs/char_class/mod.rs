@@ -76,7 +76,7 @@
 //! negated, the class is   removed and the negations cancel each other out:
 //! `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
-use crate::{error::ParseErrorKind, Span};
+use crate::Span;
 
 pub use char_group::{CharGroup, GroupItem, GroupName};
 pub use unicode::{Category, CodeBlock, OtherProperties, Script};
@@ -91,34 +91,18 @@ pub use unicode::{blocks_supported_in_dotnet, list_shorthands};
 /// details.
 #[derive(Clone, PartialEq, Eq)]
 pub struct CharClass {
-    pub negative: bool,
     pub inner: Vec<GroupItem>,
     pub span: Span,
 }
 
 impl CharClass {
     pub fn new(inner: Vec<GroupItem>, span: Span) -> Self {
-        CharClass { inner, span, negative: false }
-    }
-
-    /// Makes a positive character class negative and vice versa.
-    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
-        if self.negative {
-            Err(ParseErrorKind::UnallowedMultiNot(2))
-        } else {
-            self.negative = !self.negative;
-            Ok(())
-        }
+        CharClass { inner, span }
     }
 
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
-        if self.negative {
-            buf.push_str("![");
-        } else {
-            buf.push('[');
-        }
-
+        buf.push('[');
         for (i, item) in self.inner.iter().enumerate() {
             if i > 0 {
                 buf.push(' ');

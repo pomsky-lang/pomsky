@@ -1,0 +1,5 @@
+#! expect=error
+[!n]
+-----
+ERROR: This code point or range can't be negated
+SPAN: 1..2

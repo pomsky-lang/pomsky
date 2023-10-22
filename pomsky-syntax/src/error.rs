@@ -122,9 +122,9 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::RangeIsNotIncreasing => {
                 write!(f, "The first number in a range must be smaller than the second")
             }
-            ParseErrorKind::UnallowedNot => write!(f, "This expression can't be negated"),
+            ParseErrorKind::UnallowedNot => write!(f, "This code point or range can't be negated"),
             ParseErrorKind::UnallowedMultiNot(_) => {
-                write!(f, "An expression can't be negated more than once")
+                write!(f, "A shorthand character class can't be negated more than once")
             }
             ParseErrorKind::LonePipe => write!(f, "A pipe must be followed by an expression"),
             ParseErrorKind::LetBindingExists => {

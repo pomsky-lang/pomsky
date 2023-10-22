@@ -6,8 +6,6 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use std::fmt;
-
 use crate::error::{DeprecationError, ParseErrorKind};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
@@ -127,21 +125,6 @@ impl GroupItem {
     }
 }
 
-impl fmt::Debug for GroupItem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Char(c) => c.fmt(f),
-            Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
-            &Self::Named { name, negative } => {
-                if negative {
-                    f.write_str("!")?;
-                }
-                f.write_str(name.as_str())
-            }
-        }
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupName {
     Word,
@@ -156,20 +139,6 @@ pub enum GroupName {
 }
 
 impl GroupName {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            GroupName::Word => "word",
-            GroupName::Digit => "digit",
-            GroupName::Space => "space",
-            GroupName::HorizSpace => "horiz_space",
-            GroupName::VertSpace => "vert_space",
-            GroupName::Category(c) => c.as_str(),
-            GroupName::Script(s) => s.as_str(),
-            GroupName::CodeBlock(b) => b.as_str(),
-            GroupName::OtherProperties(o) => o.as_str(),
-        }
-    }
-
     pub fn kind(self) -> &'static str {
         match self {
             GroupName::Word

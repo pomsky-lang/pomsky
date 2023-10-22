@@ -2,7 +2,7 @@
 //! [word boundaries](https://www.regular-expressions.info/wordboundaries.html) and
 //! [anchors](https://www.regular-expressions.info/anchors.html).
 
-use crate::{error::ParseErrorKind, Span};
+use crate::Span;
 
 /// A [word boundary](https://www.regular-expressions.info/wordboundaries.html) or
 /// [anchor](https://www.regular-expressions.info/anchors.html), which we combine under the term
@@ -23,20 +23,6 @@ impl Boundary {
 
     pub fn kind(&self) -> BoundaryKind {
         self.kind
-    }
-
-    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
-        match self.kind {
-            BoundaryKind::Start
-            | BoundaryKind::End
-            | BoundaryKind::WordStart
-            | BoundaryKind::WordEnd => Err(ParseErrorKind::UnallowedNot),
-            BoundaryKind::NotWord => Err(ParseErrorKind::UnallowedMultiNot(2)),
-            BoundaryKind::Word => {
-                self.kind = BoundaryKind::NotWord;
-                Ok(())
-            }
-        }
     }
 
     #[cfg(feature = "dbg")]

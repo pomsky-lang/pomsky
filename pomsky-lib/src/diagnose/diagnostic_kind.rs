@@ -20,6 +20,8 @@ pub enum DiagnosticKind {
     Deprecated,
     /// A limitation that was deliberately enforced
     Limits,
+    /// The generated regex is invalid (detected after variable expansion)
+    Invalid,
     /// Unit test failure
     Test,
     /// Other unspecified error
@@ -36,11 +38,12 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             K::UnknownReferenceNumber(_)
             | K::UnknownReferenceName { .. }
             | K::NameUsedMultipleTimes(_)
-            | K::EmptyClass
-            | K::EmptyClassNegated { .. }
             | K::UnknownVariable { .. }
             | K::NegatedHorizVertSpace
             | K::RelativeRefZero => DiagnosticKind::Resolve,
+            K::EmptyClass | K::EmptyClassNegated { .. } | K::IllegalNegation { .. } => {
+                DiagnosticKind::Invalid
+            }
             K::CaptureInLet
             | K::ReferenceInLet
             | K::RecursiveVariable
@@ -81,6 +84,7 @@ impl Display for DiagnosticKind {
             DiagnosticKind::Unsupported => "(unsupported)",
             DiagnosticKind::Deprecated => "(deprecated)",
             DiagnosticKind::Limits => "(limits)",
+            DiagnosticKind::Invalid => "(invalid)",
             DiagnosticKind::Test => "(test)",
             DiagnosticKind::Other => "",
         })
@@ -96,6 +100,7 @@ impl From<DiagnosticKind> for &'static str {
             DiagnosticKind::Unsupported => "unsupported",
             DiagnosticKind::Deprecated => "deprecated",
             DiagnosticKind::Limits => "limits",
+            DiagnosticKind::Invalid => "invalid",
             DiagnosticKind::Test => "test",
             DiagnosticKind::Other => "other",
         }

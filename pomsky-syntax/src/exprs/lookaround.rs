@@ -1,4 +1,4 @@
-use crate::{error::ParseErrorKind, Span};
+use crate::Span;
 
 use super::Rule;
 
@@ -21,22 +21,6 @@ pub enum LookaroundKind {
 impl<'i> Lookaround<'i> {
     pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { kind, rule, span }
-    }
-
-    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
-        match self.kind {
-            LookaroundKind::AheadNegative | LookaroundKind::BehindNegative => {
-                Err(ParseErrorKind::UnallowedMultiNot(2))
-            }
-            LookaroundKind::Ahead => {
-                self.kind = LookaroundKind::AheadNegative;
-                Ok(())
-            }
-            LookaroundKind::Behind => {
-                self.kind = LookaroundKind::BehindNegative;
-                Ok(())
-            }
-        }
     }
 
     #[cfg(feature = "dbg")]

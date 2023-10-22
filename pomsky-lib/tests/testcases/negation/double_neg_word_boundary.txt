@@ -1,6 +1,3 @@
-#! expect=error
 !!%
 -----
-ERROR: An expression can't be negated more than once
-HELP: The number of exclamation marks is even, so you can remove all of them
-SPAN: 0..2
+\b

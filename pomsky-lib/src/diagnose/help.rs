@@ -59,6 +59,7 @@ pub(super) fn get_parser_help(
         ParseErrorKind::Repetition(RepetitionError::Multi) => {
             Some("Add parentheses around the first repetition.".into())
         }
+        ParseErrorKind::LonePipe => Some("Add an empty string ('') to match nothing".into()),
         ParseErrorKind::InvalidEscapeInStringAt(offset) => {
             let span_start = span.range_unchecked().start;
             *span = Span::new(span_start + offset - 1, span_start + offset + 1);
@@ -120,6 +121,14 @@ pub(super) fn get_compiler_help(
         CompileErrorKind::NegativeShorthandInAsciiMode | CompileErrorKind::UnicodeInAsciiMode => {
             Some(format!("Enable Unicode, e.g. `(enable unicode; {slice})`"))
         }
+        CompileErrorKind::IllegalNegation { .. } => Some(
+            "Only the following expressions can be negated:\n\
+            - character sets\n\
+            - string literals and alternations that match exactly one code point\n\
+            - lookarounds\n\
+            - the `%` word boundary"
+                .to_string(),
+        ),
 
         _ => None,
     }

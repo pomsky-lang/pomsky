@@ -1,5 +1,3 @@
-#! expect=error
 !(['test'])
 -----
-ERROR: This expression can't be negated
-SPAN: 0..1
+[^tes]

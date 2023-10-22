@@ -2,4 +2,5 @@
 let x = |;
 -----
 ERROR: A pipe must be followed by an expression
+HELP: Add an empty string ('') to match nothing
 SPAN: 8..9

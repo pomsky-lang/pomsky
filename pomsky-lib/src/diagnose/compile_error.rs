@@ -1,10 +1,9 @@
 use pomsky_syntax::{
     diagnose::{ParseError, ParseErrorKind},
-    exprs::GroupItem,
     Span,
 };
 
-use crate::options::RegexFlavor;
+use crate::{exprs::char_class::RegexCharSetItem, options::RegexFlavor};
 
 use super::{Diagnostic, Feature};
 
@@ -64,12 +63,15 @@ pub(crate) enum CompileErrorKind {
     NameUsedMultipleTimes(String),
     EmptyClass,
     EmptyClassNegated {
-        group1: GroupItem,
-        group2: GroupItem,
+        group1: RegexCharSetItem,
+        group2: RegexCharSetItem,
     },
     // [!v]
     // TODO: This should be allowed when there's only one shorthand in the character set
     NegatedHorizVertSpace,
+    IllegalNegation {
+        kind: IllegalNegationKind,
+    },
     CaptureInLet,
     ReferenceInLet,
     RelativeRefZero,
@@ -140,6 +142,7 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::NegatedHorizVertSpace => {
                 write!(f, "horiz_space and vert_space can't be negated within a character class")
             }
+            CompileErrorKind::IllegalNegation { kind } => kind.fmt(f),
             CompileErrorKind::CaptureInLet => {
                 write!(f, "Capturing groups within `let` statements are currently not supported")
             }
@@ -220,5 +223,41 @@ impl core::fmt::Display for UnsupportedError {
         };
 
         f.write_str(error)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub(crate) enum IllegalNegationKind {
+    Literal(String),
+    Unescaped,
+    Grapheme,
+    Dot,
+    Group,
+    Alternation,
+    Repetition,
+    Reference,
+    Recursion,
+    Boundary,
+}
+
+impl core::fmt::Display for IllegalNegationKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let s = match self {
+            IllegalNegationKind::Literal(s) => {
+                return write!(f, "String literal {s:?} can't be negated")
+            }
+            IllegalNegationKind::Unescaped => "An inline regex",
+            IllegalNegationKind::Grapheme => "A grapheme",
+            IllegalNegationKind::Dot => "The dot",
+            IllegalNegationKind::Group => "This group",
+            IllegalNegationKind::Alternation => "This alternation",
+            IllegalNegationKind::Repetition => "A repetition",
+            IllegalNegationKind::Reference => "A reference",
+            IllegalNegationKind::Recursion => "Recursion",
+            IllegalNegationKind::Boundary => "This boundary",
+        };
+        f.write_str(s)?;
+        f.write_str(" can't be negated")
     }
 }

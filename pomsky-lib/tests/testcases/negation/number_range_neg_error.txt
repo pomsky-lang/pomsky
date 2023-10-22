@@ -1,5 +1,10 @@
 #! expect=error
-!range '0'-'9'
+!range '0'-'99'
 -----
-ERROR: This expression can't be negated
+ERROR: This alternation can't be negated
+HELP: Only the following expressions can be negated:
+- character sets
+- string literals and alternations that match exactly one code point
+- lookarounds
+- the `%` word boundary
 SPAN: 0..1

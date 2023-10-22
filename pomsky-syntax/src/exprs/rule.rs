@@ -1,8 +1,8 @@
-use crate::{error::ParseErrorKind, Span};
+use crate::Span;
 
 use super::{
-    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Recursion, Reference,
-    Regex, Repetition, StmtExpr, Variable,
+    negation::Negation, Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range,
+    Recursion, Reference, Regex, Repetition, StmtExpr, Variable,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
@@ -33,6 +33,8 @@ pub enum Rule<'i> {
     Range(Range),
     /// An expression preceded by a modifier such as `enable lazy;`
     StmtExpr(Box<StmtExpr<'i>>),
+    /// Negated expression
+    Negation(Box<Negation<'i>>),
     /// A regex string, which is not escaped
     Regex(Regex<'i>),
     /// A regex string, which is not escaped
@@ -61,31 +63,10 @@ impl<'i> Rule<'i> {
             Rule::Reference(r) => r.span,
             Rule::Range(r) => r.span,
             Rule::StmtExpr(m) => m.span,
+            Rule::Negation(n) => n.not_span,
             Rule::Regex(r) => r.span,
             Rule::Recursion(r) => r.span,
             Rule::Grapheme | Rule::Codepoint | Rule::Dot => Span::empty(),
-        }
-    }
-
-    pub(crate) fn negate(&mut self) -> Result<(), ParseErrorKind> {
-        match self {
-            Rule::Literal(_)
-            | Rule::Group(_)
-            | Rule::Alternation(_)
-            | Rule::Variable(_)
-            | Rule::Reference(_)
-            | Rule::Range(_)
-            | Rule::StmtExpr(_)
-            | Rule::Regex(_)
-            | Rule::Recursion(_)
-            | Rule::Grapheme
-            | Rule::Codepoint
-            | Rule::Dot => Err(ParseErrorKind::UnallowedNot),
-
-            Rule::CharClass(c) => c.negate(),
-            Rule::Repetition(r) => r.rule.negate(),
-            Rule::Boundary(b) => b.negate(),
-            Rule::Lookaround(l) => l.negate(),
         }
     }
 
@@ -103,6 +84,7 @@ impl<'i> Rule<'i> {
             Rule::Reference(r) => r.pretty_print(buf),
             Rule::Range(r) => r.pretty_print(buf),
             Rule::StmtExpr(s) => s.pretty_print(buf),
+            Rule::Negation(n) => n.pretty_print(buf, needs_parens),
             Rule::Regex(r) => r.pretty_print(buf),
             Rule::Recursion(_) => buf.push_str("recursion"),
             Rule::Grapheme => buf.push_str("Grapheme"),

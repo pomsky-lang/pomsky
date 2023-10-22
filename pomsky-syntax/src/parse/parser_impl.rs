@@ -6,7 +6,7 @@ use crate::{
         RepetitionError,
     },
     error::{ParseError, ParseErrorKind as PEK},
-    exprs::{test::*, *},
+    exprs::{negation::Negation, test::*, *},
     lexer::Token,
     Span,
 };
@@ -280,7 +280,7 @@ impl<'i> Parser<'i> {
             nots_span = nots_span.join(self.last_span());
         }
 
-        let Some(mut rule) = self.parse_lookaround()?.try_or_else(|| self.parse_repeated())? else {
+        let Some(mut rule) = self.parse_lookaround()?.try_or_else(|| self.parse_atom())? else {
             if nots == 0 {
                 return Ok(None);
             } else {
@@ -288,10 +288,13 @@ impl<'i> Parser<'i> {
             }
         };
 
-        match nots {
-            0 => {}
-            1 => rule.negate().map_err(|k| k.at(nots_span))?,
-            _ => return Err(PEK::UnallowedMultiNot(nots).at(nots_span)),
+        for _ in 0..nots {
+            rule = Rule::Negation(Box::new(Negation { rule, not_span: nots_span }));
+        }
+
+        while let Some((kind, quantifier, span)) = self.parse_repetition()? {
+            let span = rule.span().join(span);
+            rule = Rule::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
         }
 
         Ok(Some(rule))
@@ -313,21 +316,6 @@ impl<'i> Parser<'i> {
 
         let span = rule.span();
         Ok(Some(Rule::Lookaround(Box::new(Lookaround::new(rule, kind, start_span.join(span))))))
-    }
-
-    /// Parse an atom expression with possibly multiple repetitions, e.g. `E
-    /// {3,} lazy ?`.
-    fn parse_repeated(&mut self) -> PResult<Option<Rule<'i>>> {
-        if let Some(mut rule) = self.parse_atom()? {
-            if let Some((kind, quantifier, span)) = self.parse_repetition()? {
-                let span = rule.span().join(span);
-                rule = Rule::Repetition(Box::new(Repetition::new(rule, kind, quantifier, span)));
-            }
-
-            Ok(Some(rule))
-        } else {
-            Ok(None)
-        }
     }
 
     /// Parse a repetition that can follow an atom: `+`, `?`, `*`, `{x}`,

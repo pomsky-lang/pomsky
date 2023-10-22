@@ -1,8 +1,13 @@
 use std::borrow::{Borrow, Cow};
 
-use pomsky_syntax::exprs::{BoundaryKind, Category, CodeBlock, OtherProperties, Script};
+use pomsky_syntax::{
+    exprs::{BoundaryKind, Category, CodeBlock, LookaroundKind, OtherProperties, Script},
+    Span,
+};
 
 use crate::{
+    compile::CompileResult,
+    diagnose::{CompileErrorKind, IllegalNegationKind},
     exprs::{
         alternation::RegexAlternation,
         boundary::boundary_kind_codegen,
@@ -60,7 +65,7 @@ impl Default for Regex<'_> {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexShorthand {
     Word,
@@ -86,9 +91,22 @@ impl RegexShorthand {
             RegexShorthand::HorizSpace => return None,
         })
     }
+
+    pub(crate) fn to_str(&self) -> &'static str {
+        match self {
+            RegexShorthand::Word => "word",
+            RegexShorthand::Digit => "digit",
+            RegexShorthand::Space => "space",
+            RegexShorthand::NotWord => "!word",
+            RegexShorthand::NotDigit => "!digit",
+            RegexShorthand::NotSpace => "!space",
+            RegexShorthand::VertSpace => "vert_space",
+            RegexShorthand::HorizSpace => "horiz_space",
+        }
+    }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexProperty {
     Category(Category),
@@ -98,12 +116,83 @@ pub(crate) enum RegexProperty {
 }
 
 impl RegexProperty {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RegexProperty::Category(c) => c.as_str(),
+            RegexProperty::Script(s) => s.as_str(),
+            RegexProperty::Block(b) => b.as_str(),
+            RegexProperty::Other(o) => o.as_str(),
+        }
+    }
+
     pub(crate) fn negative_item(self, negative: bool) -> RegexCharSetItem {
         RegexCharSetItem::Property { negative, value: self }
     }
 }
 
 impl<'i> Regex<'i> {
+    pub(crate) fn negate(self, not_span: Span) -> CompileResult<'i> {
+        match self {
+            Regex::Literal(l) => {
+                let mut iter = l.chars();
+                let Some(c) = iter.next().and_then(|c| iter.next().is_none().then_some(c)) else {
+                    return Err(CompileErrorKind::IllegalNegation {
+                        kind: IllegalNegationKind::Literal(l.to_string()),
+                    }
+                    .at(not_span));
+                };
+                Ok(Regex::CharSet(RegexCharSet::new(vec![RegexCharSetItem::Char(c)]).negate()))
+            }
+            Regex::Char(c) => {
+                let items = vec![RegexCharSetItem::Char(c)];
+                return Ok(Regex::CharSet(RegexCharSet::new(items).negate()));
+            }
+            Regex::CharSet(s) => Ok(Regex::CharSet(s.negate())),
+            Regex::Boundary(b) => match b {
+                BoundaryKind::Word => Ok(Regex::Boundary(BoundaryKind::NotWord)),
+                BoundaryKind::NotWord => Ok(Regex::Boundary(BoundaryKind::Word)),
+                _ => Err(CompileErrorKind::IllegalNegation { kind: IllegalNegationKind::Boundary }
+                    .at(not_span)),
+            },
+            Regex::Lookaround(mut l) => {
+                l.kind = match l.kind {
+                    LookaroundKind::Ahead => LookaroundKind::AheadNegative,
+                    LookaroundKind::Behind => LookaroundKind::BehindNegative,
+                    LookaroundKind::AheadNegative => LookaroundKind::Ahead,
+                    LookaroundKind::BehindNegative => LookaroundKind::Behind,
+                };
+                Ok(Regex::Lookaround(l))
+            }
+            Regex::Group(mut g)
+                if matches!(g.kind, RegexGroupKind::Normal) && g.parts.len() == 1 =>
+            {
+                g.parts.pop().unwrap().negate(not_span)
+            }
+
+            Regex::Unescaped(_)
+            | Regex::Grapheme
+            | Regex::Dot
+            | Regex::Group(_)
+            | Regex::Alternation(_)
+            | Regex::Repetition(_)
+            | Regex::Reference(_)
+            | Regex::Recursion => Err(CompileErrorKind::IllegalNegation {
+                kind: match self {
+                    Regex::Unescaped(_) => IllegalNegationKind::Unescaped,
+                    Regex::Grapheme => IllegalNegationKind::Grapheme,
+                    Regex::Dot => IllegalNegationKind::Dot,
+                    Regex::Group(_) => IllegalNegationKind::Group,
+                    Regex::Alternation(_) => IllegalNegationKind::Alternation,
+                    Regex::Repetition(_) => IllegalNegationKind::Repetition,
+                    Regex::Reference(_) => IllegalNegationKind::Reference,
+                    Regex::Recursion => IllegalNegationKind::Recursion,
+                    _ => unreachable!(),
+                },
+            }
+            .at(not_span)),
+        }
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         match self {
             Regex::Literal(l) => {
