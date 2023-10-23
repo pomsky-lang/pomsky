@@ -507,7 +507,7 @@ impl fmt::Debug for RegexCharSetItem {
         match self {
             Self::Char(c) => c.fmt(f),
             Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
-            Self::Shorthand(s) => f.write_str(s.to_str()),
+            Self::Shorthand(s) => f.write_str(s.as_str()),
             &Self::Property { value, negative } => {
                 if negative {
                     f.write_str("!")?;

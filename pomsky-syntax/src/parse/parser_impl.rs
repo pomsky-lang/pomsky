@@ -571,6 +571,19 @@ impl<'i> Parser<'i> {
                 return Err(PEK::Expected("code point or character").at(self.span()));
             };
 
+            if let StringOrChar::Char { is_shorthand: true, c } = first {
+                self.add_warning(
+                    ParseWarningKind::Deprecation(DeprecationWarning::ShorthandInRange(c))
+                        .at(span1),
+                );
+            }
+            if let StringOrChar::Char { is_shorthand: true, c } = last {
+                self.add_warning(
+                    ParseWarningKind::Deprecation(DeprecationWarning::ShorthandInRange(c))
+                        .at(span2),
+                );
+            }
+
             let first = first.to_char().map_err(|e| e.at(span1))?;
             let last = last.to_char().map_err(|e| e.at(span2))?;
 
@@ -584,7 +597,7 @@ impl<'i> Parser<'i> {
                     let chars = helper::parse_quoted_text(s).map_err(|k| k.at(span1))?;
                     chars.chars().map(GroupItem::Char).collect()
                 }
-                StringOrChar::Char(c) => vec![GroupItem::Char(c)],
+                StringOrChar::Char { c, .. } => vec![GroupItem::Char(c)],
             };
             Ok(Some(group))
         }
@@ -594,9 +607,9 @@ impl<'i> Parser<'i> {
         let res = if let Some(s) = self.consume_as(Token::String) {
             StringOrChar::String(s)
         } else if let Some((c, _)) = self.parse_code_point()? {
-            StringOrChar::Char(c)
+            StringOrChar::Char { c, is_shorthand: false }
         } else if let Some(c) = self.parse_special_char() {
-            StringOrChar::Char(c)
+            StringOrChar::Char { c, is_shorthand: true }
         } else {
             return Ok(None);
         };
@@ -800,13 +813,13 @@ impl<'i> Parser<'i> {
 #[derive(Clone, Copy)]
 enum StringOrChar<'i> {
     String(&'i str),
-    Char(char),
+    Char { c: char, is_shorthand: bool },
 }
 
 impl StringOrChar<'_> {
     fn to_char(self) -> Result<char, PEK> {
         Err(PEK::CharString(match self {
-            StringOrChar::Char(c) => return Ok(c),
+            StringOrChar::Char { c, .. } => return Ok(c),
             StringOrChar::String(s) => {
                 let s = helper::parse_quoted_text(s)?;
                 let mut iter = s.chars();

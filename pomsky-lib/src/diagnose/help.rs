@@ -1,6 +1,7 @@
 use pomsky_syntax::{
     diagnose::{
-        CharClassError, CharStringError, DeprecationError, ParseErrorKind, RepetitionError,
+        CharClassError, CharStringError, DeprecationError, DeprecationWarning, ParseErrorKind,
+        ParseWarningKind, RepetitionError,
     },
     Span,
 };
@@ -75,6 +76,25 @@ pub(super) fn get_parser_help(
         ),
         ParseErrorKind::Deprecated(DeprecationError::DotInSet) => {
             Some("Use `.` without brackets instead".into())
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn get_parse_warning_help(kind: &ParseWarningKind) -> Option<String> {
+    let ParseWarningKind::Deprecation(d) = kind;
+    match d {
+        DeprecationWarning::ShorthandInRange(c) => {
+            let (desc, name) = match c {
+                '\n' => ("a line feed", "n"),
+                '\r' => ("a carriage return", "r"),
+                '\t' => ("a tab character", "t"),
+                '\u{07}' => ("an alert/bell character", "a"),
+                '\u{1b}' => ("an escape character", "e"),
+                '\u{0c}' => ("a form feed", "f"),
+                _ => return None,
+            };
+            Some(format!("This shorthand matches {desc}, not a '{name}'"))
         }
         _ => None,
     }

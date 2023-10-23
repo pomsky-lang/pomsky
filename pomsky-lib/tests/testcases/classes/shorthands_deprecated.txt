@@ -1,0 +1,7 @@
+[a-f]
+-----
+[\x07-\f]
+WARNING: Shorthands in character ranges are deprecated. Use U+07 instead
+  at 1..2
+WARNING: Shorthands in character ranges are deprecated. Use U+0C instead
+  at 3..4

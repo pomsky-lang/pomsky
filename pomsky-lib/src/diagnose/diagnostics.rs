@@ -4,8 +4,9 @@ use pomsky_syntax::{
 };
 
 use super::{
-    diagnostic_code::DiagnosticCode, help::get_compiler_help, CompileError, CompileErrorKind,
-    DiagnosticKind,
+    diagnostic_code::DiagnosticCode,
+    help::{get_compiler_help, get_parse_warning_help},
+    CompileError, CompileErrorKind, DiagnosticKind,
 };
 
 #[derive(Debug, Clone)]
@@ -113,7 +114,7 @@ impl Diagnostic {
             severity: Severity::Warning,
             code: Some(DiagnosticCode::from(kind)),
             msg: kind.to_string(),
-            help: None,
+            help: get_parse_warning_help(kind),
             span,
             kind: DiagnosticKind::from(kind),
         }

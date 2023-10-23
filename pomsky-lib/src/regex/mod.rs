@@ -92,7 +92,7 @@ impl RegexShorthand {
         })
     }
 
-    pub(crate) fn to_str(&self) -> &'static str {
+    pub(crate) fn as_str(&self) -> &'static str {
         match self {
             RegexShorthand::Word => "word",
             RegexShorthand::Digit => "digit",

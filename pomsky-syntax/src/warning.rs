@@ -49,6 +49,8 @@ impl fmt::Display for ParseWarningKind {
 pub enum DeprecationWarning {
     /// U+147A, U147A
     Unicode(String),
+    /// A shorthand character in a range, e.g. `[a-f]`
+    ShorthandInRange(char),
 }
 
 impl fmt::Display for DeprecationWarning {
@@ -57,6 +59,13 @@ impl fmt::Display for DeprecationWarning {
             DeprecationWarning::Unicode(u) => {
                 let rest = u.trim_start_matches(|c| matches!(c, 'U' | '+'));
                 write!(f, "This syntax is deprecated. Use `U+{rest}` instead.")
+            }
+            &DeprecationWarning::ShorthandInRange(c) => {
+                write!(
+                    f,
+                    "Shorthands in character ranges are deprecated. Use U+{:02X} instead",
+                    c as u8
+                )
             }
         }
     }
