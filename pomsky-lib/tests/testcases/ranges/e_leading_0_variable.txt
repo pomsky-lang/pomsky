@@ -1,0 +1,6 @@
+#! expect=error
+range '039'-'4918'
+-----
+ERROR: Leading zeroes are not allowed, unless both numbers have the same number of digits
+HELP: Precede with a repeated zero: '0'* range '39'-'4918'
+SPAN: 6..18

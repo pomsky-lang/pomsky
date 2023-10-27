@@ -155,7 +155,7 @@ fn help() {
         "Test if something is a valid regex
 
 USAGE:
-    regex-test -f <FLAVOR> [INPUT]
+    regex-test -f <FLAVOR> INPUT [-t TEST]...
 
 FLAVORS:
     pcre, rust, ruby, js, java, python"

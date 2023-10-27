@@ -68,6 +68,7 @@ diagnostic_code! {
         NegatedHorizVertSpace = 119,
         MissingKeyword = 120,
         MultipleStringsInTestCase = 121,
+        RangeLeadingZeroesVariableLength = 122,
 
         // Currently a parse error, but it should be a compile error
         LetBindingExists = 300,
@@ -175,6 +176,7 @@ impl<'a> From<&'a ParseErrorKind> for DiagnosticCode {
                 Self::UnexpectedToken
             }
             P::RangeIsNotIncreasing => Self::RangeIsNotIncreasing,
+            P::RangeLeadingZeroesVariableLength => Self::RangeLeadingZeroesVariableLength,
             P::UnallowedNot => Self::UnallowedNot,
             P::UnallowedMultiNot(_) => Self::UnallowedMultiNot,
             P::LetBindingExists => Self::LetBindingExists,

@@ -755,6 +755,12 @@ impl<'i> Parser<'i> {
                 return Err(PEK::RangeIsNotIncreasing.at(span_1.join(span_2)));
             }
 
+            if start.len() != end.len()
+                && (helper::has_leading_zero(&start) || helper::has_leading_zero(&end))
+            {
+                return Err(PEK::RangeLeadingZeroesVariableLength.at(span_1.join(span_2)));
+            }
+
             Ok(Some(Rule::Range(Range::new(start, end, radix, span))))
         } else {
             Ok(None)

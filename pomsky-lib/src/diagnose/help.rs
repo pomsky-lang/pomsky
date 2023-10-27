@@ -21,6 +21,27 @@ pub(super) fn get_parser_help(
             let part2 = part2.trim_start_matches('-');
             Some(format!("Switch the numbers: {}-{}", part2.trim(), part1.trim()))
         }
+        ParseErrorKind::RangeLeadingZeroesVariableLength => {
+            fn get_number(s: &str) -> &str {
+                let digits = s.trim_matches(|c| matches!(c, ' ' | '\'' | '"'));
+                let removed_leading = digits.trim_start_matches('0');
+                if removed_leading.is_empty() {
+                    "0"
+                } else {
+                    removed_leading
+                }
+            }
+
+            let dash_pos = slice.find('-').unwrap();
+            let (part1, part2) = slice.split_at(dash_pos);
+            let part2 = part2.trim_start_matches('-');
+
+            Some(format!(
+                "Precede with a repeated zero: '0'* range '{}'-'{}'",
+                get_number(part1),
+                get_number(part2)
+            ))
+        }
         #[cfg(feature = "suggestions")]
         ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
             similar: Some(ref similar),

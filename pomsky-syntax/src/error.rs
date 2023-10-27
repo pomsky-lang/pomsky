@@ -44,6 +44,7 @@ pub enum ParseErrorKind {
     LeftoverTokens,
     ExpectedToken(Token),
     RangeIsNotIncreasing,
+    RangeLeadingZeroesVariableLength,
     UnallowedNot,
     UnallowedMultiNot(usize),
     LonePipe,
@@ -122,6 +123,10 @@ impl core::fmt::Display for ParseErrorKind {
             ParseErrorKind::RangeIsNotIncreasing => {
                 write!(f, "The first number in a range must be smaller than the second")
             }
+            ParseErrorKind::RangeLeadingZeroesVariableLength => write!(
+                f,
+                "Leading zeroes are not allowed, unless both numbers have the same number of digits"
+            ),
             ParseErrorKind::UnallowedNot => write!(f, "This code point or range can't be negated"),
             ParseErrorKind::UnallowedMultiNot(_) => {
                 write!(f, "A shorthand character class can't be negated more than once")

@@ -64,3 +64,7 @@ pub(super) fn parse_number(src: &str, radix: u8) -> Result<Vec<u8>, NumberError>
     }
     Ok(digits)
 }
+
+pub(super) fn has_leading_zero(s: &[u8]) -> bool {
+    s.len() > 1 && matches!(s, [0, ..])
+}
