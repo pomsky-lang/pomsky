@@ -1,0 +1,4 @@
+#! flavor=Pcre
+:foo('foo') ::1 ::foo
+-----
+(?P<foo>foo)(?:\1)(?:\1)

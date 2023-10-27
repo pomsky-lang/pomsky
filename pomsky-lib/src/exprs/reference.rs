@@ -138,7 +138,7 @@ impl RegexReference {
         match self {
             &RegexReference::Number(number) => {
                 debug_assert!(number <= 99);
-                write!(buf, "\\{number}").unwrap();
+                write!(buf, "(?:\\{number})").unwrap();
             }
             RegexReference::Name(name) => {
                 write!(buf, "\\k<{name}>").unwrap();
