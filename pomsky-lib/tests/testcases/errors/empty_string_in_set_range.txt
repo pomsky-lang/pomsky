@@ -1,0 +1,5 @@
+#! expect=error
+[''-'z']
+-----
+ERROR: Strings used in ranges can't be empty
+SPAN: 1..3

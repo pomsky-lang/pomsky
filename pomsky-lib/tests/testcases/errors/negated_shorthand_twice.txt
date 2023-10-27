@@ -1,0 +1,6 @@
+#! expect=error
+[!!d]
+-----
+ERROR: A shorthand character class can't be negated more than once
+HELP: The number of exclamation marks is even, so you can remove all of them
+SPAN: 1..3

@@ -1,0 +1,5 @@
+#! expect=error
+range ''-'0'
+-----
+ERROR: cannot parse integer from empty string
+SPAN: 6..8

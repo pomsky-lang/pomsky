@@ -1,0 +1,5 @@
+#! expect=error
+U+D801
+-----
+ERROR: This code point is outside the allowed range
+SPAN: 0..6

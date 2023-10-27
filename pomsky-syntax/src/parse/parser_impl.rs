@@ -626,9 +626,7 @@ impl<'i> Parser<'i> {
             }
 
             let hex = trimmed_u.trim_start_matches(|c: char| c == '+' || c.is_whitespace());
-            if hex.len() > 6 {
-                return Err(PEK::InvalidCodePoint.at(span));
-            }
+
             u32::from_str_radix(hex, 16)
                 .ok()
                 .and_then(|n| char::try_from(n).ok())
@@ -750,6 +748,11 @@ impl<'i> Parser<'i> {
                 .map_err(|k| PEK::from(k).at(span_1))?;
             let end = helper::parse_number(helper::strip_first_last(second), radix)
                 .map_err(|k| PEK::from(k).at(span_2))?;
+
+            if start.is_empty() || end.is_empty() {
+                let span = if start.is_empty() { span_1 } else { span_2 };
+                return Err(PEK::Number(NumberError::Empty).at(span));
+            }
 
             if start.len() > end.len() || (start.len() == end.len() && start > end) {
                 return Err(PEK::RangeIsNotIncreasing.at(span_1.join(span_2)));

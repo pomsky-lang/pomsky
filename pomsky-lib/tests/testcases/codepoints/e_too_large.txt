@@ -1,0 +1,5 @@
+#! expect=error
+U+EEEEEE
+-----
+ERROR: This code point is outside the allowed range
+SPAN: 0..8

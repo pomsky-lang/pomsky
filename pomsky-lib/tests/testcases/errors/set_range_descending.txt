@@ -1,0 +1,6 @@
+#! expect=error
+['z'-'g']
+-----
+ERROR: Character range must be in increasing order, but it is U+007A - U+0067
+HELP: Switch the characters: 'g'-'z'
+SPAN: 1..8
