@@ -100,6 +100,13 @@ impl<'i> RuleExt<'i> for CharClass {
         options: CompileOptions,
         state: &mut CompileState<'_, 'i>,
     ) -> CompileResult<'i> {
+        if self.inner.len() == 1 {
+            let first = self.inner.first().unwrap();
+            if let &GroupItem::Char(c) = first {
+                return Ok(Regex::Literal(c.to_string().into()));
+            }
+        }
+
         let mut prev_items: HashSet<GroupItem> = HashSet::new();
 
         let mut negative = false;
