@@ -100,11 +100,6 @@ impl<'i> RuleExt<'i> for CharClass {
         options: CompileOptions,
         state: &mut CompileState<'_, 'i>,
     ) -> CompileResult<'i> {
-        if self.inner.is_empty() {
-            // TODO: Check if this is still needed since an empty class is a syntactic error
-            return Err(CompileErrorKind::EmptyClass.at(self.span));
-        }
-
         let mut prev_items: HashSet<GroupItem> = HashSet::new();
 
         let mut negative = false;

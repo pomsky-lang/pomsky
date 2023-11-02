@@ -61,7 +61,6 @@ pub(crate) enum CompileErrorKind {
         similar: Option<Box<str>>,
     },
     NameUsedMultipleTimes(String),
-    EmptyClass,
     EmptyClassNegated {
         group1: RegexCharSetItem,
         group2: RegexCharSetItem,
@@ -133,9 +132,6 @@ impl core::fmt::Display for CompileErrorKind {
             }
             CompileErrorKind::NameUsedMultipleTimes(name) => {
                 write!(f, "Group name `{name}` used multiple times")
-            }
-            CompileErrorKind::EmptyClass => {
-                write!(f, "This character class is empty")
             }
             CompileErrorKind::EmptyClassNegated { .. } => {
                 write!(f, "This negated character class matches nothing")

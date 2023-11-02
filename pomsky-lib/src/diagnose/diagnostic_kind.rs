@@ -42,9 +42,7 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::NegatedHorizVertSpace
             | K::RelativeRefZero
             | K::DotNetNumberedRefWithMixedGroups => DiagnosticKind::Resolve,
-            K::EmptyClass | K::EmptyClassNegated { .. } | K::IllegalNegation { .. } => {
-                DiagnosticKind::Invalid
-            }
+            K::EmptyClassNegated { .. } | K::IllegalNegation { .. } => DiagnosticKind::Invalid,
             K::CaptureInLet
             | K::ReferenceInLet
             | K::RecursiveVariable

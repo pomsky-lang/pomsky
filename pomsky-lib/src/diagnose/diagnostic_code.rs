@@ -207,7 +207,6 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::HugeReference => Self::HugeReference,
             C::UnknownReferenceNumber(_) | C::UnknownReferenceName { .. } => Self::UnknownReference,
             C::NameUsedMultipleTimes(_) => Self::NameUsedMultipleTimes,
-            C::EmptyClass => Self::EmptyClass,
             C::EmptyClassNegated { .. } => Self::EmptyClassNegated,
             C::CaptureInLet => Self::CaptureInLet,
             C::ReferenceInLet => Self::ReferenceInLet,
