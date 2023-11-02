@@ -3,9 +3,7 @@ use std::{borrow::Cow, cmp::Ordering};
 use pomsky_syntax::exprs::{Range, RepetitionKind};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
     options::CompileOptions,
     regex::Regex,
 };
@@ -21,17 +19,6 @@ use super::{
 impl<'i> RuleExt<'i> for Range {
     fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
         Ok(range(&self.start, &self.end, true, self.radix).to_regex())
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        _: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        if self.end.len() > options.max_range_size as usize {
-            return Err(CompileErrorKind::RangeIsTooBig(options.max_range_size).at(self.span));
-        }
-        options.allowed_features.require(PomskyFeatures::RANGES, self.span)
     }
 }
 

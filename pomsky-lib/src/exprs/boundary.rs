@@ -5,9 +5,8 @@
 use pomsky_syntax::exprs::{Boundary, BoundaryKind};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
+    diagnose::CompileErrorKind,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -30,14 +29,6 @@ impl<'i> RuleExt<'i> for Boundary {
         } else {
             Ok(Regex::Boundary(self.kind))
         }
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        _: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        options.allowed_features.require(PomskyFeatures::BOUNDARIES, self.span)
     }
 }
 

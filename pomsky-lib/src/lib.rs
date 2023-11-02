@@ -56,9 +56,12 @@ pub mod error;
 pub mod features;
 pub mod options;
 
+mod capturing_groups;
 mod compile;
 mod exprs;
 mod regex;
+mod validation;
+mod visitor;
 
 /// Re-exports syntax node types related to tests
 pub mod test {

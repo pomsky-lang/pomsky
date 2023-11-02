@@ -1,9 +1,8 @@
 use pomsky_syntax::exprs::{Reference, ReferenceTarget};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind, Feature},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
+    diagnose::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -114,14 +113,6 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 _ => RegexReference::Number(number),
             })),
         }
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        _: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        options.allowed_features.require(PomskyFeatures::REFERENCES, self.span)
     }
 }
 

@@ -1,11 +1,8 @@
 //! Implements [alternation](https://www.regular-expressions.info/alternation.html):
 //! `('alt1' | 'alt2' | 'alt3')`.
 
-use std::collections::HashMap;
-
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::CompileError,
+    compile::{CompileResult, CompileState},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -13,18 +10,6 @@ use crate::{
 use super::{Alternation, RuleExt};
 
 impl<'i> RuleExt<'i> for Alternation<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &'i mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        for rule in &self.rules {
-            rule.get_capturing_groups(count, map, within_variable)?;
-        }
-        Ok(())
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -37,17 +22,6 @@ impl<'i> RuleExt<'i> for Alternation<'i> {
                 .map(|rule| rule.compile(options, state))
                 .collect::<Result<_, _>>()?,
         }))
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        for rule in &self.rules {
-            rule.validate(options, state)?;
-        }
-        Ok(())
     }
 }
 

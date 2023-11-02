@@ -1,11 +1,8 @@
-use std::collections::HashMap;
-
 use pomsky_syntax::exprs::{Lookaround, LookaroundKind};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompatWarning, CompileError, CompileErrorKind, CompileWarningKind, Feature},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
+    diagnose::{CompatWarning, CompileWarningKind},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -13,54 +10,25 @@ use crate::{
 use super::RuleExt;
 
 impl<'i> RuleExt<'i> for Lookaround<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &'i mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        self.rule.get_capturing_groups(count, map, within_variable)
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        match options.flavor {
-            RegexFlavor::Rust => {
-                return Err(CompileErrorKind::Unsupported(Feature::Lookaround, options.flavor)
-                    .at(self.span));
-            }
-            RegexFlavor::JavaScript
-                if matches!(self.kind, LookaroundKind::Behind | LookaroundKind::BehindNegative) =>
-            {
+        if let RegexFlavor::JavaScript = options.flavor {
+            if let LookaroundKind::Behind | LookaroundKind::BehindNegative = self.kind {
                 state.diagnostics.push(
                     CompileWarningKind::Compat(CompatWarning::JsLookbehind)
                         .at(self.span)
                         .diagnostic(),
                 );
             }
-            _ => (),
         }
 
         Ok(Regex::Lookaround(Box::new(RegexLookaround {
             content: self.rule.compile(options, state)?,
             kind: self.kind,
         })))
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        let feature = match self.kind {
-            LookaroundKind::Ahead | LookaroundKind::AheadNegative => PomskyFeatures::LOOKAHEAD,
-            LookaroundKind::Behind | LookaroundKind::BehindNegative => PomskyFeatures::LOOKBEHIND,
-        };
-        options.allowed_features.require(feature, self.span)?;
-        self.rule.validate(options, &mut state.layer_down())
     }
 }
 

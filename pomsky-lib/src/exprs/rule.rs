@@ -1,10 +1,7 @@
-use std::collections::HashMap;
-
 use pomsky_syntax::exprs::Rule;
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind},
+    compile::{CompileResult, CompileState},
     options::CompileOptions,
     regex::Regex,
 };
@@ -14,38 +11,6 @@ use super::{
 };
 
 impl<'i> RuleExt<'i> for Rule<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        match self {
-            Rule::Literal(_)
-            | Rule::CharClass(_)
-            | Rule::Codepoint
-            | Rule::Grapheme
-            | Rule::Dot
-            | Rule::Boundary(_)
-            | Rule::Variable(_)
-            | Rule::Regex(_)
-            | Rule::Range(_)
-            | Rule::Recursion(_) => {}
-            Rule::Group(g) => g.get_capturing_groups(count, map, within_variable)?,
-            Rule::Alternation(a) => a.get_capturing_groups(count, map, within_variable)?,
-            Rule::Repetition(r) => r.get_capturing_groups(count, map, within_variable)?,
-            Rule::Lookaround(l) => l.get_capturing_groups(count, map, within_variable)?,
-            Rule::Reference(r) => {
-                if within_variable {
-                    return Err(CompileErrorKind::ReferenceInLet.at(r.span));
-                }
-            }
-            Rule::StmtExpr(m) => m.get_capturing_groups(count, map, within_variable)?,
-            Rule::Negation(n) => n.rule.get_capturing_groups(count, map, within_variable)?,
-        }
-        Ok(())
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -79,29 +44,6 @@ impl<'i> RuleExt<'i> for Rule<'i> {
                 }
                 Ok(regex)
             }
-        }
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        match self {
-            Rule::Literal(_) | Rule::CharClass(_) | Rule::Variable(_) | Rule::Codepoint => Ok(()),
-            Rule::Grapheme => Grapheme {}.validate(options),
-            Rule::Dot => Dot {}.validate(options),
-            Rule::Group(g) => g.validate(options, state),
-            Rule::Alternation(a) => a.validate(options, state),
-            Rule::Repetition(r) => r.validate(options, state),
-            Rule::Boundary(b) => b.validate(options, state),
-            Rule::Lookaround(l) => l.validate(options, state),
-            Rule::Reference(r) => r.validate(options, state),
-            Rule::Range(r) => r.validate(options, state),
-            Rule::Regex(r) => r.validate(options, state),
-            Rule::Recursion(r) => r.validate(options, state),
-            Rule::StmtExpr(s) => s.validate(options, state),
-            Rule::Negation(_n) => Ok(()),
         }
     }
 }

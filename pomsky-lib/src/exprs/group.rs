@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-
 use pomsky_syntax::exprs::{Capture, Group, GroupKind};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind, Feature},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -13,42 +9,6 @@ use crate::{
 use super::RuleExt;
 
 impl<'i> RuleExt<'i> for Group<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        match self.kind {
-            GroupKind::Capturing(Capture { name: Some(name) }) => {
-                if within_variable {
-                    return Err(CompileErrorKind::CaptureInLet.at(self.span));
-                }
-
-                if map.contains_key(name) {
-                    return Err(
-                        CompileErrorKind::NameUsedMultipleTimes(name.to_string()).at(self.span)
-                    );
-                }
-
-                *count += 1;
-                map.insert(name.to_string(), *count);
-            }
-            GroupKind::Capturing(Capture { name: None }) => {
-                if within_variable {
-                    return Err(CompileErrorKind::CaptureInLet.at(self.span));
-                }
-
-                *count += 1;
-            }
-            _ => {}
-        };
-        for rule in &self.parts {
-            rule.get_capturing_groups(count, map, within_variable)?;
-        }
-        Ok(())
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -73,34 +33,6 @@ impl<'i> RuleExt<'i> for Group<'i> {
                 GroupKind::Normal | GroupKind::Implicit => RegexGroupKind::Normal,
             },
         }))
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        if let GroupKind::Atomic = self.kind {
-            options.allowed_features.require(PomskyFeatures::ATOMIC_GROUPS, self.span)?;
-
-            if let RegexFlavor::JavaScript | RegexFlavor::Rust = options.flavor {
-                return Err(CompileErrorKind::Unsupported(Feature::AtomicGroups, options.flavor)
-                    .at(self.span));
-            }
-        } else if let GroupKind::Capturing(c) = self.kind {
-            let feature = match &c.name {
-                Some(_) => PomskyFeatures::NAMED_GROUPS,
-                None => PomskyFeatures::NUMBERED_GROUPS,
-            };
-
-            options.allowed_features.require(feature, self.span)?;
-        }
-
-        let mut new_state = state.layer_down();
-        for rule in &self.parts {
-            rule.validate(options, &mut new_state)?;
-        }
-        Ok(())
     }
 }
 

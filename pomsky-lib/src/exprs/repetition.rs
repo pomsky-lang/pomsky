@@ -1,10 +1,10 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use pomsky_syntax::exprs::{Quantifier, Repetition, RepetitionKind};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind, Feature},
+    compile::{CompileResult, CompileState},
+    diagnose::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -12,15 +12,6 @@ use crate::{
 use super::RuleExt;
 
 impl<'i> RuleExt<'i> for Repetition<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &'i mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        self.rule.get_capturing_groups(count, map, within_variable)
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -40,14 +31,6 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         };
 
         Ok(Regex::Repetition(Box::new(RegexRepetition { content, kind: self.kind, quantifier })))
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        self.rule.validate(options, state)
     }
 }
 

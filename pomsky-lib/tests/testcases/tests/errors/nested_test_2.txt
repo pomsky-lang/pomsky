@@ -1,4 +1,4 @@
-#! expect=error
+#! expect=error, flavor=JavaScript
 >> test {}
    "hello world"
 -----

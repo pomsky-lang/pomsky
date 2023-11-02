@@ -26,6 +26,7 @@ pub use self::{
     group::{Capture, Group, GroupKind},
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
+    negation::Negation,
     range::Range,
     recursion::Recursion,
     reference::{Reference, ReferenceTarget},

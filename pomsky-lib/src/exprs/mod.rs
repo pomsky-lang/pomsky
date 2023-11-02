@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, Diagnostic},
+    capturing_groups::CapturingGroupsCollector,
+    compile::{CompileResult, CompileState},
+    diagnose::Diagnostic,
     options::CompileOptions,
     regex::Count,
+    validation::Validator,
+    visitor::RuleVisitor,
 };
 
 pub(crate) mod alternation;
@@ -30,23 +31,6 @@ use pomsky_syntax::Span;
 use repetition::RegexQuantifier;
 
 pub(crate) trait RuleExt<'i> {
-    fn validate(
-        &self,
-        _options: &CompileOptions,
-        _state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        Ok(())
-    }
-
-    fn get_capturing_groups(
-        &self,
-        _count: &mut u32,
-        _map: &'i mut HashMap<String, u32>,
-        _within_variable: bool,
-    ) -> Result<(), CompileError> {
-        Ok(())
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -74,13 +58,12 @@ impl<'i> Expr<'i> {
         input: &'i str,
         options: CompileOptions,
     ) -> (Option<String>, Vec<Diagnostic>) {
-        if let Err(e) = self.0.validate(&options, &mut ValidationState::new()) {
+        if let Err(e) = Validator::new(options).visit_rule(&self.0) {
             return (None, vec![e.diagnostic(input)]);
         }
 
-        let mut used_names = HashMap::new();
-        let mut groups_count = 0;
-        if let Err(e) = self.0.get_capturing_groups(&mut groups_count, &mut used_names, false) {
+        let mut capt_groups = CapturingGroupsCollector::new();
+        if let Err(e) = capt_groups.visit_rule(&self.0) {
             return (None, vec![e.diagnostic(input)]);
         }
 
@@ -100,8 +83,12 @@ impl<'i> Expr<'i> {
             ("C", &codepoint),
         ];
 
-        let mut state =
-            CompileState::new(RegexQuantifier::Greedy, used_names, groups_count, builtins);
+        let mut state = CompileState::new(
+            RegexQuantifier::Greedy,
+            capt_groups.names,
+            capt_groups.count,
+            builtins,
+        );
         let mut compiled = match self.0.compile(options, &mut state) {
             Ok(compiled) => compiled,
             Err(e) => return (None, vec![e.diagnostic(input)]),

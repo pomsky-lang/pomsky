@@ -1,29 +1,13 @@
-use std::collections::HashMap;
-
 use pomsky_syntax::exprs::{BooleanSetting, Stmt, StmtExpr};
 
 use crate::{
-    compile::{CompileResult, CompileState, ValidationState},
-    diagnose::{CompileError, CompileErrorKind},
-    features::PomskyFeatures,
+    compile::{CompileResult, CompileState},
     options::CompileOptions,
 };
 
 use super::{repetition::RegexQuantifier, RuleExt};
 
 impl<'i> RuleExt<'i> for StmtExpr<'i> {
-    fn get_capturing_groups(
-        &self,
-        count: &mut u32,
-        map: &'i mut HashMap<String, u32>,
-        within_variable: bool,
-    ) -> Result<(), CompileError> {
-        if let Stmt::Let(l) = &self.stmt {
-            l.rule.get_capturing_groups(count, map, true)?;
-        }
-        self.rule.get_capturing_groups(count, map, within_variable)
-    }
-
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
@@ -61,32 +45,5 @@ impl<'i> RuleExt<'i> for StmtExpr<'i> {
             }
             Stmt::Test(_) => self.rule.compile(options, state),
         }
-    }
-
-    fn validate(
-        &self,
-        options: &CompileOptions,
-        state: &mut ValidationState,
-    ) -> Result<(), CompileError> {
-        match &self.stmt {
-            Stmt::Enable(BooleanSetting::Lazy, span) => {
-                options.allowed_features.require(PomskyFeatures::LAZY_MODE, *span)?;
-            }
-            Stmt::Disable(BooleanSetting::Unicode, span) => {
-                options.allowed_features.require(PomskyFeatures::ASCII_MODE, *span)?;
-            }
-            Stmt::Enable(..) | Stmt::Disable(..) => {}
-            Stmt::Let(l) => {
-                options.allowed_features.require(PomskyFeatures::VARIABLES, l.name_span)?;
-                l.rule.validate(options, &mut state.layer_down())?;
-            }
-            Stmt::Test(t) => {
-                if !state.is_top_layer {
-                    return Err(CompileErrorKind::NestedTest.at(t.span));
-                }
-            }
-        }
-
-        self.rule.validate(options, state)
     }
 }

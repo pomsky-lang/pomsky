@@ -5,8 +5,7 @@ use pomsky_syntax::Span;
 
 use crate::{
     compile::CompileResult,
-    diagnose::{CompileError, CompileErrorKind, Feature},
-    features::PomskyFeatures,
+    diagnose::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -24,10 +23,5 @@ impl Grapheme {
         } else {
             Err(CompileErrorKind::Unsupported(Feature::Grapheme, options.flavor).at(Span::empty()))
         }
-    }
-
-    pub(crate) fn validate(&self, options: &CompileOptions) -> Result<(), CompileError> {
-        options.allowed_features.require(PomskyFeatures::GRAPHEME, Span::empty())?;
-        Ok(())
     }
 }
