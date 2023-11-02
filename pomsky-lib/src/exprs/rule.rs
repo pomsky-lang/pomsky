@@ -38,7 +38,10 @@ impl<'i> RuleExt<'i> for Rule<'i> {
             Rule::Recursion(r) => r.compile(options, state),
             Rule::Negation(n) => {
                 let span = n.rule.span();
-                let regex = n.rule.compile(options, state).and_then(|r| r.negate(n.not_span))?;
+                let regex = n
+                    .rule
+                    .compile(options, state)
+                    .and_then(|r| r.negate(n.not_span, options.flavor))?;
                 if let Regex::CharSet(char_set) = &regex {
                     check_char_class_empty(char_set, span)?;
                 }

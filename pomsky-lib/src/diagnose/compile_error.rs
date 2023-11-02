@@ -233,6 +233,7 @@ impl core::fmt::Display for UnsupportedError {
 #[non_exhaustive]
 pub(crate) enum IllegalNegationKind {
     Literal(String),
+    DotNetChar(char),
     Unescaped,
     Grapheme,
     Dot,
@@ -248,7 +249,15 @@ impl core::fmt::Display for IllegalNegationKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let s = match self {
             IllegalNegationKind::Literal(s) => {
-                return write!(f, "String literal {s:?} can't be negated")
+                return write!(f, "String literal {s:?} can't be negated");
+            }
+            &IllegalNegationKind::DotNetChar(c) => {
+                return write!(
+                    f,
+                    "Code point {c:?} (U+{:X}) can't be negated in the .NET flavor, because it is \
+                    above U+FFFF, and is therefore incorrectly treated as two code points by .NET.",
+                    c as u32
+                );
             }
             IllegalNegationKind::Unescaped => "An inline regex",
             IllegalNegationKind::Grapheme => "A grapheme",

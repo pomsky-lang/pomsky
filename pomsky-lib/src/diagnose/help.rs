@@ -6,7 +6,7 @@ use pomsky_syntax::{
     Span,
 };
 
-use super::CompileErrorKind;
+use super::{CompileErrorKind, IllegalNegationKind};
 
 pub(super) fn get_parser_help(
     kind: &ParseErrorKind,
@@ -165,14 +165,18 @@ pub(super) fn get_compiler_help(
         CompileErrorKind::NegativeShorthandInAsciiMode | CompileErrorKind::UnicodeInAsciiMode => {
             Some(format!("Enable Unicode, e.g. `(enable unicode; {slice})`"))
         }
-        CompileErrorKind::IllegalNegation { .. } => Some(
-            "Only the following expressions can be negated:\n\
-            - character sets\n\
-            - string literals and alternations that match exactly one code point\n\
-            - lookarounds\n\
-            - the `%` word boundary"
-                .to_string(),
-        ),
+        CompileErrorKind::IllegalNegation { kind }
+            if !matches!(kind, IllegalNegationKind::DotNetChar(_)) =>
+        {
+            Some(
+                "Only the following expressions can be negated:\n\
+                - character sets\n\
+                - string literals and alternations that match exactly one code point\n\
+                - lookarounds\n\
+                - the `%` word boundary"
+                    .to_string(),
+            )
+        }
 
         _ => None,
     }

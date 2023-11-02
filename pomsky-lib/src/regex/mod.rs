@@ -131,7 +131,7 @@ impl RegexProperty {
 }
 
 impl<'i> Regex<'i> {
-    pub(crate) fn negate(self, not_span: Span) -> CompileResult<'i> {
+    pub(crate) fn negate(self, not_span: Span, flavor: RegexFlavor) -> CompileResult<'i> {
         match self {
             Regex::Literal(l) => {
                 let mut iter = l.chars();
@@ -141,6 +141,12 @@ impl<'i> Regex<'i> {
                     }
                     .at(not_span));
                 };
+                if flavor == RegexFlavor::DotNet && c.len_utf16() > 1 {
+                    return Err(CompileErrorKind::IllegalNegation {
+                        kind: IllegalNegationKind::DotNetChar(c),
+                    }
+                    .at(not_span));
+                }
                 Ok(Regex::CharSet(RegexCharSet::new(vec![RegexCharSetItem::Char(c)]).negate()))
             }
             Regex::Char(c) => {
@@ -166,7 +172,7 @@ impl<'i> Regex<'i> {
             Regex::Group(mut g)
                 if matches!(g.kind, RegexGroupKind::Normal) && g.parts.len() == 1 =>
             {
-                g.parts.pop().unwrap().negate(not_span)
+                g.parts.pop().unwrap().negate(not_span, flavor)
             }
 
             Regex::Unescaped(_)

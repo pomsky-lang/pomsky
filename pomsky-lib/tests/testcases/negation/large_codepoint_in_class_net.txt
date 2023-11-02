@@ -1,0 +1,5 @@
+#! expect=error, flavor=DotNet
+![U+10330]
+-----
+ERROR: Code point '𐌰' (U+10330) can't be negated in the .NET flavor, because it is above U+FFFF, and is therefore incorrectly treated as two code points by .NET.
+SPAN: 0..1
