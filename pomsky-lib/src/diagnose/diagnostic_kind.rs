@@ -40,7 +40,8 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::NameUsedMultipleTimes(_)
             | K::UnknownVariable { .. }
             | K::NegatedHorizVertSpace
-            | K::RelativeRefZero => DiagnosticKind::Resolve,
+            | K::RelativeRefZero
+            | K::DotNetNumberedRefWithMixedGroups => DiagnosticKind::Resolve,
             K::EmptyClass | K::EmptyClassNegated { .. } | K::IllegalNegation { .. } => {
                 DiagnosticKind::Invalid
             }

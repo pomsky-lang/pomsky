@@ -1,0 +1,6 @@
+#! expect=error, flavor=DotNet
+:('1') :a('2') :('3') :b('4') ::1 ::2 ::3 ::4 ::a ::b
+-----
+ERROR: In the .NET flavor, numeric references are forbidden when there are both named and unnamed capturing groups. This is because .NET counts named and unnamed capturing groups separately, which is inconsistent with other flavors.
+HELP: Use a named reference, or don't mix named and unnamed capturing groups
+SPAN: 30..33

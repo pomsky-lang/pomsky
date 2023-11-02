@@ -83,12 +83,7 @@ impl<'i> Expr<'i> {
             ("C", &codepoint),
         ];
 
-        let mut state = CompileState::new(
-            RegexQuantifier::Greedy,
-            capt_groups.names,
-            capt_groups.count,
-            builtins,
-        );
+        let mut state = CompileState::new(RegexQuantifier::Greedy, capt_groups, builtins);
         let mut compiled = match self.0.compile(options, &mut state) {
             Ok(compiled) => compiled,
             Err(e) => return (None, vec![e.diagnostic(input)]),

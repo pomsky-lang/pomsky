@@ -85,6 +85,7 @@ pub(crate) enum CompileErrorKind {
     NegativeShorthandInAsciiMode,
     UnicodeInAsciiMode,
     JsWordBoundaryInUnicodeMode,
+    DotNetNumberedRefWithMixedGroups,
     NestedTest,
 }
 
@@ -169,6 +170,12 @@ impl core::fmt::Display for CompileErrorKind {
                 f,
                 "In the JavaScript flavor, word boundaries may only be used \
                 when Unicode is disabled"
+            ),
+            CompileErrorKind::DotNetNumberedRefWithMixedGroups => write!(
+                f,
+                "In the .NET flavor, numeric references are forbidden when there are both named \
+                and unnamed capturing groups. This is because .NET counts named and unnamed \
+                capturing groups separately, which is inconsistent with other flavors."
             ),
             CompileErrorKind::NestedTest => {
                 write!(f, "Unit tests may only appear at the top level of the expression")

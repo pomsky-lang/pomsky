@@ -9,9 +9,16 @@ use crate::{
 
 #[derive(Default)]
 pub(crate) struct CapturingGroupsCollector {
-    pub(crate) count: u32,
-    pub(crate) names: HashMap<String, u32>,
+    pub(crate) count_named: u32,
+    pub(crate) count_numbered: u32,
+    pub(crate) names: HashMap<String, CapturingGroupIndex>,
     pub(crate) variable_nesting: u32,
+}
+
+#[derive(Clone)]
+pub(crate) struct CapturingGroupIndex {
+    pub(crate) from_named: u32,
+    pub(crate) absolute: u32,
 }
 
 impl CapturingGroupsCollector {
@@ -46,15 +53,19 @@ impl RuleVisitor<CompileError> for CapturingGroupsCollector {
                     );
                 }
 
-                self.count += 1;
-                self.names.insert(name.to_string(), self.count);
+                self.count_named += 1;
+                let index = CapturingGroupIndex {
+                    from_named: self.count_named,
+                    absolute: self.count_named + self.count_numbered,
+                };
+                self.names.insert(name.to_string(), index);
             }
             GroupKind::Capturing(Capture { name: None }) => {
                 if self.variable_nesting > 0 {
                     return Err(CompileErrorKind::CaptureInLet.at(group.span));
                 }
 
-                self.count += 1;
+                self.count_numbered += 1;
             }
             _ => {}
         }

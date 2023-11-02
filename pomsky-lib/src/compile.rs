@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use pomsky_syntax::exprs::Rule;
 
 use crate::{
+    capturing_groups::{CapturingGroupIndex, CapturingGroupsCollector},
     diagnose::{CompileError, Diagnostic},
     exprs::repetition::RegexQuantifier,
     regex::Regex,
@@ -14,9 +15,9 @@ pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
 pub(crate) struct CompileState<'c, 'i> {
     pub(crate) next_idx: u32,
     pub(crate) used_names_vec: Vec<Option<String>>,
-    pub(crate) used_names: HashMap<String, u32>,
+    pub(crate) used_names: HashMap<String, CapturingGroupIndex>,
     pub(crate) groups_count: u32,
-    pub(crate) has_named: bool,
+    pub(crate) numbered_groups_count: u32,
 
     pub(crate) default_quantifier: RegexQuantifier,
     pub(crate) ascii_only: bool,
@@ -29,17 +30,17 @@ pub(crate) struct CompileState<'c, 'i> {
 impl<'c, 'i> CompileState<'c, 'i> {
     pub(crate) fn new(
         default_quantifier: RegexQuantifier,
-        used_names: HashMap<String, u32>,
-        groups_count: u32,
+        capt_groups: CapturingGroupsCollector,
         variables: Vec<(&'i str, &'c Rule<'i>)>,
     ) -> Self {
+        let used_names = capt_groups.names;
+        let groups_count = capt_groups.count_named + capt_groups.count_numbered;
+
         // needed for Ruby: In Ruby, backreferences to named groups have to be named as
         // well
         let mut used_names_vec = vec![None; groups_count as usize + 1];
-        let mut has_named = false;
-        for (name, &index) in &used_names {
-            used_names_vec[index as usize] = Some(name.clone());
-            has_named = true;
+        for (name, index) in &used_names {
+            used_names_vec[index.absolute as usize] = Some(name.clone());
         }
 
         CompileState {
@@ -47,7 +48,7 @@ impl<'c, 'i> CompileState<'c, 'i> {
             used_names_vec,
             used_names,
             groups_count,
-            has_named,
+            numbered_groups_count: capt_groups.count_numbered,
 
             default_quantifier,
             ascii_only: false,
@@ -56,5 +57,13 @@ impl<'c, 'i> CompileState<'c, 'i> {
 
             diagnostics: vec![],
         }
+    }
+
+    pub(crate) fn has_named_groups(&self) -> bool {
+        self.numbered_groups_count < self.groups_count
+    }
+
+    pub(crate) fn has_numbered_groups(&self) -> bool {
+        self.numbered_groups_count > 0
     }
 }

@@ -159,6 +159,9 @@ pub(super) fn get_compiler_help(
         CompileErrorKind::JsWordBoundaryInUnicodeMode => {
             Some(format!("Disable Unicode, e.g. `(disable unicode; {slice})`"))
         }
+        CompileErrorKind::DotNetNumberedRefWithMixedGroups => Some(
+            "Use a named reference, or don't mix named and unnamed capturing groups".to_string(),
+        ),
         CompileErrorKind::NegativeShorthandInAsciiMode | CompileErrorKind::UnicodeInAsciiMode => {
             Some(format!("Enable Unicode, e.g. `(enable unicode; {slice})`"))
         }

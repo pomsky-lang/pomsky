@@ -28,13 +28,18 @@ impl<'i> RuleExt<'i> for Reference<'i> {
     fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult<'i> {
         let (direction, number) = match self.target {
             ReferenceTarget::Named(name) => match state.used_names.get(name) {
-                Some(&n) => {
-                    let direction = if n >= state.next_idx {
+                Some(index) => {
+                    let direction = if index.absolute >= state.next_idx {
                         ReferenceDirection::Forwards
                     } else {
                         ReferenceDirection::Backwards
                     };
-                    (direction, n)
+                    let idx = if let RegexFlavor::DotNet = options.flavor {
+                        state.numbered_groups_count + index.from_named
+                    } else {
+                        index.absolute
+                    };
+                    (direction, idx)
                 }
                 None => {
                     return Err(CompileErrorKind::UnknownReferenceName {
@@ -62,6 +67,14 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 } else {
                     ReferenceDirection::Backwards
                 };
+
+                if options.flavor == RegexFlavor::DotNet
+                    && state.has_named_groups()
+                    && state.has_numbered_groups()
+                {
+                    return Err(CompileErrorKind::DotNetNumberedRefWithMixedGroups.at(self.span));
+                }
+
                 (direction, idx)
             }
             ReferenceTarget::Relative(offset) => {
@@ -100,7 +113,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 RegexFlavor::Ruby => {
                     if let Some(group_name) = state.used_names_vec[number as usize].as_ref() {
                         RegexReference::Name(group_name.clone())
-                    } else if !state.has_named {
+                    } else if !state.has_named_groups() {
                         RegexReference::Number(number)
                     } else {
                         return Err(CompileErrorKind::Unsupported(
