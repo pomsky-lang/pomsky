@@ -20,7 +20,7 @@ macro_rules! items {
 
 #[divan::bench_group]
 mod parse {
-    use divan::{black_box, counter::BytesCount, Bencher};
+    use divan::{counter::BytesCount, Bencher};
     use pomsky::Expr;
 
     macro_rules! group_item {
@@ -31,7 +31,7 @@ mod parse {
                     .with_inputs(|| super::$item)
                     .input_counter(|s| BytesCount::new(s.len()))
                     .bench_refs(|sample| {
-                        let (expr, _warnings) = Expr::parse(black_box(sample));
+                        let (expr, _warnings) = Expr::parse(sample);
                         expr.unwrap()
                     });
             }
@@ -52,7 +52,7 @@ mod parse {
 
 #[divan::bench_group]
 mod compile {
-    use divan::{black_box, Bencher};
+    use divan::Bencher;
     use pomsky::{
         options::{CompileOptions, RegexFlavor},
         Expr,
@@ -69,11 +69,11 @@ mod compile {
                 bencher
                     .with_inputs(|| {
                         let sample = super::$item;
-                        let (expr, _warnings) = Expr::parse(black_box(sample));
+                        let (expr, _warnings) = Expr::parse(sample);
                         (expr.unwrap(), sample)
                     })
                     .bench_refs(|(expr, sample)| {
-                        let compiled = black_box(&expr).compile(black_box(sample), ruby());
+                        let compiled = expr.compile(sample, ruby());
                         super::unwrap_compiled(compiled)
                     });
             }
@@ -100,12 +100,12 @@ pub fn range<const N: usize>(bencher: divan::Bencher) {
 
     bencher
         .with_inputs(|| {
-            let (expr, _warnings) = Expr::parse(divan::black_box(&input));
+            let (expr, _warnings) = Expr::parse(&input);
             expr.unwrap()
         })
         .bench_refs(|expr| {
             let options = CompileOptions { max_range_size: 100, ..Default::default() };
-            let compiled = divan::black_box(&expr).compile(&input, options);
+            let compiled = expr.compile(&input, options);
             unwrap_compiled(compiled)
         })
 }
@@ -119,7 +119,7 @@ fn unwrap_compiled(compiled: (Option<String>, Vec<Diagnostic>)) -> String {
 
 #[divan::bench_group]
 mod competition {
-    use divan::{black_box, counter::BytesCount};
+    use divan::counter::BytesCount;
     use pomsky::Expr;
 
     #[divan::bench(name = "pomsky (version number)")]
@@ -128,7 +128,7 @@ mod competition {
             .with_inputs(|| super::VERSION_POMSKY)
             .input_counter(|s| BytesCount::new(s.len()))
             .bench_refs(|sample| {
-                let (expr, _, _) = Expr::parse_and_compile(black_box(sample), Default::default());
+                let (expr, _, _) = Expr::parse_and_compile(sample, Default::default());
                 expr.unwrap()
             });
     }
@@ -138,7 +138,7 @@ mod competition {
         bencher
             .with_inputs(|| super::VERSION_MELODY)
             .input_counter(|s| BytesCount::new(s.len()))
-            .bench_refs(|sample| melody_compiler::compiler(black_box(sample)).unwrap());
+            .bench_refs(|sample| melody_compiler::compiler(sample).unwrap());
     }
 }
 
