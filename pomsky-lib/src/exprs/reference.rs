@@ -102,7 +102,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 Err(CompileErrorKind::Unsupported(direction.into(), options.flavor).at(self.span))
             }
 
-            RegexFlavor::JavaScript | RegexFlavor::Python
+            RegexFlavor::JavaScript | RegexFlavor::Python | RegexFlavor::Ruby
                 if direction == ReferenceDirection::Forwards =>
             {
                 Err(CompileErrorKind::Unsupported(Feature::ForwardReference, options.flavor)
