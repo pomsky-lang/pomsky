@@ -7,6 +7,6 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-regex = "1.7.0"
-pcre2 = "0.2.3"
+regex = "1.10.2"
+pcre2 = "0.2.5"
 onig = "6.4.0"

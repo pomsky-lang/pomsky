@@ -1,10 +1,11 @@
+use std::sync::OnceLock;
+
 use arbitrary::{Arbitrary, Unstructured};
-use once_cell::sync::OnceCell;
 use pomsky::{features::PomskyFeatures, options::RegexFlavor, Expr};
 use regex_test::{Outcome, RegexTest};
 
 fn get_test() -> &'static RegexTest {
-    static TEST: OnceCell<RegexTest> = OnceCell::new();
+    static TEST: OnceLock<RegexTest> = OnceLock::new();
     TEST.get_or_init(RegexTest::new)
 }
 
@@ -40,11 +41,12 @@ fn main() {
     afl::fuzz!(|data: &[u8]| {
         let mut u = Unstructured::new(data);
         if let Ok((input, compile_options)) = Arbitrary::arbitrary(&mut u) {
+            #[allow(clippy::let_unit_value)]
             let mut _f = debug!(init: input, compile_options);
 
             let result = Expr::parse_and_compile(input, compile_options);
 
-            if let (Some(regex), _warnings) = result {
+            if let (Some(regex), _warnings, _tests) = result {
                 debug!(_f, " compiled;");
 
                 let features = compile_options.allowed_features;
@@ -81,7 +83,7 @@ fn check(regex: &str, features: PomskyFeatures, flavor: RegexFlavor, mut _f: Deb
         RegexFlavor::Python if features == { features }.lookbehind(false) => {
             test.test_python(regex)
         }
-        RegexFlavor::Pcre if features == { features }.lookbehind(false) => test.test_pcre(&regex),
+        RegexFlavor::Pcre if features == { features }.lookbehind(false) => test.test_pcre(regex),
         RegexFlavor::DotNet => test.test_dotnet(regex),
         _ => Outcome::Success,
     };

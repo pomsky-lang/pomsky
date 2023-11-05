@@ -8,15 +8,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-afl = "0.12.15"
-arbitrary = "1.1.3"
+afl = "0.14.3"
+arbitrary = "1.3.2"
 regex-test = { path = "../../regex-test" }
-once_cell = "1.17.0"
-
-[dependencies.pomsky]
-path = ".."
-features = ["arbitrary"]
+pomsky = { path = "..", features = ["arbitrary"] }
 
 # Prevent this from interfering with workspaces
 [workspace]
 members = ["."]
+
+[patch.crates-io.onig_sys]
+git = "https://github.com/rust-onig/rust-onig"
+revision = "fa90c0e97e90a056af89f183b23cd417b59ee6a2"
