@@ -1,0 +1,5 @@
+#! expect=error, flavor=Ruby
+<< 'foo' >> 'bar'
+-----
+ERROR: In the Ruby flavor, lookahead is not allowed within lookbehind
+SPAN: 9..17

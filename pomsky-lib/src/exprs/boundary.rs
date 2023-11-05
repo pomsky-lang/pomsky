@@ -26,6 +26,9 @@ impl<'i> RuleExt<'i> for Boundary {
             && matches!(self.kind, Word | NotWord | WordStart | WordEnd)
         {
             Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))
+        } else if options.flavor == RegexFlavor::Ruby && state.in_lookbehind {
+            Err(CompileErrorKind::RubyLookaheadInLookbehind { was_word_boundary: true }
+                .at(self.span))
         } else {
             Ok(Regex::Boundary(self.kind))
         }

@@ -18,6 +18,7 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) used_names: HashMap<String, CapturingGroupIndex>,
     pub(crate) groups_count: u32,
     pub(crate) numbered_groups_count: u32,
+    pub(crate) in_lookbehind: bool,
 
     pub(crate) default_quantifier: RegexQuantifier,
     pub(crate) ascii_only: bool,
@@ -49,6 +50,7 @@ impl<'c, 'i> CompileState<'c, 'i> {
             used_names,
             groups_count,
             numbered_groups_count: capt_groups.count_numbered,
+            in_lookbehind: false,
 
             default_quantifier,
             ascii_only: false,

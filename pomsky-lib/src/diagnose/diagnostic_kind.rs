@@ -39,9 +39,7 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::UnknownReferenceName { .. }
             | K::NameUsedMultipleTimes(_)
             | K::UnknownVariable { .. }
-            | K::NegatedHorizVertSpace
-            | K::RelativeRefZero
-            | K::DotNetNumberedRefWithMixedGroups => DiagnosticKind::Resolve,
+            | K::RelativeRefZero => DiagnosticKind::Resolve,
             K::EmptyClassNegated { .. } | K::IllegalNegation { .. } => DiagnosticKind::Invalid,
             K::CaptureInLet
             | K::ReferenceInLet
@@ -49,7 +47,10 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::NegativeShorthandInAsciiMode
             | K::UnicodeInAsciiMode
             | K::JsWordBoundaryInUnicodeMode
-            | K::NestedTest => DiagnosticKind::Unsupported,
+            | K::NestedTest
+            | K::NegatedHorizVertSpace
+            | K::DotNetNumberedRefWithMixedGroups
+            | K::RubyLookaheadInLookbehind { .. } => DiagnosticKind::Unsupported,
             K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }

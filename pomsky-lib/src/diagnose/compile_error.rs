@@ -85,6 +85,9 @@ pub(crate) enum CompileErrorKind {
     UnicodeInAsciiMode,
     JsWordBoundaryInUnicodeMode,
     DotNetNumberedRefWithMixedGroups,
+    RubyLookaheadInLookbehind {
+        was_word_boundary: bool,
+    },
     NestedTest,
 }
 
@@ -172,6 +175,13 @@ impl core::fmt::Display for CompileErrorKind {
                 "In the .NET flavor, numeric references are forbidden when there are both named \
                 and unnamed capturing groups. This is because .NET counts named and unnamed \
                 capturing groups separately, which is inconsistent with other flavors."
+            ),
+            CompileErrorKind::RubyLookaheadInLookbehind { was_word_boundary: false } => {
+                write!(f, "In the Ruby flavor, lookahead is not allowed within lookbehind")
+            }
+            CompileErrorKind::RubyLookaheadInLookbehind { was_word_boundary: true } => write!(
+                f,
+                "In the Ruby flavor, `<` and `>` word boundaries are not allowed within lookbehind"
             ),
             CompileErrorKind::NestedTest => {
                 write!(f, "Unit tests may only appear at the top level of the expression")

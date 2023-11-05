@@ -2,7 +2,7 @@ use pomsky_syntax::exprs::{Lookaround, LookaroundKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::{CompatWarning, CompileWarningKind},
+    diagnose::{CompatWarning, CompileErrorKind, CompileWarningKind},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -15,18 +15,34 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
         options: CompileOptions,
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
-        if let RegexFlavor::JavaScript = options.flavor {
-            if let LookaroundKind::Behind | LookaroundKind::BehindNegative = self.kind {
-                state.diagnostics.push(
-                    CompileWarningKind::Compat(CompatWarning::JsLookbehind)
-                        .at(self.span)
-                        .diagnostic(),
-                );
+        match options.flavor {
+            RegexFlavor::JavaScript => {
+                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = self.kind {
+                    state.diagnostics.push(
+                        CompileWarningKind::Compat(CompatWarning::JsLookbehind)
+                            .at(self.span)
+                            .diagnostic(),
+                    );
+                }
             }
+            RegexFlavor::Ruby if state.in_lookbehind => {
+                if let LookaroundKind::Ahead | LookaroundKind::AheadNegative = self.kind {
+                    return Err(CompileErrorKind::RubyLookaheadInLookbehind {
+                        was_word_boundary: false,
+                    }
+                    .at(self.span));
+                }
+            }
+            _ => (),
+        }
+
+        revert_on_drop!(state.in_lookbehind);
+        if let LookaroundKind::Behind | LookaroundKind::BehindNegative = self.kind {
+            state.in_lookbehind = true;
         }
 
         Ok(Regex::Lookaround(Box::new(RegexLookaround {
-            content: self.rule.compile(options, state)?,
+            content: self.rule.compile(options, &mut state)?,
             kind: self.kind,
         })))
     }

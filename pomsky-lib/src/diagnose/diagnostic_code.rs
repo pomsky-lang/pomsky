@@ -92,6 +92,7 @@ diagnostic_code! {
         NestedTest = 316,
         IllegalNegation = 317,
         DotNetNumberedRefWithMixedGroups = 318,
+        RubyLookaheadInLookbehind = 319,
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
@@ -219,7 +220,8 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::NegativeShorthandInAsciiMode => Self::UnsupportedInAsciiMode,
             C::UnicodeInAsciiMode => Self::UnsupportedInAsciiMode,
             C::JsWordBoundaryInUnicodeMode => Self::UnsupportedInUnicodeMode,
-            C::DotNetNumberedRefWithMixedGroups => Self::UnsupportedInUnicodeMode,
+            C::DotNetNumberedRefWithMixedGroups => Self::DotNetNumberedRefWithMixedGroups,
+            C::RubyLookaheadInLookbehind { .. } => Self::RubyLookaheadInLookbehind,
             C::NestedTest => Self::NestedTest,
         }
     }

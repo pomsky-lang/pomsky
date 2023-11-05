@@ -1,0 +1,5 @@
+#! expect=error, flavor=Ruby
+<< <
+-----
+ERROR: In the Ruby flavor, `<` and `>` word boundaries are not allowed within lookbehind
+SPAN: 3..4

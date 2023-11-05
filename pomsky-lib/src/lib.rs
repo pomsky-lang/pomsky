@@ -51,6 +51,9 @@
 
 #![warn(missing_docs)]
 
+#[macro_use]
+mod defer;
+
 pub mod diagnose;
 pub mod error;
 pub mod features;
