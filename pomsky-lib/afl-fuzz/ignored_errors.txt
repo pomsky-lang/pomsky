@@ -1,0 +1,5 @@
+Ruby|Oniguruma error: never ending recursion
+Rust|empty character classes are not allowed
+Rust|Compiled regex exceeds size limit
+PCRE|error compiling pattern at offset \d+: lookbehind assertion is not fixed length
+Py|look-behind requires fixed-width pattern

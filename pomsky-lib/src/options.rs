@@ -33,7 +33,7 @@ impl Default for CompileOptions {
 
 /// A regex flavor is a regex engine or a set of regex engines that are similar
 /// enough that they can be treated the same for the purpose of writing regexes.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[non_exhaustive]
 pub enum RegexFlavor {

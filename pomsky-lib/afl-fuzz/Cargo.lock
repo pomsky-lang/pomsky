@@ -21,6 +21,7 @@ dependencies = [
  "afl",
  "arbitrary",
  "pomsky",
+ "regex",
  "regex-test",
 ]
 

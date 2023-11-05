@@ -1,2 +1,3 @@
 tmin input:
-    AFL_DEBUG=1 AFL_MAP_SIZE=100000 cargo afl tmin -i {{input}} -o out.txt -- ./target/debug/afl-fuzz
+    rm log.txt
+    FUZZ_LOG=1 AFL_DEBUG=1 AFL_MAP_SIZE=100000 cargo afl tmin -i {{input}} -o out.txt -- ./target/debug/afl-fuzz

@@ -1,4 +1,5 @@
 target
 out
 out.txt
+errors.txt
 log.txt
