@@ -19,5 +19,5 @@ impl<'i> RuleExt<'i> for Recursion {
 }
 
 pub(crate) fn codegen(buf: &mut String, _flavor: RegexFlavor) {
-    buf.push_str("(?R)")
+    buf.push_str("\\g<0>")
 }
