@@ -212,8 +212,8 @@ pub enum CharClassError {
     /// This error is created when `[^` is encountered. This is a negated
     /// character class in a regex, but pomsky instead uses the `![` syntax.
     CaretInGroup,
-    /// Descending code point range, e.g. `['z'-'a']`
-    DescendingRange(char, char),
+    /// Non-ascending code point range, e.g. `['z'-'a']`
+    NonAscendingRange(char, char),
     /// Invalid token within a character class
     Invalid,
     /// Character class contains incompatible shorthands, e.g. `[. codepoint]`
@@ -235,7 +235,7 @@ impl core::fmt::Display for CharClassError {
         match self {
             CharClassError::Empty => write!(f, "This character class is empty"),
             CharClassError::CaretInGroup => write!(f, "`^` is not allowed here"),
-            &CharClassError::DescendingRange(a, b) => write!(
+            &CharClassError::NonAscendingRange(a, b) => write!(
                 f,
                 "Character range must be in increasing order, but it is U+{:04X?} - U+{:04X?}",
                 a as u32, b as u32

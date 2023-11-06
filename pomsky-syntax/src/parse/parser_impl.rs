@@ -588,7 +588,7 @@ impl<'i> Parser<'i> {
             let last = last.to_char().map_err(|e| e.at(span2))?;
 
             let group = CharGroup::try_from_range(first, last).ok_or_else(|| {
-                PEK::CharClass(CharClassError::DescendingRange(first, last)).at(span1.join(span2))
+                PEK::CharClass(CharClassError::NonAscendingRange(first, last)).at(span1.join(span2))
             })?;
             Ok(Some(group))
         } else {

@@ -23,7 +23,7 @@ impl CharGroup {
     /// Tries to create a `CharGroup` from a range of characters (inclusive).
     /// Returns `None` if `last` is lower than `first`.
     pub(crate) fn try_from_range(first: char, last: char) -> Option<Vec<GroupItem>> {
-        if first <= last {
+        if first < last {
             Some(vec![GroupItem::Range { first, last }])
         } else {
             None

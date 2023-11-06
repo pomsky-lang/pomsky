@@ -61,7 +61,7 @@ diagnostic_code! {
         RepetitionChain = 112,
         CharRangeStringEmpty = 113,
         CharRangeTooManyCodePoints = 114,
-        CharClassHasDescendingRange = 115,
+        CharClassHasNonAscendingRange = 115,
         CharClassUnknownShorthand = 116,
         CharClassIllegalNegation = 117,
         CharClassUnallowedCombination = 118,
@@ -152,7 +152,7 @@ impl<'a> From<&'a CharClassError> for DiagnosticCode {
         match value {
             E::Empty => Self::EmptyClass,
             E::CaretInGroup | E::Invalid => Self::UnexpectedToken,
-            E::DescendingRange(_, _) => Self::CharClassHasDescendingRange,
+            E::NonAscendingRange(_, _) => Self::CharClassHasNonAscendingRange,
             E::Unallowed => Self::CharClassUnallowedCombination,
             E::UnknownNamedClass { .. } => Self::CharClassUnknownShorthand,
             E::Negative => Self::CharClassIllegalNegation,

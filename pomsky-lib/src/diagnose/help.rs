@@ -47,11 +47,15 @@ pub(super) fn get_parser_help(
             similar: Some(ref similar),
             ..
         }) => Some(format!("Perhaps you meant `{similar}`")),
-        ParseErrorKind::CharClass(CharClassError::DescendingRange(..)) => {
-            let dash_pos = slice.find('-').unwrap();
-            let (part1, part2) = slice.split_at(dash_pos);
-            let part2 = part2.trim_start_matches('-');
-            Some(format!("Switch the characters: {}-{}", part2.trim(), part1.trim()))
+        ParseErrorKind::CharClass(CharClassError::NonAscendingRange(c1, c2)) => {
+            if c1 == c2 {
+                Some(format!("Use a single character: '{c1}'"))
+            } else {
+                let dash_pos = slice.find('-').unwrap();
+                let (part1, part2) = slice.split_at(dash_pos);
+                let part2 = part2.trim_start_matches('-');
+                Some(format!("Switch the characters: {}-{}", part2.trim(), part1.trim()))
+            }
         }
         ParseErrorKind::CharClass(CharClassError::CaretInGroup) => {
             Some("Use `![...]` to negate a character class".into())
