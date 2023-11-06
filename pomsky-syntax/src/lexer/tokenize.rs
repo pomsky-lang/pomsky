@@ -38,7 +38,7 @@ macro_rules! consume_chain {
 macro_rules! reserved_word_pattern {
     {} => (
         "U" | "let" | "lazy" | "greedy" | "range" | "base" | "atomic" | "enable" | "disable" |
-        "if" | "else" | "recursion" | "regex" | "test"
+        "if" | "else" | "recursion" | "regex" | "test" | "call"
     );
 }
 
