@@ -1,8 +1,10 @@
-use std::collections::HashMap;
-use std::fs::{self, File, OpenOptions};
-use std::io::Write as _;
-use std::path::Path;
-use std::{env, sync::OnceLock};
+use std::{
+    collections::HashMap,
+    fs::{File, OpenOptions},
+    io::Write as _,
+    path::Path,
+    sync::OnceLock,
+};
 
 use arbitrary::{Arbitrary, Unstructured};
 use pomsky::{options::RegexFlavor, Expr};
@@ -23,86 +25,39 @@ macro_rules! debug {
 }
 
 fn main() {
-    let mut f = if let Ok("1") = env::var("FUZZ_LOG").as_deref() {
-        let file = OpenOptions::new().create(true).append(true).open("./log.txt").unwrap();
-        Some(file)
-    } else {
-        None
-    };
+    let mut f = matches!(std::env::var("FUZZ_LOG").as_deref(), Ok("1"))
+        .then(|| OpenOptions::new().create(true).append(true).open("./log.txt").unwrap());
     let mut ef = Some(OpenOptions::new().create(true).append(true).open("./errors.txt").unwrap());
     let f = &mut f;
     let ef = &mut ef;
 
     let ignored_errors = parse_ignored_errors();
 
-    afl::fuzz!(|data: &[u8]| {
+    afl::fuzz(true, |data| {
         let mut u = Unstructured::new(data);
-        if let Ok((input, compile_options)) = Arbitrary::arbitrary(&mut u) {
-            let _: &str = input;
-            let input: String = input.chars().fold(String::new(), |mut acc, c| match c {
-                // increase likelihood of generating these key words and important sequences by chance
-                'à' => acc + " Codepoint ",
-                'á' => acc + " Grapheme ",
-                'â' => acc + " Start ",
-                'ã' => acc + " End ",
-                'ä' => acc + " lazy ",
-                'å' => acc + " greedy ",
-                'æ' => acc + " enable ",
-                'ç' => acc + " disable ",
-                'è' => acc + " unicode ",
-                'é' => acc + " test {",
-                'ê' => acc + " match ",
-                'ë' => acc + " reject ",
-                'ì' => acc + " in ",
-                'í' => acc + " as ",
-                'î' => acc + " if ",
-                'ï' => acc + " else ",
-                'ð' => acc + " regex ",
-                'ñ' => acc + " recursion ",
-                'ò' => acc + " range ",
-                'ó' => acc + " base ",
-                'ô' => acc + " let ",
-                'õ' => acc + " U+1FEFF ",
-                'ö' => acc + ":bla(",
-                'ø' => acc + "::bla ",
-                'ù' => acc + "<< ",
-                'ú' => acc + ">> ",
-                'û' => acc + "'test'",
-                'ü' => acc + "atomic",
-                'ý' => acc + " U+FEFF ",
-                // 'þ' => acc + "",
-                // 'ÿ' => acc + "",
-                _ => {
-                    acc.push(c);
-                    acc
-                }
-            });
+        let Ok((input, compile_options)) = Arbitrary::arbitrary(&mut u) else { return };
+        let input = transform_input(input);
 
-            debug!(f, "\n{:?} -- {:?}\n", input, compile_options);
+        debug!(f, "\n{:?} -- {:?}\n", input, compile_options);
 
-            let result = Expr::parse_and_compile(&input, compile_options);
+        let result = Expr::parse_and_compile(&input, compile_options);
 
-            if let (Some(regex), _warnings, _tests) = result {
-                debug!(f, " compiled;");
+        if let (Some(regex), _warnings, _tests) = result {
+            debug!(f, " compiled;");
 
-                let features = compile_options.allowed_features;
+            let features = compile_options.allowed_features;
 
-                // the first check is just to make it less likely to run into regex's nesting
-                // limit; the second check is because regex-test doesn't work with empty inputs;
-                // the third check is to ignore compile errors produced by raw regexes, which
-                // pomsky doesn't validate
-                if regex.len() < 2048
-                    && !regex.is_empty()
-                    && features == { features }.regexes(false)
-                {
-                    debug!(f, " check");
-                    check(&regex, &ignored_errors, compile_options.flavor, f, ef);
-                } else {
-                    debug!(f, " SKIPPED (too long or `regex` feature enabled)");
-                }
+            // - make it less likely to run into regex's nesting limit
+            // - regex-test doesn't work with empty inputs
+            // - don't validate raw regexes, which may be invalid
+            if regex.len() < 2048 && !regex.is_empty() && features == { features }.regexes(false) {
+                debug!(f, " check");
+                check(&regex, &ignored_errors, compile_options.flavor, f, ef);
             } else {
-                debug!(f, " returned error");
+                debug!(f, " SKIPPED (too long or `regex` feature enabled)");
             }
+        } else {
+            debug!(f, " returned error");
         }
     });
 }
@@ -142,7 +97,7 @@ fn check(
 
 fn parse_ignored_errors() -> HashMap<RegexFlavor, RegexSet> {
     let ignored_err_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("ignored_errors.txt");
-    let ignored_errors = fs::read_to_string(ignored_err_path).unwrap();
+    let ignored_errors = std::fs::read_to_string(ignored_err_path).unwrap();
     let ignored_errors = ignored_errors
         .lines()
         .filter_map(|line| {
@@ -165,4 +120,45 @@ fn parse_ignored_errors() -> HashMap<RegexFlavor, RegexSet> {
         });
 
     ignored_errors.into_iter().map(|(k, v)| (k, RegexSet::new(v).unwrap())).collect()
+}
+
+fn transform_input(input: &str) -> String {
+    input.chars().fold(String::with_capacity(input.len()), |mut acc, c| match c {
+        // increase likelihood of generating these key words and important sequences by chance
+        'à' => acc + " Codepoint ",
+        'á' => acc + " Grapheme ",
+        'â' => acc + " Start ",
+        'ã' => acc + " End ",
+        'ä' => acc + " lazy ",
+        'å' => acc + " greedy ",
+        'æ' => acc + " enable ",
+        'ç' => acc + " disable ",
+        'è' => acc + " unicode ",
+        'é' => acc + " test {",
+        'ê' => acc + " match ",
+        'ë' => acc + " reject ",
+        'ì' => acc + " in ",
+        'í' => acc + " as ",
+        'î' => acc + " if ",
+        'ï' => acc + " else ",
+        'ð' => acc + " regex ",
+        'ñ' => acc + " recursion ",
+        'ò' => acc + " range ",
+        'ó' => acc + " base ",
+        'ô' => acc + " let ",
+        'õ' => acc + " U+1FEFF ",
+        'ö' => acc + ":bla(",
+        'ø' => acc + "::bla ",
+        'ù' => acc + "<< ",
+        'ú' => acc + ">> ",
+        'û' => acc + "'test'",
+        'ü' => acc + "atomic",
+        'ý' => acc + " U+FEFF ",
+        // 'þ' => acc + "",
+        // 'ÿ' => acc + "",
+        _ => {
+            acc.push(c);
+            acc
+        }
+    })
 }
