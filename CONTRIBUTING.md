@@ -1,6 +1,6 @@
 # Contributing to Pomsky
 
-There are multiple ways to contribute to pomsky. The easiest way is to use Pomsky and report any bugs or issues you find in the [issue tracker](https://github.com/pomsky-lang/pomsky/issues) or propose new features. If you'd like to contribute code, please read on. You can also [sponsor me](https://github.com/sponsors/Aloso) to support Pomsky's development.
+There are multiple ways to contribute to Pomsky. The easiest way is to use Pomsky and report any bugs or issues you find in the [issue tracker](https://github.com/pomsky-lang/pomsky/issues) or propose new features. If you'd like to contribute code, please read on. You can also [sponsor me](https://github.com/sponsors/Aloso) to support Pomsky's development.
 
 ## Conduct
 
@@ -82,7 +82,7 @@ You can optionally set the flavor with `#! flavor=FLAVOR`, for example:
 foobar
 ```
 
-You don't have to type all of this yourself, only the pomsky expression. Then run the integration test with the `--bless` flag to generate the rest: `just test-it --bless`, or `cargo test --test it --all-features -- --bless`.
+You don't have to type all of this yourself, only the Pomsky expression. Then run the integration test with the `--bless` flag to generate the rest: `just test-it --bless`, or `cargo test --test it --all-features -- --bless`.
 
 Test cases can also check if an input produces a certain error, using `#! expect=error`. Error test cases can also be generated with `--bless`.
 

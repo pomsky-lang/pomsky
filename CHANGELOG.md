@@ -113,7 +113,7 @@ Remember that you can also help out by filing issues or contributing 😉
 
   Optimizations are useful when making heavy use of variables to write readable code and still get the most efficient output. More optimizations are planned, stay tuned!
 
-- Group names now must be no longer than 32 characters. For example, `:this_is_a_very_very_very_long_name()` is no longer allowed. The reason is that group names this long are unsupported by PCRE, and we're enforcing the same limit everywhere to make pomsky more consistent across regex flavors.
+- Group names now must be no longer than 32 characters. For example, `:this_is_a_very_very_very_long_name()` is no longer allowed. The reason is that group names this long are unsupported by PCRE, and we're enforcing the same limit everywhere to make Pomsky more consistent across regex flavors.
 
 ### CLI changes
 
@@ -211,7 +211,7 @@ Remember that you can also help out by filing issues or contributing 😉
   ```
 
 - Improved diagnostics for typos. When you spell a variable, capturing group or character class
-  wrong, pomsky will suggest the correct spelling:
+  wrong, Pomsky will suggest the correct spelling:
 
   ```
   $ pomsky '[Alpabetic]'
@@ -226,7 +226,7 @@ Remember that you can also help out by filing issues or contributing 😉
   ```
 
 - Many regex syntax diagnostics were added. Pomsky now recognizes most regex syntax and suggests
-  the equivalent pomsky syntax. For example:
+  the equivalent Pomsky syntax. For example:
 
   ```
   $ pomsky '(?<grp> "test")'
@@ -246,7 +246,7 @@ Remember that you can also help out by filing issues or contributing 😉
   parentheses: `('a'{2})+`
 
   The reason is that this syntax is used by regular expressions for possessive quantifiers.
-  Forbidding this syntax in pomsky allows for better diagnostics.
+  Forbidding this syntax in Pomsky allows for better diagnostics.
 
 - Deprecated `[.]`, `[codepoint]` and `[cp]`. They should have been deprecated before, but the
   warnings were missed in the previous release.
@@ -363,8 +363,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 - API to selectively disable some language features
 
-- [Online playground](https://playground.pomsky-lang.org/) to try out Pomsky. You can write
-  pomsky expressions on the left and immediately see the output on the right.
+- [Online playground](https://playground.pomsky-lang.org/) to try out Rulex. You can write
+  Rulex expressions on the left and immediately see the output on the right.
 
 ### Changed
 
@@ -417,9 +417,9 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 - Improved Unicode support
 
-  - In addition to Unicode general categories and scripts, pomsky now supports blocks and other
+  - In addition to Unicode general categories and scripts, Rulex now supports blocks and other
     boolean properties
-  - Pomsky now validates properties and tells you when a property isn't supported by the target
+  - Rulex now validates properties and tells you when a property isn't supported by the target
     regex flavor
   - Shorthands (`[h]` and `[v]`) are substituted with character classes when required to support
     Unicode everywhere
@@ -445,7 +445,7 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 ### Changed
 
-- Improved the Rust macro; pomsky expressions are written directly in the Rust source code, not in a
+- Improved the Rust macro; Rulex expressions are written directly in the Rust source code, not in a
   string literal:
   ```rs
   let regex: &str = rulex!("hello" | "world" '!'+);
@@ -454,7 +454,7 @@ The repository was moved to its own organization! 🎉 It also has a new website
   - Strings with more than 1 code point must be enclosed in double quotes, single quotes don't work
   - Strings can't contain backslashes; this will be fixed in a future release
   - Code points must be written without the `+`, e.g. `U10FFFF` instead of `U+10FFFF`
-  - Pomsky expressions can contain Rust comments; they can't contain comments starting with `#`
+  - Rulex expressions can contain Rust comments; they can't contain comments starting with `#`
 
 ## [0.1.0] - 2022-03-11
 

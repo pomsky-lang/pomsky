@@ -2,19 +2,19 @@ set positional-arguments
 
 coverage_flags := '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
-# run pomsky (debug mode)
+# run Pomsky (debug mode)
 run S *args:
     cargo run -- "$@"
 
-# install pomsky
+# install Pomsky
 install:
     cargo install --path=pomsky-bin
 
-# benchmark pomsky
+# benchmark Pomsky
 bench *flags:
     cargo bench -p benchmark -- {{flags}}
 
-# benchmark pomsky with the plotters backend
+# benchmark Pomsky with the plotters backend
 bench-plotters *flags:
     cargo bench -p benchmark -- --plotting-backend plotters {{flags}}
 
@@ -24,14 +24,14 @@ coverage:
     zip -0 cov.zip $(find . -name "pomsky*.gc*" -print)
     grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info
 
-# test pomsky
+# test Pomsky
 test *args:
     cargo test "$@"
 
 test-it *args:
     cargo test --test it --all-features -- "$@"
 
-# fuzz pomsky ranges
+# fuzz Pomsky ranges
 fuzz-ranges *flags:
     cargo test --test it -- --fuzz-ranges {{flags}}
 
