@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2023-11-07
+
+### New
+
+- **Unit tests**: Run tests using PCRE2 during compilation with the `--test=pcre2` flag.
+
+  ```pomsky
+  test {
+    match '13.17.4.5';
+    match '13.17.4.5' as { 1:'13', 2:'17', 3:'4', 4:'5' };
+    match '13.17.4.5', '17.3.4.5'
+          in 'The IP addresses are 13.17.4.5 and 17.3.4.5.';
+    reject '256.0.0.0';
+    reject in 'This test contains no IP addresses';
+  }
+
+  let octet = range '0'-'255';
+  octet ('.' octet){3}
+  ```
+
+- **Word start and end** boundaries: `<` (start) and `>` (end) as more specific alternatives to `%`
+
+- **Recursion**: The `recursion` keyword recursively matches the entire regex where supported
+
+- **Arbitrary negation**: Any expression can be negated on the syntax level; negation is applied
+  after name resolution, so variables can be negated as well.
+
+### Changed
+
+- Require numeric ranges that allow leading zeroes to be fixed-length. E.g. `range '0024'-'1001'`
+  is allowed, but `range '024'-'1001'` is not.
+
+- Forbid single element character ranges like `['a'-'a']`. The upper bound must be strictly higher
+  than the lower bound.
+
+- Warn when non-printable character shorthands (e.g. `n` for new line) are used in a character
+  range. That's because `[a-f]` is misleading and not very useful.
+
+- Support atomic groups in Python.
+
+- Reserve `call` keyword (not used for now).
+
+### Bugfixes
+
+- Fix incorrect order of capturing groups in .NET (#96)
+- Wrap numbered references in a non-capturing group (#97)
+- Don't allow numeric ranges with an empty string as lower bound (#98)
+- Make sure negated code points above U+FFFF are forbidden in .NET
+- Disallow lookahead within lookbehind in Ruby (#101)
+- Disallow forward references in Ruby (#102)
+
 ## [0.10.0] - 2023-03-21
 
 ### New
@@ -460,7 +511,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.10...HEAD
+[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.11...HEAD
+[0.11.0]: https://github.com/pomsky-lang/pomsky/compare/v0.10...v0.11
 [0.10.0]: https://github.com/pomsky-lang/pomsky/compare/v0.9...v0.10
 [0.9.0]: https://github.com/pomsky-lang/pomsky/compare/v0.8...v0.9
 [0.8.0]: https://github.com/pomsky-lang/pomsky/compare/v0.7...v0.8
