@@ -19,6 +19,7 @@ complete -c pomsky -s h -l help             -d 'Show help information'
 complete -c pomsky      -l list             -d 'List shorthands' -xa "shorthands"
 complete -c pomsky -s n -l no-new-line      -d "Don't print line break after the output"
 complete -c pomsky -s p -l path             -d 'File to compile' -kxa "(__fish_complete_suffix .pom)"
+complete -c pomsky      -l test             -d 'Run unit tests' -xa 'pcre2'
 complete -c pomsky -s V -l version          -d 'Print version information'
 complete -c pomsky -s W -l warnings         -d 'Disable some or all warnings' -xa "(echo \"$warnings\")"
 complete -c pomsky -s d -l debug            -d 'Show debug information'

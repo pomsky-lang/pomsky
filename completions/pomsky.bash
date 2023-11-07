@@ -5,7 +5,7 @@ _complete_pomsky()
     local warnings="0 compat=0 deprecated=0"
     local warnings_concat="-W0 -Wcompat=0 -Wdeprecated=0"
     local features="atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges references regexes variables"
-    local flags="--allowed-features --flavor --help --no-new-line --path --version --warnings --debug --json --list"
+    local flags="--allowed-features --flavor --help --no-new-line --path --test --version --warnings --debug --json --list"
 
     local cur=${COMP_WORDS[COMP_CWORD]}
     local prev=${COMP_WORDS[COMP_CWORD - 1]}
@@ -35,6 +35,9 @@ _complete_pomsky()
             ;;
         --allowed-features)
             COMPREPLY=( $( compgen -W "$features" -- $cur ) )
+            ;;
+        --test)
+            COMPREPLY=( $( compgen -W "pcre2" -- $cur ) )
             ;;
         *)
             if [[ $cur = -f* ]]; then

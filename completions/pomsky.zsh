@@ -11,6 +11,13 @@ _pomsky_complete_lists() {
   _describe -t lists 'lists' lists
 }
 
+_pomsky_complete_engine() {
+  engine=(
+    'pcre2:The PCRE2 regex engine'
+  )
+  _describe -t engine 'engine' engine
+}
+
 _pomsky_complete_flavor() {
   flavors=(
     'pcre:PCRE flavor'
@@ -43,6 +50,7 @@ _pomsky() {
     '(--list)--list=[List shorthands]: :->lists' \
     '(-n --no-new-line)'{-n,--no-new-line}"[Don't print line break after the output]" \
     '(-p --path)'{-p+,--path=}'[File to compile]: :->path' \
+    '(-test)--test=[Run unit tests]: :->engine' \
     '(-V --version)'{-V,--version}'[Print version information]' \
     '(-W --warnings)'{-W+,--warnings=}'[Disable some or all warnings]: :->warnings' \
     '(-d --debug)'{-d,--debug}'[Show debug information]' \
@@ -55,6 +63,7 @@ _pomsky() {
     (path) _pomsky_complete_path ;;
     (warnings) _pomsky_complete_warnings ;;
     (lists) _pomsky_complete_lists ;;
+    (engine) _pomsky_complete_engine ;;
     (*) ;;
   esac
 }
