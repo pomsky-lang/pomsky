@@ -1,5 +1,5 @@
 set -l features \
-'ascii-mode atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges references regexes variables'
+'ascii-mode atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges recursion references regexes variables'
 set -l flavors \
 'pcre	PCRE flavor
 python	Python re flavor

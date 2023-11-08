@@ -59,6 +59,10 @@ pub(super) const HELP: Help = Help(sections![
             "-p, --path <FILE>" => {
                 ["File containing the pomsky expression to compile"]
             }
+            "    --test <ENGINE>" => {
+                ["Execute unit tests and report failures"]
+                Long ["Only supported engine is 'pcre2'."]
+            }
             "-V, --version" => {
                 ["Print version information"]
             }
@@ -118,6 +122,7 @@ Currently, the following warnings can be disabled:"]
             "numbered-groups" => { ["Allows normal capturing groups such as " g:":('test')"] }
             "ranges"          => { ["Allows ranges, e.g. " g:"range '1'-'255'"]
                                    [y!"warning" ": compiling ranges with many digits may be slow"] }
+            "recursion"       => { ["Allows " g:"recursion"] }
             "references"      => { ["Allows referencing another capturing group, e.g. " g:"::2"] }
             "regexes"         => { ["Allows literal regular expressions, e.g. " g:"regex '[]^-]'"]
                                    [y!"warning" ": does not guarantee that the output is well-formed"] }

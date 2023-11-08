@@ -4,7 +4,7 @@ _complete_pomsky()
     local flavors_concat="-fpcre -fpython -fjava -fjs -fdotnet -fruby -frust"
     local warnings="0 compat=0 deprecated=0"
     local warnings_concat="-W0 -Wcompat=0 -Wdeprecated=0"
-    local features="atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges references regexes variables"
+    local features="atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges recursion references regexes variables"
     local flags="--allowed-features --flavor --help --no-new-line --path --test --version --warnings --debug --json --list"
 
     local cur=${COMP_WORDS[COMP_CWORD]}

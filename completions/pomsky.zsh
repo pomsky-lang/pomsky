@@ -1,7 +1,7 @@
 #compdef pomsky
 
 _pomsky_complete_features() {
-  _values -s , 'features' ascii-mode atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges references regexes variables
+  _values -s , 'features' ascii-mode atomic-groups boundaries dot grapheme lazy-mode lookahead lookbehind named-groups numbered-groups ranges recursion references regexes variables
 }
 
 _pomsky_complete_lists() {
