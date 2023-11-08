@@ -133,6 +133,7 @@ OPTIONS:
         --list shorthands                Show all available character class shorthands
     -n, --no-new-line                    Don't print a new-line after the output
     -p, --path <FILE>                    File containing the pomsky expression to compile
+        --test <ENGINE>                  Execute unit tests and report failures
     -V, --version                        Print version information
     -W, --warnings <DIAGNOSTICS>         Disable certain warnings (disable all with `-W0`)
 "#, env!("CARGO_PKG_VERSION")));
