@@ -30,9 +30,11 @@ export class PomskyResult {
   /**
    * @param {string | null} output
    * @param {PomskyDiagnostic[]} diagnostics
+   * @param {any[]} tests
    */
-  constructor(output, diagnostics) {
+  constructor(output, diagnostics, tests) {
     this.output = output
     this.diagnostics = diagnostics
+    this.tests = tests
   }
 }

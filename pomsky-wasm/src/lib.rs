@@ -1,9 +1,14 @@
-use std::ops::Range;
+use std::{
+    borrow::Cow,
+    ops::{Deref, Range},
+};
 
+use js_sys::{Array, Object, Reflect};
 use pomsky::{
     diagnose::Diagnostic,
     options::{CompileOptions, RegexFlavor},
-    Expr,
+    test::{Test, TestCapture, TestCase, TestCaseMatch, TestCaseMatchAll, TestCaseReject},
+    Expr, Span,
 };
 use wasm_bindgen::prelude::*;
 
@@ -34,7 +39,11 @@ extern "C" {
     pub type PomskyResult;
 
     #[wasm_bindgen(constructor)]
-    fn new(output: Option<String>, warnings: Vec<PomskyDiagnostic>) -> PomskyResult;
+    fn new(
+        output: Option<String>,
+        warnings: Vec<PomskyDiagnostic>,
+        tests: Option<Array>,
+    ) -> PomskyResult;
 }
 
 #[wasm_bindgen(typescript_custom_section)]
@@ -53,6 +62,37 @@ interface PomskyError extends Error {}
 interface PomskyResult {
     output: string | null;
     diagnostics: PomskyDiagnostic[];
+    tests: PomskyTest[] | null;
+}
+
+type PomskyTest =
+    | { match: PomskyTestMatch }
+    | { matchAll: PomskyTestMatchAll }
+    | { reject: PomskyTestReject };
+
+interface PomskyTestMatch {
+    literal: string;
+    range: [number, number];
+    captures: PomskyTestCapture[];
+}
+
+interface PomskyTestMatchAll {
+    literal: string;
+    range: [number, number];
+    matches: PomskyTestMatch[];
+}
+
+interface PomskyTestReject {
+    literal: string;
+    range: [number, number];
+    asSubstring: boolean;
+}
+
+interface PomskyTestCapture {
+    ident: string | number;
+    identRange: [number, number];
+    literal: string;
+    range: [number, number];
 }
 "#;
 
@@ -74,7 +114,7 @@ pub fn compile(input: &str, flavor: &str) -> Result<PomskyResult, PomskyError> {
     let flavor = parse_flavor(flavor)
         .ok_or_else(|| PomskyError::new(format!("Unknown regex flavor `{flavor}`")))?;
 
-    let (result, diagnostics) = Expr::parse_and_compile(
+    let (result, diagnostics, tests) = Expr::parse_and_compile(
         input,
         CompileOptions { flavor, max_range_size: 12, ..Default::default() },
     );
@@ -82,7 +122,89 @@ pub fn compile(input: &str, flavor: &str) -> Result<PomskyResult, PomskyError> {
     Ok(PomskyResult::new(
         result,
         diagnostics.into_iter().map(|d| convert_diagnostic(input, d)).collect(),
+        tests_to_js(tests),
     ))
+}
+
+fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
+    fn cow(c: Cow<'_, str>) -> JsValue {
+        c.deref().into()
+    }
+
+    fn range(span: Span) -> Array {
+        let range = span.range().unwrap_or(0..0);
+        Array::from_iter([
+            JsValue::from_f64(range.start as f64),
+            JsValue::from_f64(range.end as f64),
+        ])
+    }
+
+    fn match_to_js(match_: TestCaseMatch) -> Object {
+        let obj = Object::new();
+        Reflect::set(&obj, &"literal".into(), &cow(match_.literal.content)).unwrap();
+        Reflect::set(&obj, &"range".into(), &range(match_.literal.span)).unwrap();
+
+        let captures = match_.captures.into_iter().map(capture_to_js);
+        Reflect::set(&obj, &"captures".into(), &Array::from_iter(captures)).unwrap();
+        obj
+    }
+
+    fn match_all_to_js(match_all: TestCaseMatchAll) -> Object {
+        let obj = Object::new();
+        Reflect::set(&obj, &"literal".into(), &cow(match_all.literal.content)).unwrap();
+        Reflect::set(&obj, &"range".into(), &range(match_all.literal.span)).unwrap();
+
+        let matches = match_all.matches.into_iter().map(match_to_js);
+        Reflect::set(&obj, &"matches".into(), &Array::from_iter(matches)).unwrap();
+        obj
+    }
+
+    fn reject_to_js(reject: TestCaseReject) -> Object {
+        let obj = Object::new();
+        Reflect::set(&obj, &"literal".into(), &cow(reject.literal.content)).unwrap();
+        Reflect::set(&obj, &"range".into(), &range(reject.literal.span)).unwrap();
+        Reflect::set(&obj, &"asSubstring".into(), &reject.as_substring.into()).unwrap();
+        obj
+    }
+
+    fn capture_to_js(capture: TestCapture) -> Object {
+        let obj = Object::new();
+
+        let ident = match capture.ident {
+            pomsky::test::CaptureIdent::Name(name) => name.into(),
+            pomsky::test::CaptureIdent::Index(idx) => idx.into(),
+        };
+        Reflect::set(&obj, &"ident".into(), &ident).unwrap();
+        Reflect::set(&obj, &"identRange".into(), &range(capture.ident_span)).unwrap();
+
+        Reflect::set(&obj, &"literal".into(), &cow(capture.literal.content)).unwrap();
+        Reflect::set(&obj, &"range".into(), &range(capture.literal.span)).unwrap();
+        obj
+    }
+
+    if tests.is_empty() {
+        return None;
+    }
+
+    let tests_obj = Array::new();
+    for test in tests {
+        for case in test.cases {
+            let case_obj = Object::new();
+            match case {
+                TestCase::Match(m) => {
+                    Reflect::set(&case_obj, &"match".into(), &match_to_js(m)).unwrap();
+                }
+                TestCase::MatchAll(m) => {
+                    Reflect::set(&case_obj, &"matchAll".into(), &match_all_to_js(m)).unwrap();
+                }
+                TestCase::Reject(r) => {
+                    Reflect::set(&case_obj, &"reject".into(), &reject_to_js(r)).unwrap();
+                }
+            }
+            tests_obj.push(&case_obj);
+        }
+    }
+    Some(tests_obj)
 }
 
 fn parse_flavor(flavor: &str) -> Option<RegexFlavor> {

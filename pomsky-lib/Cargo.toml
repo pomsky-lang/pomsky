@@ -1,7 +1,7 @@
 [package]
 name = "pomsky"
 description = "A new regular expression language"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
@@ -21,7 +21,7 @@ dbg = ["pomsky-syntax/dbg"]
 suggestions = ["pomsky-syntax/suggestions"]
 
 [dependencies]
-pomsky-syntax = { version = "0.10.0", path = "../pomsky-syntax" }
+pomsky-syntax = { version = "0.11.0", path = "../pomsky-syntax" }
 arbitrary = { version = "1.3.1", features = ["derive"], optional = true }
 
 [dependencies.miette]

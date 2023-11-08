@@ -1,7 +1,7 @@
 [package]
 name = "pomsky-bin"
 description = "Compile pomsky expressions, a new regular expression language"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2021"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
@@ -35,7 +35,7 @@ version = "5.10.0"
 features = ["fancy-no-backtrace"]
 
 [dependencies.pomsky]
-version = "0.10.0"
+version = "0.11.0"
 path = "../pomsky-lib"
 features = ["dbg", "miette", "suggestions"]
 

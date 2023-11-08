@@ -22,13 +22,13 @@ impl<'a, S, F: FnMut(&mut S)> Deref for Deferred<'a, S, F> {
     type Target = S;
 
     fn deref(&self) -> &Self::Target {
-        &self.state
+        self.state
     }
 }
 
 impl<'a, S, F: FnMut(&mut S)> DerefMut for Deferred<'a, S, F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.state
+        self.state
     }
 }
 

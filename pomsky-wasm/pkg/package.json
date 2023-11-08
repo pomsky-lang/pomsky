@@ -21,5 +21,7 @@
   "module": "compiler_web.js",
   "homepage": "https://pomsky-lang.org",
   "types": "compiler_web.d.ts",
-  "sideEffects": false
+  "sideEffects": [
+    "./snippets/*"
+  ]
 }

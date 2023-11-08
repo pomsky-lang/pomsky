@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pomsky = { version = "0.10.0", path = "../pomsky-lib" }
+pomsky = { version = "0.11.0", path = "../pomsky-lib" }
 divan = "0.1.2"
 melody_compiler = "0.19.0"
 
