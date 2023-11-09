@@ -76,7 +76,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "compiler-web"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
