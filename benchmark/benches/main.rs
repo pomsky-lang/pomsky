@@ -92,10 +92,10 @@ mod compile {
     );
 }
 
-#[divan::bench(consts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])]
-pub fn range<const N: usize>(bencher: divan::Bencher) {
-    let max = "3458709621".repeat((N + 9) / 10);
-    let max = &max[..N];
+#[divan::bench(args = 1..=13)]
+pub fn range(bencher: divan::Bencher, n: usize) {
+    let max = "3458709621".repeat((n + 9) / 10);
+    let max = &max[..n];
     let input = format!("range '0'-'{max}'");
 
     bencher
