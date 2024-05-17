@@ -1,5 +1,3 @@
-#! ignore
-# this is a macro hygiene issue, since variables are essentially macros!
 let foo = [d];
 disable unicode;
 

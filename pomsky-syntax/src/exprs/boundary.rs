@@ -13,12 +13,13 @@ use crate::Span;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Boundary {
     pub kind: BoundaryKind,
+    pub unicode_aware: bool,
     pub span: Span,
 }
 
 impl Boundary {
-    pub fn new(kind: BoundaryKind, span: Span) -> Self {
-        Boundary { kind, span }
+    pub fn new(kind: BoundaryKind, unicode_aware: bool, span: Span) -> Self {
+        Boundary { kind, unicode_aware, span }
     }
 
     pub fn kind(&self) -> BoundaryKind {

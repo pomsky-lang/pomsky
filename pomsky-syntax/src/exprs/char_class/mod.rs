@@ -93,11 +93,12 @@ pub use unicode::{blocks_supported_in_dotnet, list_shorthands};
 pub struct CharClass {
     pub inner: Vec<GroupItem>,
     pub span: Span,
+    pub unicode_aware: bool,
 }
 
 impl CharClass {
-    pub fn new(inner: Vec<GroupItem>, span: Span) -> Self {
-        CharClass { inner, span }
+    pub fn new(inner: Vec<GroupItem>, span: Span, unicode_aware: bool) -> Self {
+        CharClass { inner, span, unicode_aware }
     }
 
     #[cfg(feature = "dbg")]

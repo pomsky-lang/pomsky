@@ -22,7 +22,7 @@ impl<'i> RuleExt<'i> for Boundary {
         use BoundaryKind::*;
 
         if options.flavor == RegexFlavor::JavaScript
-            && !state.ascii_only
+            && self.unicode_aware
             && matches!(self.kind, Word | NotWord | WordStart | WordEnd)
         {
             Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))

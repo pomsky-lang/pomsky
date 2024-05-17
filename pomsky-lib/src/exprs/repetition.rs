@@ -25,9 +25,8 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
         }
 
         let quantifier = match self.quantifier {
-            Quantifier::Greedy => RegexQuantifier::Greedy,
-            Quantifier::Lazy => RegexQuantifier::Lazy,
-            Quantifier::Default => state.default_quantifier,
+            Quantifier::Greedy | Quantifier::DefaultGreedy => RegexQuantifier::Greedy,
+            Quantifier::Lazy | Quantifier::DefaultLazy => RegexQuantifier::Lazy,
         };
 
         Ok(Regex::Repetition(Box::new(RegexRepetition { content, kind: self.kind, quantifier })))

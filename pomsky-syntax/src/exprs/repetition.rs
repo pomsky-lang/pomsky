@@ -48,7 +48,7 @@ impl<'i> Repetition<'i> {
         match self.quantifier {
             Quantifier::Greedy => buf.push_str(" greedy"),
             Quantifier::Lazy => buf.push_str(" lazy"),
-            Quantifier::Default => {}
+            _ => {}
         }
     }
 }
@@ -57,7 +57,8 @@ impl<'i> Repetition<'i> {
 pub enum Quantifier {
     Greedy,
     Lazy,
-    Default,
+    DefaultGreedy,
+    DefaultLazy,
 }
 
 /// A repetition in its most canonical form, `{x,y}`.

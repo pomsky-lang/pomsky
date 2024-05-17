@@ -5,7 +5,6 @@ use pomsky_syntax::exprs::Rule;
 use crate::{
     capturing_groups::{CapturingGroupIndex, CapturingGroupsCollector},
     diagnose::{CompileError, Diagnostic},
-    exprs::repetition::RegexQuantifier,
     regex::Regex,
 };
 
@@ -20,8 +19,6 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) numbered_groups_count: u32,
     pub(crate) in_lookbehind: bool,
 
-    pub(crate) default_quantifier: RegexQuantifier,
-    pub(crate) ascii_only: bool,
     pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
     pub(crate) current_vars: HashSet<usize>,
 
@@ -30,7 +27,6 @@ pub(crate) struct CompileState<'c, 'i> {
 
 impl<'c, 'i> CompileState<'c, 'i> {
     pub(crate) fn new(
-        default_quantifier: RegexQuantifier,
         capt_groups: CapturingGroupsCollector,
         variables: Vec<(&'i str, &'c Rule<'i>)>,
     ) -> Self {
@@ -52,8 +48,6 @@ impl<'c, 'i> CompileState<'c, 'i> {
             numbered_groups_count: capt_groups.count_numbered,
             in_lookbehind: false,
 
-            default_quantifier,
-            ascii_only: false,
             variables,
             current_vars: Default::default(),
 

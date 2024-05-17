@@ -28,7 +28,6 @@ pub(crate) mod var;
 
 use pomsky_syntax::exprs::{test::Test, *};
 use pomsky_syntax::Span;
-use repetition::RegexQuantifier;
 
 pub(crate) trait RuleExt<'i> {
     fn compile<'c>(
@@ -70,8 +69,8 @@ impl<'i> Expr<'i> {
 
         let no_span = Span::empty();
 
-        let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, no_span));
-        let end = Rule::Boundary(Boundary::new(BoundaryKind::End, no_span));
+        let start = Rule::Boundary(Boundary::new(BoundaryKind::Start, true, no_span));
+        let end = Rule::Boundary(Boundary::new(BoundaryKind::End, true, no_span));
         let grapheme = Rule::Grapheme;
         let codepoint = Rule::Codepoint;
 
@@ -84,7 +83,7 @@ impl<'i> Expr<'i> {
             ("C", &codepoint),
         ];
 
-        let mut state = CompileState::new(RegexQuantifier::Greedy, capt_groups, builtins);
+        let mut state = CompileState::new(capt_groups, builtins);
         let mut compiled = match self.0.compile(options, &mut state) {
             Ok(compiled) => compiled,
             Err(e) => return (None, vec![e.diagnostic(input)]),

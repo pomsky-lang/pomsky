@@ -42,6 +42,8 @@ pub fn parse(source: &str, recursion: u32) -> (Option<Rule<'_>>, Vec<ParseDiagno
         offset: 0,
         warnings: Vec::new(),
         recursion,
+        is_lazy: false,
+        is_unicode_aware: true,
     };
 
     let rule = match parser.parse_modified() {
@@ -69,6 +71,8 @@ pub(super) struct Parser<'i> {
     offset: usize,
     warnings: Vec<ParseDiagnostic>,
     recursion: u32,
+    pub(super) is_lazy: bool,
+    pub(super) is_unicode_aware: bool,
 }
 
 // Utilities

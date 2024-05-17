@@ -98,7 +98,7 @@ impl<'i> RuleExt<'i> for CharClass {
     fn compile(
         &self,
         options: CompileOptions,
-        state: &mut CompileState<'_, 'i>,
+        _state: &mut CompileState<'_, 'i>,
     ) -> CompileResult<'i> {
         if self.inner.len() == 1 && !matches!(&&*self.inner, [GroupItem::Char('\r')]) {
             let first = self.inner.first().unwrap();
@@ -129,7 +129,7 @@ impl<'i> RuleExt<'i> for CharClass {
                     buf.push(RegexCharSetItem::Range { first, last });
                 }
                 GroupItem::Named { name, negative: item_negative } => {
-                    if state.ascii_only {
+                    if !self.unicode_aware {
                         named_class_to_regex_ascii(
                             name,
                             item_negative,

@@ -1,0 +1,4 @@
+let digit = [d];
+disable unicode; digit
+-----
+\d

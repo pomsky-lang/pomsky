@@ -1,0 +1,17 @@
+let foo = 'foo'*;
+let bar = (
+  enable lazy;
+  'bar'*
+);
+
+(
+  enable lazy;
+  foo bar ' '
+  (
+    disable lazy;
+    foo bar ' '
+  )
+)
+foo bar
+-----
+(?:foo)*(?:bar)*? (?:foo)*(?:bar)*? (?:foo)*(?:bar)*?

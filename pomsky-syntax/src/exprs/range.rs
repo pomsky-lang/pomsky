@@ -2,14 +2,14 @@ use crate::Span;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Range {
-    pub start: Vec<u8>,
-    pub end: Vec<u8>,
+    pub start: Box<[u8]>,
+    pub end: Box<[u8]>,
     pub radix: u8,
     pub span: Span,
 }
 
 impl Range {
-    pub(crate) fn new(start: Vec<u8>, end: Vec<u8>, radix: u8, span: Span) -> Self {
+    pub(crate) fn new(start: Box<[u8]>, end: Box<[u8]>, radix: u8, span: Span) -> Self {
         Range { start, end, radix, span }
     }
 

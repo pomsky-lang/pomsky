@@ -21,6 +21,9 @@ impl<'i> Parser<'i> {
     pub(super) fn parse_modified(&mut self) -> PResult<Rule<'i>> {
         let mut stmts = Vec::new();
 
+        let was_lazy = self.is_lazy;
+        let was_unicode_aware = self.is_unicode_aware;
+
         loop {
             let Some(stmt) = self
                 .parse_mode_modifier()?
@@ -29,12 +32,24 @@ impl<'i> Parser<'i> {
             else {
                 break;
             };
+
+            match &stmt.0 {
+                Stmt::Enable(BooleanSetting::Lazy, _) => self.is_lazy = true,
+                Stmt::Enable(BooleanSetting::Unicode, _) => self.is_unicode_aware = true,
+                Stmt::Disable(BooleanSetting::Lazy, _) => self.is_lazy = false,
+                Stmt::Disable(BooleanSetting::Unicode, _) => self.is_unicode_aware = false,
+                _ => {}
+            }
+
             stmts.push(stmt);
         }
 
         self.recursion_start()?;
         let mut rule = self.parse_or()?;
         self.recursion_end();
+
+        self.is_lazy = was_lazy;
+        self.is_unicode_aware = was_unicode_aware;
 
         // TODO: This should not be part of the parser
         if stmts.len() > 1 {
@@ -340,8 +355,10 @@ impl<'i> Parser<'i> {
             Quantifier::Greedy
         } else if self.consume_reserved("lazy") {
             Quantifier::Lazy
+        } else if self.is_lazy {
+            Quantifier::DefaultLazy
         } else {
-            Quantifier::Default
+            Quantifier::DefaultGreedy
         };
 
         let multi_span = self.span();
@@ -501,7 +518,7 @@ impl<'i> Parser<'i> {
                 return Err(PEK::CharClass(CharClassError::Empty).at(span));
             }
 
-            Ok(Some(Rule::CharClass(CharClass::new(inner, span))))
+            Ok(Some(Rule::CharClass(CharClass::new(inner, span, self.is_unicode_aware))))
         } else {
             Ok(None)
         }
@@ -639,7 +656,11 @@ impl<'i> Parser<'i> {
 
     fn parse_code_point_rule(&mut self) -> PResult<Option<Rule<'i>>> {
         if let Some((c, span)) = self.parse_code_point()? {
-            Ok(Some(Rule::CharClass(CharClass::new(vec![GroupItem::Char(c)], span))))
+            Ok(Some(Rule::CharClass(CharClass::new(
+                vec![GroupItem::Char(c)],
+                span,
+                self.is_unicode_aware,
+            ))))
         } else {
             Ok(None)
         }
@@ -686,7 +707,7 @@ impl<'i> Parser<'i> {
         } else {
             return None;
         };
-        Some(Rule::Boundary(Boundary::new(kind, span)))
+        Some(Rule::Boundary(Boundary::new(kind, self.is_unicode_aware, span)))
     }
 
     /// Parses a reference. Supported syntaxes are `::name`, `::3`, `::+3` and
@@ -764,7 +785,12 @@ impl<'i> Parser<'i> {
                 return Err(PEK::RangeLeadingZeroesVariableLength.at(span_1.join(span_2)));
             }
 
-            Ok(Some(Rule::Range(Range::new(start, end, radix, span))))
+            Ok(Some(Rule::Range(Range::new(
+                start.into_boxed_slice(),
+                end.into_boxed_slice(),
+                radix,
+                span,
+            ))))
         } else {
             Ok(None)
         }
