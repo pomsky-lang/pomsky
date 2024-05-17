@@ -338,7 +338,7 @@ enum Rule {
     Alt(Alt),
 }
 
-#[cfg(FALSE)]
+#[cfg(any())]
 impl std::fmt::Debug for Rule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -410,7 +410,7 @@ impl Rule {
         }
     }
 
-    #[cfg(FALSE)]
+    #[cfg(any())]
     fn debug_size(&self) -> u64 {
         match self {
             Rule::Empty => 1,

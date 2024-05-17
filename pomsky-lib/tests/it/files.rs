@@ -10,7 +10,7 @@ use pomsky::{
 };
 use regex_test::RegexTest;
 
-use crate::{args::Args, color::Color::*};
+use crate::{args::Args, color::prelude::*};
 
 pub(crate) enum TestResult {
     Success,
@@ -65,7 +65,7 @@ impl Options {
                         "rust" => RegexFlavor::Rust,
                         "ruby" => RegexFlavor::Ruby,
                         _ => {
-                            eprintln!("{}: Unknown flavor {value:?}", Yellow("Warning"));
+                            eprintln!("{}: Unknown flavor {value:?}", yellow("Warning"));
                             eprintln!("  in {path:?}");
                             continue;
                         }
@@ -76,7 +76,7 @@ impl Options {
                         "success" => Outcome::Success,
                         "error" => Outcome::Error,
                         _ => {
-                            eprintln!("{}: Unknown expected outcome {value:?}", Yellow("Warning"));
+                            eprintln!("{}: Unknown expected outcome {value:?}", yellow("Warning"));
                             eprintln!("  in {path:?}");
                             continue;
                         }
@@ -87,7 +87,7 @@ impl Options {
                         "yes" | "true" | "" => true,
                         "no" | "false" => false,
                         _ => {
-                            eprintln!("{}: Unknown boolean {value:?}", Yellow("Warning"));
+                            eprintln!("{}: Unknown boolean {value:?}", yellow("Warning"));
                             eprintln!("  in {path:?}");
                             continue;
                         }
@@ -98,14 +98,14 @@ impl Options {
                         "yes" | "true" | "" => true,
                         "no" | "false" => false,
                         _ => {
-                            eprintln!("{}: Unknown boolean {value:?}", Yellow("Warning"));
+                            eprintln!("{}: Unknown boolean {value:?}", yellow("Warning"));
                             eprintln!("  in {path:?}");
                             continue;
                         }
                     });
                 }
                 _ => {
-                    eprintln!("{}: Unknown option {key:?}", Yellow("Warning"));
+                    eprintln!("{}: Unknown option {key:?}", yellow("Warning"));
                     eprintln!("  in {path:?}");
                 }
             }
@@ -231,7 +231,7 @@ pub(crate) fn test_file(
                             _ => {
                                 eprintln!(
                                     "{}: Flavor {:?} can't be compiled at the moment",
-                                    Yellow("Warning"),
+                                    yellow("Warning"),
                                     options.flavor
                                 );
                                 eprintln!("  in {path:?}");

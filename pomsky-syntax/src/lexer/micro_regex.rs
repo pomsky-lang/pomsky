@@ -9,11 +9,6 @@ pub(crate) trait MicroRegex {
     /// length of the match.
     fn is_start(&self, haystack: &str) -> Option<(usize, Self::Context)>;
 
-    fn split_off<'a>(&self, haystack: &'a str) -> Option<(&'a str, &'a str)> {
-        let (len, _context) = self.is_start(haystack)?;
-        Some(haystack.split_at(len))
-    }
-
     fn ctx<C>(self, ctx: C) -> Ctx<Self, C>
     where
         Self: Sized,

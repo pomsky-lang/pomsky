@@ -110,7 +110,7 @@ impl RegexTest {
                     .current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/java"))
                     .arg("TesterAsync.java")
                     .output()
-                    .unwrap();
+                    .expect("`javac` executable not found, required for running Java regex flavor tests");
                 assert!(result.status.success(), "Could not compile Java file");
             }
         });
@@ -132,7 +132,9 @@ impl RegexTest {
                     .current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/dotnet"))
                     .arg("TesterAsync.cs")
                     .output()
-                    .unwrap();
+                    .expect(
+                        "`mcs` executable not found, required for running .NET regex flavor tests",
+                    );
                 assert!(result.status.success(), "Could not compile C# file");
             }
         });

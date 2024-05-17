@@ -1,6 +1,6 @@
 use std::{fmt, time::Instant};
 
-use crate::color::Color::*;
+use crate::color::prelude::*;
 use pomsky::Expr;
 use regex::Regex;
 
@@ -50,7 +50,7 @@ pub(crate) fn fuzz_ranges(
             Ok(r) => r,
             Err(error) => {
                 let res = FuzzError::InvalidRegex { range: (lo, hi), regex, error };
-                eprintln!("{}: {res}\n", Red("Error"));
+                eprintln!("{}: {res}\n", red("Error"));
                 errors.push(res);
                 continue;
             }
@@ -69,7 +69,7 @@ pub(crate) fn fuzz_ranges(
                         regex: regex.as_str().to_string(),
                         input: strings[i].clone(),
                     };
-                    eprintln!("{}: {res}\n", Red("Error"));
+                    eprintln!("{}: {res}\n", red("Error"));
                     errors.push(res);
                 }
                 (false, true) => {
@@ -78,7 +78,7 @@ pub(crate) fn fuzz_ranges(
                         regex: regex.as_str().to_string(),
                         input: strings[i].clone(),
                     };
-                    eprintln!("{}: {res}\n", Red("Error"));
+                    eprintln!("{}: {res}\n", red("Error"));
                     errors.push(res);
                 }
             }

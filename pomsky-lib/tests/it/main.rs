@@ -7,7 +7,11 @@ use std::{
 
 use regex_test::RegexTest;
 
-use crate::{args::Args, color::Color::*, files::TestResult};
+use crate::{
+    args::Args,
+    color::{prelude::*, D2},
+    files::TestResult,
+};
 
 #[macro_use]
 mod color;
@@ -42,7 +46,7 @@ fn defer_main() {
     println!("{} test cases found", samples.len());
 
     if args.include_ignored {
-        println!("{}", Yellow("including ignored cases!"));
+        println!("{}", yellow("including ignored cases!"));
     }
 
     let start = Instant::now();
@@ -61,10 +65,10 @@ fn defer_main() {
     let elapsed = start.elapsed();
     println!();
 
-    let mut ok = 0;
-    let mut failed = 0;
-    let mut blessed = 0;
-    let mut ignored = 0;
+    let mut ok: u32 = 0;
+    let mut failed: u32 = 0;
+    let mut blessed: u32 = 0;
+    let mut ignored: u32 = 0;
 
     for (result, path) in results.into_iter().zip(paths) {
         match result {
@@ -73,15 +77,15 @@ fn defer_main() {
             TestResult::Blessed => blessed += 1,
             TestResult::IncorrectResult { input, expected, got } => {
                 failed += 1;
-                println!("{}: {}", path.to_string_lossy(), Red("incorrect result."));
-                println!("       {}: {}", Blue("input"), pad_left(&input, 14));
-                println!("    {}: {}", Blue("expected"), Print(expected, 14));
-                println!("         {}: {}", Blue("got"), Print(got, 14));
+                println!("{}: {}", path.to_string_lossy(), red("incorrect result."));
+                println!("       {}: {}", blue("input"), pad_left(&input, 14));
+                println!("    {}: {}", blue("expected"), Print(expected, 14));
+                println!("         {}: {}", blue("got"), Print(got, 14));
                 println!();
             }
             TestResult::InvalidOutput(e) => {
                 failed += 1;
-                println!("{}: {}", path.to_string_lossy(), Red("invalid regex."));
+                println!("{}: {}", path.to_string_lossy(), red("invalid regex."));
                 println!("{e}");
                 println!();
             }
@@ -103,17 +107,23 @@ fn defer_main() {
 
     rt.kill_processes().unwrap();
 
+    macro_rules! number_format {
+        ($color:ident, $number:expr, $s:literal) => {
+            (if $number > 0 { $color } else { no_color })(D2($number, $s))
+        };
+    }
+
     println!(
         "test result: {}. {}; {}; {}; {}; finished in {:.2?}\n",
-        if failed == 0 { Green("ok") } else { Red("FAILED") },
-        color!(Green if ok > 0; ok, " passed"),
+        if failed == 0 { green("ok") } else { red("FAILED") },
+        number_format!(green, ok, " passed"),
         if blessed > 0 {
-            color!(Yellow if blessed > 0; blessed, " blessed")
+            number_format!(yellow, blessed, " blessed")
         } else {
-            color!(Red if failed > 0; failed, " failed")
+            number_format!(yellow, failed, " failed")
         },
-        color!(Yellow if ignored > 0; ignored, " ignored"),
-        color!(Yellow if filtered > 0; filtered, " filtered out"),
+        number_format!(yellow, ignored, " ignored"),
+        number_format!(yellow, filtered, " filtered out"),
         elapsed,
     );
 
@@ -121,7 +131,7 @@ fn defer_main() {
         println!(
             "{t_warn}: Some failed tests were blessed. Check the git diff \
             to see if their result is correct\n",
-            t_warn = Yellow("warning"),
+            t_warn = yellow("warning"),
         );
     } else if failed > 0 {
         if args.filter.is_empty() {
@@ -129,25 +139,25 @@ fn defer_main() {
                 "{t_tip}: you can rerun a specific test case with \
                 `cargo test --test it -- {t_filter}`\n\
                 where {t_filter} is a substring of the test case's file path\n",
-                t_tip = Yellow("help"),
-                t_filter = Blue("<filter>"),
+                t_tip = yellow("help"),
+                t_filter = blue("<filter>"),
             );
             println!(
                 "{t_tip}: Automatically correct failed testcases with \
                 `cargo test --test it -- {t_bless}`\n",
-                t_tip = Yellow("help"),
-                t_bless = Blue("--bless"),
+                t_tip = yellow("help"),
+                t_bless = blue("--bless"),
             );
         }
     } else if ignored > 0 {
         println!(
             "{t_tip}: run ignored test cases with `cargo test --test it -- -i`",
-            t_tip = Yellow("help"),
+            t_tip = yellow("help"),
         );
     }
 
     if failed > 0 {
-        std::process::exit(failed);
+        std::process::exit(1);
     }
 
     if args.fuzz_ranges {
@@ -167,8 +177,8 @@ fn defer_main() {
 
         println!(
             "fuzz result: {}. {}; finished in {:.2?}\n",
-            if failed == 0 { Green("ok") } else { Red("FAILED") },
-            color!(Red if failed > 0; failed, " failed"),
+            if failed == 0 { green("ok") } else { red("FAILED") },
+            number_format!(red, failed, " failed"),
             elapsed,
         );
     }
@@ -187,8 +197,8 @@ struct Print(Result<String, String>, usize);
 impl fmt::Display for Print {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            Ok(s) => write!(f, "{} /{s}/", Green("OK"), s = pad_left(s, self.1 + 4)),
-            Err(s) => write!(f, "{}: {s}", Red("ERR"), s = pad_left(s, self.1 + 5)),
+            Ok(s) => write!(f, "{} /{s}/", green("OK"), s = pad_left(s, self.1 + 4)),
+            Err(s) => write!(f, "{}: {s}", red("ERR"), s = pad_left(s, self.1 + 5)),
         }
     }
 }
@@ -204,13 +214,13 @@ fn collect_samples(
     path: PathBuf,
     buf: &mut Vec<(PathBuf, String)>,
     filter: &str,
-    filter_count: &mut u64,
+    filter_count: &mut u32,
 ) -> io::Result<()> {
     let path_ref = &path;
     if !path_ref.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("file {:?} not found", Blue(path_ref)),
+            format!("file {:?} not found", blue(path_ref)),
         ));
     }
 
@@ -232,7 +242,7 @@ fn collect_samples(
     } else {
         Err(io::Error::new(
             io::ErrorKind::Other,
-            format!("unexpected file type of {:?}", Blue(path_ref)),
+            format!("unexpected file type of {:?}", blue(path_ref)),
         ))
     }
 }
