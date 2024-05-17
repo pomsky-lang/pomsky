@@ -3,7 +3,6 @@
 pub(crate) use compile_error::{
     CompileError, CompileErrorKind, IllegalNegationKind, UnsupportedError,
 };
-pub(crate) use warning::{CompatWarning, CompileWarningKind};
 
 pub use diagnostic_code::DiagnosticCode;
 pub use diagnostic_kind::DiagnosticKind;
@@ -16,4 +15,3 @@ mod diagnostic_kind;
 mod diagnostics;
 mod feature;
 mod help;
-mod warning;

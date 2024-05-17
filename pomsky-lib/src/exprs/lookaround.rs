@@ -2,7 +2,7 @@ use pomsky_syntax::exprs::{Lookaround, LookaroundKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::{CompatWarning, CompileErrorKind, CompileWarningKind},
+    diagnose::CompileErrorKind,
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -16,15 +16,6 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
         state: &mut CompileState<'c, 'i>,
     ) -> CompileResult<'i> {
         match options.flavor {
-            RegexFlavor::JavaScript => {
-                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = self.kind {
-                    state.diagnostics.push(
-                        CompileWarningKind::Compat(CompatWarning::JsLookbehind)
-                            .at(self.span)
-                            .diagnostic(),
-                    );
-                }
-            }
             RegexFlavor::Ruby if state.in_lookbehind => {
                 if let LookaroundKind::Ahead | LookaroundKind::AheadNegative = self.kind {
                     return Err(CompileErrorKind::RubyLookaheadInLookbehind {

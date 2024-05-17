@@ -317,28 +317,6 @@ fn no_newline() {
 }
 
 #[test]
-fn disable_warnings() {
-    let mut cmd = command(&["<< 'test'", "-W0", "-fJS"]);
-    cmd.assert().success().stdout("(?<=test)\n").stderr("");
-
-    let mut cmd = command(&["<< 'test'", "-Wcompat=0", "-fJS"]);
-    cmd.assert().success().stdout("(?<=test)\n").stderr("");
-
-    let mut cmd = command(&["<< 'test'", "-Wdeprecated=0", "-fJS"]);
-    cmd.assert().success().stdout("(?<=test)\n").stderr(
-        r#"warning P0400(compat):
-  ⚠ Lookbehind is not supported in all browsers, e.g. Safari
-   ╭────
- 1 │ << 'test'
-   · ────┬────
-   ·     ╰── warning originated here
-   ╰────
-  help: Avoid lookbehind if the regex should work in different browsers
-"#,
-    );
-}
-
-#[test]
 fn wrong_order() {
     let mut cmd = command(&["-pf", "file.txt", "rust"]);
     cmd.assert().failure().stderr(format!("{ERROR}unexpected argument \"rust\"\n{USAGE}"));
@@ -438,46 +416,6 @@ fn json_output() {
             success: true,
             output: Some("..\\w".into()),
             diagnostics: vec![],
-            timings: Timings { all: 0, tests: 0 },
-        }))
-        .stderr("");
-}
-
-#[test]
-fn json_output_warnings() {
-    let mut cmd = command(&[". (<< 'a') (<< 'a')", "--json", "-fJS"]);
-    cmd.assert()
-        .success()
-        .stdout(Output::new(CompilationResult {
-            version: Version::V1,
-            success: true,
-            output: Some(".(?<=a)(?<=a)".into()),
-            diagnostics: vec![
-                Diagnostic {
-                    severity: Severity::Warning,
-                    kind: Kind::Compat,
-                    code: Some(DiagnosticCode::PossiblyUnsupported),
-                    spans: vec![Span { start: 3, end: 9, label: None }],
-                    description: "Lookbehind is not supported in all browsers, e.g. Safari".into(),
-                    help: vec![
-                        "Avoid lookbehind if the regex should work in different browsers".into()
-                    ],
-                    fixes: vec![],
-                    visual: String::new(),
-                },
-                Diagnostic {
-                    severity: Severity::Warning,
-                    kind: Kind::Compat,
-                    code: Some(DiagnosticCode::PossiblyUnsupported),
-                    spans: vec![Span { start: 12, end: 18, label: None }],
-                    description: "Lookbehind is not supported in all browsers, e.g. Safari".into(),
-                    help: vec![
-                        "Avoid lookbehind if the regex should work in different browsers".into()
-                    ],
-                    fixes: vec![],
-                    visual: String::new(),
-                },
-            ],
             timings: Timings { all: 0, tests: 0 },
         }))
         .stderr("");

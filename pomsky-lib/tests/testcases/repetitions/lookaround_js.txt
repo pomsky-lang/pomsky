@@ -1,6 +1,0 @@
-#! flavor=JavaScript
-(>> 'test')* (!<< 'test'){3}
------
-(?:(?=test))*(?:(?<!test)){3}
-WARNING: Lookbehind is not supported in all browsers, e.g. Safari
-  at 15..24
