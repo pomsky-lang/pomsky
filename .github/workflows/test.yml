@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -55,7 +55,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -67,7 +67,7 @@ jobs:
           distribution: temurin
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         if: ${{ matrix.os == 'ubuntu-latest' }}
         with:
           dotnet-version: '7.x.x'
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@nightly
@@ -99,7 +99,7 @@ jobs:
           distribution: temurin
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7.x.x'
 
@@ -110,7 +110,7 @@ jobs:
 
       - name: Setup grcov
         env:
-          TAG: v0.8.13
+          TAG: v0.8.19
         run: |
           mkdir -p ~/.local/bin
           curl -sL https://github.com/mozilla/grcov/releases/download/$TAG/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar jxf - -C ~/.local/bin
@@ -119,16 +119,15 @@ jobs:
       - name: Run grcov
         env:
           PROJECT_NAME: pomsky
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTFLAGS: '-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinline-threshold=0 -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Cpanic=abort -Zpanic_abort_tests'
           CARGO_INCREMENTAL: 0
         run: |
           cargo test
-          zip -0 cov.zip $(find . -name "$PROJECT_NAME*.gc*" -print)
-          grcov cov.zip -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info
+          grcov . -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info -b ./target/debug/pomsky
 
       - name: Coveralls upload
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: 'lcov.info'
+          files: 'lcov.info'
