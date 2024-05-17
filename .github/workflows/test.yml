@@ -123,6 +123,7 @@ jobs:
           RUSTDOCFLAGS: '-Cpanic=abort -Zpanic_abort_tests'
           CARGO_INCREMENTAL: 0
         run: |
+          rustup component add llvm-tools-preview
           cargo test
           grcov . -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info -b ./target/debug/pomsky
 
