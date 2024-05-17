@@ -125,7 +125,7 @@ jobs:
         run: |
           rustup component add llvm-tools-preview
           cargo test
-          grcov . -s . -t lcov --llvm --ignore-not-existing --ignore "/*" -o lcov.info -b ./target/debug/pomsky
+          grcov . -s . -t lcov --llvm --ignore-not-existing --ignore "/*" --ignore "pomsky-bin/src/test.rs" --ignore "target/*" -o lcov.info -b ./target/debug/pomsky
 
       - name: Coveralls upload
         uses: coverallsapp/github-action@v2
