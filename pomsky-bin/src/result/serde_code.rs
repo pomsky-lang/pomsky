@@ -48,3 +48,26 @@ impl Expected for ExpectedCode {
         write!(formatter, "diagnostic code")
     }
 }
+
+#[test]
+fn test_serde() {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Example {
+        #[serde(with = "self", skip_serializing_if = "Option::is_none", default)]
+        pub code: Option<DiagnosticCode>,
+    }
+
+    let value = Example { code: Some(DiagnosticCode::CaptureInLet) };
+    let serialized = serde_json::to_string(&value).unwrap();
+
+    assert_eq!(&serialized, r#"{"code":"P0308"}"#);
+    assert_eq!(serde_json::from_str::<Example>(&serialized).unwrap(), value);
+
+    let value_empty = Example { code: None };
+    let serialized_empty = serde_json::to_string(&value_empty).unwrap();
+
+    assert_eq!(&serialized_empty, "{}");
+    assert_eq!(serde_json::from_str::<Example>(&serialized_empty).unwrap(), value_empty);
+}
