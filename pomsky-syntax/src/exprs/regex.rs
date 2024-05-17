@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::Span;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Regex<'i> {
     pub content: Cow<'i, str>,
     pub span: Span,

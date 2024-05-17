@@ -10,7 +10,7 @@ use crate::Span;
 ///
 /// All boundaries use a variation of the `%` sigil, so they are easy to
 /// remember.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Boundary {
     pub kind: BoundaryKind,
     pub span: Span,
@@ -38,8 +38,7 @@ impl Boundary {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BoundaryKind {
     /// `Start`, the start of the string (or start of line in single-line mode)
     Start,

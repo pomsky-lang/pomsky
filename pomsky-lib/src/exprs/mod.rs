@@ -40,6 +40,7 @@ pub(crate) trait RuleExt<'i> {
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
 #[derive(Clone)]
+#[cfg_attr(not(feature = "dbg"), derive(Debug))]
 pub struct Expr<'i>(Rule<'i>);
 
 impl<'i> Expr<'i> {

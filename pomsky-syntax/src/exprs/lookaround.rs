@@ -2,15 +2,14 @@ use crate::Span;
 
 use super::Rule;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Lookaround<'i> {
     pub kind: LookaroundKind,
     pub rule: Rule<'i>,
     pub span: Span,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LookaroundKind {
     Ahead,
     Behind,

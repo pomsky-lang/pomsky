@@ -2,7 +2,7 @@ use crate::Span;
 
 use super::Rule;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Negation<'i> {
     pub rule: Rule<'i>,
     pub not_span: Span,

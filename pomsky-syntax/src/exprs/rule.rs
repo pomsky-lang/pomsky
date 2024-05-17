@@ -6,7 +6,7 @@ use super::{
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Rule<'i> {
     /// A string literal
     Literal(Literal<'i>),

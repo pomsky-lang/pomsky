@@ -14,7 +14,7 @@ use super::{Literal, Rule};
 /// that alternative is a [`Rule::Group`]. Note that a group's parentheses are
 /// removed when compiling to a regex if they aren't required. In other words,
 /// `'a' | ('b' 'c')` compiles to `a|bc`.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Alternation<'i> {
     pub rules: Vec<Rule<'i>>,
     pub(crate) span: Span,

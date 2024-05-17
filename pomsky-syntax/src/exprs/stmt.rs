@@ -2,14 +2,14 @@ use crate::Span;
 
 use super::{test::Test, Rule};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct StmtExpr<'i> {
     pub stmt: Stmt<'i>,
     pub rule: Rule<'i>,
     pub span: Span,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Stmt<'i> {
     Enable(BooleanSetting, Span),
     Disable(BooleanSetting, Span),
@@ -17,7 +17,7 @@ pub enum Stmt<'i> {
     Test(Test<'i>),
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BooleanSetting {
     Lazy,
     Unicode,
@@ -33,7 +33,7 @@ impl BooleanSetting {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Let<'i> {
     pub name: &'i str,
     pub rule: Rule<'i>,

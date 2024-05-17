@@ -2,7 +2,7 @@ use crate::{error::RepetitionError, Span};
 
 use super::Rule;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Repetition<'i> {
     pub rule: Rule<'i>,
     pub kind: RepetitionKind,
@@ -53,8 +53,7 @@ impl<'i> Repetition<'i> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Copy)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Quantifier {
     Greedy,
     Lazy,
@@ -68,8 +67,7 @@ pub enum Quantifier {
 ///  * `'x'?` is equivalent to `'x'{0,1}`
 ///  * `'x'+` is equivalent to `'x'{1,}`
 ///  * `'x'*` is equivalent to `'x'{0,}`
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct RepetitionKind {
     /// The lower bound, e.g. `{4,}`
     pub lower_bound: u32,

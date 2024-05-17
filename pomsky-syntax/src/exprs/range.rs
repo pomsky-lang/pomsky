@@ -1,6 +1,6 @@
 use crate::Span;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Range {
     pub start: Vec<u8>,
     pub end: Vec<u8>,

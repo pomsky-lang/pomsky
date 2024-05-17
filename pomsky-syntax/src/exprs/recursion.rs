@@ -1,6 +1,6 @@
 use crate::Span;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Recursion {
     pub span: Span,
 }

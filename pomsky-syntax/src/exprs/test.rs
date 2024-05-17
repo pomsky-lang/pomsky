@@ -2,13 +2,13 @@ use crate::Span;
 
 use super::Literal;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Test<'i> {
     pub cases: Vec<TestCase<'i>>,
     pub span: Span,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum TestCase<'i> {
     Match(TestCaseMatch<'i>),
     MatchAll(TestCaseMatchAll<'i>),
@@ -22,13 +22,13 @@ pub struct TestCaseMatch<'i> {
     pub span: Span,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TestCaseMatchAll<'i> {
     pub literal: Literal<'i>,
     pub matches: Vec<TestCaseMatch<'i>>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TestCaseReject<'i> {
     pub literal: Literal<'i>,
     pub as_substring: bool,

@@ -100,7 +100,7 @@ impl<'i> RuleExt<'i> for CharClass {
         options: CompileOptions,
         state: &mut CompileState<'_, 'i>,
     ) -> CompileResult<'i> {
-        if self.inner.len() == 1 {
+        if self.inner.len() == 1 && !matches!(&&*self.inner, [GroupItem::Char('\r')]) {
             let first = self.inner.first().unwrap();
             if let &GroupItem::Char(c) = first {
                 return Ok(Regex::Literal(c.to_string().into()));

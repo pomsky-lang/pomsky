@@ -89,7 +89,7 @@ pub use unicode::{blocks_supported_in_dotnet, list_shorthands};
 
 /// A _character class_. Refer to the [module-level documentation](self) for
 /// details.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CharClass {
     pub inner: Vec<GroupItem>,
     pub span: Span,

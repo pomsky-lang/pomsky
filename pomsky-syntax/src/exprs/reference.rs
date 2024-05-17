@@ -5,13 +5,13 @@
 
 use crate::Span;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Reference<'i> {
     pub target: ReferenceTarget<'i>,
     pub span: Span,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReferenceTarget<'i> {
     Named(&'i str),
     Number(u32),

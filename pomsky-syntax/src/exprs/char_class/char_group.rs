@@ -58,7 +58,7 @@ impl CharGroup {
 }
 
 /// One item in a character class.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupItem {
     /// A Unicode code point. It can be denoted in quotes (e.g. `'a'`) or in
     /// hexadecimal notation (`U+201`).
@@ -125,7 +125,7 @@ impl GroupItem {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GroupName {
     Word,
     Digit,

@@ -7,7 +7,7 @@ use super::Rule;
 ///
 /// If it is capturing, it must be wrapped in parentheses, and can have a name.
 /// If it is non-capturing, the parentheses can be omitted in same cases.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Group<'i> {
     pub parts: Vec<Rule<'i>>,
     pub kind: GroupKind<'i>,
@@ -69,7 +69,7 @@ impl<'i> Group<'i> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GroupKind<'i> {
     /// A (possibly named) capturing group e.g. `:foo`
     Capturing(Capture<'i>),
@@ -87,7 +87,7 @@ impl GroupKind<'_> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Capture<'i> {
     pub name: Option<&'i str>,
 }
