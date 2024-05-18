@@ -44,6 +44,7 @@ diagnostic_code! {
         UnclosedString = 4,
         // DeprecatedToken = 5, // unused
         LeadingZero = 6,
+        FileTooBig = 7,
 
         // Parse errors
         UnexpectedToken = 100,
@@ -143,6 +144,7 @@ impl From<LexErrorMsg> for DiagnosticCode {
             M::UnclosedString => DiagnosticCode::UnclosedString,
             M::LeadingZero => DiagnosticCode::LeadingZero,
             M::InvalidCodePoint => DiagnosticCode::CodePointInvalid,
+            M::FileTooBig => DiagnosticCode::FileTooBig,
             _ => panic!("Unhandled lexer error message {value:?}"),
         }
     }

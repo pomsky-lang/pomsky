@@ -43,7 +43,8 @@ pub(super) fn get_parse_error_msg_help(msg: LexErrorMsg, slice: &str) -> Option<
         | LexErrorMsg::GroupOther
         | LexErrorMsg::UnclosedString
         | LexErrorMsg::LeadingZero
-        | LexErrorMsg::InvalidCodePoint => return None,
+        | LexErrorMsg::InvalidCodePoint
+        | LexErrorMsg::FileTooBig => return None,
     })
 }
 

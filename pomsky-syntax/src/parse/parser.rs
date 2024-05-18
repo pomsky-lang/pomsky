@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
 use crate::{
-    diagnose::{NumberError, ParseDiagnostic, ParseError, ParseErrorKind as PEK, ParseWarning},
+    diagnose::{
+        LexErrorMsg, NumberError, ParseDiagnostic, ParseError, ParseErrorKind as PEK, ParseWarning,
+    },
     exprs::*,
     lexer::{tokenize, Token},
     Span,
@@ -14,6 +16,11 @@ use crate::{
 /// expression with too much nesting, so the `recursion` argument should be low
 /// enough to prevent that. The recommended default is 256.
 pub fn parse(source: &str, recursion: u32) -> (Option<Rule>, Vec<ParseDiagnostic>) {
+    if source.len() > u32::MAX as usize {
+        let error = PEK::LexErrorWithMessage(LexErrorMsg::FileTooBig);
+        return (None, vec![error.at(Span::empty()).into()]);
+    }
+
     let tokens = tokenize(source);
 
     let mut errors = Vec::new();

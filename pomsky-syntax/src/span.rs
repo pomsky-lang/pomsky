@@ -8,8 +8,8 @@ use std::{
 /// returns `None`.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Span {
-    start: usize,
-    end: usize,
+    start: u32,
+    end: u32,
 }
 
 impl Span {
@@ -17,7 +17,7 @@ impl Span {
     /// considered as "empty" or "missing"
     #[must_use]
     pub fn new(start: usize, end: usize) -> Self {
-        Span { start, end }
+        Span { start: start as u32, end: end as u32 }
     }
 
     /// Constructs an empty [`Span`].
@@ -37,14 +37,14 @@ impl Span {
         if self.is_empty() {
             None
         } else {
-            Some(self.start..self.end)
+            Some(self.start as usize..self.end as usize)
         }
     }
 
     /// Converts this span to a [`std::ops::Range`], without checking if it is
     /// empty.
     pub fn range_unchecked(self) -> Range<usize> {
-        self.start..self.end
+        self.start as usize..self.end as usize
     }
 
     /// Returns a new span that points to this span's start, but has a length of
@@ -56,8 +56,8 @@ impl Span {
     pub(crate) fn join(self, other: Span) -> Span {
         match (self.is_empty(), other.is_empty()) {
             (false, false) => Span {
-                start: usize::min(self.start, other.start),
-                end: usize::max(self.end, other.end),
+                start: u32::min(self.start, other.start),
+                end: u32::max(self.end, other.end),
             },
             (false, true) => self,
             (true, false) => other,
@@ -66,13 +66,13 @@ impl Span {
     }
 
     pub(crate) fn join_unchecked(self, other: Span) -> Span {
-        Span { start: usize::min(self.start, other.start), end: usize::max(self.end, other.end) }
+        Span { start: u32::min(self.start, other.start), end: u32::max(self.end, other.end) }
     }
 }
 
 impl From<Range<usize>> for Span {
     fn from(Range { start, end }: Range<usize>) -> Self {
-        Span { start, end }
+        Span { start: start as u32, end: end as u32 }
     }
 }
 
