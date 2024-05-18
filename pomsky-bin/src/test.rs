@@ -8,7 +8,7 @@ use pomsky::{
 };
 
 pub(crate) fn run_tests(
-    parsed: Expr<'_>,
+    parsed: Expr,
     input: &str,
     options: CompileOptions,
     errors: &mut Vec<Diagnostic>,
@@ -53,7 +53,7 @@ pub(crate) fn run_tests(
     }
 }
 
-fn check_test_match(regex: &Regex, test_case: TestCaseMatch<'_>, errors: &mut Vec<Diagnostic>) {
+fn check_test_match(regex: &Regex, test_case: TestCaseMatch, errors: &mut Vec<Diagnostic>) {
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {
@@ -67,9 +67,9 @@ fn check_test_match(regex: &Regex, test_case: TestCaseMatch<'_>, errors: &mut Ve
             }
 
             for capture in &test_case.captures {
-                let Some(got_capture) = (match capture.ident {
+                let Some(got_capture) = (match &capture.ident {
                     CaptureIdent::Name(name) => captures.name(name),
-                    CaptureIdent::Index(idx) => captures.get(idx as usize),
+                    &CaptureIdent::Index(idx) => captures.get(idx as usize),
                 }) else {
                     errors.push(Diagnostic::test_failure(
                         capture.ident_span,
@@ -103,7 +103,7 @@ fn check_test_match(regex: &Regex, test_case: TestCaseMatch<'_>, errors: &mut Ve
 
 fn check_all_test_matches(
     regex: &Regex,
-    test_case: TestCaseMatchAll<'_>,
+    test_case: TestCaseMatchAll,
     errors: &mut Vec<Diagnostic>,
 ) {
     let captures_iter = regex
@@ -144,9 +144,9 @@ fn check_all_test_matches(
                 }
 
                 for capture in &test_case.captures {
-                    let Some(got_capture) = (match capture.ident {
+                    let Some(got_capture) = (match &capture.ident {
                         CaptureIdent::Name(name) => captures.name(name),
-                        CaptureIdent::Index(idx) => captures.get(idx as usize),
+                        &CaptureIdent::Index(idx) => captures.get(idx as usize),
                     }) else {
                         errors.push(Diagnostic::test_failure(
                             capture.ident_span,
@@ -173,7 +173,7 @@ fn check_all_test_matches(
     }
 }
 
-fn check_test_reject(regex: &Regex, test_case: TestCaseReject<'_>, errors: &mut Vec<Diagnostic>) {
+fn check_test_reject(regex: &Regex, test_case: TestCaseReject, errors: &mut Vec<Diagnostic>) {
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {

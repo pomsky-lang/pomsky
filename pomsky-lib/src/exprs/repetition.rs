@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use pomsky_syntax::exprs::{Quantifier, Repetition, RepetitionKind};
 
 use crate::{
@@ -11,12 +9,12 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Repetition<'i> {
+impl RuleExt for Repetition {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         let content = self.rule.compile(options, state)?;
 
         if options.flavor == RegexFlavor::Ruby && content.is_assertion() {
@@ -34,8 +32,8 @@ impl<'i> RuleExt<'i> for Repetition<'i> {
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexRepetition<'i> {
-    pub(crate) content: Regex<'i>,
+pub(crate) struct RegexRepetition {
+    pub(crate) content: Regex,
     pub(crate) kind: RepetitionKind,
     pub(crate) quantifier: RegexQuantifier,
 }
@@ -46,20 +44,18 @@ pub(crate) enum RegexQuantifier {
     Lazy,
 }
 
-impl<'i> RegexRepetition<'i> {
-    pub(crate) fn new(
-        content: Regex<'i>,
-        kind: RepetitionKind,
-        quantifier: RegexQuantifier,
-    ) -> Self {
+impl RegexRepetition {
+    pub(crate) fn new(content: Regex, kind: RepetitionKind, quantifier: RegexQuantifier) -> Self {
         Self { content, kind, quantifier }
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         use std::fmt::Write;
 
-        if let Regex::Literal(Cow::Borrowed("")) = self.content {
-            return;
+        if let Regex::Literal(l) = &self.content {
+            if l.is_empty() {
+                return;
+            }
         }
 
         if self.content.needs_parens_before_repetition(flavor) {

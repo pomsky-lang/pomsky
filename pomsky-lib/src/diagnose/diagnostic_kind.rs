@@ -50,7 +50,9 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::NestedTest
             | K::NegatedHorizVertSpace
             | K::DotNetNumberedRefWithMixedGroups
-            | K::RubyLookaheadInLookbehind { .. } => DiagnosticKind::Unsupported,
+            | K::RubyLookaheadInLookbehind { .. }
+            | K::UnsupportedInLookbehind { .. }
+            | K::LookbehindNotConstantLength { .. } => DiagnosticKind::Unsupported,
             K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }

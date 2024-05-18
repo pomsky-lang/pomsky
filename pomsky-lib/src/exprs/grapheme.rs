@@ -17,7 +17,7 @@ use crate::{
 pub(crate) struct Grapheme {}
 
 impl Grapheme {
-    pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult<'static> {
+    pub(crate) fn compile(&self, options: CompileOptions) -> CompileResult {
         if matches!(options.flavor, RegexFlavor::Pcre | RegexFlavor::Java | RegexFlavor::Ruby) {
             Ok(Regex::Grapheme)
         } else {

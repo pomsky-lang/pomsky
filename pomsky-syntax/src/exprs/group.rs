@@ -8,14 +8,15 @@ use super::Rule;
 /// If it is capturing, it must be wrapped in parentheses, and can have a name.
 /// If it is non-capturing, the parentheses can be omitted in same cases.
 #[derive(Debug, Clone)]
-pub struct Group<'i> {
-    pub parts: Vec<Rule<'i>>,
-    pub kind: GroupKind<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Group {
+    pub parts: Vec<Rule>,
+    pub kind: GroupKind,
     pub span: Span,
 }
 
-impl<'i> Group<'i> {
-    pub fn new(parts: Vec<Rule<'i>>, kind: GroupKind<'i>, span: Span) -> Self {
+impl Group {
+    pub fn new(parts: Vec<Rule>, kind: GroupKind, span: Span) -> Self {
         Group { parts, kind, span }
     }
 
@@ -24,10 +25,10 @@ impl<'i> Group<'i> {
         let use_parens =
             matches!(self.kind, GroupKind::Capturing(_) | GroupKind::Atomic) || needs_parens;
 
-        match self.kind {
+        match &self.kind {
             GroupKind::Capturing(capture) => {
                 buf.push(':');
-                if let Some(name) = capture.name {
+                if let Some(name) = &capture.name {
                     buf.push_str(name);
                 }
             }
@@ -69,10 +70,11 @@ impl<'i> Group<'i> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GroupKind<'i> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum GroupKind {
     /// A (possibly named) capturing group e.g. `:foo`
-    Capturing(Capture<'i>),
+    Capturing(Capture),
     /// An atomic group
     Atomic,
     /// A normal group with a set of parentheses
@@ -81,19 +83,34 @@ pub enum GroupKind<'i> {
     Implicit,
 }
 
-impl GroupKind<'_> {
+impl GroupKind {
     pub fn is_normal(&self) -> bool {
         matches!(self, GroupKind::Normal)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Capture<'i> {
-    pub name: Option<&'i str>,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Capture {
+    pub name: Option<String>,
 }
 
-impl<'i> Capture<'i> {
-    pub fn new(name: Option<&'i str>) -> Self {
-        Capture { name }
+impl Capture {
+    pub fn new(name: Option<&str>) -> Self {
+        Capture { name: name.map(str::to_string) }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for Capture {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        if u.arbitrary()? {
+            Ok(Capture { name: Some(super::arbitrary::Ident::create(u)?) })
+        } else {
+            Ok(Capture { name: None })
+        }
+    }
+
+    fn size_hint(_depth: usize) -> (usize, Option<usize>) {
+        (1, None)
     }
 }

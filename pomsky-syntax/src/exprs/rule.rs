@@ -7,36 +7,37 @@ use super::{
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
 #[derive(Debug, Clone)]
-pub enum Rule<'i> {
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum Rule {
     /// A string literal
-    Literal(Literal<'i>),
+    Literal(Literal),
     /// A character class
     CharClass(CharClass),
     /// A group, i.e. a sequence of rules, possibly wrapped in parentheses.
-    Group(Group<'i>),
+    Group(Group),
     /// An alternation, i.e. a list of alternatives; at least one of them has to
     /// match.
-    Alternation(Alternation<'i>),
+    Alternation(Alternation),
     /// A repetition, i.e. a expression that must be repeated. The number of
     /// required repetitions is constrained by a lower and possibly an upper
     /// bound.
-    Repetition(Box<Repetition<'i>>),
+    Repetition(Box<Repetition>),
     /// A boundary (start of string, end of string or word boundary).
     Boundary(Boundary),
     /// A (positive or negative) lookahead or lookbehind.
-    Lookaround(Box<Lookaround<'i>>),
+    Lookaround(Box<Lookaround>),
     /// An variable that has been declared before.
-    Variable(Variable<'i>),
+    Variable(Variable),
     /// A backreference or forward reference.
-    Reference(Reference<'i>),
+    Reference(Reference),
     /// A range of integers
     Range(Range),
     /// An expression preceded by a modifier such as `enable lazy;`
-    StmtExpr(Box<StmtExpr<'i>>),
+    StmtExpr(Box<StmtExpr>),
     /// Negated expression
-    Negation(Box<Negation<'i>>),
+    Negation(Box<Negation>),
     /// A regex string, which is not escaped
-    Regex(Regex<'i>),
+    Regex(Regex),
     /// A regex string, which is not escaped
     Recursion(Recursion),
 
@@ -48,7 +49,7 @@ pub enum Rule<'i> {
     Dot,
 }
 
-impl<'i> Rule<'i> {
+impl Rule {
     /// Returns the span of this rule
     pub fn span(&self) -> Span {
         match self {
@@ -95,7 +96,7 @@ impl<'i> Rule<'i> {
 }
 
 #[cfg(feature = "dbg")]
-impl core::fmt::Display for Rule<'_> {
+impl core::fmt::Display for Rule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut buf = crate::PrettyPrinter::new();
         self.pretty_print(&mut buf, false);

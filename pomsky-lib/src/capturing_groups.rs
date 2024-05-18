@@ -41,7 +41,7 @@ impl RuleVisitor<CompileError> for CapturingGroupsCollector {
     }
 
     fn visit_group(&mut self, group: &exprs::Group) -> Result<(), CompileError> {
-        match group.kind {
+        match &group.kind {
             GroupKind::Capturing(Capture { name: Some(name) }) => {
                 if self.variable_nesting > 0 {
                     return Err(CompileErrorKind::CaptureInLet.at(group.span));

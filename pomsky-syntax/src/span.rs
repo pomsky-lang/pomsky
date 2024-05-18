@@ -93,3 +93,14 @@ impl Debug for Span {
         write!(f, "Span({}..{})", self.start, self.end)
     }
 }
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for Span {
+    fn arbitrary(_u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(Span { start: 0, end: 0 })
+    }
+
+    fn size_hint(_depth: usize) -> (usize, Option<usize>) {
+        (0, Some(0))
+    }
+}

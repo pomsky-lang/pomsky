@@ -15,7 +15,7 @@ use super::char_class::{RegexCharSet, RegexCharSetItem};
 pub(crate) struct Codepoint {}
 
 impl Codepoint {
-    pub(crate) fn compile(&self, _options: CompileOptions) -> CompileResult<'static> {
+    pub(crate) fn compile(&self, _options: CompileOptions) -> CompileResult {
         Ok(Regex::CharSet(RegexCharSet::new(vec![
             RegexCharSetItem::Shorthand(RegexShorthand::Space),
             RegexCharSetItem::Shorthand(RegexShorthand::NotSpace),

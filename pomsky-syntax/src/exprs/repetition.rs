@@ -3,16 +3,17 @@ use crate::{error::RepetitionError, Span};
 use super::Rule;
 
 #[derive(Debug, Clone)]
-pub struct Repetition<'i> {
-    pub rule: Rule<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Repetition {
+    pub rule: Rule,
     pub kind: RepetitionKind,
     pub quantifier: Quantifier,
     pub span: Span,
 }
 
-impl<'i> Repetition<'i> {
+impl Repetition {
     pub(crate) fn new(
-        rule: Rule<'i>,
+        rule: Rule,
         kind: RepetitionKind,
         quantifier: Quantifier,
         span: Span,
@@ -54,6 +55,7 @@ impl<'i> Repetition<'i> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum Quantifier {
     Greedy,
     Lazy,
@@ -75,6 +77,19 @@ pub struct RepetitionKind {
 
     /// The upper bound, e.g. `{0,7}`. `None` means infinity.
     pub upper_bound: Option<u32>,
+}
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for RepetitionKind {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let lower = u.int_in_range(0u8..=40)?;
+        if u.arbitrary()? {
+            let upper = u.int_in_range(lower..=lower + 40)?;
+            Ok(RepetitionKind { lower_bound: lower as u32, upper_bound: Some(upper as u32) })
+        } else {
+            Ok(RepetitionKind { lower_bound: lower as u32, upper_bound: None })
+        }
+    }
 }
 
 impl RepetitionKind {

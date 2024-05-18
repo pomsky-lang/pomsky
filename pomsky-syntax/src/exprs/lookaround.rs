@@ -3,13 +3,15 @@ use crate::Span;
 use super::Rule;
 
 #[derive(Debug, Clone)]
-pub struct Lookaround<'i> {
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Lookaround {
     pub kind: LookaroundKind,
-    pub rule: Rule<'i>,
+    pub rule: Rule,
     pub span: Span,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum LookaroundKind {
     Ahead,
     Behind,
@@ -17,8 +19,8 @@ pub enum LookaroundKind {
     BehindNegative,
 }
 
-impl<'i> Lookaround<'i> {
-    pub(crate) fn new(rule: Rule<'i>, kind: LookaroundKind, span: Span) -> Self {
+impl Lookaround {
+    pub(crate) fn new(rule: Rule, kind: LookaroundKind, span: Span) -> Self {
         Lookaround { kind, rule, span }
     }
 

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::Ordering};
+use std::cmp::Ordering;
 
 use pomsky_syntax::exprs::{Range, RepetitionKind};
 
@@ -16,8 +16,8 @@ use super::{
     RuleExt,
 };
 
-impl<'i> RuleExt<'i> for Range {
-    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
+impl RuleExt for Range {
+    fn compile(&self, _: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(range(&self.start, &self.end, true, self.radix).to_regex())
     }
 }
@@ -401,9 +401,9 @@ impl Rule {
         }
     }
 
-    fn to_regex(&self) -> Regex<'static> {
+    fn to_regex(&self) -> Regex {
         match self {
-            Rule::Empty => Regex::Literal(Cow::Borrowed("")),
+            Rule::Empty => Regex::Literal("".to_string()),
             Rule::Class(c) => c.to_regex(),
             Rule::Repeat(r) => r.to_regex(),
             Rule::Alt(a) => a.to_regex(),
@@ -435,7 +435,7 @@ struct Repeat {
 }
 
 impl Repeat {
-    fn to_regex(&self) -> Regex<'static> {
+    fn to_regex(&self) -> Regex {
         Regex::Repetition(Box::new(RegexRepetition::new(
             self.rule.to_regex(),
             RepetitionKind::try_from((self.min as u32, Some(self.max as u32))).unwrap(),
@@ -448,7 +448,7 @@ impl Repeat {
 struct Alt(Vec<Vec<Rule>>);
 
 impl Alt {
-    fn to_regex(&self) -> Regex<'static> {
+    fn to_regex(&self) -> Regex {
         Regex::Alternation(RegexAlternation::new(
             self.0
                 .iter()
@@ -464,7 +464,7 @@ impl Alt {
 }
 
 impl Class {
-    fn to_regex(self) -> Regex<'static> {
+    fn to_regex(self) -> Regex {
         let (a, b) = (self.start, self.end);
 
         Regex::CharSet(RegexCharSet::new(match (a, b, a == b) {

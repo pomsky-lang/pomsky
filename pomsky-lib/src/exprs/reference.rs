@@ -24,9 +24,9 @@ impl From<ReferenceDirection> for Feature {
     }
 }
 
-impl<'i> RuleExt<'i> for Reference<'i> {
-    fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult<'i> {
-        let (direction, number) = match self.target {
+impl RuleExt for Reference {
+    fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult {
+        let (direction, number) = match &self.target {
             ReferenceTarget::Named(name) => match state.used_names.get(name) {
                 Some(index) => {
                     let direction = if index.absolute >= state.next_idx {
@@ -43,7 +43,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                 }
                 None => {
                     return Err(CompileErrorKind::UnknownReferenceName {
-                        found: name.into(),
+                        found: name.clone().into(),
                         #[cfg(feature = "suggestions")]
                         similar: pomsky_syntax::find_suggestion(
                             name,
@@ -53,7 +53,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
                     .at(self.span));
                 }
             },
-            ReferenceTarget::Number(idx) => {
+            &ReferenceTarget::Number(idx) => {
                 if idx == 0 {
                     return Err(CompileErrorKind::UnknownReferenceNumber(0).at(self.span));
                 }
@@ -77,7 +77,7 @@ impl<'i> RuleExt<'i> for Reference<'i> {
 
                 (direction, idx)
             }
-            ReferenceTarget::Relative(offset) => {
+            &ReferenceTarget::Relative(offset) => {
                 let direction = if offset >= 0 {
                     ReferenceDirection::Forwards
                 } else {

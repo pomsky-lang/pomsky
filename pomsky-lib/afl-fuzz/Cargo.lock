@@ -276,6 +276,9 @@ dependencies = [
 [[package]]
 name = "pomsky-syntax"
 version = "0.11.0"
+dependencies = [
+ "arbitrary",
+]
 
 [[package]]
 name = "proc-macro2"

@@ -3,21 +3,24 @@ use crate::Span;
 use super::{test::Test, Rule};
 
 #[derive(Debug, Clone)]
-pub struct StmtExpr<'i> {
-    pub stmt: Stmt<'i>,
-    pub rule: Rule<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct StmtExpr {
+    pub stmt: Stmt,
+    pub rule: Rule,
     pub span: Span,
 }
 
 #[derive(Debug, Clone)]
-pub enum Stmt<'i> {
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum Stmt {
     Enable(BooleanSetting, Span),
     Disable(BooleanSetting, Span),
-    Let(Let<'i>),
-    Test(Test<'i>),
+    Let(Let),
+    Test(Test),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum BooleanSetting {
     Lazy,
     Unicode,
@@ -34,24 +37,41 @@ impl BooleanSetting {
 }
 
 #[derive(Debug, Clone)]
-pub struct Let<'i> {
-    pub name: &'i str,
-    pub rule: Rule<'i>,
+pub struct Let {
+    pub name: String,
+    pub rule: Rule,
     pub name_span: Span,
 }
 
-impl<'i> Let<'i> {
-    pub fn new(name: &'i str, rule: Rule<'i>, name_span: Span) -> Self {
-        Self { name, rule, name_span }
+impl Let {
+    pub fn new(name: &str, rule: Rule, name_span: Span) -> Self {
+        Self { name: name.to_string(), rule, name_span }
     }
 
-    pub fn name(&self) -> &'i str {
-        self.name
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
-impl<'i> StmtExpr<'i> {
-    pub fn new(stmt: Stmt<'i>, rule: Rule<'i>, span: Span) -> Self {
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for Let {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let name = super::arbitrary::Ident::create(u)?;
+        Ok(Let { name, rule: Rule::arbitrary(u)?, name_span: Span::arbitrary(u)? })
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        arbitrary::size_hint::recursion_guard(depth, |depth| {
+            arbitrary::size_hint::and(
+                super::arbitrary::Ident::size_hint(depth),
+                Rule::size_hint(depth),
+            )
+        })
+    }
+}
+
+impl StmtExpr {
+    pub fn new(stmt: Stmt, rule: Rule, span: Span) -> Self {
         Self { stmt, rule, span }
     }
 
@@ -70,7 +90,7 @@ impl<'i> StmtExpr<'i> {
             }
             Stmt::Let(r#let) => {
                 buf.push_str("let ");
-                buf.write(r#let.name);
+                buf.write(&r#let.name);
                 buf.push_str(" = ");
                 r#let.rule.pretty_print(buf, true);
                 buf.write(";\n");

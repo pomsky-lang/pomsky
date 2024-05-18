@@ -10,12 +10,12 @@ use super::{
     char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme, RuleExt,
 };
 
-impl<'i> RuleExt<'i> for Rule<'i> {
+impl RuleExt for Rule {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         match self {
             Rule::Literal(l) => l.compile(options, state),
             Rule::CharClass(c) => c.compile(options, state),

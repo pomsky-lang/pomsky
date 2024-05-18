@@ -125,7 +125,37 @@ impl GroupItem {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for GroupItem {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(match u.int_in_range(0u8..=2)? {
+            0 => GroupItem::Char(u.arbitrary()?),
+            1 => {
+                let first = u.arbitrary()?;
+                let last = u.arbitrary()?;
+                if first >= last {
+                    return Err(arbitrary::Error::IncorrectFormat);
+                }
+                GroupItem::Range { first, last }
+            }
+            _ => GroupItem::Named { name: GroupName::arbitrary(u)?, negative: bool::arbitrary(u)? },
+        })
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        arbitrary::size_hint::and(
+            u8::size_hint(depth),
+            arbitrary::size_hint::or_all(&[
+                char::size_hint(depth),
+                arbitrary::size_hint::and(char::size_hint(depth), char::size_hint(depth)),
+                arbitrary::size_hint::and(GroupName::size_hint(depth), bool::size_hint(depth)),
+            ]),
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum GroupName {
     Word,
     Digit,

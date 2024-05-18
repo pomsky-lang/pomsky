@@ -8,12 +8,12 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Group<'i> {
+impl RuleExt for Group {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         if let GroupKind::Capturing(_) = self.kind {
             state.next_idx += 1;
         }
@@ -24,9 +24,9 @@ impl<'i> RuleExt<'i> for Group<'i> {
                 .iter()
                 .map(|part| part.compile(options, state))
                 .collect::<Result<_, _>>()?,
-            kind: match self.kind {
+            kind: match &self.kind {
                 GroupKind::Capturing(Capture { name: Some(name) }) => {
-                    RegexGroupKind::NamedCapture(name)
+                    RegexGroupKind::NamedCapture(name.clone())
                 }
                 GroupKind::Capturing(Capture { name: None }) => RegexGroupKind::Capture,
                 GroupKind::Atomic => RegexGroupKind::Atomic,
@@ -37,27 +37,27 @@ impl<'i> RuleExt<'i> for Group<'i> {
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexGroup<'i> {
-    pub(crate) parts: Vec<Regex<'i>>,
-    pub(crate) kind: RegexGroupKind<'i>,
+pub(crate) struct RegexGroup {
+    pub(crate) parts: Vec<Regex>,
+    pub(crate) kind: RegexGroupKind,
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[derive(PartialEq, Eq)]
-pub(crate) enum RegexGroupKind<'i> {
+pub(crate) enum RegexGroupKind {
     Capture,
-    NamedCapture(&'i str),
+    NamedCapture(String),
     Atomic,
     Normal,
 }
 
-impl<'i> RegexGroup<'i> {
-    pub(crate) fn new(parts: Vec<Regex<'i>>, capture: RegexGroupKind<'i>) -> Self {
+impl RegexGroup {
+    pub(crate) fn new(parts: Vec<Regex>, capture: RegexGroupKind) -> Self {
         Self { parts, kind: capture }
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
-        match self.kind {
+        match &self.kind {
             RegexGroupKind::NamedCapture(name) => {
                 // https://www.regular-expressions.info/named.html
                 match flavor {

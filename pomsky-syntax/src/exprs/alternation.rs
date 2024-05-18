@@ -1,8 +1,6 @@
 //! Implements [alternation](https://www.regular-expressions.info/alternation.html):
 //! `('alt1' | 'alt2' | 'alt3')`.
 
-use std::borrow::Cow;
-
 use crate::Span;
 
 use super::{Literal, Rule};
@@ -15,13 +13,14 @@ use super::{Literal, Rule};
 /// removed when compiling to a regex if they aren't required. In other words,
 /// `'a' | ('b' 'c')` compiles to `a|bc`.
 #[derive(Debug, Clone)]
-pub struct Alternation<'i> {
-    pub rules: Vec<Rule<'i>>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Alternation {
+    pub rules: Vec<Rule>,
     pub(crate) span: Span,
 }
 
-impl<'i> Alternation<'i> {
-    pub(crate) fn new_expr(rules: Vec<Rule<'i>>) -> Rule<'i> {
+impl Alternation {
+    pub(crate) fn new_expr(rules: Vec<Rule>) -> Rule {
         rules
             .into_iter()
             .reduce(|a, b| match (a, b) {
@@ -40,7 +39,7 @@ impl<'i> Alternation<'i> {
                     Rule::Alternation(Alternation { rules: vec![a, b], span })
                 }
             })
-            .unwrap_or_else(|| Rule::Literal(Literal::new(Cow::Borrowed(""), Span::default())))
+            .unwrap_or_else(|| Rule::Literal(Literal::new("".to_string(), Span::default())))
     }
 
     #[cfg(feature = "dbg")]

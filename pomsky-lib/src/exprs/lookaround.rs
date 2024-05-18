@@ -9,12 +9,12 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Lookaround<'i> {
+impl RuleExt for Lookaround {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         match options.flavor {
             RegexFlavor::Ruby if state.in_lookbehind => {
                 if let LookaroundKind::Ahead | LookaroundKind::AheadNegative = self.kind {
@@ -32,20 +32,44 @@ impl<'i> RuleExt<'i> for Lookaround<'i> {
             state.in_lookbehind = true;
         }
 
-        Ok(Regex::Lookaround(Box::new(RegexLookaround {
-            content: self.rule.compile(options, &mut state)?,
-            kind: self.kind,
-        })))
+        let content = self.rule.compile(options, &mut state)?;
+        let lookaround = RegexLookaround::new(content, self.kind, options.flavor)
+            .map_err(|e| e.at(self.span))?;
+
+        Ok(Regex::Lookaround(Box::new(lookaround)))
     }
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexLookaround<'i> {
-    pub(crate) content: Regex<'i>,
+pub(crate) struct RegexLookaround {
+    pub(crate) content: Regex,
     pub(crate) kind: LookaroundKind,
 }
 
-impl<'i> RegexLookaround<'i> {
+impl RegexLookaround {
+    pub(crate) fn new(
+        content: Regex,
+        kind: LookaroundKind,
+        flavor: RegexFlavor,
+    ) -> Result<Self, CompileErrorKind> {
+        match flavor {
+            RegexFlavor::Python => {
+                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = kind {
+                    content.validate_in_lookbehind_py()?;
+                }
+            }
+            RegexFlavor::Pcre => {
+                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = kind {
+                    content.validate_in_lookbehind_pcre()?;
+                }
+            }
+            // TODO: Java, see <https://github.com/pomsky-lang/pomsky/issues/69>
+            _ => {}
+        }
+
+        Ok(RegexLookaround { content, kind })
+    }
+
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         buf.push_str(match self.kind {
             LookaroundKind::Ahead => "(?=",

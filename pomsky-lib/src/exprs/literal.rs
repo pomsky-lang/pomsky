@@ -8,8 +8,8 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Literal<'i> {
-    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
+impl RuleExt for Literal {
+    fn compile(&self, _: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(Regex::Literal(self.content.clone()))
     }
 }

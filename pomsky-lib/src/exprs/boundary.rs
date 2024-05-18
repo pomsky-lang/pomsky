@@ -13,12 +13,8 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Boundary {
-    fn compile<'c>(
-        &'c self,
-        options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+impl RuleExt for Boundary {
+    fn compile(&self, options: CompileOptions, state: &mut CompileState<'_>) -> CompileResult {
         use BoundaryKind::*;
 
         if options.flavor == RegexFlavor::JavaScript

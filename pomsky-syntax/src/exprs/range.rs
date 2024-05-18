@@ -34,3 +34,20 @@ impl Range {
         }
     }
 }
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for Range {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let radix = u.int_in_range(2..=36)?;
+        let start = super::arbitrary::Digits::create(u, radix)?;
+        let end = super::arbitrary::Digits::create(u, radix)?;
+        if start.len() > end.len() || (start.len() == end.len() && start > end) {
+            return Err(arbitrary::Error::IncorrectFormat);
+        }
+        Ok(Range { start, end, radix, span: Span::arbitrary(u)? })
+    }
+
+    fn size_hint(_depth: usize) -> (usize, Option<usize>) {
+        (1, None)
+    }
+}

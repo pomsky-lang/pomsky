@@ -3,51 +3,58 @@ use crate::Span;
 use super::Literal;
 
 #[derive(Debug, Clone)]
-pub struct Test<'i> {
-    pub cases: Vec<TestCase<'i>>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Test {
+    pub cases: Vec<TestCase>,
     pub span: Span,
 }
 
 #[derive(Debug, Clone)]
-pub enum TestCase<'i> {
-    Match(TestCaseMatch<'i>),
-    MatchAll(TestCaseMatchAll<'i>),
-    Reject(TestCaseReject<'i>),
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum TestCase {
+    Match(TestCaseMatch),
+    MatchAll(TestCaseMatchAll),
+    Reject(TestCaseReject),
 }
 
 #[derive(Debug, Clone)]
-pub struct TestCaseMatch<'i> {
-    pub literal: Literal<'i>,
-    pub captures: Vec<TestCapture<'i>>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct TestCaseMatch {
+    pub literal: Literal,
+    pub captures: Vec<TestCapture>,
     pub span: Span,
 }
 
 #[derive(Debug, Clone)]
-pub struct TestCaseMatchAll<'i> {
-    pub literal: Literal<'i>,
-    pub matches: Vec<TestCaseMatch<'i>>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct TestCaseMatchAll {
+    pub literal: Literal,
+    pub matches: Vec<TestCaseMatch>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TestCaseReject<'i> {
-    pub literal: Literal<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct TestCaseReject {
+    pub literal: Literal,
     pub as_substring: bool,
 }
 
 #[derive(Debug, Clone)]
-pub struct TestCapture<'i> {
-    pub ident: CaptureIdent<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct TestCapture {
+    pub ident: CaptureIdent,
     pub ident_span: Span,
-    pub literal: Literal<'i>,
+    pub literal: Literal,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum CaptureIdent<'i> {
-    Name(&'i str),
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum CaptureIdent {
+    Name(String),
     Index(u16),
 }
 
-impl<'i> TestCase<'i> {
+impl TestCase {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         match self {
@@ -87,7 +94,7 @@ impl<'i> TestCase<'i> {
     }
 }
 
-impl<'i> TestCaseMatch<'i> {
+impl TestCaseMatch {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter) {
         self.literal.pretty_print(buf);
@@ -97,7 +104,7 @@ impl<'i> TestCaseMatch<'i> {
 
             let len = self.captures.len();
             for (i, capture) in self.captures.iter().enumerate() {
-                match capture.ident {
+                match &capture.ident {
                     CaptureIdent::Name(name) => buf.push_str(name),
                     CaptureIdent::Index(idx) => buf.write_fmt(idx),
                 }

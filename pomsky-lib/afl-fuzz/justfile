@@ -1,3 +1,11 @@
+fuzz_init:
+    cargo install cargo-afl
+    cargo afl system-config
+
+fuzz in='-':
+    cargo afl build
+    cargo afl fuzz -i {{in}} -o out target/debug/afl-fuzz
+
 tmin input:
-    rm log.txt
+    rm -f log.txt
     FUZZ_LOG=1 AFL_DEBUG=1 AFL_MAP_SIZE=100000 cargo afl tmin -i {{input}} -o out.txt -- ./target/debug/afl-fuzz

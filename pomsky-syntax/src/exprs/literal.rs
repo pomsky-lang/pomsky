@@ -1,15 +1,14 @@
-use std::borrow::Cow;
-
 use crate::Span;
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Literal<'i> {
-    pub content: Cow<'i, str>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Literal {
+    pub content: String,
     pub span: Span,
 }
 
-impl<'i> Literal<'i> {
-    pub fn new(content: Cow<'i, str>, span: Span) -> Self {
+impl Literal {
+    pub fn new(content: String, span: Span) -> Self {
         Literal { content, span }
     }
 
@@ -19,7 +18,7 @@ impl<'i> Literal<'i> {
     }
 }
 
-impl std::fmt::Debug for Literal<'_> {
+impl std::fmt::Debug for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?} at {}", self.content, self.span)
     }

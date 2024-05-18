@@ -12,7 +12,7 @@ afl = "0.14.3"
 arbitrary = "1.3.2"
 regex = "1"
 regex-test = { path = "../../regex-test" }
-pomsky = { path = "..", features = ["arbitrary"] }
+pomsky = { path = "..", features = ["dbg", "arbitrary"] }
 
 # Prevent this from interfering with workspaces
 [workspace]

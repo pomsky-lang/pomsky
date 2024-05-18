@@ -1,15 +1,14 @@
-use std::borrow::Cow;
-
 use crate::Span;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Regex<'i> {
-    pub content: Cow<'i, str>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Regex {
+    pub content: String,
     pub span: Span,
 }
 
-impl<'i> Regex<'i> {
-    pub(crate) fn new(content: Cow<'i, str>, span: Span) -> Self {
+impl Regex {
+    pub(crate) fn new(content: String, span: Span) -> Self {
         Regex { content, span }
     }
 

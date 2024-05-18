@@ -8,12 +8,8 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Recursion {
-    fn compile<'c>(
-        &'c self,
-        _options: CompileOptions,
-        _: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+impl RuleExt for Recursion {
+    fn compile(&self, _options: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(Regex::Recursion)
     }
 }

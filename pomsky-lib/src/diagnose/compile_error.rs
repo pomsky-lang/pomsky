@@ -88,6 +88,13 @@ pub(crate) enum CompileErrorKind {
     RubyLookaheadInLookbehind {
         was_word_boundary: bool,
     },
+    UnsupportedInLookbehind {
+        flavor: RegexFlavor,
+        feature: Feature,
+    },
+    LookbehindNotConstantLength {
+        flavor: RegexFlavor,
+    },
     NestedTest,
 }
 
@@ -186,6 +193,17 @@ impl core::fmt::Display for CompileErrorKind {
             CompileErrorKind::NestedTest => {
                 write!(f, "Unit tests may only appear at the top level of the expression")
             }
+            CompileErrorKind::UnsupportedInLookbehind { flavor, feature } => {
+                write!(f, "Feature `{feature:?}` is not supported within lookbehinds in the {flavor:?} flavor")
+            }
+            CompileErrorKind::LookbehindNotConstantLength { flavor } => match flavor {
+                RegexFlavor::Pcre | RegexFlavor::Python => write!(
+                    f,
+                    "In the {flavor:?} flavor, lookbehinds must have a {} length",
+                    if flavor == &RegexFlavor::Pcre { "bounded" } else { "constant" }
+                ),
+                _ => write!(f, "This kind of lookbehind is not supported in the {flavor:?} flavor"),
+            },
         }
     }
 }

@@ -25,7 +25,7 @@ impl Add for Count {
     }
 }
 
-impl<'i> Regex<'i> {
+impl Regex {
     pub(crate) fn optimize(&mut self) -> Count {
         match self {
             Regex::Literal(l) => {

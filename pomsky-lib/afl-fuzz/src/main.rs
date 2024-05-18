@@ -35,14 +35,13 @@ fn main() {
 
     afl::fuzz(true, |data| {
         let mut u = Unstructured::new(data);
-        let Ok((input, compile_options)) = Arbitrary::arbitrary(&mut u) else { return };
-        let input = transform_input(input);
+        let Ok((compile_options, input)) = Arbitrary::arbitrary(&mut u) else { return };
 
-        debug!(f, "\n{:?} -- {:?}\n", input, compile_options);
+        debug!(f, "\n\n{:#?}\n{:?} -- {:?}\n", input, input, compile_options);
 
-        let result = Expr::parse_and_compile(&input, compile_options);
+        let result = Expr::compile(&input, "", compile_options);
 
-        if let (Some(regex), _warnings, _tests) = result {
+        if let (Some(regex), _warnings) = result {
             debug!(f, " compiled;");
 
             let features = compile_options.allowed_features;
@@ -52,7 +51,7 @@ fn main() {
             // - don't validate raw regexes, which may be invalid
             if regex.len() < 2048 && !regex.is_empty() && features == { features }.regexes(false) {
                 debug!(f, " check");
-                check(&regex, &ignored_errors, compile_options.flavor, f, ef);
+                check(input, &regex, &ignored_errors, compile_options.flavor, f, ef);
             } else {
                 debug!(f, " SKIPPED (too long or `regex` feature enabled)");
             }
@@ -63,6 +62,7 @@ fn main() {
 }
 
 fn check(
+    expr: Expr,
     regex: &str,
     ignored_errors: &HashMap<RegexFlavor, RegexSet>,
     flavor: RegexFlavor,
@@ -89,7 +89,7 @@ fn check(
             }
         }
 
-        debug!(ef, "{flavor:?}|{regex:?}|{e}\n");
+        debug!(ef, "\n{expr:?}\n{flavor:?}|{regex:?}|{e}\n");
         debug!(f, " {regex:?} ({flavor:?}) failed:\n{e}");
         panic!("Regex {regex:?} is invalid in the {flavor:?} flavor:\n{e}");
     }
@@ -101,6 +101,9 @@ fn parse_ignored_errors() -> HashMap<RegexFlavor, RegexSet> {
     let ignored_errors = ignored_errors
         .lines()
         .filter_map(|line| {
+            if line.starts_with('#') || line.is_empty() {
+                return None;
+            }
             Some(match line.split_once('|') {
                 Some(("JS" | "JavaScript", err)) => (RegexFlavor::JavaScript, err),
                 Some(("Java", err)) => (RegexFlavor::Java, err),
@@ -120,45 +123,4 @@ fn parse_ignored_errors() -> HashMap<RegexFlavor, RegexSet> {
         });
 
     ignored_errors.into_iter().map(|(k, v)| (k, RegexSet::new(v).unwrap())).collect()
-}
-
-fn transform_input(input: &str) -> String {
-    input.chars().fold(String::with_capacity(input.len()), |mut acc, c| match c {
-        // increase likelihood of generating these key words and important sequences by chance
-        'à' => acc + " Codepoint ",
-        'á' => acc + " Grapheme ",
-        'â' => acc + " Start ",
-        'ã' => acc + " End ",
-        'ä' => acc + " lazy ",
-        'å' => acc + " greedy ",
-        'æ' => acc + " enable ",
-        'ç' => acc + " disable ",
-        'è' => acc + " unicode ",
-        'é' => acc + " test {",
-        'ê' => acc + " match ",
-        'ë' => acc + " reject ",
-        'ì' => acc + " in ",
-        'í' => acc + " as ",
-        'î' => acc + " if ",
-        'ï' => acc + " else ",
-        'ð' => acc + " regex ",
-        'ñ' => acc + " recursion ",
-        'ò' => acc + " range ",
-        'ó' => acc + " base ",
-        'ô' => acc + " let ",
-        'õ' => acc + " U+1FEFF ",
-        'ö' => acc + ":bla(",
-        'ø' => acc + "::bla ",
-        'ù' => acc + "<< ",
-        'ú' => acc + ">> ",
-        'û' => acc + "'test'",
-        'ü' => acc + "atomic",
-        'ý' => acc + " U+FEFF ",
-        // 'þ' => acc + "",
-        // 'ÿ' => acc + "",
-        _ => {
-            acc.push(c);
-            acc
-        }
-    })
 }

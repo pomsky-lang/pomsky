@@ -3,12 +3,13 @@ use crate::Span;
 use super::Rule;
 
 #[derive(Debug, Clone)]
-pub struct Negation<'i> {
-    pub rule: Rule<'i>,
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Negation {
+    pub rule: Rule,
     pub not_span: Span,
 }
 
-impl<'i> Negation<'i> {
+impl Negation {
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
         buf.push('!');

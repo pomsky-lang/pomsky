@@ -41,7 +41,7 @@ impl RuleVisitor<CompileError> for Validator {
     }
 
     fn visit_group(&mut self, group: &exprs::Group) -> Result<(), CompileError> {
-        match group.kind {
+        match &group.kind {
             exprs::GroupKind::Atomic => {
                 self.require(Feat::ATOMIC_GROUPS, group.span)?;
 

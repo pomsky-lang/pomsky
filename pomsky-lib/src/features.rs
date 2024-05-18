@@ -17,6 +17,7 @@ use crate::diagnose::{CompileError, CompileErrorKind, UnsupportedError};
 ///     .variables(false);
 /// ```
 #[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct PomskyFeatures {
     bits: u16,
 }
@@ -40,29 +41,6 @@ impl fmt::Debug for PomskyFeatures {
             .field("dot", &self.supports(Self::DOT))
             .field("recursion", &self.supports(Self::RECURSION))
             .finish()
-    }
-}
-
-#[cfg(feature = "arbitrary")]
-impl<'a> arbitrary::Arbitrary<'a> for PomskyFeatures {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let mut feat = PomskyFeatures::default();
-        feat.grapheme(bool::arbitrary(u)?);
-        feat.numbered_groups(bool::arbitrary(u)?);
-        feat.named_groups(bool::arbitrary(u)?);
-        feat.atomic_groups(bool::arbitrary(u)?);
-        feat.references(bool::arbitrary(u)?);
-        feat.lazy_mode(bool::arbitrary(u)?);
-        feat.ascii_mode(bool::arbitrary(u)?);
-        feat.ranges(bool::arbitrary(u)?);
-        feat.variables(bool::arbitrary(u)?);
-        feat.lookahead(bool::arbitrary(u)?);
-        feat.lookbehind(bool::arbitrary(u)?);
-        feat.boundaries(bool::arbitrary(u)?);
-        feat.regexes(bool::arbitrary(u)?);
-        feat.dot(bool::arbitrary(u)?);
-        feat.recursion(bool::arbitrary(u)?);
-        Ok(feat)
     }
 }
 

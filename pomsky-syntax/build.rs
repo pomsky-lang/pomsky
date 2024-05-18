@@ -126,6 +126,7 @@ fn generate_enum(
 ) -> String {
     format!(
         r#"#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[allow(non_camel_case_types)]
 #[allow(clippy::enum_variant_names)]
 #[repr({size})]

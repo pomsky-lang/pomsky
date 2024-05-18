@@ -11,6 +11,7 @@ use crate::Span;
 /// All boundaries use a variation of the `%` sigil, so they are easy to
 /// remember.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Boundary {
     pub kind: BoundaryKind,
     pub unicode_aware: bool,
@@ -40,6 +41,7 @@ impl Boundary {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum BoundaryKind {
     /// `Start`, the start of the string (or start of line in single-line mode)
     Start,

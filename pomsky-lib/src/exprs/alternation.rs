@@ -9,12 +9,12 @@ use crate::{
 
 use super::{Alternation, RuleExt};
 
-impl<'i> RuleExt<'i> for Alternation<'i> {
+impl RuleExt for Alternation {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         Ok(Regex::Alternation(RegexAlternation {
             parts: self
                 .rules
@@ -26,12 +26,12 @@ impl<'i> RuleExt<'i> for Alternation<'i> {
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) struct RegexAlternation<'i> {
-    pub(crate) parts: Vec<Regex<'i>>,
+pub(crate) struct RegexAlternation {
+    pub(crate) parts: Vec<Regex>,
 }
 
-impl<'i> RegexAlternation<'i> {
-    pub(crate) fn new(parts: Vec<Regex<'i>>) -> Self {
+impl RegexAlternation {
+    pub(crate) fn new(parts: Vec<Regex>) -> Self {
         Self { parts }
     }
 
@@ -40,6 +40,8 @@ impl<'i> RegexAlternation<'i> {
             rule.codegen(buf, flavor);
             buf.push('|');
         }
-        let _ = buf.pop();
+        if !self.parts.is_empty() {
+            let _ = buf.pop();
+        }
     }
 }

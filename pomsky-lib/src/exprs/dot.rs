@@ -9,7 +9,7 @@ use crate::{compile::CompileResult, options::CompileOptions, regex::Regex};
 pub(crate) struct Dot {}
 
 impl Dot {
-    pub(crate) fn compile(&self, _: CompileOptions) -> CompileResult<'static> {
+    pub(crate) fn compile(&self, _: CompileOptions) -> CompileResult {
         Ok(Regex::Dot)
     }
 }

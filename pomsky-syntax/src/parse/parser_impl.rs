@@ -18,7 +18,7 @@ type PResult<T> = Result<T, ParseError>;
 const MAX_REPETITION: u32 = 65_535;
 
 impl<'i> Parser<'i> {
-    pub(super) fn parse_modified(&mut self) -> PResult<Rule<'i>> {
+    pub(super) fn parse_modified(&mut self) -> PResult<Rule> {
         let mut stmts = Vec::new();
 
         let was_lazy = self.is_lazy;
@@ -72,7 +72,7 @@ impl<'i> Parser<'i> {
         Ok(rule)
     }
 
-    fn parse_mode_modifier(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
+    fn parse_mode_modifier(&mut self) -> PResult<Option<(Stmt, Span)>> {
         let mode = if self.consume_reserved("enable") {
             true
         } else if self.consume_reserved("disable") {
@@ -99,7 +99,7 @@ impl<'i> Parser<'i> {
         Ok(Some((stmt, span)))
     }
 
-    fn parse_let(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
+    fn parse_let(&mut self) -> PResult<Option<(Stmt, Span)>> {
         if self.consume_reserved("let") {
             let span_start = self.last_span();
             let name_span = self.span();
@@ -127,7 +127,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_test(&mut self) -> PResult<Option<(Stmt<'i>, Span)>> {
+    fn parse_test(&mut self) -> PResult<Option<(Stmt, Span)>> {
         if self.consume_reserved("test") {
             let span_start = self.last_span();
             self.expect(Token::OpenBrace)?;
@@ -147,7 +147,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_test_cases(&mut self) -> PResult<Option<TestCase<'i>>> {
+    fn parse_test_cases(&mut self) -> PResult<Option<TestCase>> {
         if self.consume_contextual_keyword("match") {
             let mut matches = Vec::new();
             let mut literal = None;
@@ -192,7 +192,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_test_match(&mut self) -> PResult<TestCaseMatch<'i>> {
+    fn parse_test_match(&mut self) -> PResult<TestCaseMatch> {
         let Some(literal) = self.parse_literal()? else {
             return Err(PEK::ExpectedToken(Token::String).at(self.span()));
         };
@@ -222,11 +222,11 @@ impl<'i> Parser<'i> {
         Ok(TestCaseMatch { literal, captures, span: span_start.join(span_end) })
     }
 
-    fn parse_test_capture(&mut self) -> PResult<Option<TestCapture<'i>>> {
+    fn parse_test_capture(&mut self) -> PResult<Option<TestCapture>> {
         let ident = if let Some(n) = self.consume_number(u16::MAX)? {
             CaptureIdent::Index(n)
         } else if let Some(name) = self.consume_as(Token::Identifier) {
-            CaptureIdent::Name(name)
+            CaptureIdent::Name(name.to_string())
         } else {
             return Ok(None);
         };
@@ -239,7 +239,7 @@ impl<'i> Parser<'i> {
         Ok(Some(TestCapture { ident, ident_span, literal }))
     }
 
-    fn parse_or(&mut self) -> PResult<Rule<'i>> {
+    fn parse_or(&mut self) -> PResult<Rule> {
         let mut span = self.span();
         let leading_pipe = self.consume(Token::Pipe);
 
@@ -268,7 +268,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_sequence(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_sequence(&mut self) -> PResult<Option<Rule>> {
         let mut fixes = Vec::new();
         while let Some(fix) = self.parse_fixes()? {
             fixes.push(fix);
@@ -287,7 +287,7 @@ impl<'i> Parser<'i> {
         })
     }
 
-    fn parse_fixes(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_fixes(&mut self) -> PResult<Option<Rule>> {
         let mut nots_span = self.span();
         let mut nots = 0usize;
         while self.consume(Token::Not) {
@@ -315,7 +315,7 @@ impl<'i> Parser<'i> {
         Ok(Some(rule))
     }
 
-    fn parse_lookaround(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_lookaround(&mut self) -> PResult<Option<Rule>> {
         let kind = if self.consume(Token::LookAhead) {
             LookaroundKind::Ahead
         } else if self.consume(Token::LookBehind) {
@@ -410,7 +410,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_atom(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_atom(&mut self) -> PResult<Option<Rule>> {
         Ok(self
             .parse_group()?
             .try_or_else(|| self.parse_string())?
@@ -426,7 +426,7 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses a (possibly capturing) group, e.g. `(E E | E)` or `:name(E)`.
-    fn parse_group(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_group(&mut self) -> PResult<Option<Rule>> {
         let (kind, start_span) = self.parse_group_kind()?;
         if !kind.is_normal() {
             self.expect(Token::OpenParen)?;
@@ -448,7 +448,7 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses `:name` or just `:`. Returns the span of the colon with the name.
-    fn parse_group_kind(&mut self) -> PResult<(GroupKind<'i>, Span)> {
+    fn parse_group_kind(&mut self) -> PResult<(GroupKind, Span)> {
         if self.consume_reserved("atomic") {
             let span = self.last_span();
             Ok((GroupKind::Atomic, span))
@@ -479,15 +479,15 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses a string literal.
-    fn parse_string(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_string(&mut self) -> PResult<Option<Rule>> {
         Ok(self.parse_literal()?.map(Rule::Literal))
     }
 
-    fn parse_literal(&mut self) -> PResult<Option<Literal<'i>>> {
+    fn parse_literal(&mut self) -> PResult<Option<Literal>> {
         if let Some(s) = self.consume_as(Token::String) {
             let span = self.last_span();
             let content = helper::parse_quoted_text(s).map_err(|k| k.at(span))?;
-            Ok(Some(Literal::new(content, span)))
+            Ok(Some(Literal::new(content.to_string(), span)))
         } else {
             Ok(None)
         }
@@ -498,7 +498,7 @@ impl<'i> Parser<'i> {
     ///
     /// This function does _not_ parse exclamation marks in front of a char
     /// class, because negation is handled separately.
-    fn parse_char_set(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_char_set(&mut self) -> PResult<Option<Rule>> {
         if self.consume(Token::OpenBracket) {
             let start_span = self.last_span();
 
@@ -654,7 +654,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_code_point_rule(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_code_point_rule(&mut self) -> PResult<Option<Rule>> {
         if let Some((c, span)) = self.parse_code_point()? {
             Ok(Some(Rule::CharClass(CharClass::new(
                 vec![GroupItem::Char(c)],
@@ -692,7 +692,7 @@ impl<'i> Parser<'i> {
     /// This function does _not_ parse negated negated word boundaries (`!%`),
     /// since negation is handled elsewhere. It also does _not_ parse the
     /// `Start` and `End` global variables.
-    fn parse_boundary(&mut self) -> Option<Rule<'i>> {
+    fn parse_boundary(&mut self) -> Option<Rule> {
         let span = self.span();
         let kind = if self.consume(Token::Caret) {
             BoundaryKind::Start
@@ -712,7 +712,7 @@ impl<'i> Parser<'i> {
 
     /// Parses a reference. Supported syntaxes are `::name`, `::3`, `::+3` and
     /// `::-3`.
-    fn parse_reference(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_reference(&mut self) -> PResult<Option<Rule>> {
         if self.consume(Token::DoubleColon) {
             let start_span = self.last_span();
 
@@ -730,7 +730,7 @@ impl<'i> Parser<'i> {
                 let name = self
                     .expect_as(Token::Identifier)
                     .map_err(|p| PEK::Expected("number or group name").at(p.span))?;
-                ReferenceTarget::Named(name)
+                ReferenceTarget::Named(name.to_string())
             };
 
             let span = start_span.join(self.last_span());
@@ -740,7 +740,7 @@ impl<'i> Parser<'i> {
         }
     }
 
-    fn parse_range(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_range(&mut self) -> PResult<Option<Rule>> {
         if self.consume_reserved("range") {
             let span_start = self.last_span();
 
@@ -797,7 +797,7 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses an unescaped regex expression (`regex "[test]"`)
-    fn parse_regex(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_regex(&mut self) -> PResult<Option<Rule>> {
         if self.consume_reserved("regex") {
             let span_start = self.last_span();
             let lit = self.expect_as(Token::String)?;
@@ -806,14 +806,14 @@ impl<'i> Parser<'i> {
             let content = helper::parse_quoted_text(lit).map_err(|k| k.at(span_end))?;
 
             let span = span_start.join(span_end);
-            Ok(Some(Rule::Regex(Regex::new(content, span))))
+            Ok(Some(Rule::Regex(Regex::new(content.to_string(), span))))
         } else {
             Ok(None)
         }
     }
 
     /// Parses a variable (usage site).
-    fn parse_variable(&mut self) -> PResult<Option<Rule<'i>>> {
+    fn parse_variable(&mut self) -> PResult<Option<Rule>> {
         if let Some(ident) = self.consume_as(Token::Identifier) {
             let span1 = self.last_span();
             let rule = Rule::Variable(Variable::new(ident, span1));
@@ -827,7 +827,7 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses the dot
-    fn parse_dot(&mut self) -> Option<Rule<'i>> {
+    fn parse_dot(&mut self) -> Option<Rule> {
         if self.consume(Token::Dot) {
             Some(Rule::Dot)
         } else {
@@ -836,7 +836,7 @@ impl<'i> Parser<'i> {
     }
 
     /// Parses the `recursion` keyword
-    fn parse_recursion(&mut self) -> Option<Rule<'i>> {
+    fn parse_recursion(&mut self) -> Option<Rule> {
         if self.consume_reserved("recursion") {
             Some(Rule::Recursion(Recursion { span: self.last_span() }))
         } else {

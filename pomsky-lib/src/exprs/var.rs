@@ -9,12 +9,12 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for Variable<'i> {
+impl RuleExt for Variable {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i> {
+        state: &mut CompileState<'c>,
+    ) -> CompileResult {
         let rule = state
             .variables
             .iter()
@@ -43,10 +43,10 @@ impl<'i> RuleExt<'i> for Variable<'i> {
                 Err(CompileErrorKind::RecursiveVariable.at(self.span))
             } else {
                 Err(CompileErrorKind::UnknownVariable {
-                    found: self.name.into(),
+                    found: self.name.clone().into(),
                     #[cfg(feature = "suggestions")]
                     similar: pomsky_syntax::find_suggestion(
-                        self.name,
+                        &self.name,
                         state.variables.iter().map(|&(var, _)| var),
                     ),
                 }

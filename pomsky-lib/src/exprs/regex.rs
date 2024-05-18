@@ -8,8 +8,8 @@ use crate::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for RegexLiteral<'i> {
-    fn compile<'c>(&'c self, _: CompileOptions, _: &mut CompileState<'c, 'i>) -> CompileResult<'i> {
+impl RuleExt for RegexLiteral {
+    fn compile(&self, _: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(Regex::Unescaped(self.content.clone()))
     }
 }

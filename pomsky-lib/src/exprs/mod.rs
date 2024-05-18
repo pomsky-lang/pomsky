@@ -29,25 +29,26 @@ pub(crate) mod var;
 use pomsky_syntax::exprs::{test::Test, *};
 use pomsky_syntax::Span;
 
-pub(crate) trait RuleExt<'i> {
+pub(crate) trait RuleExt {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,
-        state: &mut CompileState<'c, 'i>,
-    ) -> CompileResult<'i>;
+        state: &mut CompileState<'c>,
+    ) -> CompileResult;
 }
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
 #[derive(Clone)]
 #[cfg_attr(not(feature = "dbg"), derive(Debug))]
-pub struct Expr<'i>(Rule<'i>);
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub struct Expr(Rule);
 
-impl<'i> Expr<'i> {
+impl Expr {
     /// Parse a `Expr` without generating code.
     ///
     /// The parsed `Expr` can be displayed with `Debug` if the `dbg` feature is
     /// enabled.
-    pub fn parse(input: &'i str) -> (Option<Self>, impl Iterator<Item = Diagnostic> + '_) {
+    pub fn parse(input: &str) -> (Option<Self>, impl Iterator<Item = Diagnostic> + '_) {
         let (rule, diagnostics) = pomsky_syntax::parse(input, 256);
         (rule.map(Expr), diagnostics.into_iter().map(|d| Diagnostic::from_parser(&d, input)))
     }
@@ -55,7 +56,7 @@ impl<'i> Expr<'i> {
     /// Compile a `Expr` that has been parsed, to a regex
     pub fn compile(
         &self,
-        input: &'i str,
+        input: &str,
         options: CompileOptions,
     ) -> (Option<String>, Vec<Diagnostic>) {
         if let Err(e) = Validator::new(options).visit_rule(&self.0) {
@@ -98,7 +99,7 @@ impl<'i> Expr<'i> {
     }
 
     /// Extracts top-level all unit tests from the Pomsky expression
-    pub fn extract_tests(self) -> Vec<Test<'i>> {
+    pub fn extract_tests(self) -> Vec<Test> {
         let mut rule = self.0;
         let mut tests = Vec::new();
         while let Rule::StmtExpr(expr) = rule {
@@ -112,9 +113,9 @@ impl<'i> Expr<'i> {
 
     /// Parse a string to a `Expr` and compile it to a regex.
     pub fn parse_and_compile(
-        input: &'i str,
+        input: &str,
         options: CompileOptions,
-    ) -> (Option<String>, Vec<Diagnostic>, Vec<Test<'i>>) {
+    ) -> (Option<String>, Vec<Diagnostic>, Vec<Test>) {
         match Self::parse(input) {
             (Some(parsed), warnings1) => match parsed.compile(input, options) {
                 (Some(compiled), warnings2) => {
@@ -138,8 +139,12 @@ impl<'i> Expr<'i> {
 }
 
 #[cfg(feature = "dbg")]
-impl core::fmt::Debug for Expr<'_> {
+impl core::fmt::Debug for Expr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        core::fmt::Display::fmt(&self.0, f)
+        if f.alternate() {
+            core::fmt::Debug::fmt(&self.0, f)
+        } else {
+            core::fmt::Display::fmt(&self.0, f)
+        }
     }
 }

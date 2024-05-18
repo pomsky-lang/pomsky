@@ -93,6 +93,8 @@ diagnostic_code! {
         IllegalNegation = 317,
         DotNetNumberedRefWithMixedGroups = 318,
         RubyLookaheadInLookbehind = 319,
+        UnsupportedInLookbehind = 320,
+        LookbehindNotConstantLength = 321,
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
@@ -222,6 +224,8 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::JsWordBoundaryInUnicodeMode => Self::UnsupportedInUnicodeMode,
             C::DotNetNumberedRefWithMixedGroups => Self::DotNetNumberedRefWithMixedGroups,
             C::RubyLookaheadInLookbehind { .. } => Self::RubyLookaheadInLookbehind,
+            C::UnsupportedInLookbehind { .. } => Self::UnsupportedInLookbehind,
+            C::LookbehindNotConstantLength { .. } => Self::LookbehindNotConstantLength,
             C::NestedTest => Self::NestedTest,
         }
     }

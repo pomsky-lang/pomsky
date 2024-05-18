@@ -1,13 +1,15 @@
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 
 use pomsky_syntax::{
-    exprs::{BoundaryKind, Category, CodeBlock, LookaroundKind, OtherProperties, Script},
+    exprs::{
+        BoundaryKind, Category, CodeBlock, LookaroundKind, OtherProperties, RepetitionKind, Script,
+    },
     Span,
 };
 
 use crate::{
     compile::CompileResult,
-    diagnose::{CompileErrorKind, IllegalNegationKind},
+    diagnose::{CompileErrorKind, Feature, IllegalNegationKind},
     exprs::{
         alternation::RegexAlternation,
         boundary::boundary_kind_codegen,
@@ -27,11 +29,11 @@ mod optimize;
 pub(super) use optimize::Count;
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-pub(crate) enum Regex<'i> {
+pub(crate) enum Regex {
     /// A literal string
-    Literal(Cow<'i, str>),
+    Literal(String),
     /// A regex string that is inserted verbatim into the output
-    Unescaped(Cow<'i, str>),
+    Unescaped(String),
     /// A literal char
     Char(char),
     /// A character class, delimited with square brackets
@@ -41,25 +43,115 @@ pub(crate) enum Regex<'i> {
     /// The dot, matching anything except `\n`
     Dot,
     /// A group, i.e. a sequence of rules, possibly wrapped in parentheses.
-    Group(RegexGroup<'i>),
+    Group(RegexGroup),
     /// An alternation, i.e. a list of alternatives; at least one of them has to
     /// match.
-    Alternation(RegexAlternation<'i>),
+    Alternation(RegexAlternation),
     /// A repetition, i.e. a expression that must be repeated. The number of
     /// required repetitions is constrained by a lower and possibly an upper
     /// bound.
-    Repetition(Box<RegexRepetition<'i>>),
+    Repetition(Box<RegexRepetition>),
     /// A boundary (start of string, end of string or word boundary).
     Boundary(BoundaryKind),
     /// A (positive or negative) lookahead or lookbehind.
-    Lookaround(Box<RegexLookaround<'i>>),
+    Lookaround(Box<RegexLookaround>),
     /// A backreference or forward reference.
     Reference(RegexReference),
     /// Recursively matches the entire regex.
     Recursion,
 }
 
-impl Default for Regex<'_> {
+impl Regex {
+    pub(super) fn validate_in_lookbehind_py(&self) -> Result<Option<u32>, CompileErrorKind> {
+        match self {
+            Regex::Literal(str) => Ok(Some(str.chars().count() as u32)),
+            Regex::Unescaped(_) => Ok(None),
+            Regex::Char(_) => Ok(Some(1)),
+            Regex::CharSet(_) => Ok(Some(1)),
+            Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
+                flavor: RegexFlavor::Python,
+                feature: Feature::Grapheme,
+            }),
+            Regex::Dot => Ok(Some(1)),
+            Regex::Group(g) => g.parts.iter().try_fold(Some(0), |acc, part| {
+                Ok(match (acc, part.validate_in_lookbehind_py()?) {
+                    (Some(a), Some(b)) => Some(a + b),
+                    _ => None,
+                })
+            }),
+            Regex::Alternation(alt) => {
+                let mut count = None;
+                for part in &alt.parts {
+                    let c = part.validate_in_lookbehind_py()?;
+                    count = match (count, c) {
+                        (Some(a), Some(b)) if a == b => Some(a),
+                        (Some(_), Some(_)) => {
+                            return Err(CompileErrorKind::LookbehindNotConstantLength {
+                                flavor: RegexFlavor::Python,
+                            })
+                        }
+                        (Some(a), None) | (None, Some(a)) => Some(a),
+                        _ => None,
+                    };
+                }
+                Ok(count)
+            }
+            Regex::Repetition(r) => {
+                if let RepetitionKind { lower_bound, upper_bound: Some(upper) } = r.kind {
+                    if lower_bound == upper {
+                        return Ok(Some(upper));
+                    }
+                }
+                Err(CompileErrorKind::LookbehindNotConstantLength { flavor: RegexFlavor::Python })
+            }
+            Regex::Boundary(_) => Ok(Some(0)),
+            Regex::Lookaround(_) => Ok(Some(0)),
+            Regex::Reference(_) => Ok(None), // TODO: somehow get the length of the referenced group
+            Regex::Recursion => unreachable!("not supported in python"),
+        }
+    }
+
+    pub(super) fn validate_in_lookbehind_pcre(&self) -> Result<(), CompileErrorKind> {
+        match self {
+            Regex::Literal(_) => Ok(()),
+            Regex::Unescaped(_) => Ok(()),
+            Regex::Char(_) => Ok(()),
+            Regex::CharSet(_) => Ok(()),
+            Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
+                flavor: RegexFlavor::Pcre,
+                feature: Feature::Grapheme,
+            }),
+            Regex::Dot => Ok(()),
+            Regex::Group(g) => {
+                for part in &g.parts {
+                    part.validate_in_lookbehind_pcre()?;
+                }
+                Ok(())
+            }
+            Regex::Alternation(alt) => {
+                for part in &alt.parts {
+                    part.validate_in_lookbehind_pcre()?;
+                }
+                Ok(())
+            }
+            Regex::Repetition(r) => match r.kind.upper_bound {
+                Some(_) => Ok(()),
+                _ => {
+                    Err(CompileErrorKind::LookbehindNotConstantLength { flavor: RegexFlavor::Pcre })
+                }
+            },
+            Regex::Boundary(_) => Ok(()),
+            Regex::Lookaround(_) => Ok(()),
+            Regex::Reference(_) => Ok(()), // TODO: somehow check the referenced group
+            Regex::Recursion => Err(CompileErrorKind::UnsupportedInLookbehind {
+                flavor: RegexFlavor::Pcre,
+                feature: Feature::Recursion,
+            }),
+        }
+    }
+}
+
+impl Default for Regex {
     fn default() -> Self {
         Regex::Literal("".into())
     }
@@ -130,8 +222,8 @@ impl RegexProperty {
     }
 }
 
-impl<'i> Regex<'i> {
-    pub(crate) fn negate(self, not_span: Span, flavor: RegexFlavor) -> CompileResult<'i> {
+impl Regex {
+    pub(crate) fn negate(self, not_span: Span, flavor: RegexFlavor) -> CompileResult {
         match self {
             Regex::Literal(l) => {
                 let mut iter = l.chars();
@@ -151,7 +243,7 @@ impl<'i> Regex<'i> {
             }
             Regex::Char(c) => {
                 let items = vec![RegexCharSetItem::Char(c)];
-                return Ok(Regex::CharSet(RegexCharSet::new(items).negate()));
+                Ok(Regex::CharSet(RegexCharSet::new(items).negate()))
             }
             Regex::CharSet(s) => Ok(Regex::CharSet(s.negate())),
             Regex::Boundary(b) => match b {

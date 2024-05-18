@@ -94,16 +94,12 @@ use pomsky_syntax::{
 
 use super::RuleExt;
 
-impl<'i> RuleExt<'i> for CharClass {
-    fn compile(
-        &self,
-        options: CompileOptions,
-        _state: &mut CompileState<'_, 'i>,
-    ) -> CompileResult<'i> {
+impl RuleExt for CharClass {
+    fn compile(&self, options: CompileOptions, _state: &mut CompileState<'_>) -> CompileResult {
         if self.inner.len() == 1 && !matches!(&&*self.inner, [GroupItem::Char('\r')]) {
             let first = self.inner.first().unwrap();
             if let &GroupItem::Char(c) = first {
-                return Ok(Regex::Literal(c.to_string().into()));
+                return Ok(Regex::Literal(c.to_string()));
             }
         }
 

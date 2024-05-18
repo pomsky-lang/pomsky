@@ -113,3 +113,21 @@ impl CharClass {
         buf.push(']');
     }
 }
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for CharClass {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        let len = u.arbitrary_len::<GroupItem>()?.max(1);
+        let mut inner = Vec::with_capacity(len);
+        for _ in 0..len {
+            inner.push(u.arbitrary()?);
+        }
+
+        Ok(CharClass { inner, span: Span::arbitrary(u)?, unicode_aware: bool::arbitrary(u)? })
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        let (_, Some(group_item_size)) = GroupItem::size_hint(depth) else { panic!() };
+        (group_item_size + 1, Some(group_item_size * 10 + 1))
+    }
+}

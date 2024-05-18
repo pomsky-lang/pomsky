@@ -8,10 +8,10 @@ use crate::{
     regex::Regex,
 };
 
-pub(crate) type CompileResult<'i> = Result<Regex<'i>, CompileError>;
+pub(crate) type CompileResult = Result<Regex, CompileError>;
 
 #[derive(Clone)]
-pub(crate) struct CompileState<'c, 'i> {
+pub(crate) struct CompileState<'i> {
     pub(crate) next_idx: u32,
     pub(crate) used_names_vec: Vec<Option<String>>,
     pub(crate) used_names: HashMap<String, CapturingGroupIndex>,
@@ -19,16 +19,16 @@ pub(crate) struct CompileState<'c, 'i> {
     pub(crate) numbered_groups_count: u32,
     pub(crate) in_lookbehind: bool,
 
-    pub(crate) variables: Vec<(&'i str, &'c Rule<'i>)>,
+    pub(crate) variables: Vec<(&'i str, &'i Rule)>,
     pub(crate) current_vars: HashSet<usize>,
 
     pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
-impl<'c, 'i> CompileState<'c, 'i> {
+impl<'i> CompileState<'i> {
     pub(crate) fn new(
         capt_groups: CapturingGroupsCollector,
-        variables: Vec<(&'i str, &'c Rule<'i>)>,
+        variables: Vec<(&'i str, &'i Rule)>,
     ) -> Self {
         let used_names = capt_groups.names;
         let groups_count = capt_groups.count_named + capt_groups.count_numbered;

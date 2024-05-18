@@ -19,6 +19,7 @@ exclude = ["tests/**", "fuzz/**", "afl-fuzz/**"]
 default = []
 dbg = ["pomsky-syntax/dbg"]
 suggestions = ["pomsky-syntax/suggestions"]
+arbitrary = ["dep:arbitrary", "pomsky-syntax/arbitrary"]
 
 [dependencies]
 pomsky-syntax = { version = "0.11.0", path = "../pomsky-syntax" }

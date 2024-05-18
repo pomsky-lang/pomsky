@@ -1,5 +1,14 @@
 Ruby|Oniguruma error: never ending recursion
+# Ruby|Oniguruma error: too big number for repeat range
+
 Rust|empty character classes are not allowed
 Rust|Compiled regex exceeds size limit
-PCRE|error compiling pattern at offset \d+: lookbehind assertion is not fixed length
-Py|look-behind requires fixed-width pattern
+
+PCRE|branch too long in variable-length lookbehind assertion
+PCRE|regular expression is too large
+# repetitions can be at most 65535 (2^16)
+PCRE|number too big in \{\} quantifier
+# lookbehind must not match more than 65535 (2^16) code points
+PCRE|lookbehind assertion is too long
+
+Java|Look-behind group does not have an obvious maximum length

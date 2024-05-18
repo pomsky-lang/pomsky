@@ -13,7 +13,7 @@ use crate::{
 /// expression. Note that **pomsky will overflow the stack** when parsing an
 /// expression with too much nesting, so the `recursion` argument should be low
 /// enough to prevent that. The recommended default is 256.
-pub fn parse(source: &str, recursion: u32) -> (Option<Rule<'_>>, Vec<ParseDiagnostic>) {
+pub fn parse(source: &str, recursion: u32) -> (Option<Rule>, Vec<ParseDiagnostic>) {
     let tokens = tokenize(source);
 
     let mut errors = Vec::new();

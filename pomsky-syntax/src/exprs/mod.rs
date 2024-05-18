@@ -17,6 +17,9 @@ pub(crate) mod stmt;
 pub mod test;
 pub(crate) mod var;
 
+#[cfg(feature = "arbitrary")]
+pub(crate) mod arbitrary;
+
 pub use self::{
     alternation::Alternation,
     boundary::{Boundary, BoundaryKind},

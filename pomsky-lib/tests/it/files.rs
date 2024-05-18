@@ -201,12 +201,12 @@ pub(crate) fn test_file(
                 }
             }
 
-            struct DisplayMatchCaptures<'i>(&'i Vec<TestCapture<'i>>);
+            struct DisplayMatchCaptures<'i>(&'i Vec<TestCapture>);
             impl std::fmt::Display for DisplayMatchCaptures<'_> {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                     let _ = write!(f, "{{ ");
                     for capture in self.0.iter() {
-                        let _ = match capture.ident {
+                        let _ = match &capture.ident {
                             CaptureIdent::Name(n) => write!(f, "{n}: "),
                             CaptureIdent::Index(i) => write!(f, "{i}: "),
                         };
