@@ -84,7 +84,7 @@ fn compile(input: &str, args: &Args) {
 
     if args.debug {
         eprintln!("======================== debug ========================");
-        eprintln!("{parsed:#?}\n");
+        eprintln!("{parsed:?}\n");
     }
 
     if !args.json {
