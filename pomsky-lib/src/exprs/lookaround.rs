@@ -52,19 +52,17 @@ impl RegexLookaround {
         kind: LookaroundKind,
         flavor: RegexFlavor,
     ) -> Result<Self, CompileErrorKind> {
-        match flavor {
-            RegexFlavor::Python => {
-                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = kind {
+        if let LookaroundKind::Behind | LookaroundKind::BehindNegative = kind {
+            match flavor {
+                RegexFlavor::Python => {
                     content.validate_in_lookbehind_py()?;
                 }
-            }
-            RegexFlavor::Pcre => {
-                if let LookaroundKind::Behind | LookaroundKind::BehindNegative = kind {
+                RegexFlavor::Pcre => {
                     content.validate_in_lookbehind_pcre()?;
                 }
+                // TODO: Java, see <https://github.com/pomsky-lang/pomsky/issues/69>
+                _ => {}
             }
-            // TODO: Java, see <https://github.com/pomsky-lang/pomsky/issues/69>
-            _ => {}
         }
 
         Ok(RegexLookaround { content, kind })

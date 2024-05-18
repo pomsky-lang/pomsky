@@ -144,16 +144,34 @@ fn reduce_repetitions(outer: RepetitionKind, inner: RepetitionKind) -> Option<Re
         (
             RepetitionKind { lower_bound: l1, upper_bound: None },
             RepetitionKind { lower_bound: l2, upper_bound: None },
-        ) => Some(RepetitionKind { lower_bound: l1.saturating_mul(l2), upper_bound: None }),
+        ) => Some(RepetitionKind { lower_bound: mul_repetitions(l1, l2)?, upper_bound: None }),
+
+        (
+            RepetitionKind { lower_bound: l1, upper_bound: Some(l1_1) },
+            RepetitionKind { lower_bound: l2, upper_bound: Some(l2_1) },
+        ) if l1 == l1_1 && l2 == l2_1 => {
+            let repetition = mul_repetitions(l1, l2)?;
+            Some(RepetitionKind { lower_bound: repetition, upper_bound: Some(repetition) })
+        }
 
         (
             RepetitionKind { lower_bound: 0 | 1, upper_bound: Some(u1) },
             RepetitionKind { lower_bound: 0 | 1, upper_bound: Some(u2) },
         ) => {
             let lower_bound = inner.lower_bound.min(outer.lower_bound);
-            Some(RepetitionKind { lower_bound, upper_bound: Some(u1.saturating_mul(u2)) })
+            Some(RepetitionKind { lower_bound, upper_bound: Some(mul_repetitions(u1, u2)?) })
         }
 
         _ => None,
+    }
+}
+
+fn mul_repetitions(a: u32, b: u32) -> Option<u32> {
+    let res = a.saturating_mul(b);
+    if res > u16::MAX as u32 {
+        // some regex flavors don't support repetitions greater than 2^16
+        None
+    } else {
+        Some(res)
     }
 }
