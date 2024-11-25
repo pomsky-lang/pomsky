@@ -32,14 +32,7 @@ pub(super) fn parse_ascii_group(
             GroupItem::range_unchecked('[', '`'),
             GroupItem::range_unchecked('{', '~'),
         ],
-        "ascii_space" => vec![
-            GroupItem::Char(' '),
-            GroupItem::Char('\t'),
-            GroupItem::Char('\n'),
-            GroupItem::Char('\r'),
-            GroupItem::Char('\x0B'),
-            GroupItem::Char('\x0C'),
-        ],
+        "ascii_space" => vec![GroupItem::range_unchecked('\t', '\r'), GroupItem::Char(' ')],
         "ascii_upper" => vec![GroupItem::range_unchecked('A', 'Z')],
         "ascii_word" => vec![
             GroupItem::range_unchecked('0', '9'),

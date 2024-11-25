@@ -29,7 +29,7 @@ pub(crate) mod var;
 use pomsky_syntax::exprs::{test::Test, *};
 use pomsky_syntax::Span;
 
-pub(crate) trait RuleExt {
+pub(crate) trait Compile {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

@@ -6,17 +6,18 @@ use crate::{
     compile::{CompileResult, CompileState},
     options::CompileOptions,
     regex::Regex,
+    unicode_set::UnicodeSet,
 };
 
 use super::{
     alternation::RegexAlternation,
-    char_class::{RegexCharSet, RegexCharSetItem},
+    char_class::RegexCharSet,
     group::{RegexGroup, RegexGroupKind},
     repetition::{RegexQuantifier, RegexRepetition},
-    RuleExt,
+    Compile,
 };
 
-impl RuleExt for Range {
+impl Compile for Range {
     fn compile(&self, _: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(range(&self.start, &self.end, true, self.radix).to_regex())
     }
@@ -466,40 +467,43 @@ impl Alt {
 impl Class {
     fn to_regex(self) -> Regex {
         let (a, b) = (self.start, self.end);
+        let mut set = UnicodeSet::new();
 
-        Regex::CharSet(RegexCharSet::new(match (a, b, a == b) {
+        match (a, b, a == b) {
             (0..=9, _, true) => return Regex::Char((a + b'0') as char),
             (0..=9, 0..=9, _) => {
-                vec![RegexCharSetItem::range_unchecked((a + b'0') as char, (b + b'0') as char)]
+                set.add_range_unchecked((a + b'0') as char..=(b + b'0') as char);
             }
-            (10.., _, true) => vec![
-                RegexCharSetItem::Char((a + b'a' - 10) as char),
-                RegexCharSetItem::Char((a + b'A' - 10) as char),
-            ],
-            (10.., 10.., _) => vec![
-                RegexCharSetItem::range_unchecked((a + b'a' - 10) as char, (b + b'a' - 10) as char),
-                RegexCharSetItem::range_unchecked((a + b'A' - 10) as char, (b + b'A' - 10) as char),
-            ],
-            (9, 10, _) => vec![
-                RegexCharSetItem::Char('9'),
-                RegexCharSetItem::Char('a'),
-                RegexCharSetItem::Char('A'),
-            ],
-            (_, 10, _) => vec![
-                RegexCharSetItem::range_unchecked((a + b'0') as char, '9'),
-                RegexCharSetItem::Char('a'),
-                RegexCharSetItem::Char('A'),
-            ],
-            (9, _, _) => vec![
-                RegexCharSetItem::Char('9'),
-                RegexCharSetItem::range_unchecked('a', (b + b'a' - 10) as char),
-                RegexCharSetItem::range_unchecked('A', (b + b'A' - 10) as char),
-            ],
-            _ => vec![
-                RegexCharSetItem::range_unchecked((a + b'0') as char, '9'),
-                RegexCharSetItem::range_unchecked('a', (b + b'a' - 10) as char),
-                RegexCharSetItem::range_unchecked('A', (b + b'A' - 10) as char),
-            ],
-        }))
+            (10.., _, true) => {
+                set.add_char_unchecked((a + b'a' - 10) as char);
+                set.add_char_unchecked((a + b'A' - 10) as char);
+            }
+            (10.., 10.., _) => {
+                set.add_range_unchecked((a + b'a' - 10) as char..=(b + b'a' - 10) as char);
+                set.add_range_unchecked((a + b'A' - 10) as char..=(b + b'A' - 10) as char);
+            }
+            (9, 10, _) => {
+                set.add_char_unchecked('9');
+                set.add_char_unchecked('a');
+                set.add_char_unchecked('A');
+            }
+            (_, 10, _) => {
+                set.add_range_unchecked((a + b'0') as char..='9');
+                set.add_char_unchecked('a');
+                set.add_char_unchecked('A');
+            }
+            (9, _, _) => {
+                set.add_char_unchecked('9');
+                set.add_range_unchecked('a'..=(b + b'a' - 10) as char);
+                set.add_range_unchecked('A'..=(b + b'A' - 10) as char);
+            }
+            _ => {
+                set.add_range_unchecked((a + b'0') as char..='9');
+                set.add_range_unchecked('a'..=(b + b'a' - 10) as char);
+                set.add_range_unchecked('A'..=(b + b'A' - 10) as char);
+            }
+        }
+
+        Regex::CharSet(RegexCharSet::new(set))
     }
 }

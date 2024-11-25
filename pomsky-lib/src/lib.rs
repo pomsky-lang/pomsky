@@ -63,6 +63,7 @@ mod capturing_groups;
 mod compile;
 mod exprs;
 mod regex;
+mod unicode_set;
 mod validation;
 mod visitor;
 

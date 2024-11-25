@@ -7,7 +7,7 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ReferenceDirection {
@@ -24,7 +24,7 @@ impl From<ReferenceDirection> for Feature {
     }
 }
 
-impl RuleExt for Reference {
+impl Compile for Reference {
     fn compile(&self, options: CompileOptions, state: &mut CompileState) -> CompileResult {
         let (direction, number) = match &self.target {
             ReferenceTarget::Named(name) => match state.used_names.get(name) {

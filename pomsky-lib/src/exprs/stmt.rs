@@ -5,9 +5,9 @@ use crate::{
     options::CompileOptions,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for StmtExpr {
+impl Compile for StmtExpr {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

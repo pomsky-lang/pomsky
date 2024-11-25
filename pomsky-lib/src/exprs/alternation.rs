@@ -7,9 +7,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::{Alternation, RuleExt};
+use super::{Alternation, Compile};
 
-impl RuleExt for Alternation {
+impl Compile for Alternation {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

@@ -239,12 +239,9 @@ impl Regex {
                     }
                     .at(not_span));
                 }
-                Ok(Regex::CharSet(RegexCharSet::new(vec![RegexCharSetItem::Char(c)]).negate()))
+                Ok(Regex::CharSet(RegexCharSet::new(c.into()).negate()))
             }
-            Regex::Char(c) => {
-                let items = vec![RegexCharSetItem::Char(c)];
-                Ok(Regex::CharSet(RegexCharSet::new(items).negate()))
-            }
+            Regex::Char(c) => Ok(Regex::CharSet(RegexCharSet::new(c.into()).negate())),
             Regex::CharSet(s) => Ok(Regex::CharSet(s.negate())),
             Regex::Boundary(b) => match b {
                 BoundaryKind::Word => Ok(Regex::Boundary(BoundaryKind::NotWord)),
@@ -379,7 +376,7 @@ impl Regex {
             Regex::Lookaround(_) | Regex::Boundary(_) => true,
             Regex::Group(g) if matches!(g.kind, RegexGroupKind::Normal) => {
                 let mut iter = g.parts.iter().filter(|part| !part.result_is_empty());
-                iter.next().map_or(false, Regex::is_assertion) && iter.next().is_none()
+                iter.next().is_some_and(Regex::is_assertion) && iter.next().is_none()
             }
             Regex::Alternation(g) => g.parts.iter().any(Regex::is_assertion),
             _ => false,

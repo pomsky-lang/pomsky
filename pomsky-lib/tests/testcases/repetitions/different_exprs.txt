@@ -1,4 +1,4 @@
-#! flavor=pcre
+#! flavor=Pcre
 'a'+ [w]+ U+10+ ([w])+ ([w] | '')+ [w d]+ (>> 'test')+ range '0'-'1'+
 -----
-a+\w+\x10+\w+(?:\w|)+[\w\d]+(?=test)+[0-1]+
+a+\w+\x10+\w+(?:\w|)+[\w\d]+(?=test)+[01]+

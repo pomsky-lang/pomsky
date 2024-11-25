@@ -1,5 +1,6 @@
 use std::{fmt, io::IsTerminal, sync::OnceLock};
 
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum Color {
     Red,
     Green,
@@ -7,9 +8,17 @@ pub(crate) enum Color {
     Yellow,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) struct Colored<T> {
     pub(crate) inner: T,
-    color: Option<Color>,
+    color: ColorOption,
+}
+
+#[derive(Clone, Copy)]
+enum ColorOption {
+    Fg(Color),
+    Bg(Color),
+    None,
 }
 
 /// A `Display` wrapper for two values to format after another.
@@ -42,7 +51,7 @@ pub(crate) mod prelude {
     }
 
     pub(crate) fn no_color<T>(inner: T) -> Colored<T> {
-        Colored { color: None, inner }
+        Colored { color: super::ColorOption::None, inner }
     }
 }
 
@@ -52,21 +61,49 @@ impl<T> Colored<T> {
         const GREEN: &str = "\x1B[38;5;10m";
         const BLUE: &str = "\x1B[38;5;14m";
         const YELLOW: &str = "\x1B[38;5;11m";
+        const RED_BG: &str = "\x1B[48;2;150;0;0m";
+        const GREEN_BG: &str = "\x1B[48;2;0;100;0m";
+        const BLUE_BG: &str = "\x1B[48;2;0;80;80m";
+        const YELLOW_BG: &str = "\x1B[48;2;80;80;0m";
         const RESET: &str = "\x1B[0m";
 
         match self.color {
-            None => ("", ""),
-            Some(Color::Red) => (RED, RESET),
-            Some(Color::Green) => (GREEN, RESET),
-            Some(Color::Blue) => (BLUE, RESET),
-            Some(Color::Yellow) => (YELLOW, RESET),
+            ColorOption::None => ("", ""),
+            ColorOption::Fg(Color::Red) => (RED, RESET),
+            ColorOption::Fg(Color::Green) => (GREEN, RESET),
+            ColorOption::Fg(Color::Blue) => (BLUE, RESET),
+            ColorOption::Fg(Color::Yellow) => (YELLOW, RESET),
+            ColorOption::Bg(Color::Red) => (RED_BG, RESET),
+            ColorOption::Bg(Color::Green) => (GREEN_BG, RESET),
+            ColorOption::Bg(Color::Blue) => (BLUE_BG, RESET),
+            ColorOption::Bg(Color::Yellow) => (YELLOW_BG, RESET),
+        }
+    }
+
+    pub fn map<U>(self, f: impl Fn(T) -> U) -> Colored<U> {
+        Colored { inner: f(self.inner), color: self.color }
+    }
+
+    pub fn bg(self) -> Colored<T> {
+        let color = match self.color {
+            ColorOption::Fg(color) | ColorOption::Bg(color) => ColorOption::Bg(color),
+            ColorOption::None => ColorOption::None,
+        };
+        Colored { color, ..self }
+    }
+
+    pub fn iff(self, condition: bool) -> Colored<T> {
+        if condition {
+            self
+        } else {
+            Colored { inner: self.inner, color: ColorOption::None }
         }
     }
 }
 
 impl<T> From<(Color, T)> for Colored<T> {
     fn from((color, inner): (Color, T)) -> Self {
-        Colored { inner, color: Some(color) }
+        Colored { inner, color: ColorOption::Fg(color) }
     }
 }
 

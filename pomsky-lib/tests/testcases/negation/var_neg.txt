@@ -1,4 +1,4 @@
 let x = ['test'];
 !x
 -----
-[^tes]
+[^est]

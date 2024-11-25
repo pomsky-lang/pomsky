@@ -5,17 +5,19 @@ use std::{
     time::Instant,
 };
 
+use diff::simple_diff;
 use regex_test::RegexTest;
 
 use crate::{
     args::Args,
-    color::{prelude::*, D2},
+    color::{prelude::*, Colored, D2},
     files::TestResult,
 };
 
 #[macro_use]
 mod color;
 mod args;
+mod diff;
 mod files;
 mod fuzzer;
 
@@ -76,11 +78,32 @@ fn defer_main() {
             TestResult::Ignored => ignored += 1,
             TestResult::Blessed => blessed += 1,
             TestResult::IncorrectResult { input, expected, got } => {
+                let l_ok = expected.is_ok();
+                let r_ok = got.is_ok();
+                let expected = expected.unwrap_or_else(|e| e);
+                let got = got.unwrap_or_else(|e| e);
+                let color;
+                let (pre, l_diff, r_diff, suf) = if l_ok == r_ok {
+                    color = true;
+                    simple_diff(&expected, &got)
+                } else {
+                    color = false;
+                    ("", &expected[..], &got[..], "")
+                };
+
                 failed += 1;
                 println!("{}: {}", path.to_string_lossy(), red("incorrect result."));
                 println!("       {}: {}", blue("input"), pad_left(&input, 14));
-                println!("    {}: {}", blue("expected"), Print(expected, 14));
-                println!("         {}: {}", blue("got"), Print(got, 14));
+                println!(
+                    "    {}: {}",
+                    blue("expected"),
+                    Print(l_ok, pre, green(l_diff).iff(color).bg(), suf, 14)
+                );
+                println!(
+                    "         {}: {}",
+                    blue("got"),
+                    Print(r_ok, pre, red(r_diff).iff(color).bg(), suf, 14)
+                );
                 println!();
             }
             TestResult::InvalidOutput(e) => {
@@ -192,13 +215,29 @@ fn filter_matches(filter: &str, path: &Path) -> bool {
     path.contains(filter)
 }
 
-struct Print(Result<String, String>, usize);
+struct Print<'a>(bool, &'a str, Colored<&'a str>, &'a str, usize);
 
-impl fmt::Display for Print {
+impl fmt::Display for Print<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.0 {
-            Ok(s) => write!(f, "{} /{s}/", green("OK"), s = pad_left(s, self.1 + 4)),
-            Err(s) => write!(f, "{}: {s}", red("ERR"), s = pad_left(s, self.1 + 5)),
+        let Print(is_ok, prefix, middle, suffix, pad) = *self;
+        if is_ok {
+            write!(
+                f,
+                "{} /{s}{m}{e}/",
+                green("OK"),
+                s = pad_left(prefix, pad + 4),
+                m = middle.map(|middle| pad_left(middle, pad + 4)),
+                e = pad_left(suffix, pad + 4)
+            )
+        } else {
+            write!(
+                f,
+                "{}: {s}{m}{e}",
+                red("ERR"),
+                s = pad_left(prefix, pad + 5),
+                m = middle.map(|middle| pad_left(middle, pad + 5)),
+                e = pad_left(suffix, pad + 5)
+            )
         }
     }
 }

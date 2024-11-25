@@ -7,10 +7,10 @@ use crate::{
 };
 
 use super::{
-    char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme, RuleExt,
+    char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme, Compile,
 };
 
-impl RuleExt for Rule {
+impl Compile for Rule {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

@@ -3,4 +3,4 @@
 ' 3 ' [ascii_graph] [ascii_lower] [ascii_print] [ascii_punct]
 ' 4 ' [ascii_upper] [ascii_xdigit]
 -----
- 1 [\x00-\x7F][0-9][0-9a-zA-Z_][ \t\n\r\x0B\f] 2 [a-zA-Z][0-9a-zA-Z][ \t][\x00-\x1F\x7F] 3 [!-~][a-z][ -~][!-/:-@\[-`{-~] 4 [A-Z][0-9a-fA-F]
+ 1 [\x00-\x7F][0-9][0-9A-Z_a-z][\t-\r ] 2 [A-Za-z][0-9A-Za-z][\t ][\x00-\x1F\x7F] 3 [!-~][a-z][ -~][!-/:-@\[-`{-~] 4 [A-Z][0-9A-Fa-f]

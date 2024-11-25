@@ -68,6 +68,7 @@ impl<I: Fn(char) -> bool> MicroRegex for CharIs<I> {
     }
 }
 
+/*
 #[derive(Clone, Copy)]
 pub(crate) struct Either<A, B>(pub(crate) A, pub(crate) B);
 
@@ -78,6 +79,7 @@ impl<A: MicroRegex, B: MicroRegex<Context = A::Context>> MicroRegex for Either<A
         self.0.is_start(haystack).or_else(|| self.1.is_start(haystack))
     }
 }
+*/
 
 #[derive(Clone, Copy)]
 pub(crate) struct Many0<I>(pub(crate) I);
@@ -112,6 +114,7 @@ impl<I: MicroRegex> MicroRegex for Many1<I> {
     }
 }
 
+/*
 #[derive(Clone, Copy)]
 pub(crate) struct Not<I>(pub(crate) I);
 
@@ -122,6 +125,7 @@ impl<I: MicroRegex> MicroRegex for Not<I> {
         self.0.is_start(haystack).is_none().then_some((0, ()))
     }
 }
+*/
 
 #[derive(Clone, Copy)]
 pub(crate) struct Ctx<I, C>(pub(crate) I, pub(crate) C);

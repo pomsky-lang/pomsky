@@ -7,9 +7,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Lookaround {
+impl Compile for Lookaround {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

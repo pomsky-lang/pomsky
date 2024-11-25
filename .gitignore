@@ -1,6 +1,7 @@
 /target
 /vendor
 core.*
+/pomsky-wasm2
 
 # coverage info
 cov.zip

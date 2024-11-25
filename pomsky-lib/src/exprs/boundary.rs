@@ -11,9 +11,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Boundary {
+impl Compile for Boundary {
     fn compile(&self, options: CompileOptions, state: &mut CompileState<'_>) -> CompileResult {
         use BoundaryKind::*;
 

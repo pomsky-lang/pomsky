@@ -73,8 +73,8 @@
 //!   `![!Latin 'a']` = `[^\P{Latin}a]`.
 //!
 //!   When a negated character class only contains 1 item, which is also
-//! negated, the class is   removed and the negations cancel each other out:
-//! `![!w]` = `\w`, `![!L]` = `\p{L}`.
+//!   negated, the class is   removed and the negations cancel each other out:
+//!   `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
 use crate::Span;
 

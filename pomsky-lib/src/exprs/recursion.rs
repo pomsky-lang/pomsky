@@ -6,9 +6,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Recursion {
+impl Compile for Recursion {
     fn compile(&self, _options: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(Regex::Recursion)
     }

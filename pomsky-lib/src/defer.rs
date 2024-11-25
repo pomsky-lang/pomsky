@@ -11,14 +11,14 @@ impl<'a, S, F: FnMut(&mut S)> Deferred<'a, S, F> {
     }
 }
 
-impl<'a, S, F: FnMut(&mut S)> Drop for Deferred<'a, S, F> {
+impl<S, F: FnMut(&mut S)> Drop for Deferred<'_, S, F> {
     fn drop(&mut self) {
         let mutator = &mut self.mutate;
         mutator(self.state);
     }
 }
 
-impl<'a, S, F: FnMut(&mut S)> Deref for Deferred<'a, S, F> {
+impl<S, F: FnMut(&mut S)> Deref for Deferred<'_, S, F> {
     type Target = S;
 
     fn deref(&self) -> &Self::Target {
@@ -26,7 +26,7 @@ impl<'a, S, F: FnMut(&mut S)> Deref for Deferred<'a, S, F> {
     }
 }
 
-impl<'a, S, F: FnMut(&mut S)> DerefMut for Deferred<'a, S, F> {
+impl<S, F: FnMut(&mut S)> DerefMut for Deferred<'_, S, F> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.state
     }

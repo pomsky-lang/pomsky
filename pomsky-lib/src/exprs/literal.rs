@@ -6,9 +6,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Literal {
+impl Compile for Literal {
     fn compile(&self, _: CompileOptions, _: &mut CompileState<'_>) -> CompileResult {
         Ok(Regex::Literal(self.content.clone()))
     }

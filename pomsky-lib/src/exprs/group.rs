@@ -6,9 +6,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Group {
+impl Compile for Group {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

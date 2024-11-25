@@ -1,4 +1,4 @@
-#! flavor=js
+#! flavor=JavaScript
 [w] [d] [s] ' - ' ![w] ![d] ![s] ' - ' [!w] [!d] [!s] ' - ' ![w d s]
 -----
-[\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\p{Nd}\s - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\P{Nd}\S - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\P{Nd}\S - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}\p{Nd}\s]
+[\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\p{Nd}\s - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\P{Nd}\S - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}]\P{Nd}\S - [^\p{Alphabetic}\p{M}\p{Nd}\p{Pc}\s]

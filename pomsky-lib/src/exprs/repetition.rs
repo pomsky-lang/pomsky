@@ -7,9 +7,9 @@ use crate::{
     regex::Regex,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for Repetition {
+impl Compile for Repetition {
     fn compile<'c>(
         &'c self,
         options: CompileOptions,

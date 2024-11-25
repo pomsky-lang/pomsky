@@ -3,4 +3,4 @@ disable unicode;
 
 ^ C G . [n r f] [d] [w] [s] % !% 'Hello äöüß' $
 -----
-^[\s\S]\X.[\n\r\f][0-9][a-zA-Z0-9_][ \t-\r]\b\BHello äöüß$
+^[\s\S]\X.[\n\f\r][0-9][0-9A-Z_a-z][\t-\r ]\b\BHello äöüß$

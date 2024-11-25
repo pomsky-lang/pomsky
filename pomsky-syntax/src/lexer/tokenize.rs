@@ -148,7 +148,7 @@ fn find_unescaped_quote(input: &str) -> Option<usize> {
     let mut s = input;
 
     loop {
-        match s.find(|c| c == '\\' || c == '"') {
+        match s.find(['\\', '"']) {
             Some(n) => {
                 if s.as_bytes()[n] == b'"' {
                     return Some(n + (input.len() - s.len()));

@@ -73,10 +73,9 @@
 //!   `![!Latin 'a']` = `[^\P{Latin}a]`.
 //!
 //!   When a negated character class only contains 1 item, which is also
-//! negated, the class is   removed and the negations cancel each other out:
-//! `![!w]` = `\w`, `![!L]` = `\p{L}`.
+//!   negated, the class is   removed and the negations cancel each other out:
+//!   `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
-use std::collections::HashSet;
 use std::fmt;
 
 use crate::{
@@ -85,6 +84,7 @@ use crate::{
     exprs::literal,
     options::{CompileOptions, RegexFlavor},
     regex::{Regex, RegexProperty, RegexShorthand},
+    unicode_set::UnicodeSet,
 };
 
 use pomsky_syntax::{
@@ -92,63 +92,59 @@ use pomsky_syntax::{
     Span,
 };
 
-use super::RuleExt;
+use super::Compile;
 
-impl RuleExt for CharClass {
+impl Compile for CharClass {
     fn compile(&self, options: CompileOptions, _state: &mut CompileState<'_>) -> CompileResult {
-        if self.inner.len() == 1 && !matches!(&&*self.inner, [GroupItem::Char('\r')]) {
-            let first = self.inner.first().unwrap();
-            if let &GroupItem::Char(c) = first {
-                return Ok(Regex::Literal(c.to_string()));
-            }
-        }
-
-        let mut prev_items: HashSet<GroupItem> = HashSet::new();
-
-        let mut negative = false;
+        // when single, a `[!w]` can be turned into `![w]`
         let is_single = self.inner.len() == 1;
-        let mut buf = Vec::new();
-        for item in &self.inner {
-            if prev_items.contains(item) {
-                continue;
-            }
-            prev_items.insert(*item);
+        let mut group_negative = false;
 
+        let mut set = UnicodeSet::new();
+        for item in &self.inner {
             match *item {
                 GroupItem::Char(c) => {
-                    validate_char_in_class(c, options.flavor, self.span)?;
-                    buf.push(RegexCharSetItem::Char(c));
+                    if !is_single {
+                        validate_char_in_class(c, options.flavor, self.span)?;
+                    }
+                    set.add_char(c)
                 }
                 GroupItem::Range { first, last } => {
                     validate_char_in_class(first, options.flavor, self.span)?;
                     validate_char_in_class(last, options.flavor, self.span)?;
-                    buf.push(RegexCharSetItem::Range { first, last });
+                    set.add_range(first..=last);
                 }
-                GroupItem::Named { name, negative: item_negative } => {
-                    if !self.unicode_aware {
-                        named_class_to_regex_ascii(
-                            name,
-                            item_negative,
-                            options.flavor,
-                            self.span,
-                            &mut buf,
-                        )?;
-                    } else {
+                GroupItem::Named { name, negative } => {
+                    if self.unicode_aware {
                         named_class_to_regex_unicode(
                             name,
-                            item_negative,
-                            &mut negative,
+                            negative,
+                            &mut group_negative,
                             is_single,
                             options.flavor,
                             self.span,
-                            &mut buf,
+                            &mut set,
+                        )?;
+                    } else {
+                        named_class_to_regex_ascii(
+                            name,
+                            negative,
+                            options.flavor,
+                            self.span,
+                            &mut set,
                         )?;
                     }
                 }
             }
         }
 
-        Ok(Regex::CharSet(RegexCharSet { negative, items: buf }))
+        // this makes it possible to use code points outside the BMP in .NET,
+        // as long as there is only one in the character set
+        if let Some(only_char) = set.try_into_char() {
+            return Ok(Regex::Literal(only_char.to_string()));
+        }
+
+        Ok(Regex::CharSet(RegexCharSet { negative: group_negative, set }))
     }
 }
 
@@ -166,28 +162,8 @@ pub(crate) fn check_char_class_empty(
     span: Span,
 ) -> Result<(), CompileError> {
     if char_set.negative {
-        let mut prev_items = vec![];
-
-        for mut item in char_set.items.iter().copied() {
-            use RegexCharSetItem as RCSI;
-            use RegexProperty as RP;
-            use RegexShorthand as RS;
-
-            if let RCSI::Property { negative, value: RP::Category(Category::Separator) } = item {
-                item = RCSI::Shorthand(if negative { RS::NotSpace } else { RS::Space });
-            }
-
-            if let Some(negated) = item.negate() {
-                if prev_items.contains(&negated) {
-                    return Err(CompileErrorKind::EmptyClassNegated {
-                        group1: negated,
-                        group2: item,
-                    }
-                    .at(span));
-                }
-            }
-
-            prev_items.push(item);
+        if let Some((group1, group2)) = char_set.set.full_props() {
+            return Err(CompileErrorKind::EmptyClassNegated { group1, group2 }.at(span));
         }
     }
     Ok(())
@@ -198,7 +174,7 @@ fn named_class_to_regex_ascii(
     negative: bool,
     flavor: RegexFlavor,
     span: Span,
-    buf: &mut Vec<RegexCharSetItem>,
+    set: &mut UnicodeSet,
 ) -> Result<(), CompileError> {
     if negative
         // In JS, \W and \D can be used for negation because they're ascii-only
@@ -212,32 +188,30 @@ fn named_class_to_regex_ascii(
         GroupName::Word => {
             if flavor == RegexFlavor::JavaScript {
                 let s = if negative { RegexShorthand::NotWord } else { RegexShorthand::Word };
-                buf.push(RegexCharSetItem::Shorthand(s));
+                set.add_prop(RegexCharSetItem::Shorthand(s));
             } else {
                 // we already checked above if negative
-                buf.extend([
-                    RegexCharSetItem::Range { first: 'a', last: 'z' },
-                    RegexCharSetItem::Range { first: 'A', last: 'Z' },
-                    RegexCharSetItem::Range { first: '0', last: '9' },
-                    RegexCharSetItem::Char('_'),
-                ]);
+                set.add_range('a'..='z');
+                set.add_range('A'..='Z');
+                set.add_range('0'..='9');
+                set.add_char('_');
             }
         }
         GroupName::Digit => {
             if flavor == RegexFlavor::JavaScript {
                 let s = if negative { RegexShorthand::NotDigit } else { RegexShorthand::Digit };
-                buf.push(RegexCharSetItem::Shorthand(s));
+                set.add_prop(RegexCharSetItem::Shorthand(s));
             } else {
                 // we already checked above if negative
-                buf.push(RegexCharSetItem::Range { first: '0', last: '9' });
+                set.add_range('0'..='9');
             }
         }
-        GroupName::Space => buf.extend([
-            RegexCharSetItem::Char(' '),
-            RegexCharSetItem::Range { first: '\x09', last: '\x0D' }, // \t\n\v\f\r
-        ]),
-        GroupName::HorizSpace => buf.push(RegexCharSetItem::Char('\t')),
-        GroupName::VertSpace => buf.push(RegexCharSetItem::Range { first: '\x0A', last: '\x0D' }),
+        GroupName::Space => {
+            set.add_char(' ');
+            set.add_range('\x09'..='\x0D'); // \t\n\v\f\r
+        }
+        GroupName::HorizSpace => set.add_char('\t'),
+        GroupName::VertSpace => set.add_range('\x0A'..='\x0D'),
         _ => return Err(CompileErrorKind::UnicodeInAsciiMode.at(span)),
     }
     Ok(())
@@ -250,7 +224,7 @@ fn named_class_to_regex_unicode(
     is_single: bool,
     flavor: RegexFlavor,
     span: Span,
-    buf: &mut Vec<RegexCharSetItem>,
+    set: &mut UnicodeSet,
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word => {
@@ -266,27 +240,33 @@ fn named_class_to_regex_unicode(
                         .at(span));
                     }
                 }
-                buf.extend([
+                set.add_prop(
                     RegexProperty::Other(OtherProperties::Alphabetic).negative_item(false),
-                    RegexProperty::Category(Category::Mark).negative_item(false),
+                );
+                set.add_prop(RegexProperty::Category(Category::Mark).negative_item(false));
+                set.add_prop(
                     RegexProperty::Category(Category::Decimal_Number).negative_item(false),
+                );
+                set.add_prop(
                     RegexProperty::Category(Category::Connector_Punctuation).negative_item(false),
-                ]);
+                );
             } else {
                 let s = if negative { RegexShorthand::NotWord } else { RegexShorthand::Word };
-                buf.push(RegexCharSetItem::Shorthand(s));
+                set.add_prop(RegexCharSetItem::Shorthand(s));
             }
         }
         GroupName::Digit => {
             if flavor == RegexFlavor::JavaScript {
-                buf.push(RegexProperty::Category(Category::Decimal_Number).negative_item(negative));
+                set.add_prop(
+                    RegexProperty::Category(Category::Decimal_Number).negative_item(negative),
+                );
             } else {
                 let s = if negative { RegexShorthand::NotDigit } else { RegexShorthand::Digit };
-                buf.push(RegexCharSetItem::Shorthand(s));
+                set.add_prop(RegexCharSetItem::Shorthand(s));
             }
         }
 
-        GroupName::Space => buf.push(RegexCharSetItem::Shorthand(if negative {
+        GroupName::Space => set.add_prop(RegexCharSetItem::Shorthand(if negative {
             RegexShorthand::NotSpace
         } else {
             RegexShorthand::Space
@@ -299,26 +279,28 @@ fn named_class_to_regex_unicode(
         GroupName::HorizSpace | GroupName::VertSpace
             if matches!(flavor, RegexFlavor::Pcre | RegexFlavor::Java) =>
         {
-            buf.push(RegexCharSetItem::Shorthand(if group == GroupName::HorizSpace {
+            set.add_prop(RegexCharSetItem::Shorthand(if group == GroupName::HorizSpace {
                 RegexShorthand::HorizSpace
             } else {
                 RegexShorthand::VertSpace
             }));
         }
         GroupName::HorizSpace => {
-            buf.push(RegexCharSetItem::Char('\t'));
+            set.add_char('\t');
             if flavor == RegexFlavor::Python {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             } else {
-                buf.push(RegexProperty::Category(Category::Space_Separator).negative_item(false));
+                set.add_prop(
+                    RegexProperty::Category(Category::Space_Separator).negative_item(false),
+                );
             }
         }
-        GroupName::VertSpace => buf.extend([
-            RegexCharSetItem::Range { first: '\x0A', last: '\x0D' },
-            RegexCharSetItem::Char('\u{85}'),
-            RegexCharSetItem::Char('\u{2028}'),
-            RegexCharSetItem::Char('\u{2029}'),
-        ]),
+        GroupName::VertSpace => {
+            set.add_range('\x0A'..='\x0D');
+            set.add_char('\u{85}');
+            set.add_char('\u{2028}');
+            set.add_char('\u{2029}');
+        }
 
         _ if flavor == RegexFlavor::Python => {
             return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
@@ -329,7 +311,7 @@ fn named_class_to_regex_unicode(
             {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }
-            buf.push(RegexProperty::Category(c).negative_item(negative));
+            set.add_prop(RegexProperty::Category(c).negative_item(negative));
         }
         GroupName::Script(s) => {
             if flavor == RegexFlavor::DotNet {
@@ -343,7 +325,7 @@ fn named_class_to_regex_unicode(
             {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }
-            buf.push(RegexProperty::Script(s).negative_item(negative));
+            set.add_prop(RegexProperty::Script(s).negative_item(negative));
         }
         GroupName::CodeBlock(b) => match flavor {
             RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
@@ -384,7 +366,7 @@ fn named_class_to_regex_unicode(
                     _ => {}
                 }
 
-                buf.push(RegexProperty::Block(b).negative_item(negative));
+                set.add_prop(RegexProperty::Block(b).negative_item(negative));
             }
             _ => return Err(CompileErrorKind::Unsupported(Feature::UnicodeBlock, flavor).at(span)),
         },
@@ -402,7 +384,7 @@ fn named_class_to_regex_unicode(
                     }
                     _ => {}
                 }
-                buf.push(RegexProperty::Other(o).negative_item(negative));
+                set.add_prop(RegexProperty::Other(o).negative_item(negative));
             } else {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             }
@@ -414,12 +396,12 @@ fn named_class_to_regex_unicode(
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) struct RegexCharSet {
     negative: bool,
-    items: Vec<RegexCharSetItem>,
+    set: UnicodeSet,
 }
 
 impl RegexCharSet {
-    pub(crate) fn new(items: Vec<RegexCharSetItem>) -> Self {
-        Self { negative: false, items }
+    pub(crate) fn new(items: UnicodeSet) -> Self {
+        Self { negative: false, set: items }
     }
 
     pub(crate) fn negate(mut self) -> Self {
@@ -428,21 +410,24 @@ impl RegexCharSet {
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
-        if self.items.len() == 1 {
-            match self.items.first().unwrap() {
-                RegexCharSetItem::Shorthand(s) => {
-                    let shorthand = if self.negative { s.negate() } else { Some(*s) };
-                    if let Some(shorthand) = shorthand {
-                        return shorthand.codegen(buf);
+        if self.set.len() == 1 {
+            if let Some(range) = self.set.ranges().next() {
+                let (first, last) = range.as_chars();
+                if first == last && !self.negative {
+                    return literal::codegen_char_esc(first, buf, flavor);
+                }
+            } else if let Some(prop) = self.set.props().next() {
+                match prop {
+                    RegexCharSetItem::Shorthand(s) => {
+                        let shorthand = if self.negative { s.negate() } else { Some(s) };
+                        if let Some(shorthand) = shorthand {
+                            return shorthand.codegen(buf);
+                        }
+                    }
+                    RegexCharSetItem::Property { negative, value } => {
+                        return value.codegen(buf, negative ^ self.negative, flavor);
                     }
                 }
-                RegexCharSetItem::Property { negative, value } => {
-                    return value.codegen(buf, negative ^ self.negative, flavor);
-                }
-                RegexCharSetItem::Char(c) if !self.negative => {
-                    return literal::codegen_char_esc(*c, buf, flavor);
-                }
-                _ => {}
             }
         }
 
@@ -453,20 +438,25 @@ impl RegexCharSet {
         }
 
         let mut is_first = true;
-        for item in &self.items {
-            match *item {
-                RegexCharSetItem::Char(c) => {
-                    literal::compile_char_esc_in_class(c, buf, is_first, flavor);
-                }
-                RegexCharSetItem::Range { first, last } => {
-                    literal::compile_char_esc_in_class(first, buf, is_first, flavor);
-                    buf.push('-');
-                    literal::compile_char_esc_in_class(last, buf, false, flavor);
-                }
+        for prop in self.set.props() {
+            match prop {
                 RegexCharSetItem::Shorthand(s) => s.codegen(buf),
                 RegexCharSetItem::Property { negative, value } => {
                     value.codegen(buf, negative, flavor);
                 }
+            }
+            is_first = false;
+        }
+        for range in self.set.ranges() {
+            let (first, last) = range.as_chars();
+            if first == last {
+                literal::compile_char_esc_in_class(first, buf, is_first, flavor);
+            } else {
+                literal::compile_char_esc_in_class(first, buf, is_first, flavor);
+                if range.first + 1 < range.last {
+                    buf.push('-');
+                }
+                literal::compile_char_esc_in_class(last, buf, false, flavor);
             }
             is_first = false;
         }
@@ -477,21 +467,13 @@ impl RegexCharSet {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RegexCharSetItem {
-    Char(char),
-    Range { first: char, last: char },
     Shorthand(RegexShorthand),
     Property { negative: bool, value: RegexProperty },
 }
 
 impl RegexCharSetItem {
-    pub(crate) fn range_unchecked(first: char, last: char) -> Self {
-        Self::Range { first, last }
-    }
-
     pub(crate) fn negate(self) -> Option<Self> {
         match self {
-            RegexCharSetItem::Char(_) => None,
-            RegexCharSetItem::Range { .. } => None,
             RegexCharSetItem::Shorthand(s) => s.negate().map(RegexCharSetItem::Shorthand),
             RegexCharSetItem::Property { negative, value } => {
                 Some(RegexCharSetItem::Property { negative: !negative, value })
@@ -503,8 +485,6 @@ impl RegexCharSetItem {
 impl fmt::Debug for RegexCharSetItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Char(c) => c.fmt(f),
-            Self::Range { first, last } => write!(f, "{first:?}-{last:?}"),
             Self::Shorthand(s) => f.write_str(s.as_str()),
             &Self::Property { value, negative } => {
                 if negative {

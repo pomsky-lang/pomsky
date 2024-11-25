@@ -57,7 +57,7 @@ impl fmt::Display for DeprecationWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DeprecationWarning::Unicode(u) => {
-                let rest = u.trim_start_matches(|c| matches!(c, 'U' | '+'));
+                let rest = u.trim_start_matches(['U', '+']);
                 write!(f, "This syntax is deprecated. Use `U+{rest}` instead.")
             }
             &DeprecationWarning::ShorthandInRange(c) => {
