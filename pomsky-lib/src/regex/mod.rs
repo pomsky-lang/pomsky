@@ -34,8 +34,6 @@ pub(crate) enum Regex {
     Literal(String),
     /// A regex string that is inserted verbatim into the output
     Unescaped(String),
-    /// A literal char
-    Char(char),
     /// A character class, delimited with square brackets
     CharSet(RegexCharSet),
     /// A Unicode grapheme
@@ -66,7 +64,6 @@ impl Regex {
         match self {
             Regex::Literal(str) => Ok(Some(str.chars().count() as u32)),
             Regex::Unescaped(_) => Ok(None),
-            Regex::Char(_) => Ok(Some(1)),
             Regex::CharSet(_) => Ok(Some(1)),
             Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
                 flavor: RegexFlavor::Python,
@@ -115,7 +112,6 @@ impl Regex {
         match self {
             Regex::Literal(_) => Ok(()),
             Regex::Unescaped(_) => Ok(()),
-            Regex::Char(_) => Ok(()),
             Regex::CharSet(_) => Ok(()),
             Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
                 flavor: RegexFlavor::Pcre,
@@ -241,7 +237,6 @@ impl Regex {
                 }
                 Ok(Regex::CharSet(RegexCharSet::new(c.into()).negate()))
             }
-            Regex::Char(c) => Ok(Regex::CharSet(RegexCharSet::new(c.into()).negate())),
             Regex::CharSet(s) => Ok(Regex::CharSet(s.negate())),
             Regex::Boundary(b) => match b {
                 BoundaryKind::Word => Ok(Regex::Boundary(BoundaryKind::NotWord)),
@@ -309,9 +304,6 @@ impl Regex {
             Regex::Unescaped(u) => {
                 buf.push_str(u);
             }
-            &Regex::Char(c) => {
-                literal::codegen_char_esc(c, buf, flavor);
-            }
             Regex::CharSet(c) => c.codegen(buf, flavor),
             Regex::Grapheme => buf.push_str("\\X"),
             Regex::Dot => buf.push('.'),
@@ -330,7 +322,6 @@ impl Regex {
             Regex::Alternation(_) => true,
             Regex::Literal(_)
             | Regex::Unescaped(_)
-            | Regex::Char(_)
             | Regex::Group(_)
             | Regex::CharSet(_)
             | Regex::Grapheme
@@ -353,7 +344,6 @@ impl Regex {
             | Regex::Unescaped(_) => true,
             Regex::Lookaround(_) => matches!(flavor, RegexFlavor::JavaScript),
             Regex::CharSet(_)
-            | Regex::Char(_)
             | Regex::Grapheme
             | Regex::Reference(_)
             | Regex::Dot

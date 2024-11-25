@@ -5,8 +5,12 @@ let regex
 
 for await (const line of readLines(Deno.stdin)) {
   if (regex === undefined) {
+    if (!line.startsWith('REGEX:')) {
+      continue
+    }
+
     try {
-      regex = new RegExp(line, 'u')
+      regex = new RegExp(line.slice(6), 'u')
       console.log('success')
     } catch (e) {
       console.log(substituteLf(e.message))
@@ -17,9 +21,7 @@ for await (const line of readLines(Deno.stdin)) {
     if (regex.test(test)) {
       console.log('test good')
     } else {
-      console.log(
-        substituteLf(`Regex '${regex.source}' does not match '${test}'`)
-      )
+      console.log(substituteLf(`Regex '${regex.source}' does not match '${test}'`))
       regex = undefined
     }
   } else {

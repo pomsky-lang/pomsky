@@ -31,3 +31,21 @@ When you found a crash, you might find it in `errors.txt`. If it's not in `error
 ## Report the bug
 
 Please report the bug [here](https://github.com/pomsky-lang/pomsky/issues). If you think it could be a security vulnerability, please disclose it directly per email: ludwig.stecher@gmx.de.
+
+## Latest findings
+
+### PCRE
+
+- Lookbehind cannot contain include unbounded repetitions.
+  - Bounded repetitions need an upper bound of _at most_ 255. I.e. `(?<=a{4,255})` is ok.
+  - Nested repetitions reach the limit quicker (TBD)
+- Lookbehind cannot contain `\X`
+
+### Ruby
+
+- Lookaround cannot contain capturing groups
+
+### Python
+
+- Lookbehind requires fixed-width pattern
+- Cannot refer to open capturing group

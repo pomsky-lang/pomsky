@@ -31,7 +31,9 @@ impl Reference {
             ReferenceTarget::Named(n) => buf.write(n),
             ReferenceTarget::Number(i) => buf.write_fmt(i),
             &ReferenceTarget::Relative(o) => {
-                buf.push(if o < 0 { '-' } else { '+' });
+                if o >= 0 {
+                    buf.push('+');
+                }
                 buf.write_fmt(o);
             }
         }

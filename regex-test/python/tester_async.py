@@ -15,8 +15,11 @@ try:
             line = line[:-1]
 
         if regex == None:
+            if not line.startswith("REGEX:"):
+                continue
+
             try:
-                regex = re.compile(line)
+                regex = re.compile(line[6:])
                 print("success")
             except Exception as e:
                 print(substituteLf(str(e)))

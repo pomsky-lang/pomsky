@@ -7,8 +7,12 @@ public class TesterAsync {
         string testLine;
 
         while ((line = Console.ReadLine()) != null) {
+            if (!line.StartsWith("REGEX:")) {
+                continue;
+            }
+
             try {
-                var r = new Regex(line, RegexOptions.Compiled);
+                var r = new Regex(line.Substring(6), RegexOptions.Compiled);
                 Console.WriteLine("success");
 
                 while ((testLine = Console.ReadLine()) != null && testLine.StartsWith("TEST:")) {

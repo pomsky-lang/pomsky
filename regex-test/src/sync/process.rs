@@ -59,12 +59,12 @@ impl Process {
         }
     }
 
-    pub(crate) fn test(&self, regex: impl Into<String>, tests: &[impl AsRef<str>]) -> Outcome {
+    pub(crate) fn test(&self, regex: impl AsRef<str>, tests: &[impl AsRef<str>]) -> Outcome {
         let mut lock = self.data.lock().unwrap();
         let (_, stdin, stdout, count) = (*lock).as_mut().expect("process isn't running");
 
         *count += 1;
-        stdin.write_all((regex.into() + "\n").as_bytes()).unwrap();
+        stdin.write_all(("REGEX:".to_string() + regex.as_ref() + "\n").as_bytes()).unwrap();
 
         let line = stdout.next().expect("child process did not respond").unwrap();
         if line != "success" {

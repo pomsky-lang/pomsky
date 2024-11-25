@@ -469,33 +469,13 @@ impl Class {
         let (a, b) = (self.start, self.end);
         let mut set = UnicodeSet::new();
 
-        match (a, b, a == b) {
-            (0..=9, _, true) => return Regex::Char((a + b'0') as char),
-            (0..=9, 0..=9, _) => {
+        match (a, b) {
+            (0..=9, 0..=9) => {
                 set.add_range_unchecked((a + b'0') as char..=(b + b'0') as char);
             }
-            (10.., _, true) => {
-                set.add_char_unchecked((a + b'a' - 10) as char);
-                set.add_char_unchecked((a + b'A' - 10) as char);
-            }
-            (10.., 10.., _) => {
+            (10.., 10..) => {
                 set.add_range_unchecked((a + b'a' - 10) as char..=(b + b'a' - 10) as char);
                 set.add_range_unchecked((a + b'A' - 10) as char..=(b + b'A' - 10) as char);
-            }
-            (9, 10, _) => {
-                set.add_char_unchecked('9');
-                set.add_char_unchecked('a');
-                set.add_char_unchecked('A');
-            }
-            (_, 10, _) => {
-                set.add_range_unchecked((a + b'0') as char..='9');
-                set.add_char_unchecked('a');
-                set.add_char_unchecked('A');
-            }
-            (9, _, _) => {
-                set.add_char_unchecked('9');
-                set.add_range_unchecked('a'..=(b + b'a' - 10) as char);
-                set.add_range_unchecked('A'..=(b + b'A' - 10) as char);
             }
             _ => {
                 set.add_range_unchecked((a + b'0') as char..='9');

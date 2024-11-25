@@ -57,7 +57,7 @@ fn check_test_match(regex: &Regex, test_case: TestCaseMatch, errors: &mut Vec<Di
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {
-            if captures[0].len() != test_case.literal.content.as_bytes().len() {
+            if captures[0].len() != test_case.literal.content.len() {
                 errors.push(Diagnostic::test_failure(
                     test_case.literal.span,
                     DiagnosticCode::TestNoExactMatch,
@@ -177,7 +177,7 @@ fn check_test_reject(regex: &Regex, test_case: TestCaseReject, errors: &mut Vec<
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {
-            let is_exact = captures[0].len() == test_case.literal.content.as_bytes().len();
+            let is_exact = captures[0].len() == test_case.literal.content.len();
             if test_case.as_substring || is_exact {
                 let actual_value;
                 let (code, actual_value) = if is_exact || !test_case.as_substring {

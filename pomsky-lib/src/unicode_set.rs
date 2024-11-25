@@ -114,10 +114,6 @@ impl UnicodeSet {
         self.ranges.insert(SetRange { first: *range.start() as u32, last: *range.end() as u32 });
     }
 
-    pub fn add_char_unchecked(&mut self, char: char) {
-        self.ranges.insert(SetRange::single(char as u32));
-    }
-
     fn add(&mut self, mut range_new: SetRange) {
         let lower = SetRange::single(range_new.first.saturating_sub(1));
         let upper = SetRange::single(range_new.last.saturating_add(1));

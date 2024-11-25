@@ -107,8 +107,7 @@ impl Regex {
                 Count::One
             }
             Regex::Unescaped(_) => Count::Many,
-            Regex::Char(_)
-            | Regex::CharSet(_)
+            Regex::CharSet(_)
             | Regex::Grapheme
             | Regex::Dot
             | Regex::Boundary(_)

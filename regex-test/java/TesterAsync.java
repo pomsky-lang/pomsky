@@ -7,8 +7,12 @@ public class TesterAsync {
         try (Scanner input = new Scanner(System.in)) {
             while (input.hasNext()) {
                 String regex = input.nextLine();
+                if (!regex.startsWith("REGEX:")) {
+                    continue;
+                }
+
                 try {
-                    Pattern p = Pattern.compile(regex);
+                    Pattern p = Pattern.compile("(?U)" + regex.substring(6));
                     System.out.printf("success\n");
 
                     while (input.hasNext()) {
