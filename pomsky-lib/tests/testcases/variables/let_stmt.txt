@@ -2,4 +2,4 @@ let x = 'a' | 'b';
 
 x x x
 -----
-(?:a|b)(?:a|b)(?:a|b)
+[ab][ab][ab]
