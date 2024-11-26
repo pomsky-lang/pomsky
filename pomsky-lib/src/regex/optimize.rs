@@ -2,9 +2,9 @@ use std::{mem, ops::Add};
 
 use pomsky_syntax::exprs::RepetitionKind;
 
-use crate::exprs::group::RegexGroupKind;
+use crate::{exprs::group::RegexGroupKind, unicode_set::UnicodeSet};
 
-use super::Regex;
+use super::{Regex, RegexCharSet};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Count {
@@ -66,13 +66,57 @@ impl Regex {
                 }
             }
             Regex::Alternation(a) => {
+                for part in &mut a.parts {
+                    part.optimize();
+                }
+
+                let mut i = 0;
+                while i < a.parts.len() - 1 {
+                    let (p1, p2) = a.parts.split_at_mut(i + 1);
+                    let lhs = &mut p1[i];
+                    let rhs = &mut p2[0];
+
+                    if lhs.is_single_char() && rhs.is_single_char() {
+                        match (lhs, rhs) {
+                            (Regex::Literal(lit1), Regex::Literal(lit2)) => {
+                                let mut set = UnicodeSet::new();
+                                set.add_char(lit1.chars().next().unwrap());
+                                set.add_char(lit2.chars().next().unwrap());
+                                a.parts[i] = Regex::CharSet(RegexCharSet::new(set));
+                                a.parts.remove(i + 1);
+                            }
+                            (Regex::Literal(lit), Regex::CharSet(set))
+                            | (Regex::CharSet(set), Regex::Literal(lit))
+                                if !set.negative =>
+                            {
+                                let mut set = std::mem::take(set);
+                                set.set.add_char(lit.chars().next().unwrap());
+                                a.parts[i] = Regex::CharSet(set);
+                                a.parts.remove(i + 1);
+                            }
+                            (Regex::CharSet(set1), Regex::CharSet(set2))
+                                if !set1.negative && !set2.negative =>
+                            {
+                                for range in set2.set.ranges() {
+                                    set1.set.add_set_range(range);
+                                }
+                                for prop in set2.set.props() {
+                                    set1.set.add_prop(prop);
+                                }
+                                a.parts.remove(i + 1);
+                            }
+                            _ => {
+                                i += 1;
+                            }
+                        }
+                    } else {
+                        i += 1;
+                    }
+                }
+
                 if a.parts.len() == 1 {
                     *self = a.parts.pop().unwrap();
                     return self.optimize();
-                }
-
-                for part in &mut a.parts {
-                    part.optimize();
                 }
 
                 Count::One

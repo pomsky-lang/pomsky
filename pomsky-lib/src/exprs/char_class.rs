@@ -394,9 +394,10 @@ fn named_class_to_regex_unicode(
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
+#[derive(Default)]
 pub(crate) struct RegexCharSet {
-    negative: bool,
-    set: UnicodeSet,
+    pub(crate) negative: bool,
+    pub(crate) set: UnicodeSet,
 }
 
 impl RegexCharSet {

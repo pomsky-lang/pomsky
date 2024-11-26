@@ -11,7 +11,7 @@ use crate::{
     regex::{RegexProperty, RegexShorthand},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct UnicodeSet {
     ranges: BTreeSet<SetRange>,
     props: Vec<RegexCharSetItem>,
@@ -108,6 +108,10 @@ impl UnicodeSet {
 
     pub fn add_range(&mut self, range: RangeInclusive<char>) {
         self.add(SetRange { first: *range.start() as u32, last: *range.end() as u32 })
+    }
+
+    pub fn add_set_range(&mut self, range: SetRange) {
+        self.add(range)
     }
 
     pub fn add_range_unchecked(&mut self, range: RangeInclusive<char>) {

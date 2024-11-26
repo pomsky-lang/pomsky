@@ -145,6 +145,14 @@ impl Regex {
             }),
         }
     }
+
+    pub(super) fn is_single_char(&self) -> bool {
+        if let Regex::Literal(l) = self {
+            !l.is_empty() && l.chars().nth(1).is_none()
+        } else {
+            matches!(self, Regex::CharSet(_))
+        }
+    }
 }
 
 impl Default for Regex {
