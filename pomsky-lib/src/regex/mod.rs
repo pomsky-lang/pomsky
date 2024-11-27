@@ -450,7 +450,7 @@ impl RegexProperty {
                         _ => buf.push_str(&b.as_str().replace('-', "_")),
                     };
                 }
-                RegexFlavor::Pcre => {
+                RegexFlavor::Ruby => {
                     buf.push_str("In");
                     buf.push_str(b.as_str());
                 }
