@@ -317,10 +317,7 @@ fn named_class_to_regex_unicode(
             if flavor == RegexFlavor::DotNet {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeScript, flavor).at(span));
             }
-            if let (
-                RegexFlavor::Pcre | RegexFlavor::Ruby | RegexFlavor::Java,
-                Script::Kawi | Script::Nag_Mundari,
-            )
+            if let (RegexFlavor::Ruby, Script::Kawi | Script::Nag_Mundari)
             | (RegexFlavor::Rust, Script::Unknown) = (flavor, s)
             {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
@@ -330,19 +327,10 @@ fn named_class_to_regex_unicode(
         GroupName::CodeBlock(b) => match flavor {
             RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
                 match (flavor, b) {
-                    (
-                        RegexFlavor::Java,
-                        CodeBlock::Arabic_Extended_C
-                        | CodeBlock::CJK_Unified_Ideographs_Extension_H
-                        | CodeBlock::Combining_Diacritical_Marks_For_Symbols
-                        | CodeBlock::Cyrillic_Extended_D
-                        | CodeBlock::Cyrillic_Supplement
-                        | CodeBlock::Devanagari_Extended_A
-                        | CodeBlock::Greek_And_Coptic
-                        | CodeBlock::Kaktovik_Numerals
-                        | CodeBlock::No_Block,
-                    )
+                    (RegexFlavor::Java, CodeBlock::No_Block)
                     | (
+                        // These should work since Oniguruma updated to Unicode 15.1
+                        // ... but our C bindings for Oniguruma are unmaintained!
                         RegexFlavor::Ruby,
                         CodeBlock::Arabic_Extended_C
                         | CodeBlock::CJK_Unified_Ideographs_Extension_H

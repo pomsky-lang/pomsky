@@ -31,7 +31,7 @@ pub(crate) fn pcre(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
             Outcome::Success
         }
         Err(e) => {
-            let width = regex[0..e.offset().unwrap_or(0)].chars().count();
+            let width = regex[0..e.offset().unwrap_or(0)].chars().count().saturating_sub(1);
             Outcome::Error(format!("{e}\n>\n> {}\n> {:width$}^", &regex, ""))
         }
     }

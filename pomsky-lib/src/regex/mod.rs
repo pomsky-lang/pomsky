@@ -425,11 +425,6 @@ impl RegexProperty {
 
         match self {
             RegexProperty::Category(c) => {
-                if let (RegexFlavor::Rust, Category::Cased_Letter | Category::Currency_Symbol) =
-                    (flavor, c)
-                {
-                    buf.push_str("gc=");
-                }
                 buf.push_str(c.as_str());
             }
             RegexProperty::Script(s) => {
@@ -445,12 +440,21 @@ impl RegexProperty {
                 }
                 RegexFlavor::Java => {
                     buf.push_str("In");
-                    buf.push_str(&b.as_str().replace('-', "_"));
+                    match b {
+                        // Java, for whatever reason, chose to only support the *2nd alias* for these blocks
+                        // (see PropertyValueAliases.txt)
+                        CodeBlock::Cyrillic_Supplement => buf.push_str("Cyrillic_Supplementary"),
+                        CodeBlock::Combining_Diacritical_Marks_For_Symbols => {
+                            buf.push_str("Combining_Marks_For_Symbols")
+                        }
+                        _ => buf.push_str(&b.as_str().replace('-', "_")),
+                    };
                 }
-                _ => {
+                RegexFlavor::Pcre => {
                     buf.push_str("In");
                     buf.push_str(b.as_str());
                 }
+                _ => panic!("No other flavors support Unicode blocks"),
             },
             RegexProperty::Other(o) => {
                 if flavor == RegexFlavor::Java {
