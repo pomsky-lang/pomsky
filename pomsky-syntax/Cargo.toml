@@ -2,7 +2,7 @@
 name = "pomsky-syntax"
 description = "Parser for pomsky, a new regular expression language"
 version = "0.11.0"
-edition = "2021"
+edition.workspace = true
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 license = "MIT OR Apache-2.0"
 homepage = "https://pomsky-lang.org"

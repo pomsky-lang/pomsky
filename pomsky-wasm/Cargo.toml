@@ -1,5 +1,6 @@
 [workspace]
 members = ["."]
+package.edition = "2021"
 
 [package]
 name = "compiler-web"
@@ -7,7 +8,7 @@ description = "A portable, modern regular expression language"
 homepage = "https://pomsky-lang.org"
 version = "0.11.0"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
-edition = "2021"
+edition.workspace = true
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pomsky-lang/pomsky"
 

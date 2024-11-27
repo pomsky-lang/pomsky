@@ -2,7 +2,7 @@
 name = "helptext"
 description = "Create beautiful help messages"
 version = "0.1.1"
-edition = "2021"
+edition.workspace = true
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 repository = "https://github.com/pomsky-lang/pomsky/tree/main/helptext"
 readme = "README.md"
