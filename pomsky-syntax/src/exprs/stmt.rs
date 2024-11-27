@@ -61,11 +61,15 @@ impl arbitrary::Arbitrary<'_> for Let {
     }
 
     fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        arbitrary::size_hint::recursion_guard(depth, |depth| {
-            arbitrary::size_hint::and(
-                super::arbitrary::Ident::size_hint(depth),
-                Rule::size_hint(depth),
-            )
+        Self::try_size_hint(depth).unwrap_or_default()
+    }
+
+    fn try_size_hint(
+        depth: usize,
+    ) -> arbitrary::Result<(usize, Option<usize>), arbitrary::MaxRecursionReached> {
+        use arbitrary::size_hint::*;
+        try_recursion_guard(depth, |depth| {
+            Ok(and(super::arbitrary::Ident::size_hint(depth), Rule::try_size_hint(depth)?))
         })
     }
 }
