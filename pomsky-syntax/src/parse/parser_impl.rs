@@ -560,11 +560,12 @@ impl<'i> Parser<'i> {
 
     /// Parses an identifier or dot in a char set
     fn parse_char_group_ident(&mut self, negative: bool) -> PResult<Option<Vec<GroupItem>>> {
-        if self.consume(Token::Dot) || self.consume(Token::Identifier) {
+        if self.consume(Token::Identifier) {
             let span = self.last_span();
 
-            let item = CharGroup::try_from_group_name(self.source_at(span), negative, span)
-                .map_err(|e| e.at(span))?;
+            let name = self.source_at(span);
+            let item =
+                CharGroup::try_from_group_name(name, negative, span).map_err(|e| e.at(span))?;
 
             Ok(Some(item))
         } else if let Some(name) = self.consume_as(Token::ReservedName) {

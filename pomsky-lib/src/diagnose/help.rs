@@ -1,7 +1,7 @@
 use pomsky_syntax::{
     diagnose::{
-        CharClassError, CharStringError, DeprecationError, DeprecationWarning, ParseErrorKind,
-        ParseWarningKind, RepetitionError,
+        CharClassError, CharStringError, DeprecationWarning, ParseErrorKind, ParseWarningKind,
+        RepetitionError,
     },
     Span,
 };
@@ -99,9 +99,6 @@ pub(super) fn get_parser_help(
                 https://pomsky-lang.org/docs/language-tour/variables/"
                 .into(),
         ),
-        ParseErrorKind::Deprecated(DeprecationError::DotInSet) => {
-            Some("Use `.` without brackets instead".into())
-        }
         _ => None,
     }
 }

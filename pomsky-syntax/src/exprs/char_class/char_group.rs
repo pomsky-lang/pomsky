@@ -6,10 +6,7 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use crate::{
-    error::{DeprecationError, ParseErrorKind},
-    Span,
-};
+use crate::{error::ParseErrorKind, Span};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -52,7 +49,6 @@ impl CharGroup {
             _ if name == "ascii" || name.starts_with("ascii_") => {
                 super::ascii::parse_ascii_group(name, negative)?
             }
-            "." => return Err(DeprecationError::DotInSet.into()),
             _ => {
                 let name = super::unicode::parse_group_name(name)?;
                 vec![GroupItem::Named { name, negative, span }]

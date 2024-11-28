@@ -159,20 +159,13 @@ impl core::fmt::Display for ParseErrorKind {
 
 /// An error that is returned when a deprecated feature is used
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeprecationError {
-    /// Deprecated `[.]`
-    DotInSet,
-}
+pub enum DeprecationError {}
 
 impl std::error::Error for DeprecationError {}
 
 impl core::fmt::Display for DeprecationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let error = match self {
-            DeprecationError::DotInSet => "`[.]` is deprecated",
-        };
-
-        f.write_str(error)
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {}
     }
 }
 
