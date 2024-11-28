@@ -42,6 +42,10 @@ pub(super) fn get_parser_help(
                 get_number(part2)
             ))
         }
+        ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
+            extra_in_prefix: true,
+            ..
+        }) => Some("When using the `block:` or `blk:` prefix, the `In` at the beginning needs to be removed".into()),
         #[cfg(feature = "suggestions")]
         ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
             similar: Some(ref similar),

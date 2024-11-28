@@ -21,6 +21,7 @@ pub(super) fn parse_group_name(
         Err(_) => {
             return Err(CharClassError::UnknownNamedClass {
                 found: name.into(),
+                extra_in_prefix: name.starts_with("InIn"),
                 #[cfg(feature = "suggestions")]
                 similar: crate::util::find_suggestion(
                     name,

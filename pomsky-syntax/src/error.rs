@@ -214,6 +214,7 @@ pub enum CharClassError {
     /// Unknown shorthand character class or Unicode property
     UnknownNamedClass {
         found: Box<str>,
+        extra_in_prefix: bool,
         #[cfg(feature = "suggestions")]
         similar: Option<Box<str>>,
     },
@@ -243,8 +244,12 @@ impl core::fmt::Display for CharClassError {
             CharClassError::Unallowed => {
                 write!(f, "This combination of character classes is not allowed")
             }
-            CharClassError::UnknownNamedClass { found, .. } => {
-                write!(f, "Unknown character class `{found}`")
+            &CharClassError::UnknownNamedClass { ref found, extra_in_prefix, .. } => {
+                if extra_in_prefix {
+                    write!(f, "Unknown character class `{}`", found.replacen("In", "blk:", 1))
+                } else {
+                    write!(f, "Unknown character class `{found}`")
+                }
             }
             CharClassError::Negative => write!(f, "This character class can't be negated"),
             CharClassError::UnexpectedPrefix => {

@@ -48,6 +48,7 @@ pub(super) fn parse_ascii_group(
         _ => {
             return Err(CharClassError::UnknownNamedClass {
                 found: name.into(),
+                extra_in_prefix: false,
                 #[cfg(feature = "suggestions")]
                 similar: crate::util::find_suggestion(name, OPTION_LIST.iter().copied()),
             })
