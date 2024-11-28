@@ -55,6 +55,8 @@ fn defer_main() {
     let rt = RegexTest::default();
     rt.init_processes();
     println!("test setup completed in {:.2?}", start.elapsed());
+    println!(" - PCRE2 version: {}", regex_test::pcre_version());
+    println!(" - Oniguruma version: {}", regex_test::onig_version());
 
     println!();
     let start = Instant::now();

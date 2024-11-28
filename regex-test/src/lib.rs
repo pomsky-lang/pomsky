@@ -8,4 +8,5 @@ pub enum Outcome {
     Error(String),
 }
 
+pub use native::{onig_version, pcre_version};
 pub use sync::RegexTest;

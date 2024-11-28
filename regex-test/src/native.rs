@@ -51,3 +51,12 @@ pub(crate) fn ruby(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
         Err(e) => Outcome::Error(e.to_string()),
     }
 }
+
+pub fn pcre_version() -> String {
+    let (major, minor) = pcre2::version();
+    format!("{major}.{minor}")
+}
+
+pub fn onig_version() -> String {
+    onig::version()
+}
