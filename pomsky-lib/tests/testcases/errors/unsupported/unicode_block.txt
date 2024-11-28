@@ -2,4 +2,4 @@
 [InBasic_Latin]
 -----
 ERROR: Unsupported feature `Unicode blocks (\p{InBlock})` in the `JavaScript` regex flavor
-SPAN: 0..15
+SPAN: 1..14

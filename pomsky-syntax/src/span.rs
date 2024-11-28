@@ -6,7 +6,7 @@ use std::{
 /// A source code location, marked by the start and end byte offset. If both are
 /// zero, this is considered as "empty" or "missing", and [`Span::range`]
 /// returns `None`.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Span {
     start: u32,
     end: u32,

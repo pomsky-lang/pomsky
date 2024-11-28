@@ -105,6 +105,7 @@ Currently, the following warnings can be disabled:"]
             "dotnet"     => { [c!"Regex" " class in .NET languages such C# and F#"] }
             "ruby"       => { ["Ruby's built-in regular expressions"] }
             "rust"       => { ["Rust's " c!"regex" " crate"] }
+            "re2"        => { ["The RE2 engine, compatible with Go's " c!"regexp" " package"] }
         }
     }
 

@@ -563,7 +563,7 @@ impl<'i> Parser<'i> {
         if self.consume(Token::Dot) || self.consume(Token::Identifier) {
             let span = self.last_span();
 
-            let item = CharGroup::try_from_group_name(self.source_at(span), negative)
+            let item = CharGroup::try_from_group_name(self.source_at(span), negative, span)
                 .map_err(|e| e.at(span))?;
 
             Ok(Some(item))

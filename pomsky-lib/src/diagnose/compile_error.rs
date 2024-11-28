@@ -83,7 +83,6 @@ pub(crate) enum CompileErrorKind {
     RangeIsTooBig(u8),
     NegativeShorthandInAsciiMode,
     UnicodeInAsciiMode,
-    JsWordBoundaryInUnicodeMode,
     DotNetNumberedRefWithMixedGroups,
     RubyLookaheadInLookbehind {
         was_word_boundary: bool,
@@ -123,6 +122,22 @@ impl core::fmt::Display for CompileErrorKind {
                     f,
                     "Code point {c:?} is too large. Code points above U+FFFF \
                     may not appear in character classes in the `{flavor:?}` flavor"
+                ),
+                Feature::UnicodeWordBoundaries => write!(
+                    f,
+                    "In the `{flavor:?}` flavor, word boundaries may only be used when Unicode is disabled"
+                ),
+                Feature::ShorthandW => write!(
+                    f,
+                    "In the `{flavor:?}` flavor, `word` can only be used when Unicode is disabled"
+                ),
+                Feature::NegativeShorthandW => write!(
+                    f,
+                    "In the `{flavor:?}` flavor, `word` can only be negated in a character class when Unicode is disabled"
+                ),
+                Feature::NegativeShorthandS => write!(
+                    f,
+                    "In the `{flavor:?}` flavor, `space` can only be negated in a character class when Unicode is disabled"
                 ),
                 _ => write!(
                     f,
@@ -167,16 +182,11 @@ impl core::fmt::Display for CompileErrorKind {
                 write!(f, "Range is too big, it isn't allowed to contain more than {digits} digits")
             }
             CompileErrorKind::NegativeShorthandInAsciiMode => {
-                write!(f, "Shorthands currently can't be negated when Unicode is disabled")
+                write!(f, "Shorthands can't be negated when Unicode is disabled")
             }
             CompileErrorKind::UnicodeInAsciiMode => {
                 write!(f, "Unicode properties can't be used when Unicode is disabled")
             }
-            CompileErrorKind::JsWordBoundaryInUnicodeMode => write!(
-                f,
-                "In the JavaScript flavor, word boundaries may only be used \
-                when Unicode is disabled"
-            ),
             CompileErrorKind::DotNetNumberedRefWithMixedGroups => write!(
                 f,
                 "In the .NET flavor, numeric references are forbidden when there are both named \

@@ -114,7 +114,7 @@ impl Compile for CharClass {
                     validate_char_in_class(last, options.flavor, self.span)?;
                     set.add_range(first..=last);
                 }
-                GroupItem::Named { name, negative } => {
+                GroupItem::Named { name, negative, span } => {
                     if self.unicode_aware {
                         named_class_to_regex_unicode(
                             name,
@@ -122,17 +122,11 @@ impl Compile for CharClass {
                             &mut group_negative,
                             is_single,
                             options.flavor,
-                            self.span,
+                            span,
                             &mut set,
                         )?;
                     } else {
-                        named_class_to_regex_ascii(
-                            name,
-                            negative,
-                            options.flavor,
-                            self.span,
-                            &mut set,
-                        )?;
+                        named_class_to_regex_ascii(name, negative, options.flavor, span, &mut set)?;
                     }
                 }
             }
@@ -169,6 +163,14 @@ pub(crate) fn check_char_class_empty(
     Ok(())
 }
 
+pub fn is_ascii_only_in_flavor(group: GroupName, flavor: RegexFlavor) -> bool {
+    match flavor {
+        RegexFlavor::JavaScript => matches!(group, GroupName::Word | GroupName::Digit),
+        RegexFlavor::RE2 => matches!(group, GroupName::Word | GroupName::Digit | GroupName::Space),
+        _ => false,
+    }
+}
+
 fn named_class_to_regex_ascii(
     group: GroupName,
     negative: bool,
@@ -176,17 +178,15 @@ fn named_class_to_regex_ascii(
     span: Span,
     set: &mut UnicodeSet,
 ) -> Result<(), CompileError> {
-    if negative
-        // In JS, \W and \D can be used for negation because they're ascii-only
-        && (flavor != RegexFlavor::JavaScript
-            || (group != GroupName::Digit && group != GroupName::Word))
-    {
+    // In JS, \W and \D can be used for negation because they're ascii-only
+    // Same goes for \W, \D and \S in RE2
+    if negative && !is_ascii_only_in_flavor(group, flavor) {
         return Err(CompileErrorKind::NegativeShorthandInAsciiMode.at(span));
     }
 
     match group {
         GroupName::Word => {
-            if flavor == RegexFlavor::JavaScript {
+            if let RegexFlavor::JavaScript | RegexFlavor::RE2 = flavor {
                 let s = if negative { RegexShorthand::NotWord } else { RegexShorthand::Word };
                 set.add_prop(RegexCharSetItem::Shorthand(s));
             } else {
@@ -198,7 +198,7 @@ fn named_class_to_regex_ascii(
             }
         }
         GroupName::Digit => {
-            if flavor == RegexFlavor::JavaScript {
+            if let RegexFlavor::JavaScript | RegexFlavor::RE2 = flavor {
                 let s = if negative { RegexShorthand::NotDigit } else { RegexShorthand::Digit };
                 set.add_prop(RegexCharSetItem::Shorthand(s));
             } else {
@@ -207,8 +207,13 @@ fn named_class_to_regex_ascii(
             }
         }
         GroupName::Space => {
-            set.add_char(' ');
-            set.add_range('\x09'..='\x0D'); // \t\n\v\f\r
+            if let RegexFlavor::RE2 = flavor {
+                let s = if negative { RegexShorthand::NotSpace } else { RegexShorthand::Space };
+                set.add_prop(RegexCharSetItem::Shorthand(s));
+            } else {
+                set.add_char(' ');
+                set.add_range('\x09'..='\x0D'); // \t\n\v\f\r
+            }
         }
         GroupName::HorizSpace => set.add_char('\t'),
         GroupName::VertSpace => set.add_range('\x0A'..='\x0D'),
@@ -228,7 +233,9 @@ fn named_class_to_regex_unicode(
 ) -> Result<(), CompileError> {
     match group {
         GroupName::Word => {
-            if flavor == RegexFlavor::JavaScript {
+            if flavor == RegexFlavor::RE2 {
+                return Err(CompileErrorKind::Unsupported(Feature::ShorthandW, flavor).at(span));
+            } else if flavor == RegexFlavor::JavaScript {
                 if negative {
                     if is_single {
                         *group_negative ^= true;
@@ -256,7 +263,7 @@ fn named_class_to_regex_unicode(
             }
         }
         GroupName::Digit => {
-            if flavor == RegexFlavor::JavaScript {
+            if matches!(flavor, RegexFlavor::JavaScript | RegexFlavor::RE2) {
                 set.add_prop(
                     RegexProperty::Category(Category::Decimal_Number).negative_item(negative),
                 );
@@ -266,11 +273,39 @@ fn named_class_to_regex_unicode(
             }
         }
 
-        GroupName::Space => set.add_prop(RegexCharSetItem::Shorthand(if negative {
-            RegexShorthand::NotSpace
-        } else {
-            RegexShorthand::Space
-        })),
+        GroupName::Space => {
+            if flavor == RegexFlavor::RE2 {
+                if negative {
+                    if is_single {
+                        *group_negative ^= true;
+                    } else {
+                        return Err(CompileErrorKind::Unsupported(
+                            Feature::NegativeShorthandS,
+                            flavor,
+                        )
+                        .at(span));
+                    }
+                }
+
+                // [ \f\n\r\t\u000b\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]
+                set.add_prop(RegexCharSetItem::Shorthand(RegexShorthand::Space));
+                set.add_char('\x0b');
+                set.add_char('\u{a0}');
+                set.add_char('\u{1680}');
+                set.add_range('\u{2000}'..='\u{200a}');
+                set.add_range('\u{2028}'..='\u{2029}');
+                set.add_char('\u{202f}');
+                set.add_char('\u{205f}');
+                set.add_char('\u{3000}');
+                set.add_char('\u{feff}');
+            } else {
+                set.add_prop(RegexCharSetItem::Shorthand(if negative {
+                    RegexShorthand::NotSpace
+                } else {
+                    RegexShorthand::Space
+                }))
+            }
+        }
 
         GroupName::HorizSpace | GroupName::VertSpace if negative => {
             return Err(CompileErrorKind::NegatedHorizVertSpace.at(span));
@@ -307,7 +342,7 @@ fn named_class_to_regex_unicode(
         }
         GroupName::Category(c) => {
             if let (RegexFlavor::Rust, Category::Surrogate)
-            | (RegexFlavor::DotNet, Category::Cased_Letter) = (flavor, c)
+            | (RegexFlavor::DotNet | RegexFlavor::RE2, Category::Cased_Letter) = (flavor, c)
             {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }

@@ -1,6 +1,5 @@
 #! expect=error, flavor=JavaScript
 < 'foo' >
 -----
-ERROR: In the JavaScript flavor, word boundaries may only be used when Unicode is disabled
-HELP: Disable Unicode, e.g. `(disable unicode; <)`
+ERROR: In the `JavaScript` flavor, word boundaries may only be used when Unicode is disabled
 SPAN: 0..1

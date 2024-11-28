@@ -6,7 +6,7 @@ use pomsky_syntax::exprs::{Boundary, BoundaryKind};
 
 use crate::{
     compile::{CompileResult, CompileState},
-    diagnose::CompileErrorKind,
+    diagnose::{CompileErrorKind, Feature},
     options::{CompileOptions, RegexFlavor},
     regex::Regex,
 };
@@ -17,11 +17,14 @@ impl Compile for Boundary {
     fn compile(&self, options: CompileOptions, state: &mut CompileState<'_>) -> CompileResult {
         use BoundaryKind::*;
 
-        if options.flavor == RegexFlavor::JavaScript
+        if options.flavor == RegexFlavor::RE2 && matches!(self.kind, WordStart | WordEnd) {
+            Err(CompileErrorKind::Unsupported(Feature::WordStartEnd, options.flavor).at(self.span))
+        } else if matches!(options.flavor, RegexFlavor::JavaScript | RegexFlavor::RE2)
             && self.unicode_aware
             && matches!(self.kind, Word | NotWord | WordStart | WordEnd)
         {
-            Err(CompileErrorKind::JsWordBoundaryInUnicodeMode.at(self.span))
+            Err(CompileErrorKind::Unsupported(Feature::UnicodeWordBoundaries, options.flavor)
+                .at(self.span))
         } else if options.flavor == RegexFlavor::Ruby && state.in_lookbehind {
             Err(CompileErrorKind::RubyLookaheadInLookbehind { was_word_boundary: true }
                 .at(self.span))

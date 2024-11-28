@@ -45,7 +45,9 @@ impl RuleVisitor<CompileError> for Validator {
             exprs::GroupKind::Atomic => {
                 self.require(Feat::ATOMIC_GROUPS, group.span)?;
 
-                if let RegexFlavor::JavaScript | RegexFlavor::Rust = self.flavor() {
+                if let RegexFlavor::JavaScript | RegexFlavor::Rust | RegexFlavor::RE2 =
+                    self.flavor()
+                {
                     return Err(CompileErrorKind::Unsupported(
                         Feature::AtomicGroups,
                         self.flavor(),
@@ -79,9 +81,8 @@ impl RuleVisitor<CompileError> for Validator {
         };
         self.require(feature, lookaround.span)?;
 
-        if self.flavor() == RegexFlavor::Rust {
-            Err(CompileErrorKind::Unsupported(Feature::Lookaround, self.flavor())
-                .at(lookaround.span))
+        if let flavor @ (RegexFlavor::Rust | RegexFlavor::RE2) = self.flavor() {
+            Err(CompileErrorKind::Unsupported(Feature::Lookaround, flavor).at(lookaround.span))
         } else {
             Ok(())
         }

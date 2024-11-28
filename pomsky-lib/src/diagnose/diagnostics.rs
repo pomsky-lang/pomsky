@@ -89,10 +89,9 @@ impl Diagnostic {
             }
             _ => {
                 let range = error_span.range().unwrap_or(0..source_code.len());
-                let slice = &source_code[range.clone()];
                 let span = Span::from(range);
 
-                let help = get_compiler_help(kind, slice, span);
+                let help = get_compiler_help(kind, span);
 
                 Diagnostic {
                     severity: Severity::Error,

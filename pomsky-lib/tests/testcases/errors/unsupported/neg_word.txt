@@ -1,5 +1,5 @@
 #! expect=error, flavor=JavaScript
 ['_' !w] !['_' !w]
 -----
-ERROR: Unsupported feature `negative `\w` shorthand in character class` in the `JavaScript` regex flavor
-SPAN: 0..8
+ERROR: In the `JavaScript` flavor, `word` can only be negated in a character class when Unicode is disabled
+SPAN: 6..7

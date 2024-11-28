@@ -2,4 +2,4 @@
 [Bidi_Mirrored]
 -----
 ERROR: This Unicode property is not supported in the `Ruby` regex flavor
-SPAN: 0..15
+SPAN: 1..14

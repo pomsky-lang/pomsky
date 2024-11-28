@@ -2,4 +2,4 @@
 [White_Space]
 -----
 ERROR: Unsupported feature `Unicode properties (\p{Property})` in the `Python` regex flavor
-SPAN: 0..13
+SPAN: 1..12

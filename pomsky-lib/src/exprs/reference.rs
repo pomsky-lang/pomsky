@@ -98,7 +98,7 @@ impl Compile for Reference {
         };
 
         match options.flavor {
-            RegexFlavor::Rust => {
+            RegexFlavor::Rust | RegexFlavor::RE2 => {
                 Err(CompileErrorKind::Unsupported(direction.into(), options.flavor).at(self.span))
             }
 

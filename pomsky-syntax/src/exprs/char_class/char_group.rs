@@ -6,7 +6,10 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use crate::error::{DeprecationError, ParseErrorKind};
+use crate::{
+    error::{DeprecationError, ParseErrorKind},
+    Span,
+};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -43,6 +46,7 @@ impl CharGroup {
     pub(crate) fn try_from_group_name(
         name: &str,
         negative: bool,
+        span: Span,
     ) -> Result<Vec<GroupItem>, ParseErrorKind> {
         Ok(match name {
             _ if name == "ascii" || name.starts_with("ascii_") => {
@@ -51,7 +55,7 @@ impl CharGroup {
             "." => return Err(DeprecationError::DotInSet.into()),
             _ => {
                 let name = super::unicode::parse_group_name(name)?;
-                vec![GroupItem::Named { name, negative }]
+                vec![GroupItem::Named { name, negative, span }]
             }
         })
     }
@@ -75,7 +79,7 @@ pub enum GroupItem {
     /// `[h]` and `[R]`.
     ///
     /// Some of them (`w`, `d`, `s` and Unicode) can be negated.
-    Named { name: GroupName, negative: bool },
+    Named { name: GroupName, negative: bool, span: Span },
 }
 
 impl GroupItem {
@@ -104,7 +108,7 @@ impl GroupItem {
                 buf.push('-');
                 print_char(last, buf);
             }
-            Self::Named { name, negative } => {
+            Self::Named { name, negative, .. } => {
                 if negative {
                     buf.push('!');
                 }
@@ -138,7 +142,11 @@ impl arbitrary::Arbitrary<'_> for GroupItem {
                 }
                 GroupItem::Range { first, last }
             }
-            _ => GroupItem::Named { name: GroupName::arbitrary(u)?, negative: bool::arbitrary(u)? },
+            _ => GroupItem::Named {
+                name: GroupName::arbitrary(u)?,
+                negative: bool::arbitrary(u)?,
+                span: Span::arbitrary(u)?,
+            },
         })
     }
 

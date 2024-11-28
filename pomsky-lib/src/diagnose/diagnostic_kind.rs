@@ -46,7 +46,6 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::RecursiveVariable
             | K::NegativeShorthandInAsciiMode
             | K::UnicodeInAsciiMode
-            | K::JsWordBoundaryInUnicodeMode
             | K::NestedTest
             | K::NegatedHorizVertSpace
             | K::DotNetNumberedRefWithMixedGroups

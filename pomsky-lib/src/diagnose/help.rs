@@ -125,11 +125,7 @@ pub(crate) fn get_parse_warning_help(kind: &ParseWarningKind) -> Option<String> 
     }
 }
 
-pub(super) fn get_compiler_help(
-    kind: &CompileErrorKind,
-    slice: &str,
-    _span: Span,
-) -> Option<String> {
+pub(super) fn get_compiler_help(kind: &CompileErrorKind, _span: Span) -> Option<String> {
     match kind {
         CompileErrorKind::UnknownVariable { found, .. }
             if found.starts_with('U') && found[1..].chars().all(|c| c.is_ascii_hexdigit()) =>
@@ -160,14 +156,11 @@ pub(super) fn get_compiler_help(
                 .into(),
         ),
 
-        CompileErrorKind::JsWordBoundaryInUnicodeMode => {
-            Some(format!("Disable Unicode, e.g. `(disable unicode; {slice})`"))
-        }
         CompileErrorKind::DotNetNumberedRefWithMixedGroups => Some(
             "Use a named reference, or don't mix named and unnamed capturing groups".to_string(),
         ),
         CompileErrorKind::NegativeShorthandInAsciiMode | CompileErrorKind::UnicodeInAsciiMode => {
-            Some(format!("Enable Unicode, e.g. `(enable unicode; {slice})`"))
+            Some("Enable Unicode for this expression".into())
         }
         CompileErrorKind::IllegalNegation { kind }
             if !matches!(kind, IllegalNegationKind::DotNetChar(_)) =>

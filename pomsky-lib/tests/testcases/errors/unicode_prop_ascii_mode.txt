@@ -3,5 +3,5 @@ disable unicode;
 [Latin]
 -----
 ERROR: Unicode properties can't be used when Unicode is disabled
-HELP: Enable Unicode, e.g. `(enable unicode; [Latin])`
-SPAN: 17..24
+HELP: Enable Unicode for this expression
+SPAN: 18..23

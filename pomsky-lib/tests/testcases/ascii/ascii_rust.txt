@@ -1,3 +1,4 @@
+#! flavor=Rust
 disable unicode;
 
 ^ C . [n r f] [d] [w] [s] % !% 'Hello äöüß' $

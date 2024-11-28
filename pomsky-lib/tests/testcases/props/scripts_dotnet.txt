@@ -2,4 +2,4 @@
 [Greek] [Grek] ![Latin] [!Latn]
 -----
 ERROR: Unsupported feature `Unicode scripts (\p{Script})` in the `DotNet` regex flavor
-SPAN: 0..7
+SPAN: 1..6

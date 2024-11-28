@@ -64,6 +64,7 @@ impl Options {
                         "python" => RegexFlavor::Python,
                         "rust" => RegexFlavor::Rust,
                         "ruby" => RegexFlavor::Ruby,
+                        "re2" => RegexFlavor::RE2,
                         _ => {
                             eprintln!("{}: Unknown flavor {value:?}", yellow("Warning"));
                             eprintln!("  in {path:?}");

@@ -223,7 +223,6 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::IllegalNegation { .. } => Self::IllegalNegation,
             C::NegativeShorthandInAsciiMode => Self::UnsupportedInAsciiMode,
             C::UnicodeInAsciiMode => Self::UnsupportedInAsciiMode,
-            C::JsWordBoundaryInUnicodeMode => Self::UnsupportedInUnicodeMode,
             C::DotNetNumberedRefWithMixedGroups => Self::DotNetNumberedRefWithMixedGroups,
             C::RubyLookaheadInLookbehind { .. } => Self::RubyLookaheadInLookbehind,
             C::UnsupportedInLookbehind { .. } => Self::UnsupportedInLookbehind,

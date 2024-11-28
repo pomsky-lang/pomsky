@@ -52,4 +52,6 @@ pub enum RegexFlavor {
     Ruby,
     /// The Rust `regex` crate
     Rust,
+    /// The RE2 library
+    RE2,
 }

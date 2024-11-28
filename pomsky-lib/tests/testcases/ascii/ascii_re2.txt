@@ -1,0 +1,6 @@
+#! flavor=RE2
+disable unicode;
+
+^ C . [n r f] [d] [w] [s] % !% 'Hello äöüß' $
+-----
+^[\s\S].[\n\f\r]\d\w\s\b\BHello äöüß$

@@ -2,4 +2,4 @@
 [Greek] [Grek] ![Latin] [!Latn]
 -----
 ERROR: Unsupported feature `Unicode properties (\p{Property})` in the `Python` regex flavor
-SPAN: 0..7
+SPAN: 1..6

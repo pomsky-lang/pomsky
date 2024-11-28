@@ -67,7 +67,8 @@ impl RegexGroup {
                     RegexFlavor::DotNet
                     | RegexFlavor::Java
                     | RegexFlavor::Ruby
-                    | RegexFlavor::JavaScript => {
+                    | RegexFlavor::JavaScript
+                    | RegexFlavor::RE2 => {
                         buf.push_str("(?<");
                     }
                 }

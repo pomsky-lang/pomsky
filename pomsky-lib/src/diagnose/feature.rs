@@ -25,6 +25,12 @@ pub enum Feature {
     /// Negative `\w` shorthand, i.e. `[\W]`. This is not supported in
     /// JavaScript when polyfilling Unicode support for `\w` and `\d`.
     NegativeShorthandW,
+    /// Negative `\s` shorthand, i.e. `[\S]`. This is not supported in
+    /// RE2 when polyfilling Unicode support for `\s`.
+    NegativeShorthandS,
+    /// `\w` shorthand. This is not supported in RE2: It cannot polyfill Unicode
+    /// support because `\p{Alphabetic}` is not supported
+    ShorthandW,
     /// Having backreferences to both named and numbered groups is not supported
     /// in Ruby.
     MixedReferences,
@@ -34,6 +40,10 @@ pub enum Feature {
     LargeCodePointInCharClass(char),
     /// Recursion is only supported in PCRE and Ruby at the moment
     Recursion,
+    /// Word boundaries in Unicode mode
+    UnicodeWordBoundaries,
+    /// Word start and word end is not supported in RE2
+    WordStartEnd,
 }
 
 impl Feature {
@@ -48,11 +58,15 @@ impl Feature {
             Feature::SpecificUnicodeProp => "This particular Unicode property",
             Feature::Backreference => "backreference",
             Feature::ForwardReference => "forward reference",
-            Feature::NegativeShorthandW => "negative `\\w` shorthand in character class",
+            Feature::NegativeShorthandW => "negative \\w shorthand in character class",
+            Feature::NegativeShorthandS => "negative \\s shorthand in character class",
+            Feature::ShorthandW => "\\w shorthand",
             Feature::MixedReferences => "references to both named and numbered groups",
             Feature::RepeatedAssertion => "single repeated assertion",
             Feature::LargeCodePointInCharClass(_) => "code points above U+FFFF in char classes",
             Feature::Recursion => "recursion",
+            Feature::UnicodeWordBoundaries => "word boundaries in Unicode mode",
+            Feature::WordStartEnd => "word start and word end",
         }
     }
 }
