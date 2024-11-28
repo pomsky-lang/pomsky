@@ -78,7 +78,7 @@
 
 use crate::Span;
 
-pub use char_group::{CharGroup, GroupItem, GroupName};
+pub use char_group::{CharGroup, GroupItem, GroupName, ScriptExtension};
 pub use unicode::{Category, CodeBlock, OtherProperties, Script};
 
 mod ascii;

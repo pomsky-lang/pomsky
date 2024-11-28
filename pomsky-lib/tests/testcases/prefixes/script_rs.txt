@@ -1,0 +1,5 @@
+#! flavor=Rust
+[sc:Greek]
+
+-----
+\p{Greek}

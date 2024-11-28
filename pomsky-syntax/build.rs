@@ -56,7 +56,7 @@ fn generate_unicode_data() {
         let canonical = script[1];
         for &name in script {
             if !distinct_cache.contains(&(name, false)) {
-                lut.push(format!("(\"{name}\", GroupName::Script(Script::{canonical}))"));
+                lut.push(format!("(\"{name}\", GroupName::Script(Script::{canonical}, ScriptExtension::Unspecified))"));
                 distinct_cache.insert((name, false));
             }
         }

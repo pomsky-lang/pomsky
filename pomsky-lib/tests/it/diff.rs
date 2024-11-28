@@ -2,13 +2,24 @@ pub fn simple_diff<'a>(left: &'a str, right: &'a str) -> (&'a str, &'a str, &'a 
     if left == right {
         return (left, "", "", "");
     }
-    let ((prefix_len, _), _) =
-        left.char_indices().zip(right.chars()).find(|&((_, a), b)| a != b).unwrap();
 
-    let ((left_last_idx, _), _) =
-        left.char_indices().rev().zip(right.chars().rev()).find(|&((_, a), b)| a != b).unwrap();
+    let min = left.len().min(right.len());
 
-    let suffix_len = left.len() - left_last_idx - 1;
+    let prefix_len = left
+        .char_indices()
+        .zip(right.chars())
+        .find(|&((_, a), b)| a != b)
+        .map(|((n, _), _)| n)
+        .unwrap_or(min);
+
+    let suffix_len = left
+        .char_indices()
+        .rev()
+        .zip(right.chars().rev())
+        .find(|&((_, a), b)| a != b)
+        .map(|((n, _), _)| left.len() - n - 1)
+        .unwrap_or(min);
+
     let suffix_len = suffix_len.min(left.len() - prefix_len).min(right.len() - prefix_len);
 
     let prefix = &left[..prefix_len];

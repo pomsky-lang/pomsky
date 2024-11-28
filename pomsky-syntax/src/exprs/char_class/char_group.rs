@@ -41,6 +41,7 @@ impl CharGroup {
     /// Unicode category, script or block. This needs to be fixed at one
     /// point!
     pub(crate) fn try_from_group_name(
+        kind: Option<&str>,
         name: &str,
         negative: bool,
         span: Span,
@@ -50,7 +51,7 @@ impl CharGroup {
                 super::ascii::parse_ascii_group(name, negative)?
             }
             _ => {
-                let name = super::unicode::parse_group_name(name)?;
+                let name = super::unicode::parse_group_name(kind, name)?;
                 vec![GroupItem::Named { name, negative, span }]
             }
         })
@@ -115,7 +116,11 @@ impl GroupItem {
                     GroupName::HorizSpace => "horiz_space",
                     GroupName::VertSpace => "vert_space",
                     GroupName::Category(c) => c.as_str(),
-                    GroupName::Script(s) => s.as_str(),
+                    GroupName::Script(s, e) => {
+                        buf.push_str(e.as_str());
+                        buf.push_str(s.as_str());
+                        return;
+                    }
                     GroupName::CodeBlock(b) => b.as_str(),
                     GroupName::OtherProperties(b) => b.as_str(),
                 };
@@ -167,9 +172,17 @@ pub enum GroupName {
     HorizSpace,
     VertSpace,
     Category(Category),
-    Script(Script),
+    Script(Script, ScriptExtension),
     CodeBlock(CodeBlock),
     OtherProperties(OtherProperties),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
+pub enum ScriptExtension {
+    Yes,
+    No,
+    Unspecified,
 }
 
 impl GroupName {
@@ -181,9 +194,19 @@ impl GroupName {
             | GroupName::HorizSpace
             | GroupName::VertSpace => "shorthand",
             GroupName::Category(_) => "category",
-            GroupName::Script(_) => "script",
+            GroupName::Script(..) => "script",
             GroupName::CodeBlock(_) => "block",
             GroupName::OtherProperties(_) => "property",
+        }
+    }
+}
+
+impl ScriptExtension {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ScriptExtension::Yes => "scx:",
+            ScriptExtension::No => "sc:",
+            ScriptExtension::Unspecified => "",
         }
     }
 }

@@ -1,0 +1,7 @@
+#! expect=error
+[gc:InBasic_Latin]
+
+-----
+ERROR: This character class has the wrong prefix; it should be block (blk),
+and the `In` at the start should be removed
+SPAN: 1..17

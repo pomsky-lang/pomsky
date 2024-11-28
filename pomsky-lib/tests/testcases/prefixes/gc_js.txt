@@ -1,0 +1,5 @@
+#! flavor=JavaScript
+[gc:L]
+
+-----
+\p{L}

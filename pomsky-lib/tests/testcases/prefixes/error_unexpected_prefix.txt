@@ -1,0 +1,6 @@
+#! expect=error
+[gcd:Alphabetic]
+
+-----
+ERROR: This character class cannot have a prefix
+SPAN: 1..15

@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 use pomsky_syntax::{
     exprs::{
         BoundaryKind, Category, CodeBlock, LookaroundKind, OtherProperties, RepetitionKind, Script,
+        ScriptExtension,
     },
     Span,
 };
@@ -206,7 +207,7 @@ impl RegexShorthand {
 #[cfg_attr(feature = "dbg", derive(Debug))]
 pub(crate) enum RegexProperty {
     Category(Category),
-    Script(Script),
+    Script(Script, ScriptExtension),
     Block(CodeBlock),
     Other(OtherProperties),
 }
@@ -215,9 +216,17 @@ impl RegexProperty {
     pub fn as_str(&self) -> &'static str {
         match self {
             RegexProperty::Category(c) => c.as_str(),
-            RegexProperty::Script(s) => s.as_str(),
+            RegexProperty::Script(s, _) => s.as_str(),
             RegexProperty::Block(b) => b.as_str(),
             RegexProperty::Other(o) => o.as_str(),
+        }
+    }
+
+    pub fn prefix_as_str(&self) -> &'static str {
+        match self {
+            RegexProperty::Script(_, ScriptExtension::No) => "sc:",
+            RegexProperty::Script(_, ScriptExtension::Yes) => "scx:",
+            _ => "",
         }
     }
 
@@ -427,9 +436,11 @@ impl RegexProperty {
             RegexProperty::Category(c) => {
                 buf.push_str(c.as_str());
             }
-            RegexProperty::Script(s) => {
-                if let RegexFlavor::JavaScript | RegexFlavor::Java = flavor {
-                    buf.push_str("sc=");
+            RegexProperty::Script(s, e) => {
+                if matches!(flavor, RegexFlavor::JavaScript | RegexFlavor::Java)
+                    || e != ScriptExtension::Unspecified
+                {
+                    buf.push_str(if let ScriptExtension::Yes = e { "scx=" } else { "sc=" });
                 }
                 buf.push_str(s.as_str());
             }

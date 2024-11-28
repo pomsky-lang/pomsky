@@ -88,7 +88,10 @@ use crate::{
 };
 
 use pomsky_syntax::{
-    exprs::{Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script},
+    exprs::{
+        Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script,
+        ScriptExtension,
+    },
     Span,
 };
 
@@ -348,7 +351,7 @@ fn named_class_to_regex_unicode(
             }
             set.add_prop(RegexProperty::Category(c).negative_item(negative));
         }
-        GroupName::Script(s) => {
+        GroupName::Script(s, e) => {
             if flavor == RegexFlavor::DotNet {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeScript, flavor).at(span));
             }
@@ -357,7 +360,33 @@ fn named_class_to_regex_unicode(
             {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }
-            set.add_prop(RegexProperty::Script(s).negative_item(negative));
+
+            let set_extensions = match e {
+                ScriptExtension::Yes => match flavor {
+                    RegexFlavor::Rust | RegexFlavor::Pcre | RegexFlavor::JavaScript => {
+                        ScriptExtension::Yes
+                    }
+                    RegexFlavor::Java
+                    | RegexFlavor::DotNet
+                    | RegexFlavor::Ruby
+                    | RegexFlavor::Python
+                    | RegexFlavor::RE2 => {
+                        return Err(CompileErrorKind::Unsupported(
+                            Feature::ScriptExtensions,
+                            flavor,
+                        )
+                        .at(span))
+                    }
+                },
+                ScriptExtension::No => match flavor {
+                    // PCRE is currently the only flavor when `\p{Greek}` is the same as `\p{scx=Greek}`
+                    RegexFlavor::Pcre => ScriptExtension::No,
+                    _ => ScriptExtension::Unspecified,
+                },
+                _ => ScriptExtension::Unspecified,
+            };
+
+            set.add_prop(RegexProperty::Script(s, set_extensions).negative_item(negative));
         }
         GroupName::CodeBlock(b) => match flavor {
             RegexFlavor::DotNet | RegexFlavor::Java | RegexFlavor::Ruby => {
@@ -514,6 +543,7 @@ impl fmt::Debug for RegexCharSetItem {
                 if negative {
                     f.write_str("!")?;
                 }
+                f.write_str(value.prefix_as_str())?;
                 f.write_str(value.as_str())
             }
         }

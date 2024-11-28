@@ -1,0 +1,5 @@
+#! flavor=JavaScript
+[sc:Greek]
+
+-----
+\p{sc=Greek}

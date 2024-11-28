@@ -25,6 +25,7 @@ pub use self::{
     boundary::{Boundary, BoundaryKind},
     char_class::{
         Category, CharClass, CharGroup, CodeBlock, GroupItem, GroupName, OtherProperties, Script,
+        ScriptExtension,
     },
     group::{Capture, Group, GroupKind},
     literal::Literal,

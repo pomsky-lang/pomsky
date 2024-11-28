@@ -219,6 +219,10 @@ pub enum CharClassError {
     },
     /// A character class that can't be negated, e.g. `[!ascii]`
     Negative,
+    /// The character class has a prefix where none is expected, e.g. `[scx:w]`
+    UnexpectedPrefix,
+    /// The character class has the wrong prefix, e.g. `[sc:Basic_Latin]` (the correct prefix would be `block:`)
+    WrongPrefix { expected: &'static str, has_in_prefix: bool },
 }
 
 impl std::error::Error for CharClassError {}
@@ -243,6 +247,20 @@ impl core::fmt::Display for CharClassError {
                 write!(f, "Unknown character class `{found}`")
             }
             CharClassError::Negative => write!(f, "This character class can't be negated"),
+            CharClassError::UnexpectedPrefix => {
+                write!(f, "This character class cannot have a prefix")
+            }
+            &CharClassError::WrongPrefix { expected, has_in_prefix } => {
+                if has_in_prefix {
+                    write!(
+                        f,
+                        "This character class has the wrong prefix; it should be {expected},\n\
+                        and the `In` at the start should be removed"
+                    )
+                } else {
+                    write!(f, "This character class has the wrong prefix; it should be {expected}")
+                }
+            }
         }
     }
 }

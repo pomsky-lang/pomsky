@@ -44,6 +44,8 @@ pub enum Feature {
     UnicodeWordBoundaries,
     /// Word start and word end is not supported in RE2
     WordStartEnd,
+    /// Unicode script extensions, e.g. `[scx:Greek]`
+    ScriptExtensions,
 }
 
 impl Feature {
@@ -67,6 +69,7 @@ impl Feature {
             Feature::Recursion => "recursion",
             Feature::UnicodeWordBoundaries => "word boundaries in Unicode mode",
             Feature::WordStartEnd => "word start and word end",
+            Feature::ScriptExtensions => "Unicode script extensions",
         }
     }
 }

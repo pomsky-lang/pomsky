@@ -70,6 +70,8 @@ diagnostic_code! {
         MissingKeyword = 120,
         MultipleStringsInTestCase = 121,
         RangeLeadingZeroesVariableLength = 122,
+        UnexpectedCharClassPrefix = 123,
+        WrongCharClassPrefix = 124,
 
         // Currently a parse error, but it should be a compile error
         LetBindingExists = 300,
@@ -160,6 +162,8 @@ impl<'a> From<&'a CharClassError> for DiagnosticCode {
             E::Unallowed => Self::CharClassUnallowedCombination,
             E::UnknownNamedClass { .. } => Self::CharClassUnknownShorthand,
             E::Negative => Self::CharClassIllegalNegation,
+            E::UnexpectedPrefix => Self::UnexpectedCharClassPrefix,
+            E::WrongPrefix { .. } => Self::WrongCharClassPrefix,
             _ => panic!("Unhandled char class error message {value:?}"),
         }
     }

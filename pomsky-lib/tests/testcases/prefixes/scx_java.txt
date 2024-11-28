@@ -1,0 +1,6 @@
+#! expect=error, flavor=Java
+[scx:Greek]
+
+-----
+ERROR: Unsupported feature `Unicode script extensions` in the `Java` regex flavor
+SPAN: 1..10

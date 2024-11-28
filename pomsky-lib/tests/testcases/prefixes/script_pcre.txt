@@ -1,0 +1,5 @@
+#! flavor=Pcre
+[sc:Greek]
+
+-----
+\p{sc=Greek}

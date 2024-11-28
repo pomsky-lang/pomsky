@@ -563,9 +563,19 @@ impl<'i> Parser<'i> {
         if self.consume(Token::Identifier) {
             let span = self.last_span();
 
-            let name = self.source_at(span);
-            let item =
-                CharGroup::try_from_group_name(name, negative, span).map_err(|e| e.at(span))?;
+            let before_colon = self.source_at(span);
+            let after_colon = if self.consume(Token::Colon) {
+                Some(self.expect_as(Token::Identifier)?)
+            } else {
+                None
+            };
+            let (kind, name, span) = match after_colon {
+                Some(name) => (Some(before_colon), name, span.join(self.last_span())),
+                None => (None, before_colon, span),
+            };
+
+            let item = CharGroup::try_from_group_name(kind, name, negative, span)
+                .map_err(|e| e.at(span))?;
 
             Ok(Some(item))
         } else if let Some(name) = self.consume_as(Token::ReservedName) {
