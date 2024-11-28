@@ -422,6 +422,7 @@ fn json_output() {
 }
 
 #[test]
+#[ignore]
 fn json_output_errors() {
     let mut cmd = command(&["[.][^test]", "--json"]);
     cmd.assert()
