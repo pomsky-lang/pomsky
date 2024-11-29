@@ -81,7 +81,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build and run tests
-        run: PCRE2_SYS_STATIC=1 cargo test
+        run: env PCRE2_SYS_STATIC=1 cargo test
 
   coverage:
     runs-on: ubuntu-latest
