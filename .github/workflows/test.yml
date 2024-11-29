@@ -81,7 +81,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build and run tests
-        run: cargo test
+        run: PCRE2_SYS_STATIC=1 cargo test
 
   coverage:
     runs-on: ubuntu-latest
@@ -124,7 +124,7 @@ jobs:
           CARGO_INCREMENTAL: 0
         run: |
           rustup component add llvm-tools-preview
-          cargo test
+          PCRE2_SYS_STATIC=1 cargo test
           grcov . -s . -t lcov --llvm --ignore-not-existing --ignore "/*" --ignore "pomsky-bin/src/test.rs" --ignore "target/*" -o lcov.info -b ./target/debug/pomsky
 
       - name: Coveralls upload

@@ -94,7 +94,7 @@ jobs:
         run: cargo install cargo-auditable
 
       - name: Build project
-        run: cargo auditable build --profile dist --locked
+        run: PCRE2_SYS_STATIC=1 cargo auditable build --profile dist --locked
 
       - name: Upload release assets
         uses: actions/upload-release-asset@v1
