@@ -1,6 +1,6 @@
 set positional-arguments
 
-coverage_flags := '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+coverage_flags := '-Zprofile -Ccodegen-units=1 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
 
 # run Pomsky (debug mode)
 run S *args:

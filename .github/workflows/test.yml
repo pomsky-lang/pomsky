@@ -119,7 +119,7 @@ jobs:
       - name: Run grcov
         env:
           PROJECT_NAME: pomsky
-          RUSTFLAGS: '-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Cinline-threshold=0 -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTFLAGS: '-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
           RUSTDOCFLAGS: '-Cpanic=abort -Zpanic_abort_tests'
           CARGO_INCREMENTAL: 0
         run: |
