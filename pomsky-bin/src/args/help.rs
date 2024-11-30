@@ -31,7 +31,7 @@ pub(super) const HELP: Help = Help(sections![
                 ["Pomsky expression to compile"]
                 Long ["\n\
                 To learn about the pomsky language, start here:\n\
-                https://pomsky-lang.org/docs/language-tour/basics/"]
+                https://pomsky-lang.org/docs/"]
             }
         }
     }
