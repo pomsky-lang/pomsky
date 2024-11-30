@@ -114,7 +114,8 @@ impl core::fmt::Display for CompileErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {kind}"),
-            CompileErrorKind::BadIntersection => write!(f, 
+            CompileErrorKind::BadIntersection => write!(
+                f,
                 "Intersecting these expressions is not supported. Only character sets \
                 can be intersected."
             ),
@@ -130,7 +131,8 @@ impl core::fmt::Display for CompileErrorKind {
                 ),
                 Feature::UnicodeWordBoundaries => write!(
                     f,
-                    "In the `{flavor:?}` flavor, word boundaries may only be used when Unicode is disabled"
+                    "In the `{flavor:?}` flavor, word boundaries may only be used when Unicode \
+                    is disabled"
                 ),
                 Feature::ShorthandW => write!(
                     f,
