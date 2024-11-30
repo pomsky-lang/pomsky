@@ -437,6 +437,16 @@ fn named_class_to_regex_unicode(
                     _ => {}
                 }
                 set.add_prop(RegexProperty::Other(o).negative_item(negative));
+            } else if flavor == RF::Java {
+                if pomsky_syntax::props_supported_in_java().binary_search(&o.as_str()).is_ok() {
+                    set.add_prop(RegexProperty::Other(o).negative_item(negative));
+                } else {
+                    return Err(CompileErrorKind::Unsupported(
+                        Feature::SpecificUnicodeProp,
+                        flavor,
+                    )
+                    .at(span));
+                }
             } else {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeProp, flavor).at(span));
             }

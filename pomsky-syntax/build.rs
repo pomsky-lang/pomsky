@@ -5,6 +5,7 @@ fn main() {
     println!("cargo:rerun-if-changed=PropertyValueAliases.txt");
     println!("cargo:rerun-if-changed=SupportedBooleanProps.txt");
     println!("cargo:rerun-if-changed=DotNetSupportedBlocks.txt");
+    println!("cargo:rerun-if-changed=JavaSupportedProps.txt");
     generate_unicode_data();
 }
 
@@ -19,6 +20,9 @@ fn generate_unicode_data() {
     let [categories, scripts, blocks, bools] = parse_aliases(&aliases, &blocks);
 
     let dotnet_blocks = std::fs::read_to_string("DotNetSupportedBlocks.txt").unwrap();
+    let java_props = std::fs::read_to_string("JavaSupportedProps.txt").unwrap();
+    assert!(dotnet_blocks.lines().is_sorted());
+    assert!(java_props.lines().is_sorted());
 
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let path = std::path::Path::new(&out_dir).join("unicode_data.rs");
@@ -104,6 +108,9 @@ static PARSE_LUT: &[(&str, GroupName)] = &[
 
 static DOTNET_SUPPORTED: &[&str] = &[
 {dotnet_supported}];
+
+static JAVA_SUPPORTED: &[&str] = &[
+{java_supported}];
 ",
             category_enum = generate_enum("Category", &categories, 0, 1),
             script_enum = generate_enum("Script", &scripts, 1, 1),
@@ -111,7 +118,9 @@ static DOTNET_SUPPORTED: &[&str] = &[
             other_enum = generate_enum("OtherProperties", &bools, 1, 1),
             lut = lut.join(",\n    "),
             dotnet_supported =
-                dotnet_blocks.lines().map(|line| format!("    {line:?},\n")).collect::<String>()
+                dotnet_blocks.lines().map(|line| format!("    {line:?},\n")).collect::<String>(),
+            java_supported =
+                java_props.lines().map(|line| format!("    {line:?},\n")).collect::<String>(),
         ),
     )
     .unwrap();

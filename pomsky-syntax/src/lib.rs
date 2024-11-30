@@ -33,4 +33,4 @@ pub use util::find_suggestion;
 use pretty_print::PrettyPrinter;
 
 #[doc(hidden)]
-pub use exprs::char_class::{blocks_supported_in_dotnet, list_shorthands};
+pub use exprs::char_class::{blocks_supported_in_dotnet, list_shorthands, props_supported_in_java};

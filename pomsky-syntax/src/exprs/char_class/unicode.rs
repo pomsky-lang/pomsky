@@ -76,6 +76,10 @@ pub fn blocks_supported_in_dotnet() -> &'static [&'static str] {
     DOTNET_SUPPORTED
 }
 
+pub fn props_supported_in_java() -> &'static [&'static str] {
+    JAVA_SUPPORTED
+}
+
 /// Returns the list of all accepted shorthands.
 pub fn list_shorthands() -> impl Iterator<Item = (&'static str, GroupName)> {
     PARSE_LUT.iter().copied()
