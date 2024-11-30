@@ -53,7 +53,7 @@ impl Span {
         Span { start: self.start, end: self.start }
     }
 
-    pub(crate) fn join(self, other: Span) -> Span {
+    pub fn join(self, other: Span) -> Span {
         match (self.is_empty(), other.is_empty()) {
             (false, false) => Span {
                 start: u32::min(self.start, other.start),

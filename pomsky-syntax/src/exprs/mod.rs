@@ -4,6 +4,7 @@ pub(crate) mod alternation;
 pub(crate) mod boundary;
 pub(crate) mod char_class;
 pub(crate) mod group;
+pub(crate) mod intersection;
 pub(crate) mod literal;
 pub(crate) mod lookaround;
 pub(crate) mod negation;
@@ -28,6 +29,7 @@ pub use self::{
         ScriptExtension,
     },
     group::{Capture, Group, GroupKind},
+    intersection::Intersection,
     literal::Literal,
     lookaround::{Lookaround, LookaroundKind},
     negation::Negation,

@@ -152,6 +152,7 @@ impl Regex {
             }
             Regex::Unescaped(_) => Count::Many,
             Regex::CharSet(_)
+            | Regex::CompoundCharSet(_)
             | Regex::Grapheme
             | Regex::Dot
             | Regex::Boundary(_)

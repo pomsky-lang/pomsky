@@ -40,6 +40,7 @@ impl fmt::Debug for PomskyFeatures {
             .field("regexes", &self.supports(Self::REGEXES))
             .field("dot", &self.supports(Self::DOT))
             .field("recursion", &self.supports(Self::RECURSION))
+            .field("intersection", &self.supports(Self::INTERSECTION))
             .finish()
     }
 }
@@ -61,7 +62,8 @@ impl Default for PomskyFeatures {
                 | Self::ATOMIC_GROUPS
                 | Self::REGEXES
                 | Self::DOT
-                | Self::RECURSION,
+                | Self::RECURSION
+                | Self::INTERSECTION,
         }
     }
 }
@@ -82,6 +84,7 @@ impl PomskyFeatures {
     pub(crate) const REGEXES: u16 = 1 << 12;
     pub(crate) const DOT: u16 = 1 << 13;
     pub(crate) const RECURSION: u16 = 1 << 14;
+    pub(crate) const INTERSECTION: u16 = 1 << 15;
 
     /// Creates an empty set of features. With this set, all optional features
     /// are disabled.
@@ -125,6 +128,7 @@ impl PomskyFeatures {
                 Self::REGEXES => UnsupportedError::Regexes,
                 Self::DOT => UnsupportedError::Dot,
                 Self::RECURSION => UnsupportedError::Recursion,
+                Self::INTERSECTION => UnsupportedError::Intersection,
                 _ => panic!("Unknown feature `0x{feature:0x}`"),
             })
             .at(span))
@@ -222,6 +226,12 @@ impl PomskyFeatures {
         self.set_bit(Self::RECURSION, support);
         *self
     }
+
+    /// Set support for intersection
+    pub fn intersection(&mut self, support: bool) -> Self {
+        self.set_bit(Self::INTERSECTION, support);
+        *self
+    }
 }
 
 #[test]
@@ -241,7 +251,8 @@ fn test_toggles() {
         .boundaries(true)
         .regexes(true)
         .dot(true)
-        .recursion(true);
+        .recursion(true)
+        .intersection(true);
 
     assert_eq!(features.bits, PomskyFeatures::default().bits);
 }

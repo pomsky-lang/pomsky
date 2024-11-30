@@ -20,6 +20,8 @@ pub enum Token {
 
     /// `|` (or)
     Pipe,
+    /// `&` (and)
+    Ampersand,
 
     /// `:` (capturing group start)
     Colon,
@@ -103,6 +105,7 @@ impl core::fmt::Display for Token {
             Token::Plus => "`+`",
             Token::QuestionMark => "`?`",
             Token::Pipe => "`|`",
+            Token::Ampersand => "`&`",
             Token::Colon => "`:`",
             Token::OpenParen => "`(`",
             Token::CloseParen => "`)`",

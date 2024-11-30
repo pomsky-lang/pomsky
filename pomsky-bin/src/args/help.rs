@@ -116,6 +116,7 @@ Currently, the following warnings can be disabled:"]
             "boundaries"      => { ["Allows matching word boundaries and anchors " g:"%" ", " g:"!%" ", " g:"^" ", " g:"$"] }
             "dot"             => { ["Allows matching the dot " g:"."] }
             "grapheme"        => { ["Allows matching a grapheme cluster with " g:"Grapheme" " or " g:"G"] }
+            "intersection"    => { ["Allows intersecting character sets with " g:"&"] }
             "lazy-mode"       => { ["Allows enabling lazy mode globally with " g:"enable lazy;"] }
             "lookahead"       => { ["Allows (negative) lookahead, e.g. " g:"(>> 'test')"] }
             "lookbehind"      => { ["Allows (negative) lookbehind, e.g. " g:"(<< 'test')"] }

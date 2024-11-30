@@ -168,6 +168,15 @@ impl UnicodeSet {
     pub fn props(&self) -> impl '_ + Iterator<Item = RegexCharSetItem> {
         self.props.iter().copied()
     }
+
+    pub(crate) fn extend(&mut self, other: UnicodeSet) {
+        for prop in other.props {
+            self.add_prop(prop);
+        }
+        for range in other.ranges {
+            self.add(range);
+        }
+    }
 }
 
 struct MaxTwoArray<T> {

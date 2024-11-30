@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use intersection::Intersection;
+
 use crate::{
     diagnose::{
         CharClassError, CharStringError, DeprecationWarning, NumberError, ParseWarningKind,
@@ -244,11 +246,11 @@ impl<'i> Parser<'i> {
         let leading_pipe = self.consume(Token::Pipe);
 
         let mut alts = Vec::new();
-        if let Some(first_alt) = self.parse_sequence()? {
+        if let Some(first_alt) = self.parse_and()? {
             alts.push(first_alt);
 
             while self.consume(Token::Pipe) {
-                if let Some(next_alt) = self.parse_sequence()? {
+                if let Some(next_alt) = self.parse_and()? {
                     span = span.join(next_alt.span());
                     alts.push(next_alt);
                 } else {
@@ -265,6 +267,36 @@ impl<'i> Parser<'i> {
             Err(PEK::LonePipe.at(span))
         } else {
             Ok(Alternation::new_expr(alts))
+        }
+    }
+
+    fn parse_and(&mut self) -> PResult<Option<Rule>> {
+        let span_start = self.span();
+        let has_leading_ampersand = self.consume(Token::Ampersand);
+
+        let Some(first_sequence) = self.parse_sequence()? else {
+            if has_leading_ampersand {
+                return Err(PEK::Expected("expression").at(self.span()));
+            }
+            return Ok(None);
+        };
+        if !self.is(Token::Ampersand) {
+            return Ok(Some(first_sequence));
+        }
+
+        let mut rules = Vec::with_capacity(2);
+        rules.push(first_sequence);
+        loop {
+            if !self.consume(Token::Ampersand) {
+                return Ok(Some(
+                    Intersection::new_expr(rules, span_start).expect("intersection can't be empty"),
+                ));
+            }
+
+            let Some(next_sequence) = self.parse_sequence()? else {
+                return Err(PEK::Expected("expression").at(self.span()));
+            };
+            rules.push(next_sequence);
         }
     }
 

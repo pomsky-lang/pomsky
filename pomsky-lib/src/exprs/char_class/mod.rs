@@ -76,7 +76,10 @@
 //!   negated, the class is   removed and the negations cancel each other out:
 //!   `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
-use std::fmt;
+use pomsky_syntax::exprs::{
+    Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script, ScriptExtension,
+};
+use pomsky_syntax::Span;
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -86,16 +89,11 @@ use crate::{
     regex::{Regex, RegexProperty, RegexShorthand},
     unicode_set::UnicodeSet,
 };
-
-use pomsky_syntax::{
-    exprs::{
-        Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script,
-        ScriptExtension,
-    },
-    Span,
-};
+pub(crate) use char_set_item::{RegexCharSet, RegexCharSetItem, RegexCompoundCharSet};
 
 use super::Compile;
+
+mod char_set_item;
 
 impl Compile for CharClass {
     fn compile(&self, options: CompileOptions, _state: &mut CompileState<'_>) -> CompileResult {
@@ -453,109 +451,4 @@ fn named_class_to_regex_unicode(
         }
     }
     Ok(())
-}
-
-#[cfg_attr(feature = "dbg", derive(Debug))]
-#[derive(Default)]
-pub(crate) struct RegexCharSet {
-    pub(crate) negative: bool,
-    pub(crate) set: UnicodeSet,
-}
-
-impl RegexCharSet {
-    pub(crate) fn new(items: UnicodeSet) -> Self {
-        Self { negative: false, set: items }
-    }
-
-    pub(crate) fn negate(mut self) -> Self {
-        self.negative = !self.negative;
-        self
-    }
-
-    pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
-        if self.set.len() == 1 {
-            if let Some(range) = self.set.ranges().next() {
-                let (first, last) = range.as_chars();
-                if first == last && !self.negative {
-                    return literal::codegen_char_esc(first, buf, flavor);
-                }
-            } else if let Some(prop) = self.set.props().next() {
-                match prop {
-                    RegexCharSetItem::Shorthand(s) => {
-                        let shorthand = if self.negative { s.negate() } else { Some(s) };
-                        if let Some(shorthand) = shorthand {
-                            return shorthand.codegen(buf);
-                        }
-                    }
-                    RegexCharSetItem::Property { negative, value } => {
-                        return value.codegen(buf, negative ^ self.negative, flavor);
-                    }
-                }
-            }
-        }
-
-        if self.negative {
-            buf.push_str("[^");
-        } else {
-            buf.push('[');
-        }
-
-        let mut is_first = true;
-        for prop in self.set.props() {
-            match prop {
-                RegexCharSetItem::Shorthand(s) => s.codegen(buf),
-                RegexCharSetItem::Property { negative, value } => {
-                    value.codegen(buf, negative, flavor);
-                }
-            }
-            is_first = false;
-        }
-        for range in self.set.ranges() {
-            let (first, last) = range.as_chars();
-            if first == last {
-                literal::compile_char_esc_in_class(first, buf, is_first, flavor);
-            } else {
-                literal::compile_char_esc_in_class(first, buf, is_first, flavor);
-                if range.first + 1 < range.last {
-                    buf.push('-');
-                }
-                literal::compile_char_esc_in_class(last, buf, false, flavor);
-            }
-            is_first = false;
-        }
-
-        buf.push(']');
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum RegexCharSetItem {
-    Shorthand(RegexShorthand),
-    Property { negative: bool, value: RegexProperty },
-}
-
-impl RegexCharSetItem {
-    pub(crate) fn negate(self) -> Option<Self> {
-        match self {
-            RegexCharSetItem::Shorthand(s) => s.negate().map(RegexCharSetItem::Shorthand),
-            RegexCharSetItem::Property { negative, value } => {
-                Some(RegexCharSetItem::Property { negative: !negative, value })
-            }
-        }
-    }
-}
-
-impl fmt::Debug for RegexCharSetItem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Shorthand(s) => f.write_str(s.as_str()),
-            &Self::Property { value, negative } => {
-                if negative {
-                    f.write_str("!")?;
-                }
-                f.write_str(value.prefix_as_str())?;
-                f.write_str(value.as_str())
-            }
-        }
-    }
 }

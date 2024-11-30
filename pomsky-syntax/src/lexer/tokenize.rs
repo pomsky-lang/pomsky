@@ -73,6 +73,7 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if c == '+' => (1, Token::Plus);
                     if c == '?' => (1, Token::QuestionMark);
                     if c == '|' => (1, Token::Pipe);
+                    if c == '&' => (1, Token::Ampersand);
                     if c == ':' => (1, Token::Colon);
                     if c == ')' => (1, Token::CloseParen);
                     if c == '{' => (1, Token::OpenBrace);

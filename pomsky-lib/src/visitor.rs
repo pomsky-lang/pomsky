@@ -3,6 +3,7 @@ use pomsky_syntax::exprs::{self, Rule};
 pub(crate) enum NestingKind {
     Group,
     Alternation,
+    Intersection,
     Repetition,
     Lookaround,
     StmtExpr,
@@ -30,6 +31,15 @@ fn visit<V: RuleVisitor<E>, E>(rule: &Rule, visitor: &mut V) -> Result<(), E> {
                 visit(rule, visitor)?;
             }
             visitor.up(NestingKind::Alternation);
+            Ok(())
+        }
+        Rule::Intersection(i) => {
+            visitor.visit_intersection(i)?;
+            visitor.down(NestingKind::Intersection);
+            for rule in &i.rules {
+                visit(rule, visitor)?;
+            }
+            visitor.up(NestingKind::Intersection);
             Ok(())
         }
         Rule::Repetition(r) => {
@@ -103,6 +113,10 @@ pub(crate) trait RuleVisitor<E> {
     }
 
     fn visit_alternation(&mut self, alt: &exprs::Alternation) -> Result<(), E> {
+        Ok(())
+    }
+
+    fn visit_intersection(&mut self, int: &exprs::Intersection) -> Result<(), E> {
         Ok(())
     }
 

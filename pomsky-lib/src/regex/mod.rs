@@ -14,7 +14,7 @@ use crate::{
     exprs::{
         alternation::RegexAlternation,
         boundary::boundary_kind_codegen,
-        char_class::{RegexCharSet, RegexCharSetItem},
+        char_class::{RegexCharSet, RegexCharSetItem, RegexCompoundCharSet},
         group::{RegexGroup, RegexGroupKind},
         literal,
         lookaround::RegexLookaround,
@@ -37,6 +37,8 @@ pub(crate) enum Regex {
     Unescaped(String),
     /// A character class, delimited with square brackets
     CharSet(RegexCharSet),
+    /// A character class, delimited with square brackets
+    CompoundCharSet(RegexCompoundCharSet),
     /// A Unicode grapheme
     Grapheme,
     /// The dot, matching anything except `\n`
@@ -65,7 +67,7 @@ impl Regex {
         match self {
             Regex::Literal(str) => Ok(Some(str.chars().count() as u32)),
             Regex::Unescaped(_) => Ok(None),
-            Regex::CharSet(_) => Ok(Some(1)),
+            Regex::CharSet(_) | Regex::CompoundCharSet(_) => Ok(Some(1)),
             Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
                 flavor: RegexFlavor::Python,
                 feature: Feature::Grapheme,
@@ -113,7 +115,7 @@ impl Regex {
         match self {
             Regex::Literal(_) => Ok(()),
             Regex::Unescaped(_) => Ok(()),
-            Regex::CharSet(_) => Ok(()),
+            Regex::CharSet(_) | Regex::CompoundCharSet(_) => Ok(()),
             Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
                 flavor: RegexFlavor::Pcre,
                 feature: Feature::Grapheme,
@@ -255,6 +257,7 @@ impl Regex {
                 Ok(Regex::CharSet(RegexCharSet::new(c.into()).negate()))
             }
             Regex::CharSet(s) => Ok(Regex::CharSet(s.negate())),
+            Regex::CompoundCharSet(s) => Ok(Regex::CompoundCharSet(s.negate())),
             Regex::Boundary(b) => match b {
                 BoundaryKind::Word => Ok(Regex::Boundary(BoundaryKind::NotWord)),
                 BoundaryKind::NotWord => Ok(Regex::Boundary(BoundaryKind::Word)),
@@ -321,7 +324,8 @@ impl Regex {
             Regex::Unescaped(u) => {
                 buf.push_str(u);
             }
-            Regex::CharSet(c) => c.codegen(buf, flavor),
+            Regex::CharSet(c) => c.codegen(buf, flavor, false),
+            Regex::CompoundCharSet(c) => c.codegen(buf, flavor),
             Regex::Grapheme => buf.push_str("\\X"),
             Regex::Dot => buf.push('.'),
             Regex::Group(g) => g.codegen(buf, flavor),
@@ -341,6 +345,7 @@ impl Regex {
             | Regex::Unescaped(_)
             | Regex::Group(_)
             | Regex::CharSet(_)
+            | Regex::CompoundCharSet(_)
             | Regex::Grapheme
             | Regex::Repetition(_)
             | Regex::Boundary(_)
@@ -361,6 +366,7 @@ impl Regex {
             | Regex::Unescaped(_) => true,
             Regex::Lookaround(_) => matches!(flavor, RegexFlavor::JavaScript),
             Regex::CharSet(_)
+            | Regex::CompoundCharSet(_)
             | Regex::Grapheme
             | Regex::Reference(_)
             | Regex::Dot

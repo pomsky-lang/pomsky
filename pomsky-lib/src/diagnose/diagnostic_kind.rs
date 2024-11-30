@@ -51,7 +51,8 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::DotNetNumberedRefWithMixedGroups
             | K::RubyLookaheadInLookbehind { .. }
             | K::UnsupportedInLookbehind { .. }
-            | K::LookbehindNotConstantLength { .. } => DiagnosticKind::Unsupported,
+            | K::LookbehindNotConstantLength { .. }
+            | K::BadIntersection => DiagnosticKind::Unsupported,
             K::RangeIsTooBig(_) => DiagnosticKind::Limits,
         }
     }

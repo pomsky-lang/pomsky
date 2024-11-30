@@ -40,6 +40,10 @@ impl RuleVisitor<CompileError> for Validator {
         }
     }
 
+    fn visit_intersection(&mut self, int: &exprs::Intersection) -> Result<(), CompileError> {
+        self.require(Feat::INTERSECTION, int.span)
+    }
+
     fn visit_group(&mut self, group: &exprs::Group) -> Result<(), CompileError> {
         match &group.kind {
             exprs::GroupKind::Atomic => {

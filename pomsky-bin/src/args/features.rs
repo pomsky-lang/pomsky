@@ -27,6 +27,7 @@ pub(super) fn parse_features(value: OsString) -> Result<PomskyFeatures, ParseArg
                 "regexes" => features.regexes(true),
                 "dot" => features.dot(true),
                 "recursion" => features.recursion(true),
+                "intersection" => features.intersection(true),
                 s => {
                     efprintln!(Y!"warning" ": unknown feature `" {s} "`");
                     features

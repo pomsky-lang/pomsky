@@ -24,6 +24,7 @@ impl Compile for Rule {
             Rule::Codepoint => Codepoint {}.compile(options),
             Rule::Dot => Dot {}.compile(options),
             Rule::Alternation(a) => a.compile(options, state),
+            Rule::Intersection(a) => a.compile(options, state),
             Rule::Repetition(r) => r.compile(options, state),
             Rule::Boundary(b) => b.compile(options, state),
             Rule::Lookaround(l) => l.compile(options, state),

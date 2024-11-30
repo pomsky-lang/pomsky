@@ -46,6 +46,8 @@ pub enum Feature {
     WordStartEnd,
     /// Unicode script extensions, e.g. `[scx:Greek]`
     ScriptExtensions,
+    /// Character set intersections
+    CharSetIntersection,
 }
 
 impl Feature {
@@ -70,6 +72,7 @@ impl Feature {
             Feature::UnicodeWordBoundaries => "word boundaries in Unicode mode",
             Feature::WordStartEnd => "word start and word end",
             Feature::ScriptExtensions => "Unicode script extensions",
+            Feature::CharSetIntersection => "Character set intersections",
         }
     }
 }

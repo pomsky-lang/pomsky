@@ -15,6 +15,7 @@ pub(crate) mod codepoint;
 pub(crate) mod dot;
 pub(crate) mod grapheme;
 pub(crate) mod group;
+pub(crate) mod intersection;
 pub(crate) mod literal;
 pub(crate) mod lookaround;
 pub(crate) mod range;

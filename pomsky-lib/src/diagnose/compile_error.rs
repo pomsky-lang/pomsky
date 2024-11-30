@@ -95,6 +95,7 @@ pub(crate) enum CompileErrorKind {
         flavor: RegexFlavor,
     },
     NestedTest,
+    BadIntersection,
 }
 
 impl CompileErrorKind {
@@ -113,6 +114,10 @@ impl core::fmt::Display for CompileErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {kind}"),
+            CompileErrorKind::BadIntersection => write!(f, 
+                "Intersecting these expressions is not supported. Only character sets \
+                can be intersected."
+            ),
             CompileErrorKind::Unsupported(feature, flavor) => match feature {
                 Feature::SpecificUnicodeProp => write!(
                     f,
@@ -133,11 +138,13 @@ impl core::fmt::Display for CompileErrorKind {
                 ),
                 Feature::NegativeShorthandW => write!(
                     f,
-                    "In the `{flavor:?}` flavor, `word` can only be negated in a character class when Unicode is disabled"
+                    "In the `{flavor:?}` flavor, `word` can only be negated in a character class \
+                    when Unicode is disabled"
                 ),
                 Feature::NegativeShorthandS => write!(
                     f,
-                    "In the `{flavor:?}` flavor, `space` can only be negated in a character class when Unicode is disabled"
+                    "In the `{flavor:?}` flavor, `space` can only be negated in a character class \
+                    when Unicode is disabled"
                 ),
                 _ => write!(
                     f,
@@ -239,6 +246,7 @@ pub(crate) enum UnsupportedError {
     Regexes,
     Dot,
     Recursion,
+    Intersection,
 }
 
 impl std::error::Error for UnsupportedError {}
@@ -261,6 +269,7 @@ impl core::fmt::Display for UnsupportedError {
             UnsupportedError::Regexes => "Unescaped regexes aren't supported",
             UnsupportedError::Dot => "The dot isn't supported",
             UnsupportedError::Recursion => "Recursion isn't supported",
+            UnsupportedError::Intersection => "Intersection isn't supported",
         };
 
         f.write_str(error)

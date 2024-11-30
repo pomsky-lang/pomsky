@@ -1,8 +1,8 @@
 use crate::Span;
 
 use super::{
-    negation::Negation, Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range,
-    Recursion, Reference, Regex, Repetition, StmtExpr, Variable,
+    intersection::Intersection, negation::Negation, Alternation, Boundary, CharClass, Group,
+    Literal, Lookaround, Range, Recursion, Reference, Regex, Repetition, StmtExpr, Variable,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.
@@ -18,6 +18,8 @@ pub enum Rule {
     /// An alternation, i.e. a list of alternatives; at least one of them has to
     /// match.
     Alternation(Alternation),
+    /// An intersection, i.e. a list of rules that all have to match at the same time.
+    Intersection(Intersection),
     /// A repetition, i.e. a expression that must be repeated. The number of
     /// required repetitions is constrained by a lower and possibly an upper
     /// bound.
@@ -57,6 +59,7 @@ impl Rule {
             Rule::CharClass(c) => c.span,
             Rule::Group(g) => g.span,
             Rule::Alternation(a) => a.span,
+            Rule::Intersection(i) => i.span,
             Rule::Repetition(r) => r.span,
             Rule::Boundary(b) => b.span,
             Rule::Lookaround(l) => l.span,
@@ -64,7 +67,7 @@ impl Rule {
             Rule::Reference(r) => r.span,
             Rule::Range(r) => r.span,
             Rule::StmtExpr(m) => m.span,
-            Rule::Negation(n) => n.not_span,
+            Rule::Negation(n) => n.not_span.join(n.rule.span()),
             Rule::Regex(r) => r.span,
             Rule::Recursion(r) => r.span,
             Rule::Grapheme | Rule::Codepoint | Rule::Dot => Span::empty(),
@@ -78,6 +81,7 @@ impl Rule {
             Rule::CharClass(c) => c.pretty_print(buf),
             Rule::Group(g) => g.pretty_print(buf, needs_parens),
             Rule::Alternation(a) => a.pretty_print(buf, needs_parens),
+            Rule::Intersection(i) => i.pretty_print(buf, needs_parens),
             Rule::Repetition(r) => r.pretty_print(buf),
             Rule::Boundary(b) => b.pretty_print(buf),
             Rule::Lookaround(l) => l.pretty_print(buf, needs_parens),
