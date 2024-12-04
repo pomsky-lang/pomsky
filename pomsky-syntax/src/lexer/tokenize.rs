@@ -42,6 +42,42 @@ macro_rules! reserved_word_pattern {
     );
 }
 
+static SINGLE_TOKEN_LOOKUP: [Option<Token>; 127] = const {
+    let mut table = [const { None }; 127];
+    table[b'^' as usize] = Some(Token::Caret);
+    table[b'$' as usize] = Some(Token::Dollar);
+    table[b'%' as usize] = Some(Token::Percent);
+    table[b'<' as usize] = Some(Token::AngleLeft);
+    table[b'>' as usize] = Some(Token::AngleRight);
+    table[b'*' as usize] = Some(Token::Star);
+    table[b'+' as usize] = Some(Token::Plus);
+    table[b'?' as usize] = Some(Token::QuestionMark);
+    table[b'|' as usize] = Some(Token::Pipe);
+    table[b'&' as usize] = Some(Token::Ampersand);
+    table[b':' as usize] = Some(Token::Colon);
+    table[b')' as usize] = Some(Token::CloseParen);
+    table[b'{' as usize] = Some(Token::OpenBrace);
+    table[b'}' as usize] = Some(Token::CloseBrace);
+    table[b',' as usize] = Some(Token::Comma);
+    table[b'!' as usize] = Some(Token::Not);
+    table[b'[' as usize] = Some(Token::OpenBracket);
+    table[b']' as usize] = Some(Token::CloseBracket);
+    table[b'-' as usize] = Some(Token::Dash);
+    table[b'.' as usize] = Some(Token::Dot);
+    table[b';' as usize] = Some(Token::Semicolon);
+    table[b'=' as usize] = Some(Token::Equals);
+    table
+};
+
+fn lookup_single(c: char) -> Option<Token> {
+    let c = c as u32;
+    if c < 128 {
+        SINGLE_TOKEN_LOOKUP[c as usize]
+    } else {
+        None
+    }
+}
+
 pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
     let mut result = vec![];
     let mut offset = 0;
@@ -64,28 +100,7 @@ pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {
                     if input.starts_with("<<") => (2, Token::LookBehind);
                     if input.starts_with("::") => (2, Token::DoubleColon);
 
-                    if c == '^' => (1, Token::Caret);
-                    if c == '$' => (1, Token::Dollar);
-                    if c == '<' => (1, Token::AngleLeft);
-                    if c == '>' => (1, Token::AngleRight);
-                    if c == '%' => (1, Token::BWord);
-                    if c == '*' => (1, Token::Star);
-                    if c == '+' => (1, Token::Plus);
-                    if c == '?' => (1, Token::QuestionMark);
-                    if c == '|' => (1, Token::Pipe);
-                    if c == '&' => (1, Token::Ampersand);
-                    if c == ':' => (1, Token::Colon);
-                    if c == ')' => (1, Token::CloseParen);
-                    if c == '{' => (1, Token::OpenBrace);
-                    if c == '}' => (1, Token::CloseBrace);
-                    if c == ',' => (1, Token::Comma);
-                    if c == '!' => (1, Token::Not);
-                    if c == '[' => (1, Token::OpenBracket);
-                    if c == '-' => (1, Token::Dash);
-                    if c == ']' => (1, Token::CloseBracket);
-                    if c == '.' => (1, Token::Dot);
-                    if c == ';' => (1, Token::Semicolon);
-                    if c == '=' => (1, Token::Equals);
+                    if let Some(token) = lookup_single(c) => (1, token);
 
                     if c == '\'' => match input[1..].find('\'') {
                         Some(len_inner) => (len_inner + 2, Token::String),

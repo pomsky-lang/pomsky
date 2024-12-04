@@ -3,7 +3,7 @@
 
 use crate::Span;
 
-use super::{Literal, Rule};
+use super::Rule;
 
 /// An [alternation](https://www.regular-expressions.info/alternation.html).
 /// This is a list of alternatives. Each alternative is a [`Rule`].
@@ -20,28 +20,6 @@ pub struct Alternation {
 }
 
 impl Alternation {
-    pub(crate) fn new_expr(rules: Vec<Rule>) -> Rule {
-        rules
-            .into_iter()
-            .reduce(|a, b| match (a, b) {
-                (Rule::Alternation(mut a), Rule::Alternation(b)) => {
-                    a.span = a.span.join(b.span);
-                    a.rules.extend(b.rules);
-                    Rule::Alternation(a)
-                }
-                (Rule::Alternation(mut a), b) => {
-                    a.span = a.span.join(b.span());
-                    a.rules.push(b);
-                    Rule::Alternation(a)
-                }
-                (a, b) => {
-                    let span = a.span().join(b.span());
-                    Rule::Alternation(Alternation { rules: vec![a, b], span })
-                }
-            })
-            .unwrap_or_else(|| Rule::Literal(Literal::new("".to_string(), Span::default())))
-    }
-
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
         if needs_parens {

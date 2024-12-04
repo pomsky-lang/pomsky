@@ -17,7 +17,7 @@ use super::{helper, Parser};
 
 type PResult<T> = Result<T, ParseError>;
 
-const MAX_REPETITION: u32 = 65_535;
+const MAX_GROUP_NUMBER: u32 = 65_535;
 
 impl<'i> Parser<'i> {
     pub(super) fn parse_modified(&mut self) -> PResult<Rule> {
@@ -86,8 +86,7 @@ impl<'i> Parser<'i> {
         let span_start = self.last_span();
         let setting = if self.consume_reserved("lazy") {
             BooleanSetting::Lazy
-        } else if let Some((Token::Identifier, "unicode")) = self.peek() {
-            self.advance();
+        } else if self.consume_contextual_keyword("unicode") {
             BooleanSetting::Unicode
         } else {
             return Err(PEK::Expected("`lazy` or `unicode`").at(self.span()));
@@ -154,8 +153,7 @@ impl<'i> Parser<'i> {
             let mut matches = Vec::new();
             let mut literal = None;
 
-            if let Some((Token::Identifier, "in")) = self.peek() {
-            } else {
+            if self.peek() != Some((Token::Identifier, "in")) {
                 matches.push(self.parse_test_match()?);
                 while self.consume(Token::Comma) {
                     matches.push(self.parse_test_match()?);
@@ -246,27 +244,27 @@ impl<'i> Parser<'i> {
         let leading_pipe = self.consume(Token::Pipe);
 
         let mut alts = Vec::new();
-        if let Some(first_alt) = self.parse_and()? {
-            alts.push(first_alt);
-
-            while self.consume(Token::Pipe) {
-                if let Some(next_alt) = self.parse_and()? {
-                    span = span.join(next_alt.span());
-                    alts.push(next_alt);
-                } else {
-                    return Err(PEK::LonePipe.at(self.last_span()));
-                }
-            }
-
-            if alts.len() == 1 {
-                Ok(alts.pop().unwrap())
+        let Some(first_alt) = self.parse_and()? else {
+            if leading_pipe {
+                return Err(PEK::LonePipe.at(span));
             } else {
-                Ok(Alternation::new_expr(alts))
+                return Ok(Rule::Literal(Literal::new("".to_string(), Span::default())));
             }
-        } else if leading_pipe {
-            Err(PEK::LonePipe.at(span))
+        };
+        alts.push(first_alt);
+
+        while self.consume(Token::Pipe) {
+            let Some(next_alt) = self.parse_and()? else {
+                return Err(PEK::LonePipe.at(self.last_span()));
+            };
+            span = span.join(next_alt.span());
+            alts.push(next_alt);
+        }
+
+        if alts.len() == 1 {
+            Ok(alts.pop().unwrap())
         } else {
-            Ok(Alternation::new_expr(alts))
+            Ok(Rule::Alternation(Alternation { rules: alts, span }))
         }
     }
 
@@ -288,9 +286,8 @@ impl<'i> Parser<'i> {
         rules.push(first_sequence);
         loop {
             if !self.consume(Token::Ampersand) {
-                return Ok(Some(
-                    Intersection::new_expr(rules, span_start).expect("intersection can't be empty"),
-                ));
+                let span = span_start.join(self.last_span());
+                return Ok(Some(Rule::Intersection(Intersection { rules, span })));
             }
 
             let Some(next_sequence) = self.parse_sequence()? else {
@@ -516,13 +513,10 @@ impl<'i> Parser<'i> {
     }
 
     fn parse_literal(&mut self) -> PResult<Option<Literal>> {
-        if let Some(s) = self.consume_as(Token::String) {
-            let span = self.last_span();
-            let content = helper::parse_quoted_text(s).map_err(|k| k.at(span))?;
-            Ok(Some(Literal::new(content.to_string(), span)))
-        } else {
-            Ok(None)
-        }
+        let Some(s) = self.consume_as(Token::String) else { return Ok(None) };
+        let span = self.last_span();
+        let content = helper::parse_quoted_text(s).map_err(|k| k.at(span))?;
+        Ok(Some(Literal::new(content.to_string(), span)))
     }
 
     /// Parses a char set, surrounded by `[` `]`. This was previously called a
@@ -592,29 +586,29 @@ impl<'i> Parser<'i> {
 
     /// Parses an identifier or dot in a char set
     fn parse_char_group_ident(&mut self, negative: bool) -> PResult<Option<Vec<GroupItem>>> {
-        if self.consume(Token::Identifier) {
-            let span = self.last_span();
-
-            let before_colon = self.source_at(span);
-            let after_colon = if self.consume(Token::Colon) {
-                Some(self.expect_as(Token::Identifier)?)
-            } else {
-                None
-            };
-            let (kind, name, span) = match after_colon {
-                Some(name) => (Some(before_colon), name, span.join(self.last_span())),
-                None => (None, before_colon, span),
-            };
-
-            let item = CharGroup::try_from_group_name(kind, name, negative, span)
-                .map_err(|e| e.at(span))?;
-
-            Ok(Some(item))
-        } else if let Some(name) = self.consume_as(Token::ReservedName) {
-            Err(PEK::UnexpectedKeyword(name.to_owned()).at(self.last_span()))
-        } else {
-            Ok(None)
+        if !self.consume(Token::Identifier) {
+            if let Some(name) = self.consume_as(Token::ReservedName) {
+                return Err(PEK::UnexpectedKeyword(name.to_owned()).at(self.last_span()));
+            }
+            return Ok(None);
         }
+        let span = self.last_span();
+
+        let before_colon = self.source_at(span);
+        let after_colon = if self.consume(Token::Colon) {
+            Some(self.expect_as(Token::Identifier)?)
+        } else {
+            None
+        };
+        let (kind, name, span) = match after_colon {
+            Some(name) => (Some(before_colon), name, span.join(self.last_span())),
+            None => (None, before_colon, span),
+        };
+
+        let item =
+            CharGroup::try_from_group_name(kind, name, negative, span).map_err(|e| e.at(span))?;
+
+        Ok(Some(item))
     }
 
     /// Parses a string literal or a character range in a char set, e.g. `"axd"`
@@ -677,54 +671,42 @@ impl<'i> Parser<'i> {
     }
 
     fn parse_code_point(&mut self) -> PResult<Option<(char, Span)>> {
-        if let Some(cp) = self.consume_as(Token::CodePoint) {
-            let span = self.last_span();
-            let trimmed_u = cp[1..].trim_start();
-            if !trimmed_u.starts_with('+') {
-                let warning = DeprecationWarning::Unicode(cp.into());
-                self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
-            }
-
-            let hex = trimmed_u.trim_start_matches(|c: char| c == '+' || c.is_whitespace());
-
-            u32::from_str_radix(hex, 16)
-                .ok()
-                .and_then(|n| char::try_from(n).ok())
-                .map(|c| Some((c, span)))
-                .ok_or_else(|| PEK::InvalidCodePoint.at(span))
-        } else {
-            Ok(None)
+        let Some(cp) = self.consume_as(Token::CodePoint) else { return Ok(None) };
+        let span = self.last_span();
+        let trimmed_u = cp[1..].trim_start();
+        if !trimmed_u.starts_with('+') {
+            let warning = DeprecationWarning::Unicode(cp.into());
+            self.add_warning(ParseWarningKind::Deprecation(warning).at(span))
         }
+
+        let hex = trimmed_u.trim_start_matches(|c: char| c == '+' || c.is_whitespace());
+
+        u32::from_str_radix(hex, 16)
+            .ok()
+            .and_then(|n| char::try_from(n).ok())
+            .map(|c| Some((c, span)))
+            .ok_or_else(|| PEK::InvalidCodePoint.at(span))
     }
 
     fn parse_code_point_rule(&mut self) -> PResult<Option<Rule>> {
-        if let Some((c, span)) = self.parse_code_point()? {
-            Ok(Some(Rule::CharClass(CharClass::new(
-                vec![GroupItem::Char(c)],
-                span,
-                self.is_unicode_aware,
-            ))))
-        } else {
-            Ok(None)
-        }
+        let Some((c, span)) = self.parse_code_point()? else { return Ok(None) };
+        let inner = vec![GroupItem::Char(c)];
+        Ok(Some(Rule::CharClass(CharClass::new(inner, span, self.is_unicode_aware))))
     }
 
     fn parse_special_char(&mut self) -> Option<char> {
-        if let Some((Token::Identifier, string)) = self.peek() {
-            let c = match string {
-                "n" => '\n',
-                "r" => '\r',
-                "t" => '\t',
-                "a" => '\u{07}',
-                "e" => '\u{1B}',
-                "f" => '\u{0C}',
-                _ => return None,
-            };
-            self.advance();
-            Some(c)
-        } else {
-            None
-        }
+        let Some((Token::Identifier, string)) = self.peek() else { return None };
+        let c = match string {
+            "n" => '\n',
+            "r" => '\r',
+            "t" => '\t',
+            "a" => '\u{07}',
+            "e" => '\u{1B}',
+            "f" => '\u{0C}',
+            _ => return None,
+        };
+        self.advance();
+        Some(c)
     }
 
     /// Parses a boundary. For start and end, there are two syntaxes: `^` and `$`.
@@ -741,7 +723,7 @@ impl<'i> Parser<'i> {
             BoundaryKind::Start
         } else if self.consume(Token::Dollar) {
             BoundaryKind::End
-        } else if self.consume(Token::BWord) {
+        } else if self.consume(Token::Percent) {
             BoundaryKind::Word
         } else if self.consume(Token::AngleLeft) {
             BoundaryKind::WordStart
@@ -766,7 +748,7 @@ impl<'i> Parser<'i> {
                 let num = self.expect_number::<i32>()?;
                 // negating from positive to negative can't overflow, luckily
                 ReferenceTarget::Relative(-num)
-            } else if let Some(num) = self.consume_number(MAX_REPETITION)? {
+            } else if let Some(num) = self.consume_number(MAX_GROUP_NUMBER)? {
                 ReferenceTarget::Number(num)
             } else {
                 // TODO: Better diagnostic for `::let`
@@ -857,16 +839,13 @@ impl<'i> Parser<'i> {
 
     /// Parses a variable (usage site).
     fn parse_variable(&mut self) -> PResult<Option<Rule>> {
-        if let Some(ident) = self.consume_as(Token::Identifier) {
-            let span1 = self.last_span();
-            let rule = Rule::Variable(Variable::new(ident, span1));
-            if let Some((Token::Equals, span2)) = self.peek_pair() {
-                return Err(PEK::MissingLetKeyword.at(span1.join(span2)));
-            }
-            Ok(Some(rule))
-        } else {
-            Ok(None)
+        let Some(ident) = self.consume_as(Token::Identifier) else { return Ok(None) };
+        let span1 = self.last_span();
+        let rule = Rule::Variable(Variable::new(ident, span1));
+        if let Some((Token::Equals, span2)) = self.peek_pair() {
+            return Err(PEK::MissingLetKeyword.at(span1.join(span2)));
         }
+        Ok(Some(rule))
     }
 
     /// Parses the dot

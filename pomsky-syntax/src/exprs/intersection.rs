@@ -20,33 +20,6 @@ pub struct Intersection {
 }
 
 impl Intersection {
-    pub(crate) fn new_expr(rules: Vec<Rule>, start_span: Span) -> Option<Rule> {
-        rules
-            .into_iter()
-            .reduce(|a, b| match (a, b) {
-                (Rule::Intersection(mut a), Rule::Intersection(b)) => {
-                    a.span = a.span.join(b.span);
-                    a.rules.extend(b.rules);
-                    Rule::Intersection(a)
-                }
-                (Rule::Intersection(mut a), b) => {
-                    a.span = a.span.join(b.span());
-                    a.rules.push(b);
-                    Rule::Intersection(a)
-                }
-                (a, b) => {
-                    let span = a.span().join(b.span());
-                    Rule::Intersection(Intersection { rules: vec![a, b], span })
-                }
-            })
-            .map(|mut rule| {
-                if let Rule::Intersection(i) = &mut rule {
-                    i.span = i.span.join(start_span)
-                }
-                rule
-            })
-    }
-
     #[cfg(feature = "dbg")]
     pub(super) fn pretty_print(&self, buf: &mut crate::PrettyPrinter, needs_parens: bool) {
         if needs_parens {

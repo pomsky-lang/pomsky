@@ -9,7 +9,11 @@ pub enum Token {
     /// `$` (end boundary)
     Dollar,
     /// `%` (`\b` boundary)
-    BWord,
+    Percent,
+    /// `<` (word start)
+    AngleLeft,
+    /// `>` (word end)
+    AngleRight,
 
     /// `*` (`*?` repetition)
     Star,
@@ -42,27 +46,18 @@ pub enum Token {
 
     /// `[` (open character class)
     OpenBracket,
-
-    /// `-` (unicode range)
-    Dash,
-
     /// `]` (close character class)
     CloseBracket,
 
+    /// `-` (unicode range)
+    Dash,
     /// `.` (any code point except newline)
     Dot,
 
     /// `>>` (positive lookahead)
     LookAhead,
-
     /// `<<` (positive lookbehind)
     LookBehind,
-
-    /// `<` (word start)
-    AngleLeft,
-
-    /// `>` (word end)
-    AngleRight,
 
     /// `::` (back reference)
     DoubleColon,
@@ -100,7 +95,7 @@ impl core::fmt::Display for Token {
         f.write_str(match self {
             Token::Caret => "`^`",
             Token::Dollar => "`$`",
-            Token::BWord => "`%`",
+            Token::Percent => "`%`",
             Token::Star => "`*`",
             Token::Plus => "`+`",
             Token::QuestionMark => "`?`",
