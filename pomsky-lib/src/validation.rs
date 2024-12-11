@@ -40,6 +40,14 @@ impl RuleVisitor<CompileError> for Validator {
         }
     }
 
+    fn visit_repetition(&mut self, repetition: &exprs::Repetition) -> Result<(), CompileError> {
+        if let (RegexFlavor::RE2, Some(1001..)) = (self.flavor(), repetition.kind.upper_bound) {
+            return Err(CompileErrorKind::Unsupported(Feature::RepetitionAbove1000, self.flavor())
+                .at(repetition.span));
+        }
+        Ok(())
+    }
+
     fn visit_intersection(&mut self, int: &exprs::Intersection) -> Result<(), CompileError> {
         self.require(Feat::INTERSECTION, int.span)
     }

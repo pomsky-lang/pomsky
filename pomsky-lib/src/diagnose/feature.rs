@@ -48,6 +48,8 @@ pub enum Feature {
     ScriptExtensions,
     /// Character set intersections
     CharSetIntersection,
+    /// Repetition higher than 1000
+    RepetitionAbove1000,
 }
 
 impl Feature {
@@ -73,6 +75,7 @@ impl Feature {
             Feature::WordStartEnd => "word start and word end",
             Feature::ScriptExtensions => "Unicode script extensions",
             Feature::CharSetIntersection => "Character set intersections",
+            Feature::RepetitionAbove1000 => "Repetition above 1000",
         }
     }
 }

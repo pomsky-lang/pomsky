@@ -1,0 +1,5 @@
+#! expect=error, flavor=RE2
+U+2{,1010}
+-----
+ERROR: Unsupported feature `Repetition above 1000` in the `RE2` regex flavor
+SPAN: 0..10
