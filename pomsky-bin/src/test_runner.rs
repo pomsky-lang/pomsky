@@ -1,11 +1,14 @@
-use pcre2::bytes::Regex;
+use std::ops::Index;
+
+use pcre2::bytes::Regex as PcreRegex;
 use pomsky::{
     diagnose::{Diagnostic, DiagnosticCode, Severity},
     features::PomskyFeatures,
-    options::{CompileOptions, RegexFlavor},
+    options::CompileOptions,
     test::{CaptureIdent, TestCase, TestCaseMatch, TestCaseMatchAll, TestCaseReject},
     Expr,
 };
+use regex::Regex as RustRegex;
 
 pub(crate) fn run_tests(
     parsed: &Expr,
@@ -13,32 +16,44 @@ pub(crate) fn run_tests(
     options: CompileOptions,
     errors: &mut Vec<Diagnostic>,
 ) {
-    let (Some(pcre_pattern), _) = parsed.compile(
-        input,
-        CompileOptions {
-            flavor: RegexFlavor::Pcre,
-            allowed_features: PomskyFeatures::default(),
-            ..options
-        },
-    ) else {
+    let (Some(pattern), _) = parsed
+        .compile(input, CompileOptions { allowed_features: PomskyFeatures::default(), ..options })
+    else {
         let msg = "Failed to compile the expression in the PCRE flavor for running tests".into();
         errors.push(Diagnostic::ad_hoc(Severity::Error, None, msg, None));
         return;
     };
 
-    let regex = pcre2::bytes::RegexBuilder::new()
-        .jit_if_available(true)
-        .ucp(true)
-        .utf(true)
-        .build(&pcre_pattern);
+    let regex = match options.flavor {
+        pomsky::options::RegexFlavor::Pcre => {
+            let regex = pcre2::bytes::RegexBuilder::new()
+                .jit_if_available(true)
+                .ucp(true)
+                .utf(true)
+                .build(&pattern);
 
-    let regex = match regex {
-        Ok(regex) => regex,
-        Err(e) => {
-            let help = Some(format!("The compiled regex is {pcre_pattern:?}"));
-            errors.push(Diagnostic::ad_hoc(Severity::Error, None, e.to_string(), help));
-            return;
+            match regex {
+                Ok(regex) => Regex::Pcre(regex),
+                Err(e) => {
+                    let help = Some(format!("The compiled regex is {pattern:?}"));
+                    errors.push(Diagnostic::ad_hoc(Severity::Error, None, e.to_string(), help));
+                    return;
+                }
+            }
         }
+        pomsky::options::RegexFlavor::Rust => {
+            let regex = RustRegex::new(&pattern);
+
+            match regex {
+                Ok(regex) => Regex::Rust(regex),
+                Err(e) => {
+                    let help = Some(format!("The compiled regex is {pattern:?}"));
+                    errors.push(Diagnostic::ad_hoc(Severity::Error, None, e.to_string(), help));
+                    return;
+                }
+            }
+        }
+        _ => panic!("Unsupported flavor"),
     };
 
     let tests = parsed.extract_tests_ref();
@@ -54,7 +69,7 @@ pub(crate) fn run_tests(
 }
 
 fn check_test_match(regex: &Regex, test_case: &TestCaseMatch, errors: &mut Vec<Diagnostic>) {
-    let result = regex.captures(test_case.literal.content.as_bytes());
+    let result = regex.captures(&test_case.literal.content);
     match result {
         Ok(Some(captures)) => {
             if captures[0].len() != test_case.literal.content.len() {
@@ -107,7 +122,7 @@ fn check_all_test_matches(
     errors: &mut Vec<Diagnostic>,
 ) {
     let captures_iter = regex
-        .captures_iter(test_case.literal.content.as_bytes())
+        .captures_iter(&test_case.literal.content)
         .map(Some)
         .chain(std::iter::repeat_with(|| None));
     let expected_iter = test_case.matches.iter().map(Some).chain(std::iter::repeat(None));
@@ -174,7 +189,7 @@ fn check_all_test_matches(
 }
 
 fn check_test_reject(regex: &Regex, test_case: &TestCaseReject, errors: &mut Vec<Diagnostic>) {
-    let result = regex.captures(test_case.literal.content.as_bytes());
+    let result = regex.captures(&test_case.literal.content);
     match result {
         Ok(Some(captures)) => {
             let is_exact = captures[0].len() == test_case.literal.content.len();
@@ -199,6 +214,100 @@ fn check_test_reject(regex: &Regex, test_case: &TestCaseReject, errors: &mut Vec
                 e.to_string(),
                 Some(format!("The compiled regex is {:?}", regex.as_str())),
             ));
+        }
+    }
+}
+
+enum Regex {
+    Pcre(PcreRegex),
+    Rust(RustRegex),
+}
+
+impl Regex {
+    fn as_str(&self) -> &str {
+        match self {
+            Regex::Pcre(regex) => regex.as_str(),
+            Regex::Rust(regex) => regex.as_str(),
+        }
+    }
+
+    fn captures<'a>(&'a self, subject: &'a str) -> Result<Option<Captures<'a>>, pcre2::Error> {
+        match self {
+            Regex::Pcre(regex) => regex.captures(subject.as_bytes()).map(|o| o.map(Captures::Pcre)),
+            Regex::Rust(regex) => Ok(regex.captures(subject).map(Captures::Rust)),
+        }
+    }
+
+    fn captures_iter<'r, 's>(&'r self, subject: &'s str) -> CaptureMatches<'r, 's> {
+        match self {
+            Regex::Pcre(regex) => CaptureMatches::Pcre(regex.captures_iter(subject.as_bytes())),
+            Regex::Rust(regex) => CaptureMatches::Rust(regex.captures_iter(subject)),
+        }
+    }
+}
+
+enum Captures<'a> {
+    Pcre(pcre2::bytes::Captures<'a>),
+    Rust(regex::Captures<'a>),
+}
+
+impl Captures<'_> {
+    fn name(&self, name: &str) -> Option<Match<'_>> {
+        match self {
+            Captures::Pcre(captures) => captures.name(name).map(Match::Pcre),
+            Captures::Rust(captures) => captures.name(name).map(Match::Rust),
+        }
+    }
+
+    fn get(&self, index: usize) -> Option<Match<'_>> {
+        match self {
+            Captures::Pcre(captures) => captures.get(index).map(Match::Pcre),
+            Captures::Rust(captures) => captures.get(index).map(Match::Rust),
+        }
+    }
+}
+
+impl Index<usize> for Captures<'_> {
+    type Output = [u8];
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match self {
+            Captures::Pcre(captures) => &captures[index],
+            Captures::Rust(captures) => captures[index].as_bytes(),
+        }
+    }
+}
+
+enum Match<'s> {
+    Pcre(pcre2::bytes::Match<'s>),
+    Rust(regex::Match<'s>),
+}
+
+impl Match<'_> {
+    fn as_bytes(&self) -> &[u8] {
+        match self {
+            Match::Pcre(mat) => mat.as_bytes(),
+            Match::Rust(mat) => mat.as_str().as_bytes(),
+        }
+    }
+}
+
+enum CaptureMatches<'r, 's> {
+    Pcre(pcre2::bytes::CaptureMatches<'r, 's>),
+    Rust(regex::CaptureMatches<'r, 's>),
+}
+
+impl<'s> Iterator for CaptureMatches<'_, 's> {
+    type Item = Result<Captures<'s>, pcre2::Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            CaptureMatches::Pcre(capture_matches) => {
+                capture_matches.next().map(|r| r.map(Captures::Pcre))
+            }
+            CaptureMatches::Rust(capture_matches) => {
+                capture_matches.next().map(|c| Ok(Captures::Rust(c)))
+            }
         }
     }
 }

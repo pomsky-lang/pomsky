@@ -2,12 +2,14 @@ use std::path::PathBuf;
 
 use pomsky::{features::PomskyFeatures, options::RegexFlavor};
 
+pub(crate) use self::engines::RegexEngine;
 pub(crate) use errors::ParseArgsError;
-pub(crate) use help::print_short_usage_and_help_err;
+pub(crate) use help::print_usage_and_help;
 pub(crate) use input::Input;
 pub(crate) use warnings::DiagnosticSet;
 
-use self::engines::RegexEngine;
+use crate::format::Logger;
+
 use self::parse::{ListKind, Parsed};
 
 mod engines;
@@ -62,8 +64,8 @@ pub(crate) struct TestOptions {
     pub(crate) pass_with_no_tests: bool,
 }
 
-pub(super) fn parse_args() -> Result<(Subcommand, GlobalOptions), ParseArgsError> {
-    match parse::parse_args_inner(lexopt::Parser::from_env())? {
+pub(super) fn parse_args(logger: &Logger) -> Result<(Subcommand, GlobalOptions), ParseArgsError> {
+    match parse::parse_args_inner(logger, lexopt::Parser::from_env())? {
         Parsed::Options(subcommand, opts) => Ok((subcommand, opts)),
         Parsed::Help(help) => {
             match help {

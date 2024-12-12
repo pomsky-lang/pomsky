@@ -1,7 +1,10 @@
 use std::{fmt, path::Path};
 
+use helptext::text;
 use pomsky::diagnose::{DiagnosticCode, DiagnosticKind};
 use serde::{Deserialize, Serialize};
+
+use crate::format::Logger;
 
 mod serde_code;
 
@@ -89,7 +92,14 @@ impl CompilationResult {
             .collect()
     }
 
-    pub(crate) fn output(self, json: bool, new_line: bool, in_test_suite: bool, source_code: &str) {
+    pub(crate) fn output(
+        self,
+        logger: &Logger,
+        json: bool,
+        new_line: bool,
+        in_test_suite: bool,
+        source_code: &str,
+    ) {
         let success = self.success;
         if json {
             match serde_json::to_string(&self) {
@@ -98,13 +108,9 @@ impl CompilationResult {
             }
         } else {
             if in_test_suite {
-                if success {
-                    efprintln!(G!"ok");
-                } else {
-                    efprintln!(R!"failed");
-                }
+                logger.basic().fmtln(if success { text![G!"ok"] } else { text![R!"failed"] });
             }
-            self.output_human_readable(new_line, in_test_suite, Some(source_code));
+            self.output_human_readable(logger, new_line, in_test_suite, Some(source_code));
         }
         if !success && !in_test_suite {
             std::process::exit(1);
@@ -113,6 +119,7 @@ impl CompilationResult {
 
     fn output_human_readable(
         mut self,
+        logger: &Logger,
         new_line: bool,
         in_test_suite: bool,
         source_code: Option<&str>,
@@ -121,25 +128,18 @@ impl CompilationResult {
             self.diagnostics.retain(|d| d.severity == Severity::Error);
         }
         let initial_len = self.diagnostics.len();
-        let error_len = self.diagnostics.iter().filter(|d| d.severity == Severity::Error).count();
-        let warning_len = self.diagnostics.len() - error_len;
 
         if self.diagnostics.len() > 8 {
             self.diagnostics.drain(8..);
         }
 
         for diag in &self.diagnostics {
-            diag.print_human_readable(source_code);
+            diag.print_human_readable(logger, source_code);
         }
 
-        if !self.diagnostics.is_empty() {
-            if initial_len > self.diagnostics.len() {
-                efprintln!(C!"note" ": " {&(initial_len - self.diagnostics.len()).to_string()} " diagnostic(s) were omitted");
-            }
-            if initial_len > 3 && error_len == 0 {
-                let warning_len = warning_len.to_string();
-                efprintln!(Y!"warning" ": pomsky generated " {&warning_len} " warnings");
-            }
+        if !self.diagnostics.is_empty() && initial_len > self.diagnostics.len() {
+            let omitted = initial_len - self.diagnostics.len();
+            logger.note().println(format_args!("{omitted} diagnostic(s) were omitted"));
         }
 
         if let Some(compiled) = &self.output {
@@ -187,7 +187,7 @@ pub struct Diagnostic {
     pub visual: String,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
     Error,
@@ -344,22 +344,15 @@ impl Diagnostic {
         }
     }
 
-    fn print_human_readable(&self, source_code: Option<&str>) {
+    fn print_human_readable(&self, logger: &Logger, source_code: Option<&str>) {
         let kind = self.kind.as_str();
-        let display = self.miette_display(source_code).to_string();
-        if let Some(code) = self.code {
-            let code = code.to_string();
-            match self.severity {
-                Severity::Error => efprint!(R!"error " R!{&code} "(" {&kind} "):" {&display}),
-                Severity::Warning => {
-                    efprint!(Y!"warning " Y!{&code} "(" {&kind} "):" {&display})
-                }
+        let display = self.miette_display(source_code);
+
+        match self.code {
+            Some(code) => {
+                logger.diagnostic_with_code(self.severity, &code.to_string(), kind).print(display);
             }
-        } else {
-            match self.severity {
-                Severity::Error => efprint!(R!"error" "(" {&kind} "):" {&display}),
-                Severity::Warning => efprint!(Y!"warning" "(" {&kind} "):" {&display}),
-            }
+            None => logger.diagnostic(self.severity, kind).print(display),
         }
     }
 

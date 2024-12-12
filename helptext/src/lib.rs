@@ -2,7 +2,7 @@
 //!
 //! The syntax of the help message is explained in the [`sections`] macro.
 //!
-//! The syntax for colorizing text is explained in the [`text`] macro.
+//! The syntax for styling text is explained in the [`text`] macro.
 //!
 //! ```
 //! use helptext::{Help, sections};
@@ -11,10 +11,10 @@
 //!     ["my-cool-program " {env!("CARGO_PKG_VERSION")}]
 //!     ["Use " c:"-h" " for short descriptions and " c:"--help" " for more details."]
 //!     []
-//!     "USAGE" {
+//!     "Usage" {
 //!         ["my-cool-program [OPTIONS] <INPUT>"]
 //!     }
-//!     "OPTIONS" {
+//!     "Options" {
 //!         table Auto {
 //!             "-h, --help" => {
 //!                 ["Print help information"]
@@ -51,19 +51,19 @@
 //!     }
 //! ));
 //!
-//! fn print_short_help(use_colors: bool) {
+//! fn print_short_help(use_styles: bool) {
 //!     HELP.write(
 //!         &mut std::io::stdout().lock(),
 //!         false,  // don't show long help
-//!         use_colors,
+//!         use_styles,
 //!     );
 //! }
 //!
-//! fn print_long_help(use_colors: bool) {
+//! fn print_long_help(use_styles: bool) {
 //!     HELP.write(
 //!         &mut std::io::stdout().lock(),
 //!         true,  // show long help
-//!         use_colors,
+//!         use_styles,
 //!     );
 //! }
 //! ```
@@ -74,9 +74,9 @@
 //!
 //! ![Long help](https://raw.githubusercontent.com/pomsky-lang/pomsky/main/helptext/docs/long_help.png)
 
-mod color;
 mod help;
 mod macros;
+mod style;
 
-pub use color::Color;
 pub use help::*;
+pub use style::Style;

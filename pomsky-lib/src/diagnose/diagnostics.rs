@@ -244,7 +244,7 @@ impl Diagnostic {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 miette::GraphicalReportHandler::new()
                     .with_width(100)
-                    .with_theme(GraphicalTheme::none())
+                    .with_theme(GraphicalTheme::unicode_nocolor())
                     .render_report(f, &self.0)
             }
         }

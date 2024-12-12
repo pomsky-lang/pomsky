@@ -2,9 +2,14 @@ use std::ffi::OsString;
 
 use pomsky::features::PomskyFeatures;
 
+use crate::format::Logger;
+
 use super::ParseArgsError;
 
-pub(super) fn parse_features(value: OsString) -> Result<PomskyFeatures, ParseArgsError> {
+pub(super) fn parse_features(
+    logger: &Logger,
+    value: OsString,
+) -> Result<PomskyFeatures, ParseArgsError> {
     let lower = value.to_string_lossy().to_ascii_lowercase();
 
     let mut features = PomskyFeatures::new();
@@ -29,7 +34,7 @@ pub(super) fn parse_features(value: OsString) -> Result<PomskyFeatures, ParseArg
                 "recursion" => features.recursion(true),
                 "intersection" => features.intersection(true),
                 s => {
-                    efprintln!(Y!"warning" ": unknown feature `" {s} "`");
+                    logger.warn().println(format_args!("unknown feature `{s}`"));
                     features
                 }
             };

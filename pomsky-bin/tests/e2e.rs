@@ -69,14 +69,14 @@ impl PredicateReflection for Output {
 const ERROR: &str = "error: ";
 const ERROR_COLOR: &str = "\u{1b}[31;1merror\u{1b}[0m: ";
 const USAGE: &str = r#"
-USAGE:
+Usage:
     pomsky [OPTIONS] <INPUT>
     pomsky [OPTIONS] --path <PATH>
     command | pomsky [OPTIONS]
 For more information try `--help`
 "#;
 const USAGE_COLOR: &str = "\n\
-\u{1b}[33mUSAGE\u{1b}[0m:\n    \
+\u{1b}[4;1mUsage\u{1b}[0m:\n    \
     pomsky [OPTIONS] <INPUT>\n    \
     pomsky [OPTIONS] --path <PATH>\n    \
     command | pomsky [OPTIONS]\n\
@@ -114,18 +114,18 @@ Compile pomsky expressions, a new regular expression language
 
 Use `-h` for short descriptions and `--help` for more details.
 
-USAGE:
+Usage:
     pomsky [OPTIONS] <INPUT>
     pomsky [OPTIONS] --path <PATH>
     command | pomsky [OPTIONS]
 
-SUBCOMMANDS:
+Subcommands:
     pomsky test  Run unit tests in pomsky expressions
 
-ARGS:
+Args:
     <INPUT>  Pomsky expression to compile
 
-OPTIONS:
+Options:
         --allowed-features <FEATURE>...  Comma-separated list of allowed features [default: all enabled]
     -f, --flavor <FLAVOR>                Regex flavor [default: `pcre`]
     -h, --help                           Print help information
@@ -143,7 +143,7 @@ fn unknown_flag() {
     cmd.assert().failure().stderr(format!(
         "{ERROR}invalid option '-k'
 
-USAGE:
+Usage:
     pomsky [OPTIONS] <INPUT>
     pomsky [OPTIONS] --path <PATH>
     command | pomsky [OPTIONS]
@@ -238,14 +238,14 @@ fn arg_input_with_flavor() {
 fn invalid_flavor() {
     let mut cmd = command(&[":foo('test')+", "-f", "jsx"]);
     cmd.assert().failure().stderr(format!(
-        "error: 'jsx' isn't a valid flavor
+        "error: `jsx` isn't a valid flavor
 possible values: pcre, python, java, javascript, dotnet, ruby, rust
 {USAGE}"
     ));
 
     let mut cmd = command_color(&[":foo('test')+", "-f", "jsx"]);
     cmd.assert().failure().stderr(format!(
-        "{ERROR_COLOR}'jsx' isn't a valid flavor
+        "{ERROR_COLOR}`jsx` isn't a valid flavor
 possible values: pcre, python, java, javascript, dotnet, ruby, rust
 {USAGE_COLOR}"
     ));
@@ -255,7 +255,7 @@ possible values: pcre, python, java, javascript, dotnet, ruby, rust
 fn flavor_used_multiple_times() {
     let mut cmd = command(&[":foo('test')+", "-fjs", "-f", "rust"]);
     cmd.assert().failure().stderr(format!(
-        "error: The argument '--flavor' was provided more than once, but cannot be used multiple times
+        "error: The argument `--flavor` was provided more than once, but cannot be used multiple times
 {USAGE}"
     ));
 }
@@ -307,7 +307,7 @@ fn no_newline() {
 
     let mut cmd = command(&["-n", ":foo('test')+", "-n"]);
     cmd.assert().failure().stderr(format!(
-        r#"error: The argument '--no-new-line' was provided more than once, but cannot be used multiple times
+        r#"error: The argument `--no-new-line` was provided more than once, but cannot be used multiple times
 {USAGE}"#
     ));
 }
@@ -442,12 +442,12 @@ fn json_output_errors() {
                     fixes: vec![],
                     visual: String::from(
                         "error P0100(syntax):
-  x Expected character class, string, code point, Unicode property or `]`
-   ,----
- 1 | [.][^test]
-   :  |
-   :  `-- error occurred here
-   `----
+  × Expected character class, string, code point, Unicode property or `]`
+   ╭────
+ 1 │ [.][^test]
+   ·  ┬
+   ·  ╰── error occurred here
+   ╰────
 ",
                     ),
                 }],

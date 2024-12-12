@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::Color;
+use crate::Style;
 
 /// A structured help message.
 ///
@@ -9,9 +9,9 @@ use crate::Color;
 pub struct Help<'a>(pub &'a [HelpSection<'a>]);
 
 impl Help<'_> {
-    pub fn write(&self, buf: &mut impl Write, long: bool, colored: bool) -> io::Result<()> {
+    pub fn write(&self, buf: &mut impl Write, long: bool, styled: bool) -> io::Result<()> {
         for section in self.0 {
-            section.write(buf, long, colored, 0, false)?;
+            section.write(buf, long, styled, 0, false)?;
         }
         Ok(())
     }
@@ -35,19 +35,19 @@ impl HelpSection<'_> {
         &self,
         buf: &mut impl Write,
         long: bool,
-        colored: bool,
+        styled: bool,
         indent: usize,
         same_line: bool,
     ) -> io::Result<bool> {
         match *self {
             HelpSection::Short(section) => {
                 if !long {
-                    return section.write(buf, long, colored, indent, same_line);
+                    return section.write(buf, long, styled, indent, same_line);
                 }
             }
             HelpSection::Long(section) => {
                 if long {
-                    return section.write(buf, long, colored, indent, same_line);
+                    return section.write(buf, long, styled, indent, same_line);
                 }
             }
             HelpSection::Text(segments) => {
@@ -57,7 +57,7 @@ impl HelpSection<'_> {
                     )?;
                 }
                 for segment in segments {
-                    segment.write(&mut *buf, colored, indent)?;
+                    segment.write(&mut *buf, styled, indent)?;
                 }
                 buf.write_all(b"\n")?;
                 return Ok(true);
@@ -67,10 +67,10 @@ impl HelpSection<'_> {
                     &b"\n                                                  "[..indent + 1],
                 )?;
 
-                if colored {
-                    buf.write_all(Color::ANSI_Y.as_bytes())?;
+                if styled {
+                    buf.write_all(Style::ANSI_UB.as_bytes())?;
                     buf.write_all(name.as_bytes())?;
-                    buf.write_all(Color::ANSI_RESET.as_bytes())?;
+                    buf.write_all(Style::ANSI_RESET.as_bytes())?;
                 } else {
                     buf.write_all(name.as_bytes())?;
                 }
@@ -84,7 +84,7 @@ impl HelpSection<'_> {
                             &b"                                                  "[..new_indent],
                         )?;
                     }
-                    line_written |= section.write(buf, long, colored, new_indent, false)?;
+                    line_written |= section.write(buf, long, styled, new_indent, false)?;
                 }
                 return Ok(line_written);
             }
@@ -114,10 +114,10 @@ impl HelpSection<'_> {
                         &b"                                                  "[..indent],
                     )?;
 
-                    if colored {
-                        buf.write_all(Color::ANSI_G.as_bytes())?;
+                    if styled {
+                        buf.write_all(Style::ANSI_G.as_bytes())?;
                         buf.write_all(key.as_bytes())?;
-                        buf.write_all(Color::ANSI_RESET.as_bytes())?;
+                        buf.write_all(Style::ANSI_RESET.as_bytes())?;
                     } else {
                         buf.write_all(key.as_bytes())?;
                     }
@@ -136,7 +136,7 @@ impl HelpSection<'_> {
                         line_written |= section.write(
                             buf,
                             long,
-                            colored,
+                            styled,
                             new_indent,
                             is_small && !line_written,
                         )?;
@@ -162,7 +162,7 @@ pub enum TableMode {
 
 #[derive(Debug, Clone)]
 pub struct Segment<'a> {
-    pub style: Option<Color>,
+    pub style: Option<Style>,
     pub text: &'a str,
     pub ticks: bool,
 }
@@ -172,10 +172,10 @@ impl<'a> Segment<'a> {
         Segment { style: None, text, ticks: false }
     }
 
-    pub fn write(&self, buf: &mut impl Write, colored: bool, indent: usize) -> io::Result<()> {
-        if let Some(color) = &self.style {
-            if colored {
-                buf.write_all(color.ansi_code().as_bytes())?;
+    pub fn write(&self, buf: &mut impl Write, styled: bool, indent: usize) -> io::Result<()> {
+        if let Some(style) = &self.style {
+            if styled {
+                buf.write_all(style.ansi_code().as_bytes())?;
             } else if self.ticks {
                 buf.write_all(b"`")?;
             }
@@ -193,8 +193,8 @@ impl<'a> Segment<'a> {
         }
 
         if self.style.is_some() {
-            if colored {
-                buf.write_all(Color::ANSI_RESET.as_bytes())?;
+            if styled {
+                buf.write_all(Style::ANSI_RESET.as_bytes())?;
             } else if self.ticks {
                 buf.write_all(b"`")?;
             }

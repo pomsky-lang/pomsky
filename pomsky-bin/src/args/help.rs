@@ -2,7 +2,7 @@ use helptext::{sections, Help, HelpSection};
 use supports_color::Stream;
 
 const USAGE: Help = Help(sections![
-    "USAGE" {
+    "Usage" {
         ["pomsky [OPTIONS] <INPUT>\n\
         pomsky [OPTIONS] --path <PATH>\n\
         command | pomsky [OPTIONS]"]
@@ -88,13 +88,13 @@ pub(super) const HELP: Help = Help(sections![
     \n\
     Use " c:"-h" " for short descriptions and " c:"--help" " for more details."]
 
-    "USAGE" {
+    "Usage" {
         ["pomsky [OPTIONS] <INPUT>\n\
         pomsky [OPTIONS] --path <PATH>\n\
         command | pomsky [OPTIONS]"]
     }
 
-    "SUBCOMMANDS" {
+    "Subcommands" {
         table Auto {
             "pomsky test" => {
                 ["Run unit tests in pomsky expressions"]
@@ -104,7 +104,7 @@ pub(super) const HELP: Help = Help(sections![
         }
     }
 
-    "ARGS" {
+    "Args" {
         table Auto {
             "<INPUT>" => {
                 ["Pomsky expression to compile"]
@@ -115,7 +115,7 @@ pub(super) const HELP: Help = Help(sections![
         }
     }
 
-    "OPTIONS" {
+    "Options" {
         table Auto {
             "    --allowed-features <FEATURE>..." => {
                 ["Comma-separated list of allowed features [default: all enabled]"]
@@ -151,8 +151,8 @@ pub(super) const HELP: Help = Help(sections![
         }
     }
 
-    Long "FLAVORS" FLAVORS
-    Long "FEATURES" FEATURES
+    Long "Flavors" FLAVORS
+    Long "Features" FEATURES
 ]);
 
 pub(super) const TEST_HELP: Help = Help(sections![
@@ -163,13 +163,11 @@ pub(super) const TEST_HELP: Help = Help(sections![
     \n\
     Use " c:"-h" " for short descriptions and " c:"--help" " for more details."]
 
-    "USAGE" {
-        ["pomsky test [OPTIONS] --path <PATH>\n\
-        pomsky test [OPTIONS] <INPUT>\n\
-        command | pomsky test [OPTIONS]"]
+    "Usage" {
+        ["pomsky test [OPTIONS] --path <PATH>"]
     }
 
-    "ARGS" {
+    "Args" {
         table Auto {
             "<INPUT>" => {
                 ["Pomsky expression to test"]
@@ -180,7 +178,7 @@ pub(super) const TEST_HELP: Help = Help(sections![
         }
     }
 
-    "OPTIONS" {
+    "Options" {
         table Auto {
             "    --allowed-features <FEATURE>..." => {
                 ["Comma-separated list of allowed features [default: all enabled]"]
@@ -199,7 +197,7 @@ pub(super) const TEST_HELP: Help = Help(sections![
                 ["Print help information"]
                 Long ["Use " c:"-h" " for short descriptions and " c:"--help" " for more details."]
             }
-            "-p, --path <FILE>" => {
+            "-p, --path <PATH>" => {
                 ["File or directory containing the pomsky expressions to compile"]
                 Long ["If a directory is specified, all contained " c:"*.pomsky" " files are tested.
 Note that pomsky respects " c:".gitignore" " files."]
@@ -214,12 +212,12 @@ Note that pomsky respects " c:".gitignore" " files."]
         }
     }
 
-    Long "FLAVORS" FLAVORS
-    Long "ENGINES" ENGINES
-    Long "FEATURES" FEATURES
+    Long "Flavors" FLAVORS
+    Long "Engines" ENGINES
+    Long "Features" FEATURES
 ]);
 
-pub(crate) fn print_short_usage_and_help_err() {
+pub(crate) fn print_usage_and_help() {
     let _ = USAGE.write(&mut std::io::stderr().lock(), false, is_colored(Stream::Stderr));
 }
 

@@ -2,27 +2,27 @@
 #[macro_export]
 macro_rules! text_impl {
     // c:"text"
-    ([$color_id:ident : $lit:literal $($rest:tt)*] $($done:tt)*) => {
+    ([$style_id:ident : $lit:literal $($rest:tt)*] $($done:tt)*) => {
         $crate::text_impl!([$($rest)*] $($done)*, $crate::Segment {
-            style: Some($crate::Color::$color_id), text: $lit, ticks: true
+            style: Some($crate::Style::$style_id), text: $lit, ticks: true
         })
     };
     // c:{expr}
-    ([$color_id:ident : {$ex:expr} $($rest:tt)*] $($done:tt)*) => {
+    ([$style_id:ident : {$ex:expr} $($rest:tt)*] $($done:tt)*) => {
         $crate::text_impl!([$($rest)*] $($done)*, $crate::Segment {
-            style: Some($crate::Color::$color_id), text: $ex, ticks: true
+            style: Some($crate::Style::$style_id), text: $ex, ticks: true
         })
     };
     // c!"text"
-    ([$color_id:ident ! $lit:literal $($rest:tt)*] $($done:tt)*) => {
+    ([$style_id:ident ! $lit:literal $($rest:tt)*] $($done:tt)*) => {
         $crate::text_impl!([$($rest)*] $($done)*, $crate::Segment {
-            style: Some($crate::Color::$color_id), text: $lit, ticks: false
+            style: Some($crate::Style::$style_id), text: $lit, ticks: false
         })
     };
     // c!{expr}
-    ([$color_id:ident ! {$ex:expr} $($rest:tt)*] $($done:tt)*) => {
+    ([$style_id:ident ! {$ex:expr} $($rest:tt)*] $($done:tt)*) => {
         $crate::text_impl!([$($rest)*] $($done)*, $crate::Segment {
-            style: Some($crate::Color::$color_id), text: $ex, ticks: false
+            style: Some($crate::Style::$style_id), text: $ex, ticks: false
         })
     };
     // "text"
@@ -131,14 +131,15 @@ macro_rules! sections_impl {
 ///
 /// Each segment can be preceded by one of
 ///
-/// - `c:`, where `c` is a [`Color`](crate::Color) variant; the segment is
-///   printed in color if supported, otherwise it is wrapped in backticks
-/// - `c!`, where `c` is a [`Color`](crate::Color) variant; the segment is
-///   printed in color if supported, otherwise no formatting is applied
+/// - `c:`, where `c` is a [`Style`](crate::Style) variant; the segment is
+///   styled if supported, otherwise it is wrapped in backticks
+/// - `c!`, where `c` is a [`Style`](crate::Style) variant; the segment is
+///   styled if supported, otherwise no formatting is applied
 ///
-/// Each color can be abbreviated with its first letter (cyan ➔ c, green ➔ g,
+/// Each color style can be abbreviated with its first letter (cyan ➔ c, green ➔ g,
 /// magenta ➔ m, red ➔ r, yellow ➔ y); use an uppercase letter to make it
-/// bold (bold cyan ➔ C, etc.)
+/// bold (bold cyan ➔ C, etc.). The `Underline` and `UnderlineBold` styles
+/// are abbreviated as `u` and `U`, respectively.
 ///
 /// Segments are _not_ separated with commas, for example:
 ///
@@ -180,7 +181,7 @@ macro_rules! text {
 ///
 ///    ```
 ///    # helptext::sections!(
-///    "USAGE" {
+///    "Usage" {
 ///        ["section 1"]
 ///        ["section 2"]
 ///    }

@@ -6,6 +6,7 @@ pub(crate) enum ParseArgsError {
     StdinUtf8(FromUtf8Error),
     UnexpectedTwice(&'static str),
     NoInput,
+    NoPath,
     InputAndPath,
     UnknownFlavor(String),
     UnknownEngine(String),
@@ -29,31 +30,32 @@ impl fmt::Display for ParseArgsError {
             ParseArgsError::StdinUtf8(e) => write!(f, "Could not parse stdin: {e}"),
             ParseArgsError::UnexpectedTwice(option) => write!(
                 f,
-                "The argument '{option}' was provided more than once, \
+                "The argument `{option}` was provided more than once, \
                     but cannot be used multiple times"
             ),
             ParseArgsError::UnknownFlavor(flavor) => write!(
                 f,
-                "'{flavor}' isn't a valid flavor\n\
+                "`{flavor}` isn't a valid flavor\n\
                     possible values: pcre, python, java, javascript, dotnet, ruby, rust"
             ),
             ParseArgsError::UnknownEngine(engine) => {
-                write!(f, "'{engine}' isn't a valid regex engine\npossible values: pcre2")
+                write!(f, "`{engine}` isn't a valid regex engine\npossible values: pcre2")
             }
             ParseArgsError::UnknownList(list) => {
-                write!(f, "'{list}' isn't a valid list\npossible values: shorthands")
+                write!(f, "`{list}` isn't a valid list\npossible values: shorthands")
             }
             ParseArgsError::NoInput => write!(f, "No input provided"),
+            ParseArgsError::NoPath => write!(f, "No file path provided"),
             ParseArgsError::InputAndPath => {
                 write!(f, "You can only provide an input or a path, but not both")
             }
             ParseArgsError::WarningsNoEquals(warning) => write!(
                 f,
-                "'{warning}' contains no '='\n\
-                    try '-W{warning}=0' to disable {warning} warnings"
+                "`{warning}` contains no `=`\n\
+                    try `-W{warning}=0` to disable {warning} warnings"
             ),
             ParseArgsError::WarningsNoZero(warning) => {
-                write!(f, "warnings can only be disabled, try '-W{warning}=0'")
+                write!(f, "warnings can only be disabled, try `-W{warning}=0`")
             }
             ParseArgsError::WarningsNotAllowed(warning) => {
                 write!(f, "`{warning}` diagnostic kind cannot be disabled")
