@@ -27,7 +27,7 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 
 pomsky = { version = "0.11.0", path = "../pomsky-lib", features = ["miette"] }
 
-miette = { version = "5.10.0", features = ["fancy"] }
+miette = { version = "7.4.0", default-features = false }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.33"

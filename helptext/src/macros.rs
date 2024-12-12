@@ -40,6 +40,18 @@ macro_rules! text_impl {
 
 #[doc(hidden)]
 #[macro_export]
+macro_rules! rhs_impl {
+    // {expr}
+    ({ $($inner:tt)* }) => {
+        $crate::sections!( $($inner)* )
+    };
+    ($e:expr) => {
+        $e
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
 macro_rules! sections_impl {
     // ["text"]
     (@[ [$($text:tt)*] $($rest:tt)* ] $($done:tt)*) => {
@@ -52,19 +64,19 @@ macro_rules! sections_impl {
     //     "foo" => {...}
     //     "bar" => {...}
     // }
-    (@[ table $mode:ident { $( $key:literal => { $($inner:tt)* } )* } $($rest:tt)* ] $($done:tt)*) => {
+    (@[ table $mode:ident { $( $key:literal => $rhs:tt )* } $($rest:tt)* ] $($done:tt)*) => {
         $crate::sections_impl!(
             @[ $($rest)* ] $($done)*,
             $crate::HelpSection::Table($crate::TableMode::$mode, &[$(
-                ( $key, $crate::sections!( $($inner)* ) ),
+                ( $key, $crate::rhs_impl!($rhs) ),
             )*])
         )
     };
     // "NAME" {...}
-    (@[ $name:literal { $($inner:tt)* } $($rest:tt)* ] $($done:tt)*) => {
+    (@[ $name:literal $rhs:tt $($rest:tt)* ] $($done:tt)*) => {
         $crate::sections_impl!(
             @[ $($rest)* ] $($done)*,
-            $crate::HelpSection::Name($name, $crate::sections!( $($inner)* ))
+            $crate::HelpSection::Name($name, $crate::rhs_impl!($rhs))
         )
     };
     // Short ["text"]
@@ -80,23 +92,30 @@ macro_rules! sections_impl {
     //     "foo" => {...}
     //     "bar" => {...}
     // }
-    (@[ $wrapper:ident table $mode:ident { $( $key:literal => { $($inner:tt)* } )* } $($rest:tt)* ] $($done:tt)*) => {
+    (@[ $wrapper:ident table $mode:ident { $( $key:literal => $rhs:tt )* } $($rest:tt)* ] $($done:tt)*) => {
         $crate::sections_impl!(
             @[ $($rest)* ] $($done)*,
             $crate::HelpSection::$wrapper(
                 &$crate::HelpSection::Table($crate::TableMode::$mode, &[$(
-                    ( $key, $crate::sections!( $($inner)* ) ),
+                    ( $key, $crate::rhs_impl!($rhs) ),
                 )*])
             )
         )
     };
     // Short "NAME" {...}
-    (@[ $wrapper:ident $name:literal { $($inner:tt)* } $($rest:tt)* ] $($done:tt)*) => {
+    (@[ $wrapper:ident $name:literal $rhs:tt $($rest:tt)* ] $($done:tt)*) => {
         $crate::sections_impl!(
             @[$($rest)*] $($done)*,
             $crate::HelpSection::$wrapper(
-                &$crate::HelpSection::Name($name, $crate::sections!( $($inner)* ))
+                &$crate::HelpSection::Name($name, $crate::rhs_impl!($rhs))
             )
+        )
+    };
+    // {expr}
+    (@[ { $($inner:tt)* } $($rest:tt)* ] $($done:tt)*) => {
+        $crate::sections_impl!(
+            @[$($rest)*] $($done)*,
+            $($inner)*
         )
     };
 
@@ -146,8 +165,8 @@ macro_rules! text {
 ///
 /// There are three kinds of sections:
 ///
-/// 1. Normal sections, wrapped in square brackets. Refer to the [`text`
-///    macro][text] for the syntax. Example:
+/// 1. Normal sections, wrapped in square brackets. Refer to the
+///    [`text` macro][text] for the syntax. Example:
 ///
 ///    ```
 ///    # helptext::sections!(
@@ -244,6 +263,38 @@ macro_rules! text {
 ///     }
 /// );
 /// ```
+///
+/// You can factor parts of the help message into variables, and include them in the `sections!` macro:
+///
+/// - A single section is included by wrapping it in `{}`:
+///
+///   ```
+///   # use helptext::{sections, Help, HelpSection};
+///   const FOO: HelpSection = HelpSection::Text(sections![]);
+///  
+///   Help(sections![
+///       ["Included section:"]
+///       {FOO}
+///   ]);
+///   ```
+///
+/// - Content of named sections and table rows is included by replacing the `{...}` with the variable name:
+///
+///   ```
+///   # use helptext::{sections, Help, HelpSection};
+///   const FOO: &[HelpSection] = sections![
+///       ["First line"]
+///       ["Second line"]
+///   ];
+///  
+///   Help(sections![
+///       "Named section" FOO
+///
+///       table Auto {
+///           "Foo" => FOO
+///       }
+///   ]);
+///   ```
 #[macro_export]
 macro_rules! sections {
     () => {

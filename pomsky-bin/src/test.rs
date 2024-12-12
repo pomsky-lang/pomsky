@@ -8,7 +8,7 @@ use pomsky::{
 };
 
 pub(crate) fn run_tests(
-    parsed: Expr,
+    parsed: &Expr,
     input: &str,
     options: CompileOptions,
     errors: &mut Vec<Diagnostic>,
@@ -41,9 +41,9 @@ pub(crate) fn run_tests(
         }
     };
 
-    let tests = parsed.extract_tests();
+    let tests = parsed.extract_tests_ref();
     for test in tests {
-        for test_case in test.cases {
+        for test_case in &test.cases {
             match test_case {
                 TestCase::Match(m) => check_test_match(&regex, m, errors),
                 TestCase::MatchAll(a) => check_all_test_matches(&regex, a, errors),
@@ -53,7 +53,7 @@ pub(crate) fn run_tests(
     }
 }
 
-fn check_test_match(regex: &Regex, test_case: TestCaseMatch, errors: &mut Vec<Diagnostic>) {
+fn check_test_match(regex: &Regex, test_case: &TestCaseMatch, errors: &mut Vec<Diagnostic>) {
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {
@@ -103,7 +103,7 @@ fn check_test_match(regex: &Regex, test_case: TestCaseMatch, errors: &mut Vec<Di
 
 fn check_all_test_matches(
     regex: &Regex,
-    test_case: TestCaseMatchAll,
+    test_case: &TestCaseMatchAll,
     errors: &mut Vec<Diagnostic>,
 ) {
     let captures_iter = regex
@@ -173,7 +173,7 @@ fn check_all_test_matches(
     }
 }
 
-fn check_test_reject(regex: &Regex, test_case: TestCaseReject, errors: &mut Vec<Diagnostic>) {
+fn check_test_reject(regex: &Regex, test_case: &TestCaseReject, errors: &mut Vec<Diagnostic>) {
     let result = regex.captures(test_case.literal.content.as_bytes());
     match result {
         Ok(Some(captures)) => {

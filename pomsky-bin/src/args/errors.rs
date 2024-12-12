@@ -7,9 +7,8 @@ pub(crate) enum ParseArgsError {
     UnexpectedTwice(&'static str),
     NoInput,
     InputAndPath,
-    InputAndList,
     UnknownFlavor(String),
-    UnknownTestEngine(String),
+    UnknownEngine(String),
     UnknownList(String),
     WarningsNoEquals(String),
     WarningsNoZero(String),
@@ -38,7 +37,7 @@ impl fmt::Display for ParseArgsError {
                 "'{flavor}' isn't a valid flavor\n\
                     possible values: pcre, python, java, javascript, dotnet, ruby, rust"
             ),
-            ParseArgsError::UnknownTestEngine(engine) => {
+            ParseArgsError::UnknownEngine(engine) => {
                 write!(f, "'{engine}' isn't a valid regex engine\npossible values: pcre2")
             }
             ParseArgsError::UnknownList(list) => {
@@ -47,9 +46,6 @@ impl fmt::Display for ParseArgsError {
             ParseArgsError::NoInput => write!(f, "No input provided"),
             ParseArgsError::InputAndPath => {
                 write!(f, "You can only provide an input or a path, but not both")
-            }
-            ParseArgsError::InputAndList => {
-                write!(f, "You can only list something or compile an expression, but not both")
             }
             ParseArgsError::WarningsNoEquals(warning) => write!(
                 f,

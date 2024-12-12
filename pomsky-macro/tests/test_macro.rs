@@ -9,7 +9,7 @@ fn rust() {
         number (op number)*
     };
 
-    assert_eq!(REGEX, "-?\\d+(?:[+\\-*/]-?\\d+)*");
+    assert_eq!(REGEX, "-?\\d+(?:[*+\\-/]-?\\d+)*");
 }
 
 #[test]

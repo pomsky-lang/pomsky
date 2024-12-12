@@ -1,4 +1,8 @@
-//! A crate to print beautiful help messages.
+//! Create beautiful help messages.
+//!
+//! The syntax of the help message is explained in the [`sections`] macro.
+//!
+//! The syntax for colorizing text is explained in the [`text`] macro.
 //!
 //! ```
 //! use helptext::{Help, sections};

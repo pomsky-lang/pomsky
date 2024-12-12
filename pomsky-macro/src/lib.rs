@@ -22,6 +22,8 @@ mod diagnostic;
 /// ### Example
 ///
 /// ```
+/// use pomsky_macro::pomsky;
+///
 /// const REGEX: &str = pomsky! {
 ///     let number = '-'? [digit]+;
 ///     let op = ["+-*/"];
@@ -36,22 +38,31 @@ mod diagnostic;
 /// The regex flavor defaults to `Rust`, so it can be used with the [regex]
 /// crate:
 ///
-/// ```rust,no_test
+/// ```no_run
+/// # mod regex {
+/// #     pub(super) struct Regex;
+/// #     impl Regex {
+/// #         pub(super) fn new(s: &str) -> Result<Self, ()> { Ok(Regex) }
+/// #     }
+/// # }
+/// # use pomsky_macro::pomsky;
 /// use regex::Regex;
 ///
 /// fn get_regex() -> Regex {
-///     Regex::new(pomsky! { ... }).unwrap()
+///     Regex::new(pomsky! { "hello world" }).unwrap()
 /// }
 /// ```
 ///
 /// If you want to use a different flavor, you can specify it in the first line,
 /// like so:
 ///
-/// ```rust,no_test
+/// ```rust
+/// # use pomsky_macro::pomsky;
 /// pomsky! {
 ///     #flavor = Pcre
 ///     // your pomsky expression goes here
 /// }
+/// # ;
 /// ```
 ///
 /// Available flavors are

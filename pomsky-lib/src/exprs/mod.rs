@@ -112,6 +112,19 @@ impl Expr {
         tests
     }
 
+    /// Extracts top-level all unit tests from the Pomsky expression
+    pub fn extract_tests_ref(&self) -> Vec<&Test> {
+        let mut rule = &self.0;
+        let mut tests = Vec::new();
+        while let Rule::StmtExpr(expr) = rule {
+            if let Stmt::Test(test) = &expr.stmt {
+                tests.push(test);
+            }
+            rule = &expr.rule;
+        }
+        tests
+    }
+
     /// Parse a string to a `Expr` and compile it to a regex.
     pub fn parse_and_compile(
         input: &str,

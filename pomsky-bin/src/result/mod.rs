@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, path::Path};
 
 use pomsky::diagnose::{DiagnosticCode, DiagnosticKind};
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,8 @@ pub struct CompilationResult {
     ///
     /// Equivalent to `result.output.is_some()`
     pub success: bool,
+    /// File that was compiled
+    pub path: Option<String>,
     /// Compilation result
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
@@ -29,39 +31,128 @@ pub enum Version {
 }
 
 impl CompilationResult {
-    pub fn success(output: String, time_all_micros: u128, time_test_micros: u128) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn success(
+        path: Option<&Path>,
+        output: String,
+        time_all_micros: u128,
+        time_test_micros: u128,
+        diagnostics: impl IntoIterator<Item = pomsky::diagnose::Diagnostic>,
+        source_code: &str,
+        warnings: &crate::args::DiagnosticSet,
+        json: bool,
+    ) -> Self {
         Self {
+            path: path
+                .map(|p| p.canonicalize().as_deref().unwrap_or(p).to_string_lossy().to_string()),
             version: Version::V1,
             success: true,
             output: Some(output),
-            diagnostics: vec![],
+            diagnostics: Self::convert_diagnostics(diagnostics, source_code, warnings, json),
             timings: Timings::from_micros(time_all_micros, time_test_micros),
         }
     }
 
-    pub fn error(time_all_micros: u128, time_test_micros: u128) -> Self {
+    pub(crate) fn error(
+        path: Option<&Path>,
+        time_all_micros: u128,
+        time_test_micros: u128,
+        diagnostics: impl IntoIterator<Item = pomsky::diagnose::Diagnostic>,
+        source_code: &str,
+        warnings: &crate::args::DiagnosticSet,
+        json: bool,
+    ) -> Self {
         Self {
+            path: path
+                .map(|p| p.canonicalize().as_deref().unwrap_or(p).to_string_lossy().to_string()),
             version: Version::V1,
             success: false,
             output: None,
-            diagnostics: vec![],
+            diagnostics: Self::convert_diagnostics(diagnostics, source_code, warnings, json),
             timings: Timings::from_micros(time_all_micros, time_test_micros),
         }
     }
 
-    pub fn with_diagnostics(
-        mut self,
+    fn convert_diagnostics(
         diagnostics: impl IntoIterator<Item = pomsky::diagnose::Diagnostic>,
-        source_code: Option<&str>,
-    ) -> Self {
-        self.diagnostics.extend(diagnostics.into_iter().map(|d| Diagnostic::from(d, source_code)));
-        self
+        source_code: &str,
+        warnings: &crate::args::DiagnosticSet,
+        json: bool,
+    ) -> Vec<Diagnostic> {
+        let source_code = Some(source_code);
+        diagnostics
+            .into_iter()
+            .filter_map(|d| match d.severity {
+                pomsky::diagnose::Severity::Warning if !warnings.is_enabled(d.kind) => None,
+                _ => Some(Diagnostic::from(d, source_code, json)),
+            })
+            .collect()
     }
 
-    pub fn output_json(&self) {
-        match serde_json::to_string(self) {
-            Ok(string) => println!("{string}"),
-            Err(e) => eprintln!("{e}"),
+    pub(crate) fn output(self, json: bool, new_line: bool, in_test_suite: bool, source_code: &str) {
+        let success = self.success;
+        if json {
+            match serde_json::to_string(&self) {
+                Ok(string) => println!("{string}"),
+                Err(e) => eprintln!("{e}"),
+            }
+        } else {
+            if in_test_suite {
+                if success {
+                    efprintln!(G!"ok");
+                } else {
+                    efprintln!(R!"failed");
+                }
+            }
+            self.output_human_readable(new_line, in_test_suite, Some(source_code));
+        }
+        if !success && !in_test_suite {
+            std::process::exit(1);
+        }
+    }
+
+    fn output_human_readable(
+        mut self,
+        new_line: bool,
+        in_test_suite: bool,
+        source_code: Option<&str>,
+    ) {
+        if self.output.is_none() {
+            self.diagnostics.retain(|d| d.severity == Severity::Error);
+        }
+        let initial_len = self.diagnostics.len();
+        let error_len = self.diagnostics.iter().filter(|d| d.severity == Severity::Error).count();
+        let warning_len = self.diagnostics.len() - error_len;
+
+        if self.diagnostics.len() > 8 {
+            self.diagnostics.drain(8..);
+        }
+
+        for diag in &self.diagnostics {
+            diag.print_human_readable(source_code);
+        }
+
+        if !self.diagnostics.is_empty() {
+            if initial_len > self.diagnostics.len() {
+                efprintln!(C!"note" ": " {&(initial_len - self.diagnostics.len()).to_string()} " diagnostic(s) were omitted");
+            }
+            if initial_len > 3 && error_len == 0 {
+                let warning_len = warning_len.to_string();
+                efprintln!(Y!"warning" ": pomsky generated " {&warning_len} " warnings");
+            }
+        }
+
+        if let Some(compiled) = &self.output {
+            if in_test_suite {
+                // do nothing
+            } else if new_line {
+                println!("{compiled}");
+            } else {
+                use std::io::Write;
+
+                print!("{compiled}");
+                std::io::stdout().flush().unwrap();
+            }
         }
     }
 }
@@ -123,6 +214,21 @@ pub enum Kind {
     Limits,
     Test,
     Other,
+}
+
+impl Kind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Kind::Syntax => "syntax",
+            Kind::Resolve => "resolve",
+            Kind::Compat => "compat",
+            Kind::Unsupported => "unsupported",
+            Kind::Deprecated => "deprecated",
+            Kind::Limits => "limits",
+            Kind::Test => "test",
+            Kind::Other => "other",
+        }
+    }
 }
 
 impl From<DiagnosticKind> for Kind {
@@ -205,16 +311,26 @@ pub struct Replacement {
 }
 
 impl Diagnostic {
-    fn from(value: pomsky::diagnose::Diagnostic, source_code: Option<&str>) -> Self {
+    pub(crate) fn from(
+        value: pomsky::diagnose::Diagnostic,
+        source_code: Option<&str>,
+        json: bool,
+    ) -> Self {
         let kind = value.kind.to_string();
-        let display = value.default_display(source_code);
         let severity: &str = value.severity.into();
 
-        let visual = match value.code {
-            Some(code) => format!("{severity} {code}{kind}:\n{display}"),
-            None => format!("{severity}{kind}:\n{display}"),
+        let visual = if json {
+            let display = value.display_ascii(source_code);
+            let visual = match value.code {
+                Some(code) => format!("{severity} {code}{kind}:{display}"),
+                None => format!("{severity}{kind}:{display}"),
+            };
+            drop(display);
+            visual
+        } else {
+            // unused
+            String::new()
         };
-        drop(display);
 
         Diagnostic {
             severity: value.severity.into(),
@@ -226,6 +342,92 @@ impl Diagnostic {
             fixes: vec![],
             visual,
         }
+    }
+
+    fn print_human_readable(&self, source_code: Option<&str>) {
+        let kind = self.kind.as_str();
+        let display = self.miette_display(source_code).to_string();
+        if let Some(code) = self.code {
+            let code = code.to_string();
+            match self.severity {
+                Severity::Error => efprint!(R!"error " R!{&code} "(" {&kind} "):" {&display}),
+                Severity::Warning => {
+                    efprint!(Y!"warning " Y!{&code} "(" {&kind} "):" {&display})
+                }
+            }
+        } else {
+            match self.severity {
+                Severity::Error => efprint!(R!"error" "(" {&kind} "):" {&display}),
+                Severity::Warning => efprint!(Y!"warning" "(" {&kind} "):" {&display}),
+            }
+        }
+    }
+
+    fn miette_display<'a>(&'a self, source_code: Option<&'a str>) -> impl std::fmt::Display + 'a {
+        use miette::ReportHandler;
+        use std::fmt;
+
+        #[derive(Debug)]
+        struct MietteDiagnostic<'a> {
+            diagnostic: &'a Diagnostic,
+            source_code: Option<&'a str>,
+        }
+
+        impl fmt::Display for MietteDiagnostic<'_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.diagnostic.description.fmt(f)
+            }
+        }
+
+        impl std::error::Error for MietteDiagnostic<'_> {}
+
+        impl miette::Diagnostic for MietteDiagnostic<'_> {
+            fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
+                if self.diagnostic.help.is_empty() {
+                    None
+                } else {
+                    let help = self.diagnostic.help.join("\n");
+                    Some(Box::new(help))
+                }
+            }
+
+            fn source_code(&self) -> Option<&dyn miette::SourceCode> {
+                self.source_code.as_ref().map(|s| s as &dyn miette::SourceCode)
+            }
+
+            fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+                if let Some(Span { start, end, label }) = self.diagnostic.spans.first() {
+                    let label = label.as_deref().unwrap_or(match self.diagnostic.severity {
+                        Severity::Error => "error occurred here",
+                        Severity::Warning => "warning originated here",
+                    });
+                    Some(Box::new(std::iter::once(miette::LabeledSpan::new(
+                        Some(label.into()),
+                        *start,
+                        end - start,
+                    ))))
+                } else {
+                    None
+                }
+            }
+
+            fn severity(&self) -> Option<miette::Severity> {
+                Some(match self.diagnostic.severity {
+                    Severity::Error => miette::Severity::Error,
+                    Severity::Warning => miette::Severity::Warning,
+                })
+            }
+        }
+
+        struct Handler<'a>(MietteDiagnostic<'a>);
+
+        impl fmt::Display for Handler<'_> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                miette::MietteHandler::default().debug(&self.0, f)
+            }
+        }
+
+        Handler(MietteDiagnostic { diagnostic: self, source_code })
     }
 }
 

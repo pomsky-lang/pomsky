@@ -1,15 +1,15 @@
 use pomsky::{diagnose::Diagnostic, options::CompileOptions, Expr};
 
-const STRINGS: &str = include_str!("./files/strings.pom");
-const PROPERTIES: &str = include_str!("./files/properties.pom");
-const GROUPS: &str = include_str!("./files/groups.pom");
-const CAPT_GROUPS: &str = include_str!("./files/capt_groups.pom");
-const CLASSES: &str = include_str!("./files/classes.pom");
-const REPETITIONS: &str = include_str!("./files/repetitions.pom");
-const SPECIAL: &str = include_str!("./files/special.pom");
-const MODES: &str = include_str!("./files/modes.pom");
+const STRINGS: &str = include_str!("./files/strings.pomsky");
+const PROPERTIES: &str = include_str!("./files/properties.pomsky");
+const GROUPS: &str = include_str!("./files/groups.pomsky");
+const CAPT_GROUPS: &str = include_str!("./files/capt_groups.pomsky");
+const CLASSES: &str = include_str!("./files/classes.pomsky");
+const REPETITIONS: &str = include_str!("./files/repetitions.pomsky");
+const SPECIAL: &str = include_str!("./files/special.pomsky");
+const MODES: &str = include_str!("./files/modes.pomsky");
 
-const VERSION_POMSKY: &str = include_str!("./files/version.pom");
+const VERSION_POMSKY: &str = include_str!("./files/version.pomsky");
 const VERSION_MELODY: &str = include_str!("./files/version.melody");
 
 macro_rules! items {

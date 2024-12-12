@@ -40,7 +40,7 @@ impl core::fmt::Display for Diagnostic {
 }
 
 /// Indicates whether a diagnostic is an error or a warning
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Severity {
     /// Error
     Error,
@@ -184,34 +184,34 @@ impl Diagnostic {
     /// trait.
     #[cfg(feature = "miette")]
     #[must_use]
-    pub fn default_display(
-        &self,
-        source_code: Option<impl Into<String>>,
-    ) -> impl std::fmt::Display + '_ {
-        use miette::ReportHandler;
+    pub fn display_ascii<'a>(
+        &'a self,
+        source_code: Option<&'a str>,
+    ) -> impl std::fmt::Display + 'a {
+        use miette::GraphicalTheme;
         use std::fmt;
 
         #[derive(Debug)]
-        struct MietteDiagnostic {
-            diagnostic: Diagnostic,
-            code: Option<String>,
+        struct MietteDiagnostic<'a> {
+            diagnostic: &'a Diagnostic,
+            source_code: Option<&'a str>,
         }
 
-        impl fmt::Display for MietteDiagnostic {
+        impl fmt::Display for MietteDiagnostic<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.diagnostic.fmt(f)
             }
         }
 
-        impl std::error::Error for MietteDiagnostic {}
+        impl std::error::Error for MietteDiagnostic<'_> {}
 
-        impl miette::Diagnostic for MietteDiagnostic {
+        impl miette::Diagnostic for MietteDiagnostic<'_> {
             fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
                 self.diagnostic.help.as_deref().map(|h| Box::new(h) as Box<dyn fmt::Display + 'a>)
             }
 
             fn source_code(&self) -> Option<&dyn miette::SourceCode> {
-                self.code.as_ref().map(|s| s as &dyn miette::SourceCode)
+                self.source_code.as_ref().map(|s| s as &dyn miette::SourceCode)
             }
 
             fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
@@ -238,14 +238,17 @@ impl Diagnostic {
             }
         }
 
-        struct Handler(MietteDiagnostic);
+        struct Handler<'a>(MietteDiagnostic<'a>);
 
-        impl fmt::Display for Handler {
+        impl fmt::Display for Handler<'_> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                miette::MietteHandler::default().debug(&self.0, f)
+                miette::GraphicalReportHandler::new()
+                    .with_width(100)
+                    .with_theme(GraphicalTheme::none())
+                    .render_report(f, &self.0)
             }
         }
 
-        Handler(MietteDiagnostic { diagnostic: self.clone(), code: source_code.map(Into::into) })
+        Handler(MietteDiagnostic { diagnostic: self, source_code })
     }
 }

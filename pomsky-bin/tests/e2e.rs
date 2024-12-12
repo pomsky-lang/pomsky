@@ -66,12 +66,8 @@ impl PredicateReflection for Output {
     }
 }
 
-const RED: &str = "\u{1b}[31m";
-// const RED_BOLD: &str = "\u{1b}[31;1m";
-const RESET: &str = "\u{1b}[0m";
-
-const ERROR: &str = "error:\n  × ";
-const ERROR_COLOR: &str = "\u{1b}[31;1merror\u{1b}[0m:\n  \u{1b}[31m×\u{1b}[0m ";
+const ERROR: &str = "error: ";
+const ERROR_COLOR: &str = "\u{1b}[31;1merror\u{1b}[0m: ";
 const USAGE: &str = r#"
 USAGE:
     pomsky [OPTIONS] <INPUT>
@@ -123,6 +119,9 @@ USAGE:
     pomsky [OPTIONS] --path <PATH>
     command | pomsky [OPTIONS]
 
+SUBCOMMANDS:
+    pomsky test  Run unit tests in pomsky expressions
+
 ARGS:
     <INPUT>  Pomsky expression to compile
 
@@ -133,7 +132,6 @@ OPTIONS:
         --list shorthands                Show all available character class shorthands
     -n, --no-new-line                    Don't print a new-line after the output
     -p, --path <FILE>                    File containing the pomsky expression to compile
-        --test <ENGINE>                  Execute unit tests and report failures
     -V, --version                        Print version information
     -W, --warnings <DIAGNOSTICS>         Disable certain warnings (disable all with `-W0`)
 "#, env!("CARGO_PKG_VERSION")));
@@ -157,7 +155,7 @@ For more information try `--help`
 #[test]
 fn file_doesnt_exist() {
     let mut cmd = command(&["-p", "test/file/doesnt/exist"]);
-    cmd.assert().failure().stderr(format!("{ERROR}No such file or directory (os error 2)\n"));
+    cmd.assert().failure().stderr("error: No such file or directory (os error 2)\n");
 
     let mut cmd = command_color(&["-p", "test/file/doesnt/exist"]);
     cmd.assert().failure().stderr(format!("{ERROR_COLOR}No such file or directory (os error 2)\n"));
@@ -240,15 +238,15 @@ fn arg_input_with_flavor() {
 fn invalid_flavor() {
     let mut cmd = command(&[":foo('test')+", "-f", "jsx"]);
     cmd.assert().failure().stderr(format!(
-        "{ERROR}'jsx' isn't a valid flavor
-  │ possible values: pcre, python, java, javascript, dotnet, ruby, rust
+        "error: 'jsx' isn't a valid flavor
+possible values: pcre, python, java, javascript, dotnet, ruby, rust
 {USAGE}"
     ));
 
     let mut cmd = command_color(&[":foo('test')+", "-f", "jsx"]);
     cmd.assert().failure().stderr(format!(
         "{ERROR_COLOR}'jsx' isn't a valid flavor
-  {RED}│{RESET} possible values: pcre, python, java, javascript, dotnet, ruby, rust
+possible values: pcre, python, java, javascript, dotnet, ruby, rust
 {USAGE_COLOR}"
     ));
 }
@@ -257,8 +255,7 @@ fn invalid_flavor() {
 fn flavor_used_multiple_times() {
     let mut cmd = command(&[":foo('test')+", "-fjs", "-f", "rust"]);
     cmd.assert().failure().stderr(format!(
-        "{ERROR}The argument '--flavor' was provided more than once, but cannot be used
-  │ multiple times
+        "error: The argument '--flavor' was provided more than once, but cannot be used multiple times
 {USAGE}"
     ));
 }
@@ -267,7 +264,7 @@ fn flavor_used_multiple_times() {
 fn input_and_path() {
     let mut cmd = command(&[":foo('test')+", "-p", "foo"]);
     cmd.assert().failure().stderr(format!(
-        "{ERROR}You can only provide an input or a path, but not both
+        "error: You can only provide an input or a path, but not both
 {USAGE}"
     ));
 }
@@ -310,8 +307,7 @@ fn no_newline() {
 
     let mut cmd = command(&["-n", ":foo('test')+", "-n"]);
     cmd.assert().failure().stderr(format!(
-        r#"{ERROR}The argument '--no-new-line' was provided more than once, but cannot be
-  │ used multiple times
+        r#"error: The argument '--no-new-line' was provided more than once, but cannot be used multiple times
 {USAGE}"#
     ));
 }
@@ -364,9 +360,10 @@ fn test_output() {
         "--test=pcre2",
     ]);
     cmd.assert().failure().stderr(
-        r#"error P0501(test):
+        r#"warning: The `--test` argument is deprecated, use the `pomsky test` subcommand instead
+error P0501(test):
   × The regex did not find this match within the test string
-   ╭─[5:1]
+   ╭─[6:11]
  5 │     reject in "fastest";
  6 │     match "fanta" in "fantastic"; # wrong
    ·           ───┬───
@@ -375,7 +372,7 @@ fn test_output() {
    ╰────
 error P0505(test):
   × The regex match does not have the expected capture group
-   ╭─[6:1]
+   ╭─[7:23]
  6 │     match "fanta" in "fantastic"; # wrong
  7 │     match "test" as { 1: "" } in "testament";
    ·                       ┬
@@ -384,7 +381,7 @@ error P0505(test):
    ╰────
 error P0503(test):
   × The regex found a different match in the test string
-   ╭─[7:1]
+   ╭─[8:11]
  7 │     match "test" as { 1: "" } in "testament";
  8 │     match "test" as { 1: "?" } in "test!"; # wrong
    ·           ───┬──
@@ -394,7 +391,7 @@ error P0503(test):
   help: The actual match is "test!"
 error P0503(test):
   × The regex found a different match in the test string
-    ╭─[8:1]
+    ╭─[9:11]
   8 │     match "test" as { 1: "?" } in "test!"; # wrong
   9 │     match "test" as { foo: "!" } in "test!"; # wrong
     ·           ───┬──
@@ -412,6 +409,7 @@ fn json_output() {
     cmd.assert()
         .success()
         .stdout(Output::new(CompilationResult {
+            path: None,
             version: Version::V1,
             success: true,
             output: Some("..\\w".into()),
@@ -422,33 +420,34 @@ fn json_output() {
 }
 
 #[test]
-#[ignore]
 fn json_output_errors() {
     let mut cmd = command(&["[.][^test]", "--json"]);
     cmd.assert()
         .failure()
         .stdout(
             Output::new(CompilationResult {
+                path: None,
                 version: Version::V1,
                 success: false,
                 output: None,
                 diagnostics: vec![Diagnostic {
                     severity: Severity::Error,
-                    kind: Kind::Deprecated,
-                    code: Some(DiagnosticCode::DeprecatedSyntax),
+                    kind: Kind::Syntax,
+                    code: Some(DiagnosticCode::UnexpectedToken),
                     spans: vec![Span { start: 1, end: 2, label: None }],
-                    description: "`[.]` is deprecated".into(),
-                    help: vec!["Use `.` without brackets instead".into()],
+                    description:
+                        "Expected character class, string, code point, Unicode property or `]`"
+                            .into(),
+                    help: vec![],
                     fixes: vec![],
                     visual: String::from(
-                        "error P0105(deprecated):
-  × `[.]` is deprecated
-   ╭────
- 1 │ [.][^test]
-   ·  ┬
-   ·  ╰── error occurred here
-   ╰────
-  help: Use `.` without brackets instead
+                        "error P0100(syntax):
+  x Expected character class, string, code point, Unicode property or `]`
+   ,----
+ 1 | [.][^test]
+   :  |
+   :  `-- error occurred here
+   `----
 ",
                     ),
                 }],
