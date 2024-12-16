@@ -353,9 +353,7 @@ fn named_class_to_regex_unicode(
             if flavor == RegexFlavor::DotNet {
                 return Err(CompileErrorKind::Unsupported(Feature::UnicodeScript, flavor).at(span));
             }
-            if let (RegexFlavor::Ruby, Script::Kawi | Script::Nag_Mundari)
-            | (RegexFlavor::Rust, Script::Unknown) = (flavor, s)
-            {
+            if let (RegexFlavor::Rust, Script::Unknown) = (flavor, s) {
                 return Err(CompileErrorKind::unsupported_specific_prop_in(flavor).at(span));
             }
 

@@ -52,7 +52,6 @@ HighSurrogates
 Hiragana
 IPAExtensions
 IdeographicDescriptionCharacters
-IsPrivateUseArea
 Kanbun
 KangxiRadicals
 Kannada
@@ -83,6 +82,7 @@ OpticalCharacterRecognition
 Oriya
 PhoneticExtensions
 PrivateUse
+PrivateUseArea
 Runic
 Sinhala
 SmallFormVariants
