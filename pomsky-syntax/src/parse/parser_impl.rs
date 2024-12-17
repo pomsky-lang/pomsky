@@ -503,7 +503,7 @@ impl<'i> Parser<'i> {
             }
             Ok((GroupKind::Capturing(Capture::new(name)), span))
         } else {
-            Ok((GroupKind::Normal, self.span().start()))
+            Ok((GroupKind::Normal, self.span()))
         }
     }
 

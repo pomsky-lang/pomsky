@@ -8,6 +8,7 @@ const CLASSES: &str = include_str!("./files/classes.pomsky");
 const REPETITIONS: &str = include_str!("./files/repetitions.pomsky");
 const SPECIAL: &str = include_str!("./files/special.pomsky");
 const MODES: &str = include_str!("./files/modes.pomsky");
+const EMAIL: &str = include_str!("./files/email.pomsky");
 
 const VERSION_POMSKY: &str = include_str!("./files/version.pomsky");
 const VERSION_MELODY: &str = include_str!("./files/version.melody");
@@ -47,6 +48,7 @@ mod parse {
         repetitions: REPETITIONS,
         special: SPECIAL,
         modes: MODES,
+        email: EMAIL,
     );
 }
 
@@ -89,6 +91,7 @@ mod compile {
         repetitions: REPETITIONS,
         special: SPECIAL,
         modes: MODES,
+        email: EMAIL,
     );
 }
 

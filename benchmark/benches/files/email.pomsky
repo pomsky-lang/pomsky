@@ -1,0 +1,25 @@
+let before_at = ['a'-'z' '0'-'9' "!#$%&'*+/=?^_`{|}~-"];
+let escaped = '\' [U+01-U+09 U+0b U+0c U+0e-U+7f];
+let quoted_before_at = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21 U+23-U+5b U+5d-U+7f];
+let port_digit = [U+01-U+08 U+0b U+0c U+0e-U+1f U+21-U+5a U+53-U+7f];
+
+let lower_digit = ['a'-'z' '0'-'9'];
+let lower_digit_dash = ['a'-'z' '0'-'9' '-'];
+
+let domain_label = lower_digit (lower_digit_dash* lower_digit)?;
+
+(
+  | before_at+ ('.' before_at+)*
+  | '"' (quoted_before_at | escaped)* '"'
+)
+'@'
+(
+  | (domain_label '.')+ domain_label
+  | '['
+    (:(range '0'-'255') '.'){3}
+    (
+      | :(range '0'-'255')
+      | lower_digit_dash* lower_digit ':' (port_digit | escaped)+
+    )
+    ']'
+)
