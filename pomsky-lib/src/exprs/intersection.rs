@@ -29,9 +29,10 @@ impl Compile for Intersection {
         })?;
 
         if let Regex::CompoundCharSet(_) = regex {
-            if let RegexFlavor::Java | RegexFlavor::Ruby | RegexFlavor::Rust = options.flavor {
-                // supported
-            } else {
+            if !matches!(
+                options.flavor,
+                RegexFlavor::JavaScript | RegexFlavor::Java | RegexFlavor::Ruby | RegexFlavor::Rust
+            ) {
                 return Err(CompileErrorKind::Unsupported(
                     Feature::CharSetIntersection,
                     options.flavor,
