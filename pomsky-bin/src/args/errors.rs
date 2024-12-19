@@ -39,7 +39,7 @@ impl fmt::Display for ParseArgsError {
                     possible values: pcre, python, java, javascript, dotnet, ruby, rust"
             ),
             ParseArgsError::UnknownEngine(engine) => {
-                write!(f, "`{engine}` isn't a valid regex engine\npossible values: pcre2")
+                write!(f, "`{engine}` isn't a valid regex engine\npossible values: pcre2, rust")
             }
             ParseArgsError::UnknownList(list) => {
                 write!(f, "`{list}` isn't a valid list\npossible values: shorthands")
