@@ -69,6 +69,7 @@ pub(crate) fn test(logger: &Logger, args: GlobalOptions, test_args: TestOptions)
                 exit(0);
             } else {
                 logger.error().println("no `*.pomsky` files found to test");
+                logger.note().println("run with `--pass-with-no-tests` to ignore this error");
                 exit(5);
             }
         }
