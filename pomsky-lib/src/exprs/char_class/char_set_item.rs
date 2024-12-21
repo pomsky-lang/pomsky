@@ -42,7 +42,7 @@ impl RegexCompoundCharSet {
     }
 
     fn may_intersect(&self, other: &RegexCharSet) -> bool {
-        self.intersections.iter().any(|set| set.may_intersect(other))
+        self.intersections.iter().all(|set| set.may_intersect(other))
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
