@@ -1,0 +1,7 @@
+#! expect=error
+[w] & 'ab'
+-----
+ERROR: Intersecting these expressions is not supported. Only character sets can be intersected.
+HELP: One character sets can be intersected.
+Parentheses may be required to clarify the parsing order.
+SPAN: 0..10

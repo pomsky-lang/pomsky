@@ -175,6 +175,11 @@ pub(super) fn get_compiler_help(kind: &CompileErrorKind, _span: Span) -> Option<
                     .to_string(),
             )
         }
+        CompileErrorKind::BadIntersection => Some(
+            "One character sets can be intersected.\n\
+            Parentheses may be required to clarify the parsing order."
+                .to_string(),
+        ),
 
         _ => None,
     }
