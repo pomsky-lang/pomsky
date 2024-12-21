@@ -1,0 +1,5 @@
+#! expect=error
+'a' & 'b'
+-----
+ERROR: Intersection of expressions that do not overlap
+SPAN: 0..9

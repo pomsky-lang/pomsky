@@ -99,6 +99,7 @@ diagnostic_code! {
         UnsupportedInLookbehind = 320,
         LookbehindNotConstantLength = 321,
         BadIntersection = 322,
+        EmptyIntersection = 323,
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
@@ -234,6 +235,7 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::LookbehindNotConstantLength { .. } => Self::LookbehindNotConstantLength,
             C::NestedTest => Self::NestedTest,
             C::BadIntersection => Self::BadIntersection,
+            C::EmptyIntersection => Self::EmptyIntersection,
         }
     }
 }

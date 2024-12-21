@@ -177,6 +177,12 @@ impl UnicodeSet {
             self.add(range);
         }
     }
+
+    pub(crate) fn may_intersect(&self, other: &UnicodeSet) -> bool {
+        !self.props.is_empty()
+            || !other.props.is_empty()
+            || other.ranges.iter().any(|range| self.ranges.contains(range))
+    }
 }
 
 struct MaxTwoArray<T> {

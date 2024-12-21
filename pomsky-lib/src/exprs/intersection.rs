@@ -24,7 +24,9 @@ impl Compile for Intersection {
         let (first_span, first) = rules.next().expect("Intersection is empty");
 
         let regex = rules.try_fold(first?, |a, (right_span, b)| match as_sets(a, b?) {
-            Ok((left, right)) => Ok(left.add(right)),
+            Ok((left, right)) => left
+                .add(right)
+                .ok_or_else(|| CompileErrorKind::EmptyIntersection.at(first_span.join(right_span))),
             Err(kind) => Err(kind.at(first_span.join(right_span))),
         })?;
 

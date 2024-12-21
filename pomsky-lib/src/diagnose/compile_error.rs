@@ -96,6 +96,7 @@ pub(crate) enum CompileErrorKind {
     },
     NestedTest,
     BadIntersection,
+    EmptyIntersection,
 }
 
 impl CompileErrorKind {
@@ -114,11 +115,6 @@ impl core::fmt::Display for CompileErrorKind {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             CompileErrorKind::ParseError(kind) => write!(f, "Parse error: {kind}"),
-            CompileErrorKind::BadIntersection => write!(
-                f,
-                "Intersecting these expressions is not supported. Only character sets \
-                can be intersected."
-            ),
             CompileErrorKind::Unsupported(feature, flavor) => match feature {
                 Feature::SpecificUnicodeProp => write!(
                     f,
@@ -223,6 +219,14 @@ impl core::fmt::Display for CompileErrorKind {
                 ),
                 _ => write!(f, "This kind of lookbehind is not supported in the {flavor:?} flavor"),
             },
+            CompileErrorKind::BadIntersection => write!(
+                f,
+                "Intersecting these expressions is not supported. Only character sets \
+                can be intersected."
+            ),
+            CompileErrorKind::EmptyIntersection => {
+                write!(f, "Intersection of expressions that do not overlap")
+            }
         }
     }
 }

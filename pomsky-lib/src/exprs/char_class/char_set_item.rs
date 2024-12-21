@@ -21,7 +21,7 @@ impl RegexCompoundCharSet {
         self
     }
 
-    pub(crate) fn add(mut self, other: RegexCharSet) -> Regex {
+    pub(crate) fn add(mut self, other: RegexCharSet) -> Option<Regex> {
         if other.negative && self.intersections.iter().all(|i| i.negative) {
             let mut intersections = self.intersections.into_iter();
             let mut char_set = intersections.next().expect("Intersection is empty");
@@ -32,11 +32,17 @@ impl RegexCompoundCharSet {
             if self.negative {
                 char_set = char_set.negate();
             }
-            Regex::CharSet(char_set)
-        } else {
+            Some(Regex::CharSet(char_set))
+        } else if self.may_intersect(&other) {
             self.intersections.push(other);
-            Regex::CompoundCharSet(self)
+            Some(Regex::CompoundCharSet(self))
+        } else {
+            None
         }
+    }
+
+    fn may_intersect(&self, other: &RegexCharSet) -> bool {
+        self.intersections.iter().any(|set| set.may_intersect(other))
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
@@ -74,6 +80,10 @@ impl RegexCharSet {
     pub(crate) fn negate(mut self) -> Self {
         self.negative = !self.negative;
         self
+    }
+
+    pub(crate) fn may_intersect(&self, other: &Self) -> bool {
+        self.negative || other.negative || self.set.may_intersect(&other.set)
     }
 
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor, inside_compound: bool) {
