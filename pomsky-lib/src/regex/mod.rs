@@ -156,6 +156,19 @@ impl Regex {
             matches!(self, Regex::CharSet(_))
         }
     }
+
+    pub(super) fn terminates(&self) -> bool {
+        match self {
+            Regex::Recursion => false,
+            Regex::Repetition(repetition) => {
+                repetition.kind.lower_bound == 0 || repetition.content.terminates()
+            }
+            Regex::Group(group) => group.parts.iter().all(|part| part.terminates()),
+            Regex::Alternation(alternation) => alternation.parts.iter().any(|alt| alt.terminates()),
+            Regex::Lookaround(lookaround) => lookaround.content.terminates(),
+            _ => true,
+        }
+    }
 }
 
 impl Default for Regex {

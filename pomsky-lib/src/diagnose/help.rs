@@ -180,6 +180,11 @@ pub(super) fn get_compiler_help(kind: &CompileErrorKind, _span: Span) -> Option<
             Parentheses may be required to clarify the parsing order."
                 .to_string(),
         ),
+        CompileErrorKind::InfiniteRecursion => Some(
+            "A recursive expression must have a branch that \
+            doesn't reach the `recursion`, or can repeat 0 times"
+                .to_string(),
+        ),
 
         _ => None,
     }

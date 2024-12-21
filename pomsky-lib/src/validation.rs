@@ -10,12 +10,13 @@ use crate::{
 #[derive(Clone)]
 pub(crate) struct Validator {
     pub(crate) options: CompileOptions,
+    pub(crate) first_recursion: Option<Span>,
     pub(crate) layer: u32,
 }
 
 impl Validator {
     pub(crate) fn new(options: CompileOptions) -> Self {
-        Validator { options, layer: 0 }
+        Validator { options, first_recursion: None, layer: 0 }
     }
 
     fn require(&self, feature: u16, span: Span) -> Result<(), CompileError> {
@@ -131,6 +132,10 @@ impl RuleVisitor<CompileError> for Validator {
 
     fn visit_recursion(&mut self, recursion: &exprs::Recursion) -> Result<(), CompileError> {
         self.require(Feat::RECURSION, recursion.span)?;
+
+        if self.first_recursion.is_none() {
+            self.first_recursion = Some(recursion.span);
+        }
 
         if let RegexFlavor::Pcre | RegexFlavor::Ruby = self.flavor() {
             Ok(())

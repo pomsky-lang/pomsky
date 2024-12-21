@@ -95,6 +95,7 @@ pub(crate) enum CompileErrorKind {
         flavor: RegexFlavor,
     },
     NestedTest,
+    InfiniteRecursion,
     BadIntersection,
     EmptyIntersection,
 }
@@ -219,6 +220,7 @@ impl core::fmt::Display for CompileErrorKind {
                 ),
                 _ => write!(f, "This kind of lookbehind is not supported in the {flavor:?} flavor"),
             },
+            CompileErrorKind::InfiniteRecursion => write!(f, "This recursion never terminates"),
             CompileErrorKind::BadIntersection => write!(
                 f,
                 "Intersecting these expressions is not supported. Only character sets \

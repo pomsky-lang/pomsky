@@ -1,7 +1,7 @@
 use crate::{
     capturing_groups::CapturingGroupsCollector,
     compile::{CompileResult, CompileState},
-    diagnose::Diagnostic,
+    diagnose::{CompileErrorKind, Diagnostic},
     options::CompileOptions,
     regex::Count,
     validation::Validator,
@@ -60,7 +60,8 @@ impl Expr {
         input: &str,
         options: CompileOptions,
     ) -> (Option<String>, Vec<Diagnostic>) {
-        if let Err(e) = Validator::new(options).visit_rule(&self.0) {
+        let mut validator = Validator::new(options);
+        if let Err(e) = validator.visit_rule(&self.0) {
             return (None, vec![e.diagnostic(input)]);
         }
 
@@ -90,6 +91,12 @@ impl Expr {
             Ok(compiled) => compiled,
             Err(e) => return (None, vec![e.diagnostic(input)]),
         };
+        if let Some(rec_span) = validator.first_recursion {
+            if !compiled.terminates() {
+                let error = CompileErrorKind::InfiniteRecursion.at(rec_span);
+                return (None, vec![error.diagnostic(input)]);
+            }
+        }
         let count = compiled.optimize();
 
         let mut buf = String::new();

@@ -98,8 +98,9 @@ diagnostic_code! {
         RubyLookaheadInLookbehind = 319,
         UnsupportedInLookbehind = 320,
         LookbehindNotConstantLength = 321,
-        BadIntersection = 322,
-        EmptyIntersection = 323,
+        InfiniteRecursion = 322,
+        BadIntersection = 323,
+        EmptyIntersection = 324,
 
         // Warning indicating something might not be supported
         PossiblyUnsupported = 400,
@@ -234,6 +235,7 @@ impl<'a> From<&'a CompileErrorKind> for DiagnosticCode {
             C::UnsupportedInLookbehind { .. } => Self::UnsupportedInLookbehind,
             C::LookbehindNotConstantLength { .. } => Self::LookbehindNotConstantLength,
             C::NestedTest => Self::NestedTest,
+            C::InfiniteRecursion => Self::InfiniteRecursion,
             C::BadIntersection => Self::BadIntersection,
             C::EmptyIntersection => Self::EmptyIntersection,
         }

@@ -1,0 +1,6 @@
+#! expect=error, flavor=Pcre
+("foo" recursion)+
+-----
+ERROR: This recursion never terminates
+HELP: A recursive expression must have a branch that doesn't reach the `recursion`, or can repeat 0 times
+SPAN: 7..16

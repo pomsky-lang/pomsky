@@ -40,9 +40,10 @@ impl From<&CompileErrorKind> for DiagnosticKind {
             | K::NameUsedMultipleTimes(_)
             | K::UnknownVariable { .. }
             | K::RelativeRefZero => DiagnosticKind::Resolve,
-            K::EmptyClassNegated { .. } | K::IllegalNegation { .. } | K::EmptyIntersection => {
-                DiagnosticKind::Invalid
-            }
+            K::EmptyClassNegated { .. }
+            | K::InfiniteRecursion
+            | K::IllegalNegation { .. }
+            | K::EmptyIntersection => DiagnosticKind::Invalid,
             K::CaptureInLet
             | K::ReferenceInLet
             | K::RecursiveVariable
