@@ -9,11 +9,11 @@ When participating in discussions, please follow the [code of conduct](./CODE_OF
 - [Issue tracker](https://github.com/pomsky-lang/pomsky/issues)
 - [GitHub discussions](https://github.com/pomsky-lang/pomsky/discussions)
 
-If you notice a comment that violates the Code of Conduct, is offending, or violates any law, please [reach out](mailto:ludwig.stecher@gmx.de). If you have questions or are unsure if a comment is allowed, feel free to reach out as well.
+If you notice a comment that violates the Code of Conduct, is offending, or violates any law, please [reach out](mailto:info@pomsky-lang.org). If you have questions or are unsure if a comment is allowed, feel free to reach out as well.
 
 ## Security
 
-If you have a concern that may warrant a security advisory, please [contact me directly](mailto:ludwig.stecher@gmx.de). Don't file an issue: Most of the time, security concerns should only be made public once a fix is available.
+If you have a concern that may warrant a security advisory, please [contact us](mailto:info@pomsky-lang.org). Don't file an issue: Most of the time, security concerns should only be made public once a fix is available.
 
 ## Contributing Code
 

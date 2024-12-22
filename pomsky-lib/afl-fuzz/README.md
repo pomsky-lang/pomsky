@@ -30,7 +30,7 @@ When you found a crash, you might find it in `errors.txt`. If it's not in `error
 
 ## Report the bug
 
-Please report the bug [here](https://github.com/pomsky-lang/pomsky/issues). If you think it could be a security vulnerability, please disclose it directly per email: ludwig.stecher@gmx.de.
+Please report the bug [here](https://github.com/pomsky-lang/pomsky/issues). If you think it could be a security vulnerability, please disclose it directly per email: info@pomsky-lang.org.
 
 ## Latest findings
 

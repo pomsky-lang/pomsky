@@ -23,28 +23,9 @@ cargo install pomsky-bin
 
 Then you can compile pomsky expressions to a regex flavor of your choice; the default is PCRE.
 
-```sh
-$ pomsky --help
-pomsky 0.1.0
-Ludwig Stecher <ludwig.stecher@gmx.de>
-Compile pomsky expressions, a new regular expression language
+Run `pomsky --help` for more information.
 
-USAGE:
-    pomsky [OPTIONS] [INPUT]
-
-ARGS:
-    <INPUT>    Pomsky expression to compile
-
-OPTIONS:
-    -d, --debug              Show debug information
-    -f, --flavor <FLAVOR>    Regex flavor [possible values: pcre, python,
-                             java, javascript, dotnet, ruby, rust]
-    -h, --help               Print help information
-    -p, --path <FILE>        File containing the pomsky expression to compile
-    -V, --version            Print version information
-```
-
-It provides nice error messages:
+Pomsky provides nice error messages:
 
 ```sh
 $ pomsky "'Hello world'* \X+"
