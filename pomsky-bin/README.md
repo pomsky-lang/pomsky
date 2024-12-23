@@ -3,17 +3,22 @@
 This CLI allows you to compile [pomsky expressions](https://pomsky-lang.org/) to regexes in the
 command line.
 
-## Use pre-built binaries
+## Installation
 
-Binaries are available for Windows, Linux and macOS. Download them from the
-[releases page](https://github.com/pomsky-lang/pomsky/releases).
+You can install Pomsky by...
 
-## Install from source
+- downloading a pre-built binary
+- using the shell or PowerShell installer
+- using the Windows msi installer
+- installing the `@pomsky-lang/cli` NPM module globally
+- installing the `pomsky-bin` AUR package
 
-This requires that a recent Rust toolchain is installed. Instructions for how to install Rust can be
-found [here](https://www.rust-lang.org/tools/install).
+See the [releases page](https://github.com/pomsky-lang/pomsky/releases) for instructions.
 
-Install the CLI with
+## Build from source
+
+Ensure you have a recent Rust toolchain installed. Instructions for how to install Rust can be
+found [here](https://www.rust-lang.org/tools/install). Then run
 
 ```sh
 cargo install pomsky-bin

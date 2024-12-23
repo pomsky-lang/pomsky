@@ -37,34 +37,35 @@ Read the [blog](https://pomsky-lang.org/blog/) or the [changelog](./CHANGELOG.md
 
 ## Installation
 
-Pre-built binaries can be found on the [releases page](https://github.com/pomsky-lang/pomsky/releases).
+You can install Pomsky by...
 
-Pomsky can also be installed from source via [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html) with `cargo install pomsky-bin`.
+- downloading a pre-built binary
+- using the shell or PowerShell installer
+- using the Windows msi installer
+- installing the `@pomsky-lang/cli` NPM module globally
+- installing the `pomsky-bin` AUR package
 
-## Compatibility
+See the [releases page](https://github.com/pomsky-lang/pomsky/releases) for instructions.
 
-Pomsky is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby and Rust. The regex
+## Build from source
+
+Ensure you have a recent Rust toolchain installed. Instructions for how to install Rust can be
+found [here](https://www.rust-lang.org/tools/install). Then run
+
+```sh
+cargo install pomsky-bin
+```
+
+## Compatibility and portability
+
+Pomsky is currently compatible with PCRE, JavaScript, Java, .NET, Python, Ruby, Rust, and RE2. The regex
 flavor must be specified during compilation, so Pomsky can ensure that the produced regex works as
 desired on the targeted regex engine.
 
 **Note**: You should enable Unicode support in your regex engine, if it isn't enabled by default.
 This is [explained here][enable-unicode].
 
-## Portability
-
-Pomsky aims to be as portable as possible, polyfilling Unicode and unsupported features where feasible. That said, there are some cases where portability is not possible:
-
-- Some features (e.g. lookaround, backreferences, Unicode properties) aren't supported in every flavor. Pomsky fails to compile when you're using an unsupported feature.
-
-- `\b` (word boundaries) are not Unicode aware in JavaScript. Pomsky therefore only allows word boundaries when Unicode is disabled.
-
-- `\w` in .NET handles Unicode incorrectly, with no way to polyfill it properly. This means that in .NET, `[word]` only matches the `L`, `Mn`, `Nd`, and `Pc` general categories, instead of `Alphabetic`, `M`, `Nd`, `Pc` and `Join_Control`.
-
-- In .NET, `.`, `Codepoint` and character classes (e.g. `[Latin]`) only match a single UTF-16 code unit rather than a codepoint.
-
-- `[space]` matches slightly different code points in JavaScript than in Java. This will be fixed.
-
-- Backreferences behave differently in JavaScript and Python when the referenced group has no captured text. There is nothing we can do about it, but we could add a warning for this in the future.
+There are a few situations where Pomsky expressions are not portable, [explained here][portability].
 
 ## Security
 
@@ -111,6 +112,7 @@ Dual-licensed under the [MIT license][mit-license] or the [Apache 2.0 license][a
 
 [book]: https://pomsky-lang.org/docs/get-started/introduction/
 [enable-unicode]: https://pomsky-lang.org/docs/get-started/enable-unicode/
+[portability]: https://pomsky-lang.org/docs/appendix/portability/
 [billion-lols]: https://en.wikipedia.org/wiki/Billion_laughs_attack
 [security]: https://pomsky-lang.org/docs/reference/security/
 [comparison]: https://pomsky-lang.org/docs/reference/comparison/
