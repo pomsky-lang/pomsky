@@ -16,6 +16,7 @@ pub struct RegexTest {
     pub rust: Count,
     pub pcre: Count,
     pub ruby: Count,
+    pub re2: Count,
 }
 
 impl RegexTest {
@@ -119,5 +120,15 @@ impl RegexTest {
     pub fn test_dotnet_with(&self, regex: impl AsRef<str>, tests: &[impl AsRef<str>]) -> Outcome {
         self.dotnet.start("dotnet", "dotnet-script", &["TesterAsync.cs"]);
         self.dotnet.test(regex, tests)
+    }
+
+    pub fn test_re2(&self, regex: &str) -> Outcome {
+        self.re2.add_one();
+        crate::native::re2(regex, &[] as &[&str])
+    }
+
+    pub fn test_re2_with(&self, regex: &str, tests: &[impl AsRef<str>]) -> Outcome {
+        self.re2.add_one();
+        crate::native::re2(regex, tests)
     }
 }

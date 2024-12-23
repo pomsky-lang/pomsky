@@ -52,6 +52,21 @@ pub(crate) fn ruby(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
     }
 }
 
+pub(crate) fn re2(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
+    match re2::RE2::compile(regex, re2::Options::default()) {
+        Ok(regex) => {
+            for text in test_strings {
+                let text = text.as_ref();
+                if !regex.partial_match(text) {
+                    return Outcome::Error(format!("Test string didn't match: {text}"));
+                }
+            }
+            Outcome::Success
+        }
+        Err(e) => Outcome::Error(e.message),
+    }
+}
+
 pub fn pcre_version() -> String {
     let (major, minor) = pcre2::version();
     format!("{major}.{minor}")
