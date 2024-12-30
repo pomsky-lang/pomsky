@@ -7,68 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - TBD
+
 ### New
 
-- Support for the RE2 flavor
+- [RE2](https://github.com/google/re2) flavor added
 
-- Intersection of character sets. For example, `[Letter] & [Latin]` matches a letter that is also in the Latin script.
-
-- Character class prefixes: `gc:` (general category), `sc:` (script), `scx:` (script extension), `blk:` (blocks).
-  For example, `[scx:Syriac]` matches all characters with the Syriac script extension.
-
-  - Adds support for script extensions (currently supported in PCRE, JavaScript, and Rust)
-  - If the `blk:` prefix is used, `In` must be removed; e.g. `[InPrivate_Use]` becomes `[blk:Private_Use]`
-  - Writing the prefix is optional, except for script extensions
-
-- A `pomsky test` subcommand for running unit tests
-
-  - Two supported regex engines for testing: `pcre2` and `rust`
-  - The `--test` argument is now deprecated
-
-- Many optimizations (see below)
-
-### Changed
-
-- Change hygiene of `lazy` and `unicode` mode to behave as one would expect.
-  Going forward, modes depend on the scope where an expression is defined, not where it is used:
+- [Intersection](https://www.regular-expressions.info/charclassintersect.html) of character sets added, using the new `&` operator:
 
   ```pomsky
-  let foo = 'foo'*;  # this repetition is not lazy
-  (enable lazy; foo)
+  [Thai] & [Nd] # equivalent to the regex [\p{Thai}&&\p{Nd}]
   ```
 
-- Increase the maximum length of group names from 32 to 128 characters.
-  Group names this long are supported in PCRE2 since version 10.44.
+  Note that subtraction can be achieved by negating the character set to be subtracted:
 
-- Produce an error if the contents of a lookbehind assertion are not supported by the regex flavor (Java, Python, PCRE)
+  ```pomsky
+  [Thai] & ![Nd] # equivalent to the regex [\p{Thai}--\p{Nd}]
+  ```
 
-- Produce an error if infinite recursion is detected
+- Match [Script Extensions](https://www.unicode.org/L2/L2011/11406-script-ext.html), using the `scx:` or `script_extensions:` prefix:
 
-- Remove the compatibility warning for lookbehind in JavaScript.
-  Lookbehind is now widely supported in JavaScript engines.
+  ```pomsky
+  [scx:Syriac]
+  ```
 
-- Allow all supported boolean Unicode properties in the Java flavor
+  Other Unicode properties also get optional prefixes:
 
-- Deprecate the `--test` argument; use `pomsky test -p <PATH>` instead
+  ```pomsky
+  # old         # new         # alternative
+  [Latin]       [sc:Latin]    [script:Latin]
+  [InGreek]     [blk:Greek]   [block:Greek]
+  [Letter]      [gc:Letter]   [general_category:Letter]
+  ```
 
-### Optimizations
+  Note that for the `In` prefix of Unicode blocks is omitted when the `blk:` or `block:` prefix is used. Unicode blocks with `In` instead of `blk:` will be deprecated.
 
-- De-duplicate and merge character ranges: `['b' 'a'-'f' 'c'-'m']` becomes `[a-m]`
+- `pomsky test` subcommand added to compile and test all `*.pomsky` files in a directory. This command ignores files matched by a `.ignore` or `.gitignore` file. For help, run `pomsky test --help`.
 
-  - Note that this doesn't work with Unicode classes, e.g. `Alphabetic`
+- Unit tests can now be run with the Rust `regex` crate. To use it, specify `--flavor=rust` or `--engine=rust`.
 
-- Merge common alternation prefixes: `'do' | 'double' | 'down'` becomes `do(?:uble|wn)??`
+- Diagnostic to detect infinite recursion. If a recursive expression can never terminate, an error is shown.
 
-  - This only works with string literals and character sets, for now
-  - Only adjacent alternatives can be merged to ensure that precedence isn't affected
+### Changes
 
-- Combine single-character alternations into a set: `'a' | 'b' | 'c' | 'f'` becomes `[a-cf]`
+- `lazy` and `unicode` mode is no longer inherited when expanding variables.
 
-- Merge constant nested repetitions: `('a'{3}){4}` becomes `a{12}`
+  > [!IMPORTANT]  
+  > This changes the meaning of expressions such as this:
+  >
+  > ```pomsky
+  > let variable = 'test'*;
+  > enable lazy;
+  > variable
+  > ```
+  >
+  > Before Pomsky 0.12, the repetition was lazy, but now it isn't.
 
-### Bugfixes
+  The `enable` or `disable` statement has to appear before the repetition _syntactically_, it doesn't matter where the variable is used. The old behavior was too unintuitive and easy to mess up, so we fixed it.
 
-- Do not miscompile `[r]`
+- Optimize single-character alternatives, and merge adjacent or overlapping ranges.
+
+  For example, `'a' | ['bc'] | ['f'-'i']` is optimized to `[a-cf-i]`.
+
+  > [!NOTE]  
+  > The order of character ranges in a set is no longer preserved. Currently, they are sorted in ascending order; for example, `['x' 'X' 'A'-'F' 'a'-'f']` becomes `[A-FXa-fx]`.
+
+- No longer warn about lookbehind in JavaScript. Lookbehind is now widely supported.
+
+- Update Unicode support data for properties added in Unicode 15.x
+
+### Fixes
+
+- Allow supported Unicode binary properties in Java (previously, binary properties in Java were unsupported)
+
+- Link PCRE2 statically (previously it was linked dynamically, which doesn't work if PCRE2 isn't installed on the target system)
+
+- Allow Unicode blocks in Ruby, but not PCRE
+
+- Output `[r]` as `\r`, not as `\n` (this was a bug introduced by normalizing verbatim line endings in strings).
 
 ## [0.11.0] - 2023-11-09
 
