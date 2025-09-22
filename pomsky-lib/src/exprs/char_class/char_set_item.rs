@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::options::RegexFlavor;
 
-use super::{literal, Regex, RegexProperty, RegexShorthand, UnicodeSet};
+use super::{Regex, RegexProperty, RegexShorthand, UnicodeSet, literal};
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
 #[derive(Default)]

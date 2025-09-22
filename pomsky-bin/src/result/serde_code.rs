@@ -1,7 +1,7 @@
 use pomsky::diagnose::DiagnosticCode;
 use serde::{
-    de::{Error, Expected, Unexpected, Visitor},
     Deserializer, Serializer,
+    de::{Error, Expected, Unexpected, Visitor},
 };
 
 pub(super) fn serialize<S>(value: &Option<DiagnosticCode>, serializer: S) -> Result<S::Ok, S::Error>

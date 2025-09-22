@@ -76,10 +76,10 @@
 //!   negated, the class is   removed and the negations cancel each other out:
 //!   `![!w]` = `\w`, `![!L]` = `\p{L}`.
 
+use pomsky_syntax::Span;
 use pomsky_syntax::exprs::{
     Category, CharClass, CodeBlock, GroupItem, GroupName, OtherProperties, Script, ScriptExtension,
 };
-use pomsky_syntax::Span;
 
 use crate::{
     compile::{CompileResult, CompileState},
@@ -156,10 +156,10 @@ pub(crate) fn check_char_class_empty(
     char_set: &RegexCharSet,
     span: Span,
 ) -> Result<(), CompileError> {
-    if char_set.negative {
-        if let Some((group1, group2)) = char_set.set.full_props() {
-            return Err(CompileErrorKind::EmptyClassNegated { group1, group2 }.at(span));
-        }
+    if char_set.negative
+        && let Some((group1, group2)) = char_set.set.full_props()
+    {
+        return Err(CompileErrorKind::EmptyClassNegated { group1, group2 }.at(span));
     }
     Ok(())
 }
@@ -371,7 +371,7 @@ fn named_class_to_regex_unicode(
                             Feature::ScriptExtensions,
                             flavor,
                         )
-                        .at(span))
+                        .at(span));
                     }
                 },
                 ScriptExtension::No => match flavor {

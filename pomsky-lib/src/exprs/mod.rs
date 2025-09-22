@@ -27,8 +27,8 @@ pub(crate) mod rule;
 pub(crate) mod stmt;
 pub(crate) mod var;
 
-use pomsky_syntax::exprs::{test::Test, *};
 use pomsky_syntax::Span;
+use pomsky_syntax::exprs::{test::Test, *};
 
 pub(crate) trait Compile {
     fn compile<'c>(

@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use crate::{
+    Span,
     diagnose::{
         LexErrorMsg, NumberError, ParseDiagnostic, ParseError, ParseErrorKind as PEK, ParseWarning,
     },
     exprs::*,
-    lexer::{tokenize, Token},
-    Span,
+    lexer::{Token, tokenize},
 };
 
 /// Parses a source string as a pomsky expression.

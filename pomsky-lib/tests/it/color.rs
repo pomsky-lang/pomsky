@@ -93,11 +93,7 @@ impl<T> Colored<T> {
     }
 
     pub fn iff(self, condition: bool) -> Colored<T> {
-        if condition {
-            self
-        } else {
-            Colored { inner: self.inner, color: ColorOption::None }
-        }
+        if condition { self } else { Colored { inner: self.inner, color: ColorOption::None } }
     }
 }
 

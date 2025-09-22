@@ -51,7 +51,7 @@ pub(super) fn parse_ascii_group(
                 extra_in_prefix: false,
                 #[cfg(feature = "suggestions")]
                 similar: crate::util::find_suggestion(name, OPTION_LIST.iter().copied()),
-            })
+            });
         }
     })
 }

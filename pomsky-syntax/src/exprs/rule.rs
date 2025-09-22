@@ -1,8 +1,8 @@
 use crate::Span;
 
 use super::{
-    intersection::Intersection, negation::Negation, Alternation, Boundary, CharClass, Group,
-    Literal, Lookaround, Range, Recursion, Reference, Regex, Repetition, StmtExpr, Variable,
+    Alternation, Boundary, CharClass, Group, Literal, Lookaround, Range, Recursion, Reference,
+    Regex, Repetition, StmtExpr, Variable, intersection::Intersection, negation::Negation,
 };
 
 /// A parsed pomsky expression, which might contain more sub-expressions.

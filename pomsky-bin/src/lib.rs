@@ -15,8 +15,8 @@ pub use result::{
 use std::{path::Path, process::exit, time::Instant};
 
 use pomsky::{
-    options::{CompileOptions as PomskyCompileOptions, RegexFlavor},
     Expr,
+    options::{CompileOptions as PomskyCompileOptions, RegexFlavor},
 };
 
 use args::{CompileOptions, GlobalOptions, Input};

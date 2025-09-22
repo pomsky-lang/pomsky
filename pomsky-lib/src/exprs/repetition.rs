@@ -52,10 +52,10 @@ impl RegexRepetition {
     pub(crate) fn codegen(&self, buf: &mut String, flavor: RegexFlavor) {
         use std::fmt::Write;
 
-        if let Regex::Literal(l) = &self.content {
-            if l.is_empty() {
-                return;
-            }
+        if let Regex::Literal(l) = &self.content
+            && l.is_empty()
+        {
+            return;
         }
 
         if self.content.needs_parens_before_repetition(flavor) {
@@ -100,10 +100,10 @@ impl RegexRepetition {
             }
         };
 
-        if let RegexQuantifier::Lazy = self.quantifier {
-            if !omit_lazy {
-                buf.push('?');
-            }
+        if let RegexQuantifier::Lazy = self.quantifier
+            && !omit_lazy
+        {
+            buf.push('?');
         }
     }
 }

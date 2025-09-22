@@ -1,4 +1,4 @@
-use helptext::{sections, Help, HelpSection};
+use helptext::{Help, HelpSection, sections};
 use supports_color::Stream;
 
 const USAGE: Help = Help(sections![

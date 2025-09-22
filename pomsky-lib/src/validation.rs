@@ -1,4 +1,4 @@
-use pomsky_syntax::{exprs, Span};
+use pomsky_syntax::{Span, exprs};
 
 use crate::{
     diagnose::{CompileError, CompileErrorKind, Feature},

@@ -10,7 +10,7 @@ members = [
 ]
 default-members = ["./pomsky-bin", "./pomsky-lib", "./pomsky-syntax"]
 resolver = "2"
-package.edition = "2021"
+package.edition = "2024"
 
 [profile.release]
 lto = "thin"

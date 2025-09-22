@@ -27,7 +27,7 @@ pub(super) fn parse_group_name(
                     name,
                     PARSE_LUT.iter().map(|&(name, _)| name),
                 ),
-            })
+            });
         }
     };
     if let Some(kind) = kind {

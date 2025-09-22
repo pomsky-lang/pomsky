@@ -1,12 +1,12 @@
 use pomsky_syntax::{
-    diagnose::{ParseDiagnostic, ParseDiagnosticKind, ParseErrorKind, ParseWarningKind},
     Span,
+    diagnose::{ParseDiagnostic, ParseDiagnosticKind, ParseErrorKind, ParseWarningKind},
 };
 
 use super::{
+    CompileError, CompileErrorKind, DiagnosticKind,
     diagnostic_code::DiagnosticCode,
     help::{get_compiler_help, get_parse_warning_help},
-    CompileError, CompileErrorKind, DiagnosticKind,
 };
 
 #[derive(Debug, Clone)]

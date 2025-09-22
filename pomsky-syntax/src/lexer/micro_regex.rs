@@ -21,11 +21,7 @@ impl MicroRegex for str {
     type Context = ();
 
     fn is_start(&self, haystack: &str) -> Option<(usize, ())> {
-        if haystack.starts_with(self) {
-            Some((self.len(), ()))
-        } else {
-            None
-        }
+        if haystack.starts_with(self) { Some((self.len(), ())) } else { None }
     }
 }
 
@@ -33,11 +29,7 @@ impl MicroRegex for char {
     type Context = ();
 
     fn is_start(&self, haystack: &str) -> Option<(usize, ())> {
-        if haystack.starts_with(*self) {
-            Some((self.len_utf8(), ()))
-        } else {
-            None
-        }
+        if haystack.starts_with(*self) { Some((self.len_utf8(), ())) } else { None }
     }
 }
 

@@ -1,9 +1,9 @@
 use pomsky_syntax::{
+    Span,
     diagnose::{
         CharClassError, CharStringError, DeprecationWarning, ParseErrorKind, ParseWarningKind,
         RepetitionError,
     },
-    Span,
 };
 
 use super::{CompileErrorKind, IllegalNegationKind};
@@ -48,7 +48,7 @@ pub(super) fn get_parser_help(
         }) => Some("When using the `block:` or `blk:` prefix, the `In` at the beginning needs to be removed".into()),
         #[cfg(feature = "suggestions")]
         ParseErrorKind::CharClass(CharClassError::UnknownNamedClass {
-            similar: Some(ref similar),
+            similar: Some(similar),
             ..
         }) => Some(format!("Perhaps you meant `{similar}`")),
         ParseErrorKind::CharClass(CharClassError::NonAscendingRange(c1, c2)) => {
@@ -135,8 +135,8 @@ pub(super) fn get_compiler_help(kind: &CompileErrorKind, _span: Span) -> Option<
         }
 
         #[cfg(feature = "suggestions")]
-        CompileErrorKind::UnknownVariable { similar: Some(ref similar), .. }
-        | CompileErrorKind::UnknownReferenceName { similar: Some(ref similar), .. } => {
+        CompileErrorKind::UnknownVariable { similar: Some(similar), .. }
+        | CompileErrorKind::UnknownReferenceName { similar: Some(similar), .. } => {
             Some(format!("Perhaps you meant `{similar}`"))
         }
 

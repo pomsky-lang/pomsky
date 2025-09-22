@@ -6,7 +6,7 @@
 //!
 //! Refer to the [`char_class` module](crate::char_class) for more information.
 
-use crate::{error::ParseErrorKind, Span};
+use crate::{Span, error::ParseErrorKind};
 
 use super::unicode::{Category, CodeBlock, OtherProperties, Script};
 
@@ -23,11 +23,7 @@ impl CharGroup {
     /// Tries to create a `CharGroup` from a range of characters (inclusive).
     /// Returns `None` if `last` is lower than `first`.
     pub(crate) fn try_from_range(first: char, last: char) -> Option<Vec<GroupItem>> {
-        if first < last {
-            Some(vec![GroupItem::Range { first, last }])
-        } else {
-            None
-        }
+        if first < last { Some(vec![GroupItem::Range { first, last }]) } else { None }
     }
 
     /// Try to create a `CharGroup` from the name of a character class. Fails if

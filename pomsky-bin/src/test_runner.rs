@@ -2,11 +2,11 @@ use std::ops::Index;
 
 use pcre2::bytes::Regex as PcreRegex;
 use pomsky::{
+    Expr,
     diagnose::{Diagnostic, DiagnosticCode, Severity},
     features::PomskyFeatures,
     options::CompileOptions,
     test::{CaptureIdent, TestCase, TestCaseMatch, TestCaseMatchAll, TestCaseReject},
-    Expr,
 };
 use regex::Regex as RustRegex;
 

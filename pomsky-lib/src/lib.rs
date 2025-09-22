@@ -74,8 +74,8 @@ pub mod test {
 
 pub use exprs::Expr;
 pub use pomsky_syntax::{
-    diagnose::{ParseError, ParseWarning as Warning},
     Span,
+    diagnose::{ParseError, ParseWarning as Warning},
 };
 
 pub use pomsky_syntax::list_shorthands;

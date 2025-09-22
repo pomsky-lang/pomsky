@@ -7,9 +7,9 @@ use crate::{
 };
 
 use super::{
+    Compile, Intersection,
     char_class::{RegexCharSet, RegexCompoundCharSet},
     group::RegexGroupKind,
-    Compile, Intersection,
 };
 
 impl Compile for Intersection {
@@ -30,14 +30,14 @@ impl Compile for Intersection {
             Err(kind) => Err(kind.at(first_span.join(right_span))),
         })?;
 
-        if let Regex::CompoundCharSet(_) = regex {
-            if let RegexFlavor::DotNet | RegexFlavor::Python | RegexFlavor::RE2 = options.flavor {
-                return Err(CompileErrorKind::Unsupported(
-                    Feature::CharSetIntersection,
-                    options.flavor,
-                )
-                .at(self.span));
-            }
+        if let Regex::CompoundCharSet(_) = regex
+            && let RegexFlavor::DotNet | RegexFlavor::Python | RegexFlavor::RE2 = options.flavor
+        {
+            return Err(CompileErrorKind::Unsupported(
+                Feature::CharSetIntersection,
+                options.flavor,
+            )
+            .at(self.span));
         }
 
         Ok(regex)
@@ -56,12 +56,12 @@ fn expand_regex(r: Regex) -> Regex {
     match r {
         Regex::Literal(ref lit) => {
             let mut chars = lit.chars();
-            if let Some(char) = chars.next() {
-                if chars.next().is_none() {
-                    let mut set = UnicodeSet::new();
-                    set.add_char(char);
-                    return Regex::CharSet(RegexCharSet::new(set));
-                }
+            if let Some(char) = chars.next()
+                && chars.next().is_none()
+            {
+                let mut set = UnicodeSet::new();
+                set.add_char(char);
+                return Regex::CharSet(RegexCharSet::new(set));
             }
             r
         }

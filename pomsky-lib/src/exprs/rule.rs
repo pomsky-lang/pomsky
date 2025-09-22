@@ -7,7 +7,7 @@ use crate::{
 };
 
 use super::{
-    char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme, Compile,
+    Compile, char_class::check_char_class_empty, codepoint::Codepoint, dot::Dot, grapheme::Grapheme,
 };
 
 impl Compile for Rule {

@@ -103,21 +103,13 @@ impl Process {
     /// Sends a SIGKILL signal to the child process
     pub fn kill(&self) -> io::Result<()> {
         let mut guard = self.data.lock().unwrap();
-        if let Some((child, ..)) = &mut *guard {
-            child.kill()
-        } else {
-            Ok(())
-        }
+        if let Some((child, ..)) = &mut *guard { child.kill() } else { Ok(()) }
     }
 
     /// Waits for the child process to exit normally
     pub fn wait(&self) -> io::Result<Option<ExitStatus>> {
         let mut guard = self.data.lock().unwrap();
-        if let Some((child, ..)) = &mut *guard {
-            child.try_wait()
-        } else {
-            Ok(None)
-        }
+        if let Some((child, ..)) = &mut *guard { child.try_wait() } else { Ok(None) }
     }
 }
 

@@ -10,11 +10,11 @@ use crate::{
 };
 
 use super::{
+    Compile,
     alternation::RegexAlternation,
     char_class::RegexCharSet,
     group::{RegexGroup, RegexGroupKind},
     repetition::{RegexQuantifier, RegexRepetition},
-    Compile,
 };
 
 impl Compile for Range {
@@ -292,31 +292,29 @@ fn merge_and_optimize_alternatives(alternatives: Vec<Vec<Rule>>) -> Rule {
                 }
             }
 
-            if let Some(last) = acc.last_mut() {
-                if let [Rule::Class(prev_class), prev] = last.as_mut_slice() {
-                    if let [Rule::Class(this_class), ref mut this2] = rules.as_mut_slice() {
-                        if prev == this2 {
-                            debug_assert!(prev_class.end + 1 == this_class.start);
-                            prev_class.end = this_class.end;
+            if let Some(last) = acc.last_mut()
+                && let [Rule::Class(prev_class), prev] = last.as_mut_slice()
+                && let [Rule::Class(this_class), this2] = rules.as_mut_slice()
+                && prev == this2
+            {
+                debug_assert!(prev_class.end + 1 == this_class.start);
+                prev_class.end = this_class.end;
 
-                            if let [last1, last2] = last.as_slice() {
-                                if last1 == last2 {
-                                    let rule = last.pop().unwrap();
-                                    last[0] = rule.repeat(2, 2);
-                                } else if let Rule::Repeat(r) = last2 {
-                                    if r.rule == *last1 {
-                                        let (min, max) = (r.min, r.max);
-                                        last.pop();
-                                        let rule = last.pop().unwrap();
-                                        last.push(rule.repeat(min + 1, max + 1));
-                                    }
-                                }
-                            }
-
-                            return acc;
-                        }
+                if let [last1, last2] = last.as_slice() {
+                    if last1 == last2 {
+                        let rule = last.pop().unwrap();
+                        last[0] = rule.repeat(2, 2);
+                    } else if let Rule::Repeat(r) = last2
+                        && r.rule == *last1
+                    {
+                        let (min, max) = (r.min, r.max);
+                        last.pop();
+                        let rule = last.pop().unwrap();
+                        last.push(rule.repeat(min + 1, max + 1));
                     }
                 }
+
+                return acc;
             }
 
             acc.push(rules);

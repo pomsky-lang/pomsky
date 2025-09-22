@@ -1,11 +1,11 @@
 use std::borrow::Borrow;
 
 use pomsky_syntax::{
+    Span,
     exprs::{
         BoundaryKind, Category, CodeBlock, LookaroundKind, OtherProperties, RepetitionKind, Script,
         ScriptExtension,
     },
-    Span,
 };
 
 use crate::{
@@ -88,7 +88,7 @@ impl Regex {
                         (Some(_), Some(_)) => {
                             return Err(CompileErrorKind::LookbehindNotConstantLength {
                                 flavor: RegexFlavor::Python,
-                            })
+                            });
                         }
                         (Some(a), None) | (None, Some(a)) => Some(a),
                         _ => None,
@@ -97,10 +97,10 @@ impl Regex {
                 Ok(count)
             }
             Regex::Repetition(r) => {
-                if let RepetitionKind { lower_bound, upper_bound: Some(upper) } = r.kind {
-                    if lower_bound == upper {
-                        return Ok(Some(upper));
-                    }
+                if let RepetitionKind { lower_bound, upper_bound: Some(upper) } = r.kind
+                    && lower_bound == upper
+                {
+                    return Ok(Some(upper));
                 }
                 Err(CompileErrorKind::LookbehindNotConstantLength { flavor: RegexFlavor::Python })
             }

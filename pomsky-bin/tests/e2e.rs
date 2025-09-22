@@ -49,13 +49,9 @@ impl predicates::Predicate<[u8]> for Output {
         }
     }
 
-    fn find_case(&self, expected: bool, variable: &[u8]) -> Option<Case> {
+    fn find_case(&self, expected: bool, variable: &[u8]) -> Option<Case<'_>> {
         let actual = self.eval(variable);
-        if expected == actual {
-            Some(Case::new(Some(self), actual))
-        } else {
-            None
-        }
+        if expected == actual { Some(Case::new(Some(self), actual)) } else { None }
     }
 }
 

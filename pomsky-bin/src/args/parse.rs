@@ -1,4 +1,4 @@
-use std::io::{stdin, stdout, IsTerminal};
+use std::io::{IsTerminal, stdin, stdout};
 use std::path::PathBuf;
 
 use pomsky::{features::PomskyFeatures, options::RegexFlavor};

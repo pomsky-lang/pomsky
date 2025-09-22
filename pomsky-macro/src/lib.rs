@@ -11,8 +11,8 @@ use std::iter::Peekable;
 use proc_macro::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
 
 use pomsky::{
-    options::{CompileOptions, RegexFlavor},
     Expr,
+    options::{CompileOptions, RegexFlavor},
 };
 
 mod diagnostic;

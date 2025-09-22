@@ -1,4 +1,4 @@
-use pomsky::{diagnose::Diagnostic, options::CompileOptions, Expr};
+use pomsky::{Expr, diagnose::Diagnostic, options::CompileOptions};
 
 const STRINGS: &str = include_str!("./files/strings.pomsky");
 const PROPERTIES: &str = include_str!("./files/properties.pomsky");
@@ -21,7 +21,7 @@ macro_rules! items {
 
 #[divan::bench_group]
 mod parse {
-    use divan::{counter::BytesCount, Bencher};
+    use divan::{Bencher, counter::BytesCount};
     use pomsky::Expr;
 
     macro_rules! group_item {
@@ -56,8 +56,8 @@ mod parse {
 mod compile {
     use divan::Bencher;
     use pomsky::{
-        options::{CompileOptions, RegexFlavor},
         Expr,
+        options::{CompileOptions, RegexFlavor},
     };
 
     fn ruby() -> CompileOptions {
@@ -97,7 +97,7 @@ mod compile {
 
 #[divan::bench(args = 1..=13)]
 pub fn range(bencher: divan::Bencher, n: usize) {
-    let max = "3458709621".repeat((n + 9) / 10);
+    let max = "3458709621".repeat(n.div_ceil(10));
     let max = &max[..n];
     let input = format!("range '0'-'{max}'");
 

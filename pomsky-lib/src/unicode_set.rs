@@ -149,10 +149,10 @@ impl UnicodeSet {
                 item = RCS::Shorthand(if negative { RS::NotSpace } else { RS::Space });
             }
 
-            if let Some(negated) = item.negate() {
-                if prev_items.contains(&negated) {
-                    return Some((negated, item));
-                }
+            if let Some(negated) = item.negate()
+                && prev_items.contains(&negated)
+            {
+                return Some((negated, item));
             }
 
             prev_items.push(item);

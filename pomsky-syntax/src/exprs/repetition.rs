@@ -1,4 +1,4 @@
-use crate::{error::RepetitionError, Span};
+use crate::{Span, error::RepetitionError};
 
 use super::Rule;
 

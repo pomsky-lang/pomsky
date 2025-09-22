@@ -34,11 +34,7 @@ impl Span {
     /// Converts this span to a [`std::ops::Range`]. If it is empty, `None` is
     /// returned.
     pub fn range(self) -> Option<Range<usize>> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(self.start as usize..self.end as usize)
-        }
+        if self.is_empty() { None } else { Some(self.start as usize..self.end as usize) }
     }
 
     /// Converts this span to a [`std::ops::Range`], without checking if it is

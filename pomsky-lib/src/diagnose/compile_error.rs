@@ -1,6 +1,6 @@
 use pomsky_syntax::{
-    diagnose::{ParseError, ParseErrorKind},
     Span,
+    diagnose::{ParseError, ParseErrorKind},
 };
 
 use crate::{exprs::char_class::RegexCharSetItem, options::RegexFlavor};
@@ -210,7 +210,10 @@ impl core::fmt::Display for CompileErrorKind {
                 write!(f, "Unit tests may only appear at the top level of the expression")
             }
             CompileErrorKind::UnsupportedInLookbehind { flavor, feature } => {
-                write!(f, "Feature `{feature:?}` is not supported within lookbehinds in the {flavor:?} flavor")
+                write!(
+                    f,
+                    "Feature `{feature:?}` is not supported within lookbehinds in the {flavor:?} flavor"
+                )
             }
             CompileErrorKind::LookbehindNotConstantLength { flavor } => match flavor {
                 RegexFlavor::Pcre | RegexFlavor::Python => write!(

@@ -15,13 +15,22 @@ impl fmt::Display for FuzzError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FuzzError::FalsePositive { range: (start, end), regex, input } => {
-                write!(f, "false positive\n      range: {start}-{end}\ntest string: {input}\n      regex: {regex}")
+                write!(
+                    f,
+                    "false positive\n      range: {start}-{end}\ntest string: {input}\n      regex: {regex}"
+                )
             }
             FuzzError::FalseNegative { range: (start, end), regex, input } => {
-                write!(f, "false negative\n      range: {start}-{end}\ntest string: {input}\n      regex: {regex}")
+                write!(
+                    f,
+                    "false negative\n      range: {start}-{end}\ntest string: {input}\n      regex: {regex}"
+                )
             }
             FuzzError::InvalidRegex { range: (start, end), regex, error } => {
-                write!(f, "invalid regex\n        range: {start}-{end}\nerror message: {error}\n        regex: {regex}")
+                write!(
+                    f,
+                    "invalid regex\n        range: {start}-{end}\nerror message: {error}\n        regex: {regex}"
+                )
             }
         }
     }

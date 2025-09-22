@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use intersection::Intersection;
 
 use crate::{
+    Span,
     diagnose::{
         CharClassError, CharStringError, DeprecationWarning, NumberError, ParseWarningKind,
         RepetitionError,
@@ -10,10 +11,9 @@ use crate::{
     error::{ParseError, ParseErrorKind as PEK},
     exprs::{negation::Negation, test::*, *},
     lexer::Token,
-    Span,
 };
 
-use super::{helper, Parser};
+use super::{Parser, helper};
 
 type PResult<T> = Result<T, ParseError>;
 
@@ -850,11 +850,7 @@ impl<'i> Parser<'i> {
 
     /// Parses the dot
     fn parse_dot(&mut self) -> Option<Rule> {
-        if self.consume(Token::Dot) {
-            Some(Rule::Dot)
-        } else {
-            None
-        }
+        if self.consume(Token::Dot) { Some(Rule::Dot) } else { None }
     }
 
     /// Parses the `recursion` keyword

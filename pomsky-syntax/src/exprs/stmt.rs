@@ -1,6 +1,6 @@
 use crate::Span;
 
-use super::{test::Test, Rule};
+use super::{Rule, test::Test};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]

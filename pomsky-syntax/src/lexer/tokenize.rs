@@ -1,8 +1,8 @@
 use crate::Span;
 
 use super::{
-    micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
     LexErrorMsg, Token,
+    micro_regex::{Capture, CharIs, Many0, Many1, MicroRegex},
 };
 
 macro_rules! consume_chain {
@@ -71,11 +71,7 @@ static SINGLE_TOKEN_LOOKUP: [Option<Token>; 127] = const {
 
 fn lookup_single(c: char) -> Option<Token> {
     let c = c as u32;
-    if c < 128 {
-        SINGLE_TOKEN_LOOKUP[c as usize]
-    } else {
-        None
-    }
+    if c < 128 { SINGLE_TOKEN_LOOKUP[c as usize] } else { None }
 }
 
 pub(crate) fn tokenize(mut input: &str) -> Vec<(Token, Span)> {

@@ -5,7 +5,7 @@ use std::{
     num::{IntErrorKind, ParseIntError},
 };
 
-use crate::{lexer::Token, Span};
+use crate::{Span, lexer::Token};
 
 pub use crate::lexer::LexErrorMsg;
 
@@ -107,10 +107,16 @@ impl core::fmt::Display for ParseErrorKind {
             }
             &ParseErrorKind::NonAsciiIdentAfterColon(char) => {
                 let num = char as u32;
-                write!(f, "Group name contains illegal code point `{char}` (U+{num:04X}). Group names must be ASCII only.")
+                write!(
+                    f,
+                    "Group name contains illegal code point `{char}` (U+{num:04X}). Group names must be ASCII only."
+                )
             }
             &ParseErrorKind::GroupNameTooLong(len) => {
-                write!(f, "Group name is too long. It is {len} code points long, but must be at most 32 code points.")
+                write!(
+                    f,
+                    "Group name is too long. It is {len} code points long, but must be at most 32 code points."
+                )
             }
 
             ParseErrorKind::Deprecated(deprecation) => deprecation.fmt(f),

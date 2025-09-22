@@ -4,9 +4,9 @@ use helptext::text;
 use pomsky::options::RegexFlavor;
 
 use crate::{
+    CompilationResult,
     args::{CompileOptions, GlobalOptions, Input, RegexEngine, TestOptions},
     format::Logger,
-    CompilationResult,
 };
 
 pub(crate) struct TestDirectoryResult {
@@ -120,21 +120,13 @@ fn test_directory(
         .filter_entry(is_dir_or_pomsky_file)
         .build()
     {
-        if let Ok(entry) = entry.map_err(|d| handle_walk_error(d, logger, current_dir)) {
-            if entry.file_type().is_some_and(|ty| ty.is_file()) {
-                total += 1;
+        if let Ok(entry) = entry.map_err(|d| handle_walk_error(d, logger, current_dir))
+            && entry.file_type().is_some_and(|ty| ty.is_file())
+        {
+            total += 1;
 
-                let path = entry.path();
-                test_single(
-                    logger,
-                    path,
-                    current_dir,
-                    args,
-                    compile_args,
-                    &mut results,
-                    &mut failed,
-                );
-            }
+            let path = entry.path();
+            test_single(logger, path, current_dir, args, compile_args, &mut results, &mut failed);
         };
     }
 

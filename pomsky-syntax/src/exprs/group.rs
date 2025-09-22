@@ -48,11 +48,7 @@ impl Group {
             let len = self.parts.len();
             for (i, part) in self.parts.iter().enumerate() {
                 let child_needs_parens = if len == 1 {
-                    if use_parens {
-                        false
-                    } else {
-                        needs_parens
-                    }
+                    if use_parens { false } else { needs_parens }
                 } else {
                     use Rule::*;
                     matches!(part, Lookaround(_) | StmtExpr(_) | Alternation(_) | Group(_))

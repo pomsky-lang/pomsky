@@ -10,7 +10,7 @@ use regex_test::RegexTest;
 
 use crate::{
     args::Args,
-    color::{prelude::*, Colored, D2},
+    color::{Colored, D2, prelude::*},
     files::TestResult,
 };
 
@@ -281,9 +281,6 @@ fn collect_samples(
         }
         Ok(())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("unexpected file type of {:?}", blue(path_ref)),
-        ))
+        Err(io::Error::other(format!("unexpected file type of {:?}", blue(path_ref))))
     }
 }
