@@ -568,7 +568,7 @@ impl<'i> Parser<'i> {
                     return Err(PEK::UnallowedNot.at(nots_span));
                 }
                 group
-            } else if let Some(group) = self.parse_char_group_ident(nots % 2 != 0)? {
+            } else if let Some(group) = self.parse_char_group_ident(!nots.is_multiple_of(2))? {
                 if nots > 1 {
                     return Err(PEK::UnallowedMultiNot(nots).at(nots_span));
                 }

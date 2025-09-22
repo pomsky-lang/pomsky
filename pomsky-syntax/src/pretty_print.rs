@@ -15,7 +15,7 @@ impl PrettyPrinter {
     }
 
     fn add_spaces(&mut self, n: usize) {
-        self.buf.extend(std::iter::repeat(' ').take(n));
+        self.buf.extend(std::iter::repeat_n(' ', n));
     }
 
     pub(crate) fn write(&mut self, s: &str) {
@@ -63,14 +63,14 @@ impl PrettyPrinter {
         self.buf.push_str(paren);
         self.indent += 2;
         self.buf.push('\n');
-        self.buf.extend(std::iter::repeat(' ').take(self.indent));
+        self.buf.extend(std::iter::repeat_n(' ', self.indent));
     }
 
     pub(crate) fn end_indentation(&mut self, paren: &str) {
         debug_assert!(!paren.contains('\n'));
         self.indent = self.indent.saturating_sub(2);
         self.buf.push('\n');
-        self.buf.extend(std::iter::repeat(' ').take(self.indent));
+        self.buf.extend(std::iter::repeat_n(' ', self.indent));
         self.buf.push_str(paren);
     }
 

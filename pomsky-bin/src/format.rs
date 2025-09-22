@@ -47,7 +47,7 @@ impl Logger {
         }
     }
 
-    pub(crate) fn basic(&self) -> Formatted<FormatBasic> {
+    pub(crate) fn basic(&self) -> Formatted<'_, FormatBasic> {
         Formatted { format: FormatBasic, logger: self }
     }
 
@@ -55,7 +55,7 @@ impl Logger {
         &self,
         severity: Severity,
         kind: &'a str,
-    ) -> Formatted<FormatDetailed<'a, 4>> {
+    ) -> Formatted<'_, FormatDetailed<'a, 4>> {
         let label = match severity {
             Severity::Error => Segment { style: Some(Style::R), text: "error", ticks: false },
             Severity::Warning => Segment { style: Some(Style::Y), text: "warning", ticks: false },
@@ -69,7 +69,7 @@ impl Logger {
         severity: Severity,
         code: &'a str,
         kind: &'a str,
-    ) -> Formatted<FormatDetailed<'a, 5>> {
+    ) -> Formatted<'_, FormatDetailed<'a, 5>> {
         let label = match severity {
             Severity::Error => Segment { style: Some(Style::R), text: "error ", ticks: false },
             Severity::Warning => Segment { style: Some(Style::Y), text: "warning ", ticks: false },
@@ -84,15 +84,15 @@ impl Logger {
         Formatted { format: FormatDetailed { start }, logger: self }
     }
 
-    pub(crate) fn error(&self) -> Formatted<FormatError> {
+    pub(crate) fn error(&self) -> Formatted<'_, FormatError> {
         Formatted { format: FormatError, logger: self }
     }
 
-    pub(crate) fn warn(&self) -> Formatted<FormatWarning> {
+    pub(crate) fn warn(&self) -> Formatted<'_, FormatWarning> {
         Formatted { format: FormatWarning, logger: self }
     }
 
-    pub(crate) fn note(&self) -> Formatted<FormatNote> {
+    pub(crate) fn note(&self) -> Formatted<'_, FormatNote> {
         Formatted { format: FormatNote, logger: self }
     }
 }
