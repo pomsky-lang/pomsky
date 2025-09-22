@@ -31,10 +31,7 @@ impl Compile for Intersection {
         })?;
 
         if let Regex::CompoundCharSet(_) = regex {
-            if !matches!(
-                options.flavor,
-                RegexFlavor::JavaScript | RegexFlavor::Java | RegexFlavor::Ruby | RegexFlavor::Rust
-            ) {
+            if let RegexFlavor::DotNet | RegexFlavor::Python | RegexFlavor::RE2 = options.flavor {
                 return Err(CompileErrorKind::Unsupported(
                     Feature::CharSetIntersection,
                     options.flavor,
