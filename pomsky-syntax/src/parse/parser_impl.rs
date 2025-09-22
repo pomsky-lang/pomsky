@@ -497,7 +497,7 @@ impl<'i> Parser<'i> {
                     return Err(PEK::NonAsciiIdentAfterColon(c).at(Span::new(start, start + len)));
                 }
 
-                if name.len() > 32 {
+                if name.len() > 128 {
                     return Err(PEK::GroupNameTooLong(name.len()).at(self.last_span()));
                 }
             }

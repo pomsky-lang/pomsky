@@ -1,5 +1,5 @@
 #! expect=error, flavor=Pcre
-:TestTestTestTestTestTestTestTest1('test')
+:TestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTestTest1('test')
 -----
-ERROR: Group name is too long. It is 33 code points long, but must be at most 32 code points.
-SPAN: 1..34
+ERROR: Group name is too long. It is 129 code points long, but must be at most 128 code points.
+SPAN: 1..130

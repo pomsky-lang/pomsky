@@ -115,7 +115,7 @@ impl core::fmt::Display for ParseErrorKind {
             &ParseErrorKind::GroupNameTooLong(len) => {
                 write!(
                     f,
-                    "Group name is too long. It is {len} code points long, but must be at most 32 code points."
+                    "Group name is too long. It is {len} code points long, but must be at most 128 code points."
                 )
             }
 
