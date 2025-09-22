@@ -91,11 +91,11 @@ impl Expr {
             Ok(compiled) => compiled,
             Err(e) => return (None, vec![e.diagnostic(input)]),
         };
-        if let Some(rec_span) = validator.first_recursion {
-            if !compiled.terminates() {
-                let error = CompileErrorKind::InfiniteRecursion.at(rec_span);
-                return (None, vec![error.diagnostic(input)]);
-            }
+        if let Some(rec_span) = validator.first_recursion
+            && !compiled.terminates()
+        {
+            let error = CompileErrorKind::InfiniteRecursion.at(rec_span);
+            return (None, vec![error.diagnostic(input)]);
         }
         let count = compiled.optimize();
 

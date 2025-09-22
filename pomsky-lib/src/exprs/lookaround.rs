@@ -60,7 +60,9 @@ impl RegexLookaround {
                 RegexFlavor::Pcre => {
                     content.validate_in_lookbehind_pcre()?;
                 }
-                // TODO: Java, see <https://github.com/pomsky-lang/pomsky/issues/69>
+                RegexFlavor::Java => {
+                    content.validate_in_lookbehind_java()?;
+                }
                 _ => {}
             }
         }

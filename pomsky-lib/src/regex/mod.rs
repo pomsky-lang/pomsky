@@ -149,6 +149,38 @@ impl Regex {
         }
     }
 
+    pub(super) fn validate_in_lookbehind_java(&self) -> Result<(), CompileErrorKind> {
+        match self {
+            Regex::Group(g) => {
+                for part in &g.parts {
+                    part.validate_in_lookbehind_java()?;
+                }
+                Ok(())
+            }
+            Regex::Alternation(alt) => {
+                for part in &alt.parts {
+                    part.validate_in_lookbehind_java()?;
+                }
+                Ok(())
+            }
+            Regex::Repetition(r) => match r.kind.upper_bound {
+                Some(_) => Ok(()),
+                _ => {
+                    Err(CompileErrorKind::LookbehindNotConstantLength { flavor: RegexFlavor::Java })
+                }
+            },
+            Regex::Grapheme => Err(CompileErrorKind::UnsupportedInLookbehind {
+                flavor: RegexFlavor::Java,
+                feature: Feature::Grapheme,
+            }),
+            Regex::Reference(_) => Err(CompileErrorKind::UnsupportedInLookbehind {
+                flavor: RegexFlavor::Java,
+                feature: Feature::Backreference,
+            }),
+            _ => Ok(()),
+        }
+    }
+
     pub(super) fn is_single_char(&self) -> bool {
         if let Regex::Literal(l) = self {
             !l.is_empty() && l.chars().nth(1).is_none()

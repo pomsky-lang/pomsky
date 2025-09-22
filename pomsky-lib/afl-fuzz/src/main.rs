@@ -7,7 +7,7 @@ use std::{
 };
 
 use arbitrary::{Arbitrary, Unstructured};
-use pomsky::{options::RegexFlavor, Expr};
+use pomsky::{Expr, options::RegexFlavor};
 use regex::RegexSet;
 use regex_test::{Outcome, RegexTest};
 
@@ -82,11 +82,11 @@ fn check(
     };
     if let Outcome::Error(e) = outcome {
         let e = e.trim();
-        if let Some(ignored_errors) = ignored_errors.get(&flavor) {
-            if ignored_errors.is_match(e) {
-                debug!(f, " {regex:?} ({flavor:?}) ERROR IGNORED: {e}");
-                return;
-            }
+        if let Some(ignored_errors) = ignored_errors.get(&flavor)
+            && ignored_errors.is_match(e)
+        {
+            debug!(f, " {regex:?} ({flavor:?}) ERROR IGNORED: {e}");
+            return;
         }
 
         debug!(ef, "\n{expr:?}\n{flavor:?}|{regex:?}|{e}\n");

@@ -216,10 +216,10 @@ impl core::fmt::Display for CompileErrorKind {
                 )
             }
             CompileErrorKind::LookbehindNotConstantLength { flavor } => match flavor {
-                RegexFlavor::Pcre | RegexFlavor::Python => write!(
+                RegexFlavor::Pcre | RegexFlavor::Python | RegexFlavor::Java => write!(
                     f,
                     "In the {flavor:?} flavor, lookbehinds must have a {} length",
-                    if flavor == &RegexFlavor::Pcre { "bounded" } else { "constant" }
+                    if flavor == &RegexFlavor::Python { "constant" } else { "bounded" }
                 ),
                 _ => write!(f, "This kind of lookbehind is not supported in the {flavor:?} flavor"),
             },
