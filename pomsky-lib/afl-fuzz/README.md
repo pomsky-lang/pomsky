@@ -7,7 +7,7 @@ The latter requirement is tested by compiling the regex with the respective rege
 - deno (for JavaScript)
 - javac
 - python
-- mcs (for .NET)
+- dotnet-script (for .NET)
 
 ## Usage
 
