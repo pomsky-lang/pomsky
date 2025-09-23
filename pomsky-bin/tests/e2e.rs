@@ -395,6 +395,7 @@ error P0503(test):
  10 │ }
     ╰────
   help: The actual match is "test!"
+        executed with PCRE2 version 10.45
 "#,
     );
 }
