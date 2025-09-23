@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     cmp::Ordering,
     collections::BTreeSet,
@@ -11,7 +12,7 @@ use crate::{
     regex::{RegexProperty, RegexShorthand},
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, Clone)]
 pub(crate) struct UnicodeSet {
     ranges: BTreeSet<SetRange>,
     props: Vec<RegexCharSetItem>,
@@ -25,7 +26,20 @@ impl From<char> for UnicodeSet {
     }
 }
 
-#[derive(Debug, Eq, Clone, Copy)]
+impl PartialEq for UnicodeSet {
+    fn eq(&self, other: &Self) -> bool {
+        self.props == other.props
+            && self.ranges.len() == other.ranges.len()
+            && self.ranges.iter().all(|range| {
+                other
+                    .ranges
+                    .get(range)
+                    .is_some_and(|r| r.first == range.first && r.last == range.last)
+            })
+    }
+}
+
+#[derive(Eq, Clone, Copy)]
 pub(crate) struct SetRange {
     pub(crate) first: u32,
     pub(crate) last: u32,
@@ -83,19 +97,29 @@ impl AddAssign for SetRange {
     }
 }
 
+impl fmt::Debug for SetRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (a, b) = self.as_chars();
+        write!(f, "{a:?}..{b:?}")
+    }
+}
+
 impl UnicodeSet {
     pub fn new() -> Self {
         UnicodeSet { ranges: BTreeSet::new(), props: Vec::new() }
     }
 
     pub fn try_into_char(&self) -> Option<char> {
-        if self.ranges.len() == 1 && self.props.is_empty() {
-            let range = self.ranges.first().unwrap();
-            if range.first == range.last && range.first != b'\r' as u32 {
-                return Some(range.first.try_into().unwrap());
-            }
+        if self.ranges.len() == 1
+            && self.props.is_empty()
+            && let Some(range) = self.ranges.first()
+            && range.first == range.last
+            && range.first != b'\r' as u32
+        {
+            Some(range.first.try_into().unwrap())
+        } else {
+            None
         }
-        None
     }
 
     pub fn len(&self) -> usize {

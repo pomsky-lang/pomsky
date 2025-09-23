@@ -8,5 +8,5 @@ publish = false
 
 [dependencies]
 regex = "1.11.1"
-pcre2 = "0.2.9"
+pcre2 = "0.2.10"
 onig = "6.4.0"

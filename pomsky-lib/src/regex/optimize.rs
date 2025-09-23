@@ -2,7 +2,10 @@ use std::{mem, ops::Add};
 
 use pomsky_syntax::exprs::RepetitionKind;
 
-use crate::{exprs::group::RegexGroupKind, unicode_set::UnicodeSet};
+use crate::exprs::alternation::RegexAlternation;
+use crate::exprs::group::{RegexGroup, RegexGroupKind};
+use crate::exprs::repetition::{RegexQuantifier, RegexRepetition};
+use crate::unicode_set::UnicodeSet;
 
 use super::{Regex, RegexCharSet};
 
@@ -66,33 +69,58 @@ impl Regex {
                 }
             }
             Regex::Alternation(a) => {
+                if let Some(Regex::Literal(l)) = a.parts.first()
+                    && l.is_empty()
+                {
+                    a.parts.remove(0);
+                    let parts = mem::take(&mut a.parts);
+                    *self = Regex::Repetition(Box::new(RegexRepetition::new(
+                        Regex::Alternation(RegexAlternation { parts }),
+                        RepetitionKind { lower_bound: 0, upper_bound: Some(1) },
+                        RegexQuantifier::Lazy,
+                    )));
+                    return self.optimize();
+                }
+                if let Some(Regex::Literal(l)) = a.parts.last()
+                    && l.is_empty()
+                {
+                    a.parts.pop();
+                    let parts = mem::take(&mut a.parts);
+                    *self = Regex::Repetition(Box::new(RegexRepetition::new(
+                        Regex::Alternation(RegexAlternation { parts }),
+                        RepetitionKind { lower_bound: 0, upper_bound: Some(1) },
+                        RegexQuantifier::Greedy,
+                    )));
+                    return self.optimize();
+                }
+
                 for part in &mut a.parts {
                     part.optimize();
                 }
 
-                let mut i = 0;
-                while i < a.parts.len() - 1 {
-                    let (p1, p2) = a.parts.split_at_mut(i + 1);
-                    let lhs = &mut p1[i];
-                    let rhs = &mut p2[0];
+                let mut merged = false;
 
+                reduce_many_mut(&mut a.parts, |lhs, rhs| {
                     if lhs.is_single_char() && rhs.is_single_char() {
-                        match (lhs, rhs) {
+                        match (&mut *lhs, rhs) {
                             (Regex::Literal(lit1), Regex::Literal(lit2)) => {
+                                if lit1 == lit2 {
+                                    return true;
+                                }
                                 let mut set = UnicodeSet::new();
                                 set.add_char(lit1.chars().next().unwrap());
                                 set.add_char(lit2.chars().next().unwrap());
-                                a.parts[i] = Regex::CharSet(RegexCharSet::new(set));
-                                a.parts.remove(i + 1);
+                                *lhs = Regex::CharSet(RegexCharSet::new(set));
+                                true
                             }
-                            (Regex::Literal(lit), Regex::CharSet(set))
-                            | (Regex::CharSet(set), Regex::Literal(lit))
-                                if !set.negative =>
+                            (Regex::Literal(lit), Regex::CharSet(char_set))
+                            | (Regex::CharSet(char_set), Regex::Literal(lit))
+                                if !char_set.negative =>
                             {
-                                let mut set = std::mem::take(set);
-                                set.set.add_char(lit.chars().next().unwrap());
-                                a.parts[i] = Regex::CharSet(set);
-                                a.parts.remove(i + 1);
+                                let mut char_set = std::mem::take(char_set);
+                                char_set.set.add_char(lit.chars().next().unwrap());
+                                *lhs = Regex::CharSet(char_set);
+                                true
                             }
                             (Regex::CharSet(set1), Regex::CharSet(set2))
                                 if !set1.negative && !set2.negative =>
@@ -103,14 +131,21 @@ impl Regex {
                                 for prop in set2.set.props() {
                                     set1.set.add_prop(prop);
                                 }
-                                a.parts.remove(i + 1);
+                                true
                             }
-                            _ => {
-                                i += 1;
-                            }
+                            _ => false,
                         }
+                    } else if merge_common_prefix(lhs, rhs) {
+                        merged = true;
+                        true
                     } else {
-                        i += 1;
+                        false
+                    }
+                });
+
+                if merged {
+                    for part in &mut a.parts {
+                        part.optimize();
                     }
                 }
 
@@ -217,5 +252,101 @@ fn mul_repetitions(a: u32, b: u32) -> Option<u32> {
         None
     } else {
         Some(res)
+    }
+}
+
+/// Merge adjacent elements in the Vec using the `reducer`, which processes two elements at a time.
+///
+/// When the reducer returns `true`, this indicates that they were merged into the first element
+/// in-place, so the second one needs to be removed.
+fn reduce_many_mut<T>(slice: &mut Vec<T>, mut reducer: impl FnMut(&mut T, &mut T) -> bool) {
+    let mut i = 0;
+    while i < slice.len() - 1 {
+        let (p1, p2) = slice.split_at_mut(i + 1);
+        let lhs = &mut p1[i];
+        let rhs = &mut p2[0];
+
+        let res = reducer(lhs, rhs);
+        if res {
+            slice.remove(i + 1);
+        } else {
+            i += 1;
+        }
+    }
+}
+
+fn merge_common_prefix(lhs: &mut Regex, rhs: &mut Regex) -> bool {
+    let prefix1 = prefix(lhs);
+    let prefix2 = prefix(rhs);
+
+    if let (Some(prefix1), Some(prefix2)) = (prefix1, prefix2)
+        && prefix1 == prefix2
+    {
+        let prefix = match prefix1 {
+            Prefix::Dot => Regex::Dot,
+            Prefix::Char(c) => Regex::Literal(c.to_string()),
+            Prefix::CharSet(char_set) => Regex::CharSet(char_set.clone()),
+        };
+
+        remove_prefix(lhs);
+        remove_prefix(rhs);
+
+        let group = if let Regex::Alternation(alt) = lhs {
+            alt.parts.push(mem::take(rhs));
+            vec![prefix, mem::take(lhs)]
+        } else {
+            let alts = vec![mem::take(lhs), mem::take(rhs)];
+            vec![prefix, Regex::Alternation(RegexAlternation::new(alts))]
+        };
+        *lhs = Regex::Group(RegexGroup::new(group, RegexGroupKind::Normal));
+
+        true
+    } else {
+        false
+    }
+}
+
+#[derive(PartialEq, Eq)]
+enum Prefix<'a> {
+    Dot,
+    Char(char),
+    CharSet(&'a RegexCharSet),
+}
+
+fn prefix(regex: &Regex) -> Option<Prefix<'_>> {
+    match regex {
+        Regex::Literal(lit) => lit.chars().next().map(Prefix::Char),
+        Regex::CharSet(char_set) => Some(Prefix::CharSet(char_set)),
+        Regex::Dot => Some(Prefix::Dot),
+        Regex::Group(group) if group.kind == RegexGroupKind::Normal => {
+            group.parts.first().and_then(prefix)
+        }
+        _ => None,
+    }
+}
+
+fn remove_prefix(regex: &mut Regex) {
+    match regex {
+        Regex::Literal(lit) => {
+            let len = lit.chars().next().unwrap().len_utf8();
+            lit.drain(0..len);
+        }
+        Regex::CharSet(_) | Regex::Dot => {
+            *regex = Regex::Literal(String::new());
+        }
+        Regex::Group(group) => {
+            if let Some(part) = group.parts.first_mut() {
+                remove_prefix(part);
+            }
+            if let Some(Regex::Literal(s)) = group.parts.first()
+                && s.is_empty()
+            {
+                group.parts.remove(0);
+                if group.parts.len() == 1 {
+                    *regex = group.parts.pop().unwrap();
+                }
+            }
+        }
+        _ => {}
     }
 }

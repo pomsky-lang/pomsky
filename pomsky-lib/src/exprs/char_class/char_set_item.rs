@@ -66,7 +66,7 @@ impl RegexCompoundCharSet {
 }
 
 #[cfg_attr(feature = "dbg", derive(Debug))]
-#[derive(Default)]
+#[derive(Default, PartialEq, Eq, Clone)]
 pub(crate) struct RegexCharSet {
     pub(crate) negative: bool,
     pub(crate) set: UnicodeSet,

@@ -148,6 +148,24 @@ fn compile(
 
             if !test_errors.is_empty() {
                 diagnostics.extend(test_errors);
+                if let Some(last) = diagnostics.last_mut() {
+                    let mut prev_help = last.help.take().unwrap_or_default();
+                    if !prev_help.is_empty() {
+                        prev_help.push('\n');
+                    }
+                    prev_help += "executed with ";
+                    match options.flavor {
+                        RegexFlavor::Pcre => {
+                            let (major, minor) = pcre2::version();
+                            prev_help += &format!("PCRE2 version {major}.{minor}");
+                        }
+                        flavor => {
+                            prev_help += &format!("{flavor:?}");
+                        }
+                    }
+                    last.help = Some(prev_help);
+                }
+
                 return CompilationResult::error(
                     path,
                     start.elapsed().as_micros(),
