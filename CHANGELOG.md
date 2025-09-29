@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### New
+
+- Support for the RE2 flavor
+
+- Intersection of character sets. For example, `[Letter] & [Latin]` matches a letter that is also in the Latin script.
+
+- Character class prefixes: `gc:` (general category), `sc:` (script), `scx:` (script extension), `blk:` (blocks).
+  For example, `[scx:Syriac]` matches all characters with the Syriac script extension.
+
+  - Adds support for script extensions (currently supported in PCRE, JavaScript, and Rust)
+  - If the `blk:` prefix is used, `In` must be removed; e.g. `[InPrivate_Use]` becomes `[blk:Private_Use]`
+  - Writing the prefix is optional, except for script extensions
+
+- A `pomsky test` subcommand for running unit tests
+
+  - Two supported regex engines for testing: `pcre2` and `rust`
+  - The `--test` argument is now deprecated
+
+- Many optimizations (see below)
+
+### Changed
+
+- Change hygiene of `lazy` and `unicode` mode to behave as one would expect.
+  Going forward, modes depend on the scope where an expression is defined, not where it is used:
+
+  ```pomsky
+  let foo = 'foo'*;  # this repetition is not lazy
+  (enable lazy; foo)
+  ```
+
+- Increase the maximum length of group names from 32 to 128 characters.
+  Group names this long are supported in PCRE2 since version 10.44.
+
+- Produce an error if the contents of a lookbehind assertion are not supported by the regex flavor (Java, Python, PCRE)
+
+- Produce an error if infinite recursion is detected
+
+- Remove the compatibility warning for lookbehind in JavaScript.
+  Lookbehind is now widely supported in JavaScript engines.
+
+- Allow all supported boolean Unicode properties in the Java flavor
+
+- Deprecate the `--test` argument; use `pomsky test -p <PATH>` instead
+
+### Optimizations
+
+- De-duplicate and merge character ranges: `['b' 'a'-'f' 'c'-'m']` becomes `[a-m]`
+
+  - Note that this doesn't work with Unicode classes, e.g. `Alphabetic`
+
+- Merge common alternation prefixes: `'do' | 'double' | 'down'` becomes `do(?:uble|wn)??`
+
+  - This only works with string literals and character sets, for now
+  - Only adjacent alternatives can be merged to ensure that precedence isn't affected
+
+- Combine single-character alternations into a set: `'a' | 'b' | 'c' | 'f'` becomes `[a-cf]`
+
+- Merge constant nested repetitions: `('a'{3}){4}` becomes `a{12}`
+
+### Bugfixes
+
+- Do not miscompile `[r]`
+
 ## [0.11.0] - 2023-11-09
 
 ### New
