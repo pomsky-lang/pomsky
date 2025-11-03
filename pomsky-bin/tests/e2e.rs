@@ -327,8 +327,7 @@ fn specify_features() {
         "variables,boundaries,dot,atomic-groups,lazy-mode,named-groups",
     ]);
     cmd.assert().failure().stderr(
-        r#"error P0302(syntax):
-  × Numbered capturing groups aren't supported
+        r#"error P0302(syntax):  × Numbered capturing groups aren't supported
    ╭────
  1 │ :(.)
    · ──┬─
@@ -357,8 +356,7 @@ fn test_output() {
     ]);
     cmd.assert().failure().stderr(
         r#"warning: The `--test` argument is deprecated, use the `pomsky test` subcommand instead
-error P0501(test):
-  × The regex did not find this match within the test string
+error P0501(test):  × The regex did not find this match within the test string
    ╭─[6:11]
  5 │     reject in "fastest";
  6 │     match "fanta" in "fantastic"; # wrong
@@ -366,8 +364,7 @@ error P0501(test):
    ·              ╰── error occurred here
  7 │     match "test" as { 1: "" } in "testament";
    ╰────
-error P0505(test):
-  × The regex match does not have the expected capture group
+error P0505(test):  × The regex match does not have the expected capture group
    ╭─[7:23]
  6 │     match "fanta" in "fantastic"; # wrong
  7 │     match "test" as { 1: "" } in "testament";
@@ -375,8 +372,7 @@ error P0505(test):
    ·                       ╰── error occurred here
  8 │     match "test" as { 1: "?" } in "test!"; # wrong
    ╰────
-error P0503(test):
-  × The regex found a different match in the test string
+error P0503(test):  × The regex found a different match in the test string
    ╭─[8:11]
  7 │     match "test" as { 1: "" } in "testament";
  8 │     match "test" as { 1: "?" } in "test!"; # wrong
@@ -385,8 +381,7 @@ error P0503(test):
  9 │     match "test" as { foo: "!" } in "test!"; # wrong
    ╰────
   help: The actual match is "test!"
-error P0503(test):
-  × The regex found a different match in the test string
+error P0503(test):  × The regex found a different match in the test string
     ╭─[9:11]
   8 │     match "test" as { 1: "?" } in "test!"; # wrong
   9 │     match "test" as { foo: "!" } in "test!"; # wrong
@@ -438,8 +433,7 @@ fn json_output_errors() {
                     help: vec![],
                     fixes: vec![],
                     visual: String::from(
-                        "error P0100(syntax):
-  × Expected character class, string, code point, Unicode property or `]`
+                        "error P0100(syntax):  × Expected character class, string, code point, Unicode property or `]`
    ╭────
  1 │ [.][^test]
    ·  ┬

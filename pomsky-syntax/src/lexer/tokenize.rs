@@ -30,7 +30,7 @@ macro_rules! consume_chain {
         $input:ident, $c:ident;
     ) => {
         {
-            (($c.len_utf8(), Token::Error))
+            ($c.len_utf8(), Token::Error)
         }
     }
 }
