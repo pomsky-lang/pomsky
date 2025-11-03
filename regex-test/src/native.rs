@@ -52,6 +52,7 @@ pub(crate) fn ruby(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
     }
 }
 
+#[cfg(feature = "re2")]
 pub(crate) fn re2(regex: &str, test_strings: &[impl AsRef<str>]) -> Outcome {
     match re2::RE2::compile(regex, re2::Options::default()) {
         Ok(regex) => {

@@ -10,4 +10,4 @@ publish = false
 regex = "1.11.1"
 pcre2 = "0.2.10"
 onig = "6.4.0"
-re2 = "0.0.8"
+re2 = { version = "0.0.11", optional = true }

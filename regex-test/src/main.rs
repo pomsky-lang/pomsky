@@ -27,6 +27,7 @@ fn main_impl(test: &RegexTest) -> Result<(), String> {
         Flavor::Js => test.test_js_with(&args.input, &args.test),
         Flavor::Java => test.test_java_with(&args.input, &args.test),
         Flavor::Python => test.test_python_with(&args.input, &args.test),
+        #[cfg(feature = "re2")]
         Flavor::RE2 => test.test_re2_with(&args.input, &args.test),
     };
 
@@ -47,6 +48,7 @@ enum Flavor {
     Java,
     Python,
     DotNet,
+    #[cfg(feature = "re2")]
     RE2,
 }
 
@@ -63,6 +65,7 @@ impl FromStr for Flavor {
             "java" => Flavor::Java,
             "py" | "python" => Flavor::Python,
             ".net" | "dotnet" => Flavor::DotNet,
+            #[cfg(feature = "re2")]
             "re2" => Flavor::RE2,
             _ => return Err(()),
         })

@@ -139,11 +139,11 @@ fn compile(
         let mut time_test = 0;
 
         #[cfg(feature = "test")]
-        if compile_args.test.is_some() {
+        if let Some(test_engine) = compile_args.test {
             let mut test_errors = Vec::new();
 
             let start = Instant::now();
-            test_runner::run_tests(&parsed, input, options, &mut test_errors);
+            test_runner::run_tests(&parsed, input, options, test_engine, &mut test_errors);
             time_test = start.elapsed().as_micros();
 
             if !test_errors.is_empty() {

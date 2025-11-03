@@ -10,10 +10,13 @@ use pomsky::{
 };
 use regex::Regex as RustRegex;
 
+use crate::args::RegexEngine;
+
 pub(crate) fn run_tests(
     parsed: &Expr,
     input: &str,
     options: CompileOptions,
+    test_engine: RegexEngine,
     errors: &mut Vec<Diagnostic>,
 ) {
     let (Some(pattern), _) = parsed
@@ -24,8 +27,8 @@ pub(crate) fn run_tests(
         return;
     };
 
-    let regex = match options.flavor {
-        pomsky::options::RegexFlavor::Pcre => {
+    let regex = match test_engine {
+        RegexEngine::Pcre2 => {
             let regex = pcre2::bytes::RegexBuilder::new()
                 .jit_if_available(true)
                 .ucp(true)
@@ -41,7 +44,7 @@ pub(crate) fn run_tests(
                 }
             }
         }
-        pomsky::options::RegexFlavor::Rust => {
+        RegexEngine::Rust => {
             let regex = RustRegex::new(&pattern);
 
             match regex {
@@ -53,7 +56,6 @@ pub(crate) fn run_tests(
                 }
             }
         }
-        _ => panic!("Unsupported flavor"),
     };
 
     let tests = parsed.extract_tests_ref();

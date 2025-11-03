@@ -16,6 +16,7 @@ pub struct RegexTest {
     pub rust: Count,
     pub pcre: Count,
     pub ruby: Count,
+    #[cfg(feature = "re2")]
     pub re2: Count,
 }
 
@@ -122,11 +123,13 @@ impl RegexTest {
         self.dotnet.test(regex, tests)
     }
 
+    #[cfg(feature = "re2")]
     pub fn test_re2(&self, regex: &str) -> Outcome {
         self.re2.add_one();
         crate::native::re2(regex, &[] as &[&str])
     }
 
+    #[cfg(feature = "re2")]
     pub fn test_re2_with(&self, regex: &str, tests: &[impl AsRef<str>]) -> Outcome {
         self.re2.add_one();
         crate::native::re2(regex, tests)
