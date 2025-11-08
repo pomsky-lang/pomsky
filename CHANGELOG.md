@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.12.0] - TBD
+## [0.12.0] - 2025-11-08
 
 ### New
 
@@ -590,7 +590,8 @@ The repository was moved to its own organization! 🎉 It also has a new website
 
 Initial release
 
-[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.11...HEAD
+[unreleased]: https://github.com/pomsky-lang/pomsky/compare/v0.12...HEAD
+[0.12.0]: https://github.com/pomsky-lang/pomsky/compare/v0.11...v0.12
 [0.11.0]: https://github.com/pomsky-lang/pomsky/compare/v0.10...v0.11
 [0.10.0]: https://github.com/pomsky-lang/pomsky/compare/v0.9...v0.10
 [0.9.0]: https://github.com/pomsky-lang/pomsky/compare/v0.8...v0.9

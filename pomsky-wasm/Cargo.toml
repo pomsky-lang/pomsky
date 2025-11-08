@@ -6,7 +6,7 @@ package.edition = "2021"
 name = "compiler-web"
 description = "A portable, modern regular expression language"
 homepage = "https://pomsky-lang.org"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Pomsky developers <info@pomsky-lang.org>"]
 edition.workspace = true
 license = "MIT OR Apache-2.0"
@@ -25,7 +25,7 @@ js-sys = "0.3.65"
 
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
-pomsky = { version = "0.11.0", path = "../pomsky-lib", features = ["miette"] }
+pomsky = { version = "0.12.0", path = "../pomsky-lib", features = ["miette"] }
 
 miette = { version = "7.4.0", default-features = false }
 

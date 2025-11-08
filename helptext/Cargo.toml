@@ -1,7 +1,7 @@
 [package]
 name = "helptext"
 description = "Create beautiful help messages"
-version = "0.1.1"
+version = "0.1.2"
 edition.workspace = true
 authors = ["Pomsky developers <info@pomsky-lang.org>"]
 repository = "https://github.com/pomsky-lang/pomsky/tree/main/helptext"

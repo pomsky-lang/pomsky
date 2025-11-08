@@ -1006,7 +1006,7 @@ checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
 
 [[package]]
 name = "helptext"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "hermit-abi"
@@ -1790,7 +1790,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "arbitrary",
  "lexopt",
@@ -1802,7 +1802,7 @@ dependencies = [
 
 [[package]]
 name = "pomsky-bin"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -1821,14 +1821,14 @@ dependencies = [
 
 [[package]]
 name = "pomsky-macro"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "pomsky",
 ]
 
 [[package]]
 name = "pomsky-syntax"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "arbitrary",
  "strsim",
