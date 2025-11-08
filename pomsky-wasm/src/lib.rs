@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    ops::{Deref, Range},
-};
+use std::ops::Range;
 
 use js_sys::{Array, Object, Reflect};
 use pomsky::{
@@ -127,10 +124,6 @@ pub fn compile(input: &str, flavor: &str) -> Result<PomskyResult, PomskyError> {
 }
 
 fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
-    fn cow(c: Cow<'_, str>) -> JsValue {
-        c.deref().into()
-    }
-
     fn range(span: Span) -> Array {
         let range = span.range().unwrap_or(0..0);
         Array::from_iter([
@@ -141,7 +134,7 @@ fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
 
     fn match_to_js(match_: TestCaseMatch) -> Object {
         let obj = Object::new();
-        Reflect::set(&obj, &"literal".into(), &cow(match_.literal.content)).unwrap();
+        Reflect::set(&obj, &"literal".into(), &match_.literal.content.into()).unwrap();
         Reflect::set(&obj, &"range".into(), &range(match_.literal.span)).unwrap();
 
         let captures = match_.captures.into_iter().map(capture_to_js);
@@ -151,7 +144,7 @@ fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
 
     fn match_all_to_js(match_all: TestCaseMatchAll) -> Object {
         let obj = Object::new();
-        Reflect::set(&obj, &"literal".into(), &cow(match_all.literal.content)).unwrap();
+        Reflect::set(&obj, &"literal".into(), &match_all.literal.content.into()).unwrap();
         Reflect::set(&obj, &"range".into(), &range(match_all.literal.span)).unwrap();
 
         let matches = match_all.matches.into_iter().map(match_to_js);
@@ -161,7 +154,7 @@ fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
 
     fn reject_to_js(reject: TestCaseReject) -> Object {
         let obj = Object::new();
-        Reflect::set(&obj, &"literal".into(), &cow(reject.literal.content)).unwrap();
+        Reflect::set(&obj, &"literal".into(), &reject.literal.content.into()).unwrap();
         Reflect::set(&obj, &"range".into(), &range(reject.literal.span)).unwrap();
         Reflect::set(&obj, &"asSubstring".into(), &reject.as_substring.into()).unwrap();
         obj
@@ -177,7 +170,7 @@ fn tests_to_js(tests: Vec<Test>) -> Option<Array> {
         Reflect::set(&obj, &"ident".into(), &ident).unwrap();
         Reflect::set(&obj, &"identRange".into(), &range(capture.ident_span)).unwrap();
 
-        Reflect::set(&obj, &"literal".into(), &cow(capture.literal.content)).unwrap();
+        Reflect::set(&obj, &"literal".into(), &capture.literal.content.into()).unwrap();
         Reflect::set(&obj, &"range".into(), &range(capture.literal.span)).unwrap();
         obj
     }

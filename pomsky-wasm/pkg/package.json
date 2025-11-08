@@ -1,10 +1,11 @@
 {
-  "name": "@pomsky-lang/compiler-web",
+  "name": "@pomsky-lang/compiler-node",
+  "type": "module",
   "collaborators": [
-    "Ludwig Stecher <ludwig.stecher@gmx.de>"
+    "Pomsky developers <info@pomsky-lang.org>"
   ],
   "description": "A portable, modern regular expression language",
-  "version": "0.11.0",
+  "version": "0.12.1",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
@@ -14,14 +15,16 @@
     "snippets",
     "compiler_web_bg.wasm",
     "compiler_web.js",
+    "compiler_web_bg.js",
     "compiler_web.d.ts",
     "LICENSE_MIT",
     "LICENSE_APACHE"
   ],
-  "module": "compiler_web.js",
+  "main": "compiler_web.js",
   "homepage": "https://pomsky-lang.org",
   "types": "compiler_web.d.ts",
   "sideEffects": [
+    "./compiler_web.js",
     "./snippets/*"
   ]
 }
